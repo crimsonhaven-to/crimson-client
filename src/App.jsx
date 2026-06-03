@@ -1,11 +1,47 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
+import React, { useState, useEffect, useRef, Component } from 'react';
+import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, RefreshCw } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeSearch, useTrendingAnime } from './hooks'; // Importing our clean state abstractions
+import { useAnimeSearch, useTrendingAnime, useRouter } from './hooks'; // Imported useRouter
 
 const API_BASE_URL = 'http://localhost:8000';
 
-// --- SUB-COMPONENTS FOR SCALABILITY ---
+class GlobalErrorBoundary extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+    static getDerivedStateFromError(error) { return { hasError: true, error }; }
+    componentDidCatch(error, errorInfo) { console.error("CRITICAL CLIENT CRASH CAPTURED:", error, errorInfo); }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans flex items-center justify-center p-6 select-none">
+                    <div className="max-w-xl w-full border-2 border-crimson-500 bg-crimson-950/90 rounded-2xl p-8 shadow-[0_0_50px_rgba(239,68,68,0.25)] space-y-6 text-center backdrop-blur-md">
+                        <div className="flex justify-center">
+                            <div className="p-4 bg-crimson-500/10 rounded-full border border-crimson-500/30 animate-pulse">
+                                <AlertTriangle className="w-12 h-12 text-crimson-500" />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <h1 className="text-2xl font-black uppercase tracking-wider text-white">System Exception Recovered</h1>
+                            <p className="text-sm text-crimson-400 font-mono">The layout runtime encountered an unhandled mutation sequence.</p>
+                        </div>
+                        {this.state.error && (
+                            <div className="p-4 bg-black/50 border border-crimson-900 rounded-xl text-left font-mono text-xs text-crimson-300 max-h-[150px] overflow-y-auto break-words">
+                                <span className="text-crimson-500 font-bold">Vector Log:</span> {this.state.error.toString()}
+                            </div>
+                        )}
+                        <button onClick={() => window.location.assign('/')} className="w-full bg-crimson-500 hover:bg-crimson-400 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+                            <RefreshCw className="w-4 h-4" /> Return to Safe Terminal
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 const AnimeCard = ({ title, poster, onSelect }) => (
     <div
         className="flex items-center justify-between p-3 cursor-pointer hover:bg-crimson-900/20 transition-colors border-b border-crimson-900/50"
@@ -29,14 +65,7 @@ function LandingView({
     trendLoading, 
     onSelectSuggestion 
 }) {
-    const {
-        queryName, setQueryName,
-        searchResults,
-        showSuggestions, setShowSuggestions,
-        metaLoading,
-        apiError
-    } = searchState;
-
+    const { queryName, setQueryName, searchResults, showSuggestions, setShowSuggestions, metaLoading, apiError } = searchState;
     const dropdownRef = useRef(null);
 
     const handleSearchSubmit = (e) => {
@@ -66,18 +95,12 @@ function LandingView({
                         onChange={(e) => {
                             const val = e.target.value;
                             setQueryName(val);
-                            // FIXED: Explicitly flag suggestions to show when user types matching text thresholds
-                            if (val.trim().length >= 3) {
-                                setShowSuggestions(true);
-                            }
+                            if (val.trim().length >= 3) setShowSuggestions(true);
                         }}
                         onBlur={(e) => {
-                            // Check if focus truly left the wrapper element container before dropping out
-                            if (!dropdownRef.current?.contains(e.relatedTarget)) {
-                                setShowSuggestions(false);
-                            }
+                            if (!dropdownRef.current?.contains(e.relatedTarget)) setShowSuggestions(false);
                         }}
-                        className="w-full text-white py-4 px-5 focus:outline-none placeholder-crimson-700/80 font-medium tracking-wide appearance-none bg-transparent"
+                        className="w-full text-white py-4 px-5 focus:outline-none placeholder-crimson-400/90 placeholder:drop-shadow-[0_0_6px_rgba(239,68,68,0.5)] font-semibold tracking-wide appearance-none bg-transparent"
                     />
                     <button
                         type="submit"
@@ -88,7 +111,6 @@ function LandingView({
                     </button>
                 </form>
 
-                {/* Autocomplete Dropdown Panel */}
                 {showSuggestions && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-crimson-950 border border-crimson-800 shadow-xl max-h-[300px] overflow-y-auto z-20 text-left rounded-xl">
                         {searchResults.length > 0 ? (
@@ -146,20 +168,33 @@ function LandingView({
     );
 }
 
-function WatchView({ animeMetadata, selectedAnilistId }) {
-    const [currentEpisode, setCurrentEpisode] = useState(1);
+function WatchView({ routeParams, navigate, searchState }) {
+    const { anilistId, episode } = routeParams;
+    const { animeMetadata, setAnimeMetadata } = searchState;
     const [activeStreamIdx, setActiveStreamIdx] = useState(0);
     const [streamData, setStreamData] = useState(null);
     const [streamLoading, setStreamLoading] = useState(false);
 
+    // Effect 1: Handle metadata synchronization if loaded directly via URL
     useEffect(() => {
-        if (!selectedAnilistId) return;
+        if (!anilistId) return;
+        if (animeMetadata && String(animeMetadata.anilist_id) === String(anilistId)) return;
+
+        fetch(`${API_BASE_URL}/info/${anilistId}`)
+            .then(res => res.ok ? res.json() : null)
+            .then(setAnimeMetadata)
+            .catch(err => console.error("Metadata fetch sync err:", err));
+    }, [anilistId, animeMetadata, setAnimeMetadata]);
+
+    // Effect 2: Handle stream scraping updates when id or episode parameter mutates
+    useEffect(() => {
+        if (!anilistId) return;
 
         setStreamLoading(true);
         setStreamData(null);
         setActiveStreamIdx(0);
 
-        fetch(`${API_BASE_URL}/watch/${selectedAnilistId}/${currentEpisode}`)
+        fetch(`${API_BASE_URL}/watch/${anilistId}/${episode}`)
             .then((res) => {
                 if (!res.ok) throw new Error('Could not resolve streaming sources.');
                 return res.json();
@@ -167,7 +202,7 @@ function WatchView({ animeMetadata, selectedAnilistId }) {
             .then(setStreamData)
             .catch((err) => console.error('Stream fetch error:', err))
             .finally(() => setStreamLoading(false));
-    }, [selectedAnilistId, currentEpisode]);
+    }, [anilistId, episode]);
 
     const activeStream = streamData?.streams?.[activeStreamIdx];
 
@@ -209,7 +244,7 @@ function WatchView({ animeMetadata, selectedAnilistId }) {
                                 <span className="bg-crimson-500/20 text-crimson-400 text-xs px-2.5 py-0.5 rounded-md font-bold uppercase tracking-wider border border-crimson-500/30">
                                     {animeMetadata?.status || 'Synchronized'}
                                 </span>
-                                <span className="text-xs text-crimson-400/80 font-mono">Camp Identifier: {selectedAnilistId}</span>
+                                <span className="text-xs text-crimson-400/80 font-mono">Camp Identifier: {anilistId}</span>
                             </div>
                             <h1 className="text-3xl font-black tracking-tight text-white">{animeMetadata?.title || 'Unknown Cluster Title'}</h1>
                             <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3 hover:line-clamp-none transition-all cursor-pointer">
@@ -218,7 +253,7 @@ function WatchView({ animeMetadata, selectedAnilistId }) {
                         </div>
                         <div className="bg-crimson-900/40 border border-crimson-800/40 px-5 py-3 rounded-xl text-center min-w-[100px]">
                             <p className="text-xs uppercase text-crimson-400 font-extrabold tracking-widest">Episode</p>
-                            <p className="text-3xl font-black text-white">{currentEpisode}</p>
+                            <p className="text-3xl font-black text-white">{episode}</p>
                         </div>
                     </div>
                 </div>
@@ -232,9 +267,9 @@ function WatchView({ animeMetadata, selectedAnilistId }) {
                             {animeMetadata.episodes_list.map((ep) => (
                                 <button 
                                     key={ep.episode_number} 
-                                    onClick={() => setCurrentEpisode(ep.episode_number)} 
+                                    onClick={() => navigate(`/watch/${anilistId}/${ep.episode_number}`)} 
                                     className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${
-                                        currentEpisode === ep.episode_number 
+                                        Number(episode) === Number(ep.episode_number) 
                                             ? 'bg-crimson-500 border-crimson-400 text-white font-bold shadow-[0_4px_12px_rgba(255,0,30,0.3)] scale-105' 
                                             : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-200 hover:border-crimson-700 hover:bg-crimson-900/20'
                                     }`}
@@ -304,10 +339,8 @@ function AboutView() {
 }
 
 // --- MASTER APPLICATION ROOT ---
-function App() {
-    const [currentView, setCurrentView] = useState('landing');
-    const [selectedAnilistId, setSelectedAnilistId] = useState(null);
-    
+function AppContent() {
+    const { view, params, navigate } = useRouter(); // Initialize central router hooks
     const searchState = useAnimeSearch();
     const { trendingAnimes, trendLoading } = useTrendingAnime();
 
@@ -331,8 +364,9 @@ function App() {
             const data = await res.json();
             
             searchState.setAnimeMetadata(data);
-            setSelectedAnilistId(data.anilist_id);
-            setCurrentView('watch');
+            
+            // FIXED: Trigger clean routing state modification instead of manual state flags
+            navigate(`/watch/${data.anilist_id}/1`);
         } catch (err) {
             searchState.setApiError('Metadata mapping failed to load.');
         } finally {
@@ -347,23 +381,23 @@ function App() {
             </div>
             
             <nav className="border-b border-crimson-900/60 bg-crimson-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-md">
-                <div onClick={() => { setCurrentView('landing'); searchState.setApiError(null); }} className="flex items-center space-x-2 cursor-pointer group">
+                <div onClick={() => { navigate('/'); searchState.setApiError(null); }} className="flex items-center space-x-2 cursor-pointer group">
                     <span className="text-2xl font-black tracking-tighter text-crimson-500 group-hover:text-crimson-400 transition-colors">
                         crimson<span className="text-crimson-100 font-light">haven</span>
                     </span>
                 </div>
                 <div className="flex space-x-6 text-sm font-medium items-center">
-                    <button onClick={() => setCurrentView('landing')} className={`transition-colors flex items-center gap-1.5 ${currentView === 'landing' ? 'text-crimson-500 font-bold' : 'text-crimson-200/70 hover:text-crimson-400'}`}>
+                    <button onClick={() => navigate('/')} className={`transition-colors flex items-center gap-1.5 ${view === 'landing' ? 'text-crimson-500 font-bold' : 'text-crimson-200/70 hover:text-crimson-400'}`}>
                         <Film className="w-4 h-4" /> Search Home
                     </button>
-                    <button onClick={() => setCurrentView('about')} className={`transition-colors flex items-center gap-1.5 ${currentView === 'about' ? 'text-crimson-500 font-bold' : 'text-crimson-200/70 hover:text-crimson-400'}`}>
+                    <button onClick={() => navigate('/about')} className={`transition-colors flex items-center gap-1.5 ${view === 'about' ? 'text-crimson-500 font-bold' : 'text-crimson-200/70 hover:text-crimson-400'}`}>
                         <HelpCircle className="w-4 h-4" /> About Us
                     </button>
                 </div>
             </nav>
 
             <div className="flex-grow z-10 flex flex-col justify-center">
-                {currentView === 'landing' && (
+                {view === 'landing' && (
                     <LandingView 
                         searchState={searchState} 
                         trendingAnimes={trendingAnimes} 
@@ -371,13 +405,14 @@ function App() {
                         onSelectSuggestion={handleSelectSuggestion} 
                     />
                 )}
-                {currentView === 'watch' && (
+                {view === 'watch' && (
                     <WatchView 
-                        animeMetadata={searchState.animeMetadata} 
-                        selectedAnilistId={selectedAnilistId} 
+                        routeParams={params}
+                        navigate={navigate}
+                        searchState={searchState}
                     />
                 )}
-                {currentView === 'about' && <AboutView />}
+                {view === 'about' && <AboutView />}
             </div>
 
             <footer className="w-full border-t border-crimson-900/40 bg-crimson-950/90 text-center py-6 px-4 z-10 relative">
@@ -386,6 +421,14 @@ function App() {
                 </p>
             </footer>
         </div>
+    );
+}
+
+function App() {
+    return (
+        <GlobalErrorBoundary>
+            <AppContent />
+        </GlobalErrorBoundary>
     );
 }
 
