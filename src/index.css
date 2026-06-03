@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+@theme {
+  /* Ultra-dark vampire backgrounds */
+  --color-crimson-950: #1a0005;
+  --color-crimson-900: #38020c;
+  --color-crimson-800: #5c0514;
+  
+  /* Mid-tones */
+  --color-crimson-700: #8f071d;
+  
+  /* Some High-Contrast Accents */
+  --color-crimson-500: #ff003c; /* Piercing, vivid neon crimson */
+  --color-crimson-400: #ff4066; /* Bright coral-crimson for hover states */
+  
+  /* Text elements */
+  --color-crimson-100: #ffe5ea;
+  --color-crimson-50: #fff5f6;
+}
