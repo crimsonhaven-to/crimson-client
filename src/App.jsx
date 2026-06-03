@@ -40,54 +40,56 @@ function App() {
 const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.length < 3) return [];
     try {
-        // Using encodeURIComponent for safety in URL queries
         const res = await fetch(`${API_BASE_URL}/search/anime?query_name=${encodeURIComponent(query)}`);
         if (!res.ok) throw new Error("Failed to fetch search suggestions.");
-        return res.json().suggestions || [];
+        const data = await res.json();
+        
+        // FIX 1: The backend returns the array directly, NOT wrapped inside a "suggestions" key
+        return Array.isArray(data) ? data : [];
     } catch (e) {
         console.error("Search suggestion error:", e);
-        setApiError(e.message);
         return [];
     }
 }, []);
 
 
-/** * Handles selection from the autocomplete dropdown. This is the main logic update.
+/** * Handles selection from the autocomplete dropdown.
  */
 const handleSelectSuggestion = async (suggestion) => {
-    setQueryName(suggestion.title); // Set name to selected title
+    // FIX 2: Gracefully capture either TMDB .name (TV) or .title (Movies)
+    const displayTitle = suggestion.name || suggestion.title || "Selected Anime";
+    setQueryName(displayTitle); 
     setShowSuggestions(false);
 
-    // Since the backend has already performed the TMDB->AniList mapping, 
-    // we can now proceed directly to fetch metadata using the provided IDs.
     setMetaLoading(true);
     setApiError(null);
     setAnimeMetadata(null);
 
-    // Set both TMDB and AniList IDs simultaneously
-    setSelectedTmdbId(suggestion.tmdb_id);
-    setSelectedAnilistId(suggestion.anilist_id);
-
-    // Trigger the metadata fetch (Endpoint 1)
+    // Trigger the metadata fetch using suggestion.id
     try {
-        const res = await fetch(`${API_BASE_URL}/info/${suggestion.tmdb_id}`);
-        if (!res.ok) throw new Error("Anime metadata mapping not found in database.");
-        return res.json();
+        const res = await fetch(`${API_BASE_URL}/info/${suggestion.id}`);
+        
+        if (!res.ok) {
+            throw new Error("Anime metadata mapping not found in database.");
+        }
+        
+        const data = await res.json();
+        
+        setAnimeMetadata(data);
+        setSelectedTmdbId(data.tmdb_id);
+        setSelectedAnilistId(data.anilist_id);
+        
+        setCurrentEpisode(1); 
+        setCurrentView('watch'); 
     } catch (err) {
         console.error(err);
-        setApiError('Metadata mapping failed to load. Check network connectivity or ID.');
+        setApiError('Metadata mapping failed to load. Check local mapping database configurations.');
     } finally {
         setMetaLoading(false);
     }
-
-    setCurrentEpisode(1); // Default to first episode
-    setCurrentView('watch');
 };
 
 
-/**
- * Handles submission of the search form (if user hits enter instead of clicking suggestion).
- */
 /**
  * Handles submission of the search form (if user hits enter instead of clicking suggestion).
  */
@@ -95,35 +97,11 @@ const handleSearchSubmit = async (e) => {
     e.preventDefault();
     if (!queryName.trim()) return;
 
-    // 1. If we have autocomplete suggestions ready, automatically pick the first choice
-    if (searchResults.length > 0 && !selectedAnilistId) {
+    if (searchResults.length > 0) {
         const firstSuggestion = searchResults[0];
         await handleSelectSuggestion(firstSuggestion);
     } else {
-        // 2. Fallback: Treat the raw input text as a TMDB ID lookup
-        setMetaLoading(true);
-        setApiError(null);
-        setAnimeMetadata(null);
-        setSelectedTmdbId(queryName.trim());
-
-        fetch(`${API_BASE_URL}/info/${encodeURIComponent(queryName.trim())}`)
-            .then((res) => {
-                if (!res.ok) throw new Error('Anime metadata mapping not found in database.');
-                return res.json();
-            })
-            .then((data) => {
-                // CRITICAL FIX: You need to store the metadata data payload here!
-                setAnimeMetadata(data);
-                setSelectedAnilistId(data.anilist_id);
-                setCurrentEpisode(1); // Default to first episode
-                setCurrentView('watch'); // Transition viewport
-                setMetaLoading(false);
-            })
-            .catch((err) => {
-                console.error('Search Submit Error:', err);
-                setApiError(err.message || 'Failed to fetch anime data.');
-                setMetaLoading(false);
-            });
+        setApiError('Please choose a valid choice from the loading results dropdown.');
     }
 };
 
@@ -135,7 +113,7 @@ useEffect(() => {
 
     setStreamLoading(true);
     setStreamData(null);
-    setActiveStreamIdx(0); // Reset fallback source pointer
+    setActiveStreamIdx(0); 
 
     fetch(`${API_BASE_URL}/watch/${selectedAnilistId}/${currentEpisode}`)
         .then((res) => {
@@ -189,7 +167,7 @@ useEffect(() => {
 const AnimeCard = ({ title, poster, onSelect }) => (
     <div
         className="flex items-center justify-between p-3 cursor-pointer hover:bg-crimson-900/20 transition-colors border-b border-crimson-900/50"
-        onClick={onSelect}
+        onMouseDown={onSelect} 
     >
         <div className="flex items-center gap-3">
             {poster ? (
@@ -197,7 +175,7 @@ const AnimeCard = ({ title, poster, onSelect }) => (
             ) : (
                 <div className="w-12 h-16 bg-crimson-900/30 flex items-center justify-center text-sm text-crimson-400">No Poster</div>
             )}
-            <span className={`text-base font-semibold ${selectedAnilistId ? 'text-white' : 'text-crimson-300'} truncate`}>
+            <span className="text-base font-semibold text-crimson-300 truncate max-w-[240px]">
                 {title}
             </span>
         </div>
@@ -260,22 +238,20 @@ return (
                             </p>
                         </div>
 
-                        {/* SEARCH BAR CONTAINER (FIXED JSX STRUCTURE) */}
+                        {/* SEARCH BAR CONTAINER */}
                         <div className="relative max-w-xl mx-auto group">
                             <form onSubmit={handleSearchSubmit} className="flex items-end space-x-2 border-2 border-crimson-900/80 rounded-2xl shadow-2xl bg-crimson-900/30 transition-all">
                                 <input
                                     type="text" 
                                     placeholder="Enter Anime Name (e.g., The Eminence in Shadow)..."
                                     value={queryName}
+                                    onFocus={() => { if (queryName.length >= 3) setShowSuggestions(true); }}
                                     onChange={async (e) => {
                                         const val = e.target.value;
                                         setQueryName(val);
                                         
-                                        // Show suggestions if query is long enough, hide otherwise
                                         if (val.length >= 3 && val.trim() !== '') {
                                             setShowSuggestions(true);
-                                            
-                                            // CRITICAL: Fetch data from backend and update searchResults state
                                             const suggestions = await fetchSuggestions(val);
                                             setSearchResults(suggestions);
                                         } else {
@@ -283,13 +259,16 @@ return (
                                             setSearchResults([]);
                                         }
                                     }}
-                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} 
+                                    onBlur={() => {
+                                        // Give onMouseDown a brief window to register clicks on cards
+                                        setTimeout(() => setShowSuggestions(false), 200);
+                                    }} 
                                     className="w-full text-white py-4 px-5 focus:outline-none placeholder-crimson-700/80 font-medium tracking-wide appearance-none"
                                 />
                                 <button
                                     type="submit"
                                     disabled={metaLoading}
-                                    className="bg-crimson-500 hover:bg-crimson-400 disabled:bg-crimson-800 text-white px-6 rounded-r-2xl transition-all shadow-md flex items-center justify-center"
+                                    className="bg-crimson-500 hover:bg-crimson-400 disabled:bg-crimson-800 text-white px-6 py-[18px] rounded-r-2xl transition-all shadow-md flex items-center justify-center self-stretch"
                                 >
                                     {metaLoading ? (
                                         <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -300,11 +279,29 @@ return (
                             </form>
 
                             {/* Autocomplete Dropdown */}
-                            {showSuggestions && searchResults.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 bg-crimson-950 border-b border-crimson-800 shadow-xl max-h-[300px] overflow-y-auto z-20">
-                                    {searchResults.map((suggestion, index) => (
-                                        <AnimeCard key={index} title={suggestion.title} poster={suggestion.poster} onSelect={() => handleSelectSuggestion(suggestion)} />
-                                    ))}
+                            {showSuggestions && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-crimson-950 border border-crimson-800 shadow-xl max-h-[300px] overflow-y-auto z-20 text-left rounded-xl">
+                                    {searchResults.length > 0 ? (
+                                        searchResults.map((suggestion, index) => {
+                                            // FIX 3: Dynamic poster path compilation since TMDB returns partial URLs string
+                                            const posterUrl = suggestion.poster_path 
+                                                ? `https://image.tmdb.org/t/p/w200${suggestion.poster_path}` 
+                                                : null;
+
+                                            return (
+                                                <AnimeCard 
+                                                    key={index} 
+                                                    title={suggestion.name || suggestion.title} 
+                                                    poster={posterUrl} 
+                                                    onSelect={() => handleSelectSuggestion(suggestion)} 
+                                                />
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="p-4 text-sm text-crimson-400 text-center italic">
+                                            No tracked anime found matching that title.
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -313,7 +310,7 @@ return (
                         {apiError && (
                             <div className="max-w-md mx-auto p-4 bg-crimson-900/40 border border-crimson-500/30 rounded-xl text-sm text-crimson-300 flex items-center gap-3 shadow-lg mt-8">
                                 <AlertTriangle className="w-5 h-5 text-crimson-500 shrink-0" />
-                                <span className="text-left">Error: {apiError}</span>
+                                <span className="text-left">Status Message: {apiError}</span>
                             </div>
                         )}
 
@@ -323,7 +320,6 @@ return (
                                 <Play className="w-6 h-6 text-crimson-500" /> Trending Streams <span className="text-base font-normal opacity-70">({trendingAnimes.length} Results)</span>
                             </h2>
 
-                            {/* Loading State */}
                             {trendLoading && (
                                 <div className="flex justify-center space-x-6 animate-pulse text-crimson-300">
                                     <div className="w-[150px] h-48 bg-gray-700/30 rounded-lg flex-shrink-0 border border-dashed border-crimson-900/50"></div>
@@ -332,16 +328,14 @@ return (
                                 </div>
                             )}
 
-                            {/* Error State */}
-                            {!trendLoading && apiError && (
-                                <div className="text-center text-red-400 p-4 bg-crimson-900/20 rounded-lg">Trending data failed to load. ({apiError})</div>
-                            )}
-
-                            {/* Success State */}
                             {!trendLoading && trendingAnimes.length > 0 && (
                                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
                                     {trendingAnimes.map((anime, index) => (
-                                        <div key={index} className="bg-crimson-900/10 border border-crimson-900/40 rounded-xl overflow-hidden hover:border-crimson-500 transition-all group cursor-pointer transform hover:-translate-y-1">
+                                        <div 
+                                            key={index} 
+                                            onClick={() => handleSelectSuggestion(anime)}
+                                            className="bg-crimson-900/10 border border-crimson-900/40 rounded-xl overflow-hidden hover:border-crimson-500 transition-all group cursor-pointer transform hover:-translate-y-1"
+                                        >
                                             <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-auto object-cover" />
                                             <div className="p-3 text-left">
                                                 <h4 className="text-sm font-bold text-white line-clamp-2 group-hover:text-crimson-400 transition-colors">{anime.title}</h4>
@@ -351,7 +345,6 @@ return (
                                 </div>
                             )}
 
-                            {/* Empty State */}
                             {!trendLoading && trendingAnimes.length === 0 && (
                                 <div className="p-6 bg-crimson-900/20 rounded-xl border border-dashed border-crimson-900 text-center text-crimson-500">No currently tracked popular streams found in the database.</div>
                             )}
@@ -362,9 +355,7 @@ return (
                 {/* VIEW 2: WATCH INTERFACE */}
                 {currentView === 'watch' && (
                     <div className="max-w-7xl w-full mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
-                        {/* Left Frame: Video Engine & Meta Listing */}
                         <div className="lg:col-span-3 space-y-6">
-                            {/* Media Sandbox View */}
                             <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border border-crimson-900/80 shadow-[0_0_60px_rgba(26,0,5,0.8)]">
                                 {streamLoading && (
                                     <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950 z-20">
@@ -397,7 +388,6 @@ return (
                                 )}
                             </div>
 
-                            {/* Aggregated Overview Metadata Block */}
                             <div className="p-6 bg-crimson-900/10 border border-crimson-900/40 rounded-2xl backdrop-blur-sm relative overflow-hidden">
                                 <div className="flex flex-wrap items-start justify-between gap-4 relative z-10">
                                     <div className="space-y-2 max-w-xl">
@@ -415,7 +405,6 @@ return (
                                 </div>
                             </div>
 
-                            {/* Dynamic Interactive Episode Index Selector */}
                             {animeMetadata?.episodes_list && (
                                 <div className="p-6 bg-crimson-900/10 border border-crimson-900/40 rounded-2xl space-y-4">
                                     <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -433,13 +422,11 @@ return (
                             )}
                         </div>
 
-                        {/* Right Frame: Source Selection Sidebar */}
                         <div className="lg:col-span-1 space-y-4">
                             <div className="bg-crimson-900/20 border border-crimson-900/50 p-6 rounded-2xl sticky top-24">
                                 <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                                     <span className="w-2 h-2 rounded-full bg-crimson-500 animate-ping" /> Scraped Targets
                                 </h3>
-
                                 <div className="space-y-2">
                                     {streamLoading ? (
                                         [1, 2].map((n) => <div key={n} className="h-14 bg-crimson-900/10 animate-pulse rounded-xl border border-crimson-900/20"></div>)
@@ -469,7 +456,6 @@ return (
                             <h2 className="text-3xl font-black text-white uppercase tracking-tight">About CrimsonHaven</h2>
                             <p className="text-sm text-crimson-400 font-medium">The architectural design manifest.</p>
                         </div>
-
                         <div className="space-y-4 text-sm text-crimson-200/80 leading-relaxed text-justify">
                             <p>
                                 <strong className="text-white">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame. It functions explicitly as an abstraction layer built on top of decoupled microservices designed to format metadata processing endpoints.
@@ -479,7 +465,7 @@ return (
                             </p>
                             <div className="bg-crimson-900/20 border border-crimson-900 p-4 rounded-xl font-mono text-xs text-crimson-300 space-y-1">
                                 <p className="font-bold text-white mb-1">// System Specification Diagnostics</p>
-                                <p>• Client Layer: React 18 / Vite / Tailwind CSS v4</p>
+                                <p>• Client Layer: React 18 / Vite / Tailwind CSS</p>
                                 <p>• Server Routing Pipeline: Python / FastAPI Asynchronous Engine</p>
                                 <p>• Resolution Engine Model: Concurrent Resolver Layer</p>
                             </div>
