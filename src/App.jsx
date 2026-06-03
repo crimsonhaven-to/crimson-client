@@ -299,14 +299,14 @@ function App() {
                                     <div className="absolute top-full left-0 right-0 mt-1 bg-crimson-950 border border-crimson-800 shadow-xl max-h-[300px] overflow-y-auto z-20 text-left rounded-xl">
                                         {searchResults.length > 0 ? (
                                             searchResults.map((suggestion, index) => {
-                                                const posterUrl = suggestion.poster_path 
-                                                    ? `https://image.tmdb.org/t/p/w200${suggestion.poster_path}` 
-                                                    : null;
-
+                                                
+                                                //  FIX: Use the fully qualified URL passed directly from the API response
+                                                const posterUrl = suggestion.poster || null;
+                                            
                                                 return (
                                                     <AnimeCard 
                                                         key={index} 
-                                                        title={suggestion.name || suggestion.title} 
+                                                        title={suggestion.title || suggestion.name} 
                                                         poster={posterUrl} 
                                                         onSelect={() => handleSelectSuggestion(suggestion)} 
                                                     />
