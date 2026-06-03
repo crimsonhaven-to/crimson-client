@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
+import Background from './assets/background.svg';
 
 //TODO: When in Prod, I need to change the API URL
 const API_BASE_URL = 'http://localhost:8000'; 
@@ -209,7 +210,10 @@ function App() {
         <>
             <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
                 {/* Background Ambience Texture */}
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(92,5,20,0.15)_0%,transparent_70%)] pointer-events-none z-0" />
+                <div className="absolute inset-0 pointer-events-none z-0">
+                    <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-70 wallpaper-img" />
+                </div>
+                <div className="absolute inset-0 pointer-events-none z-0" style={{background: 'radial-gradient(circle at center, rgba(92,5,20,0.30) 0%, transparent 70%)'}} />
 
                 {/* Shared Navigation Header */}
                 <nav className="border-b border-crimson-900/60 bg-crimson-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-md">
