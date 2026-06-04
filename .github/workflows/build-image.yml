@@ -5,7 +5,7 @@ on:
     branches:
       - dev
     tags:
-      - 'v*.*' # Triggers on v1.0, v1.1, v2.0, etc.
+      - 'v*.*'
 
 jobs:
   build:
@@ -15,24 +15,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Determine the tags dynamically based on the Git ref
-      - name: Set Docker Tags
+      # 1. Determine both the tags AND the API URL dynamically
+      - name: Set Build Variables
         id: vars
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Extract version from tag (e.g., refs/tags/v1.0 -> v1.0)
             VERSION=${GITHUB_REF#refs/tags/}
             echo "IMAGE_TAGS=-t crimson-client:${VERSION} -t crimson-client:latest" >> $GITHUB_OUTPUT
+            echo "API_URL=https://backend.crimsonhaven.to:8000" >> $GITHUB_OUTPUT
           else
-            # It's a push to the dev branch
             SHORT_SHA=$(git rev-parse --short HEAD)
             echo "IMAGE_TAGS=-t crimson-client:dev -t crimson-client:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+            echo "API_URL=https://dev-backend.crimsonhaven.to:8000" >> $GITHUB_OUTPUT
           fi
 
-      # 2. Build the Docker image using the dynamically generated tags
+      # 2. Build the Docker image, passing the API URL as a build argument
       - name: Build Docker Image
         run: |
-          docker build ${{ steps.vars.outputs.IMAGE_TAGS }} .
+          docker build \
+            --build-arg VITE_API_BASE_URL="${{ steps.vars.outputs.API_URL }}" \
+            ${{ steps.vars.outputs.IMAGE_TAGS }} .
 
       # 3. Clean up dangling images to save disk space
       - name: Prune old images
