@@ -22,11 +22,11 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/}
             echo "IMAGE_TAGS=-t crimson-client:${VERSION} -t crimson-client:latest" >> $GITHUB_OUTPUT
-            echo "API_URL=https://backend.crimsonhaven.to:8000" >> $GITHUB_OUTPUT
+            echo "API_URL=https://backend.crimsonhaven.to" >> $GITHUB_OUTPUT
           else
             SHORT_SHA=$(git rev-parse --short HEAD)
             echo "IMAGE_TAGS=-t crimson-client:dev -t crimson-client:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
-            echo "API_URL=https://dev-backend.crimsonhaven.to:8000" >> $GITHUB_OUTPUT
+            echo "API_URL=https://dev-backend.crimsonhaven.to" >> $GITHUB_OUTPUT
           fi
 
       # 2. Build the Docker image, passing the API URL as a build argument
