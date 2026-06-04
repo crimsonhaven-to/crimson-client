@@ -103,65 +103,72 @@ export function useAnimeStreamer() {
     }, []);
 
     // Handle initial item selection with season grouping
-    const handleSelectSuggestion = async (suggestion, navigateToWatchView) => {
-        const displayTitle = suggestion.name || suggestion.title || "Selected Anime";
-        setQueryName(displayTitle); 
-        setShowSuggestions(false);
-        setMetaLoading(true);
-        setApiError(null);
-        setAnimeMetadata(null);
-        setAvailableSeasons([]);
+const handleSelectSuggestion = async (suggestion, navigateToWatchView) => {
+    const displayTitle = suggestion.name || suggestion.title || "Selected Anime";
+    setQueryName(displayTitle); 
+    setShowSuggestions(false);
+    setMetaLoading(true);
+    setApiError(null);
+    setAnimeMetadata(null);
+    setAvailableSeasons([]);
 
-        const tmdbId = suggestion.tmdb_id;
-        const anilistId = suggestion.anilist_id;
+    const tmdbId = suggestion.tmdb_id;
+    const anilistId = suggestion.anilist_id;
+    
+    if (!tmdbId && !anilistId) {
+        setApiError('Selection failed: Identifiers missing.');
+        setMetaLoading(false);
+        return;
+    }
+
+    try {
+        // First, fetch available seasons using the anilist_id
+        let seasons = [];
+        if (anilistId) {
+            seasons = await fetchAvailableSeasons(anilistId);
+        }
         
-        if (!tmdbId && !anilistId) {
-            setApiError('Selection failed: Identifiers missing.');
-            setMetaLoading(false);
-            return;
+        // Determine which season to load initially
+        let initialSeason = null;
+        let initialAnilistId = anilistId;
+        let initialTmdbId = tmdbId;
+        let initialSeasonNumber = 1;
+        let initialTmdbSeason = 1;
+        
+        if (seasons && seasons.length > 0) {
+            // Use the first season from the group
+            initialSeason = seasons[0];
+            initialAnilistId = initialSeason.anilist_id;
+            initialTmdbId = initialSeason.tmdb_id;  // Now this exists!
+            initialSeasonNumber = initialSeason.season_number;
+            initialTmdbSeason = initialSeason.tmdb_season;
         }
-
-        try {
-            // First, fetch available seasons using the anilist_id
-            let seasons = [];
-            if (anilistId) {
-                seasons = await fetchAvailableSeasons(anilistId);
-            }
-            
-            // Determine which season to load initially
-            let initialSeason = null;
-            let initialAnilistId = anilistId;
-            let initialTmdbId = tmdbId;
-            let initialSeasonNumber = 1;
-            
-            if (seasons && seasons.length > 0) {
-                // Use the first season from the group
-                initialSeason = seasons[0];
-                initialAnilistId = initialSeason.anilist_id;
-                initialTmdbId = initialSeason.tmdb_id;
-                initialSeasonNumber = initialSeason.season_number;
-            }
-            
-            // Fetch metadata for the initial season
-            const res = await fetch(`${API_BASE_URL}/info/${initialTmdbId}?season=${initialSeason.tmdb_season || 1}`);
-            if (!res.ok) throw new Error("Anime metadata mapping not found in database.");
-            
-            const data = await res.json();
-            setAnimeMetadata(data);
-            setSelectedTmdbId(data.tmdb_id); 
-            setSelectedAnilistId(initialAnilistId);
-            setCurrentSeasonAnilistId(initialAnilistId);
-            setCurrentSeason(initialSeasonNumber);
-            setCurrentEpisode(1);
-            
-            if (navigateToWatchView) navigateToWatchView();
-        } catch (err) {
-            console.error("Metadata fetch error:", err);
-            setApiError('Metadata mapping failed to load.');
-        } finally {
-            setMetaLoading(false);
+        
+        // Validate we have a valid TMDB ID
+        if (!initialTmdbId) {
+            throw new Error("No TMDB ID found for this anime");
         }
-    };
+        
+        // Fetch metadata for the initial season
+        const res = await fetch(`${API_BASE_URL}/info/${initialTmdbId}?season=${initialTmdbSeason}`);
+        if (!res.ok) throw new Error(`Metadata fetch failed: ${res.status}`);
+        
+        const data = await res.json();
+        setAnimeMetadata(data);
+        setSelectedTmdbId(data.tmdb_id); 
+        setSelectedAnilistId(initialAnilistId);
+        setCurrentSeasonAnilistId(initialAnilistId);
+        setCurrentSeason(initialSeasonNumber);
+        setCurrentEpisode(1);
+        
+        if (navigateToWatchView) navigateToWatchView();
+    } catch (err) {
+        console.error("Metadata fetch error:", err);
+        setApiError(`Metadata mapping failed: ${err.message}`);
+    } finally {
+        setMetaLoading(false);
+    }
+};
 
     // Update metadata when season changes
     const updateSeason = useCallback(async (seasonNumber) => {

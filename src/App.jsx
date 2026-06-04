@@ -244,7 +244,7 @@ function App() {
                 </div>
 
                 <footer className="w-full border-t border-crimson-900/40 bg-crimson-950/90 text-center py-6 px-4 z-10 relative">
-                    <p className="text-[11px] font-medium tracking-wide text-crimson-600 max-w-3xl mx-auto uppercase leading-normal">Disclaimer: <span className="text-crimson-400/70">crimsonhaven does not host, store, or upload any file assets locally.</span></p>
+                    <p className="text-[11px] font-medium tracking-wide text-crimson-600 max-w-3xl mx-auto uppercase leading-normal">Disclaimer: <span className="text-crimson-400/70">crimsonhaven does not host, store, or upload any file assets locally. Any legal issues should be taken up with the providers directly :3</span></p>
                 </footer>
             </div>
         </>
