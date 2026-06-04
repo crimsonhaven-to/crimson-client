@@ -67,27 +67,37 @@ export function useAnimeStreamer(externalProps = {}) {
   }, [queryName, fetchSuggestions]);
 
   // ---------- Helper: fetch available seasons for an anime ----------
-  const fetchAvailableSeasons = useCallback(async (anilistId) => {
+const fetchAvailableSeasons = useCallback(async (anilistId) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/seasons/${anilistId}`);
-      if (!res.ok) throw new Error('Failed to fetch season information');
-      const data = await res.json();
-      
-      if (data.success && data.seasons) {
-        setAvailableSeasons(data.seasons);
-        setSeasonGroups({
-          title: data.title,
-          totalSeasons: data.total_seasons
-        });
-        return data.seasons;
-      }
-      return [];
+        const res = await fetch(`${API_BASE_URL}/seasons/${anilistId}`);
+        if (!res.ok) throw new Error('Failed to fetch season information');
+        const data = await res.json();
+        
+        if (data.success && data.seasons) {
+            setAvailableSeasons(data.seasons);
+            let title = data.title;
+            // If title is missing or "Unknown Anime", try to get it from first season's metadata
+            if ((!title || title === "Unknown Anime") && data.seasons.length > 0) {
+                const firstSeason = data.seasons[0];
+                const metaRes = await fetch(`${API_BASE_URL}/info/${firstSeason.tmdb_id}?season=${firstSeason.tmdb_season}`);
+                if (metaRes.ok) {
+                    const metaData = await metaRes.json();
+                    title = metaData.title;
+                }
+            }
+            setSeasonGroups({
+                title: title || 'Unknown Anime',
+                totalSeasons: data.total_seasons
+            });
+            return data.seasons;
+        }
+        return [];
     } catch (err) {
-      console.error("Season fetch error:", err);
-      setApiError('Could not load season information');
-      return [];
+        console.error("Season fetch error:", err);
+        setApiError('Could not load season information');
+        return [];
     }
-  }, []);
+}, []);
 
   // ---------- Core: initialise everything from anilistId, season, episode ----------
   const initializeFromIds = useCallback(async (anilistId, seasonNumber = 1, episodeNumber = 1) => {
