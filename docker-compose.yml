@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: reallordraymond/crimson-client:0.2
+    ports:
+      - "8080:80"
+    # Override the API base URL during build (if needed)
