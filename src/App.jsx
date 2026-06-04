@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
 import Background from './assets/background.jpg';
 
@@ -18,6 +18,7 @@ function App() {
         activeStreamIdx, setActiveStreamIdx,
         animeMetadata, streamData,
         metaLoading, streamLoading, apiError, setApiError,
+        availableSeasons, seasonGroups,
         handleSelectSuggestion
     } = useAnimeStreamer();
 
@@ -138,7 +139,12 @@ function App() {
                                                 <span className="bg-crimson-500/20 text-crimson-400 text-xs px-2.5 py-0.5 rounded-md font-bold uppercase tracking-wider border border-crimson-500/30">{animeMetadata?.status || 'Synchronized'}</span>
                                                 <span className="text-xs text-crimson-400/80 font-mono">AniList Reference: {animeMetadata?.anilist_id}</span>
                                             </div>
-                                            <h1 className="text-3xl font-black tracking-tight text-white">{animeMetadata?.title || 'Unknown Cluster Title'}</h1>
+                                            <h1 className="text-3xl font-black tracking-tight text-white">
+                                                {seasonGroups?.title || animeMetadata?.title || 'Unknown Cluster Title'}
+                                                {seasonGroups?.totalSeasons > 1 && (
+                                                    <span className="text-lg text-crimson-400 ml-2">(Season {currentSeason})</span>
+                                                )}
+                                            </h1>
                                             <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3 hover:line-clamp-none transition-all cursor-pointer">{animeMetadata?.summary || 'No summary asset provided.'}</p>
                                         </div>
                                         <div className="flex gap-2">
@@ -155,21 +161,34 @@ function App() {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <div className="p-4 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl flex items-center gap-2 overflow-x-auto">
-                                        <span className="text-xs font-bold uppercase text-crimson-500 tracking-wider whitespace-nowrap">Jump To Season:</span>
-                                        <div className="flex gap-1.5">
-                                            {[1, 2, 3, 4, 5].map((sNum) => (
-                                                <button key={sNum} onClick={() => { setCurrentSeason(sNum); setCurrentEpisode(1); }} className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${currentSeason === sNum ? 'bg-crimson-500 border-crimson-400 text-white' : 'bg-crimson-900/20 border-crimson-900/50 text-crimson-300 hover:border-crimson-700'}`}>S{sNum}</button>
-                                            ))}
+                                    {/* Dynamic Season Selector based on available seasons */}
+                                    {availableSeasons && availableSeasons.length > 0 && (
+                                        <div className="p-4 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl flex items-center gap-2 overflow-x-auto">
+                                            <span className="text-xs font-bold uppercase text-crimson-500 tracking-wider whitespace-nowrap">Jump To Season:</span>
+                                            <div className="flex gap-1.5">
+                                                {availableSeasons.map((season) => (
+                                                    <button 
+                                                        key={season.season_number} 
+                                                        onClick={() => setCurrentSeason(season.season_number)} 
+                                                        className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${currentSeason === season.season_number ? 'bg-crimson-500 border-crimson-400 text-white' : 'bg-crimson-900/20 border-crimson-900/50 text-crimson-300 hover:border-crimson-700'}`}
+                                                    >
+                                                        S{season.season_number}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
                                     {animeMetadata?.episodes_list && (
                                         <div className="p-6 bg-crimson-900/10 border border-crimson-900/40 rounded-2xl space-y-4">
                                             <h3 className="text-lg font-bold text-white flex items-center gap-2"><Info className="w-5 h-5 text-crimson-500" /> Episode Index Selector</h3>
                                             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
                                                 {animeMetadata.episodes_list.map((ep) => (
-                                                    <button key={ep.episode_number} onClick={() => setCurrentEpisode(ep.episode_number)} className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${currentEpisode === ep.episode_number ? 'bg-crimson-500 border-crimson-400 text-white font-bold shadow-[0_4px_12px_rgba(255,0,30,0.3)] scale-105' : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-200 hover:border-crimson-700 hover:bg-crimson-900/20'}`}>
+                                                    <button 
+                                                        key={ep.episode_number} 
+                                                        onClick={() => setCurrentEpisode(ep.episode_number)} 
+                                                        className={`p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 ${currentEpisode === ep.episode_number ? 'bg-crimson-500 border-crimson-400 text-white font-bold shadow-[0_4px_12px_rgba(255,0,30,0.3)] scale-105' : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-200 hover:border-crimson-700 hover:bg-crimson-900/20'}`}
+                                                    >
                                                         <span className="text-xs uppercase font-bold opacity-60">Ep</span>
                                                         <span className="text-lg font-black">{ep.episode_number}</span>
                                                     </button>
@@ -186,7 +205,11 @@ function App() {
                                     <div className="space-y-2">
                                         {streamLoading ? ([1, 2].map((n) => <div key={n} className="h-14 bg-crimson-900/10 animate-pulse rounded-xl border border-crimson-900/20"></div>)) : streamData?.streams && streamData.streams.length > 0 ? (
                                             streamData.streams.map((stream, idx) => (
-                                                <button key={idx} onClick={() => setActiveStreamIdx(idx)} className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between group ${activeStreamIdx === idx ? 'bg-crimson-500 text-white font-bold border-crimson-400 shadow-[0_4px_12px_rgba(255,0,60,0.2)]' : 'bg-crimson-950/60 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-700'}`}>
+                                                <button 
+                                                    key={idx} 
+                                                    onClick={() => setActiveStreamIdx(idx)} 
+                                                    className={`w-full text-left p-3.5 rounded-xl border transition-all flex items-center justify-between group ${activeStreamIdx === idx ? 'bg-crimson-500 text-white font-bold border-crimson-400 shadow-[0_4px_12px_rgba(255,0,60,0.2)]' : 'bg-crimson-950/60 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-700'}`}
+                                                >
                                                     <div className="flex flex-col">
                                                         <span className="text-[10px] uppercase tracking-wider opacity-70 font-bold">Type: {stream.type}</span>
                                                         <span className="text-sm font-extrabold tracking-wide text-white truncate max-w-[160px]">{stream.source}</span>
@@ -213,6 +236,7 @@ function App() {
                                     <p className="font-bold text-white mb-1">// System Specification Diagnostics</p>
                                     <p>• Client Layer: React 18 / Vite / Tailwind CSS</p>
                                     <p>• Server Routing Pipeline: Python / FastAPI Asynchronous Engine</p>
+                                    <p>• Multi-Season Support: Season grouping with automatic AniList ID mapping</p>
                                 </div>
                             </div>
                         </div>

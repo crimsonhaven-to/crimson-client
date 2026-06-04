@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// Replace with your production URL when deploying
+//TODO: add production URL when deploying
 const API_BASE_URL = 'http://localhost:8000';
 
 /**
@@ -32,6 +32,11 @@ export function useAnimeStreamer() {
     const [currentSeason, setCurrentSeason] = useState(1);
     const [currentEpisode, setCurrentEpisode] = useState(1);
     const [activeStreamIdx, setActiveStreamIdx] = useState(0);
+    
+    // Multi-season support
+    const [availableSeasons, setAvailableSeasons] = useState([]);
+    const [seasonGroups, setSeasonGroups] = useState(null);
+    const [currentSeasonAnilistId, setCurrentSeasonAnilistId] = useState(null);
 
     // Dynamic state loaders
     const [animeMetadata, setAnimeMetadata] = useState(null);
@@ -74,7 +79,30 @@ export function useAnimeStreamer() {
         }
     }, [queryName, fetchSuggestions]);
 
-    // Handle initial item selection
+    // Fetch available seasons for an anime
+    const fetchAvailableSeasons = useCallback(async (anilistId) => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/seasons/${anilistId}`);
+            if (!res.ok) throw new Error('Failed to fetch season information');
+            const data = await res.json();
+            
+            if (data.success && data.seasons) {
+                setAvailableSeasons(data.seasons);
+                setSeasonGroups({
+                    title: data.title,
+                    totalSeasons: data.total_seasons
+                });
+                return data.seasons;
+            }
+            return [];
+        } catch (err) {
+            console.error("Season fetch error:", err);
+            setApiError('Could not load season information');
+            return [];
+        }
+    }, []);
+
+    // Handle initial item selection with season grouping
     const handleSelectSuggestion = async (suggestion, navigateToWatchView) => {
         const displayTitle = suggestion.name || suggestion.title || "Selected Anime";
         setQueryName(displayTitle); 
@@ -82,24 +110,50 @@ export function useAnimeStreamer() {
         setMetaLoading(true);
         setApiError(null);
         setAnimeMetadata(null);
+        setAvailableSeasons([]);
 
-        const idToUse = suggestion.tmdb_id || suggestion.anilist_id;
-        if (!idToUse) {
+        const tmdbId = suggestion.tmdb_id;
+        const anilistId = suggestion.anilist_id;
+        
+        if (!tmdbId && !anilistId) {
             setApiError('Selection failed: Identifiers missing.');
             setMetaLoading(false);
             return;
         }
 
         try {
-            const res = await fetch(`${API_BASE_URL}/info/${idToUse}?season=1`);
+            // First, fetch available seasons using the anilist_id
+            let seasons = [];
+            if (anilistId) {
+                seasons = await fetchAvailableSeasons(anilistId);
+            }
+            
+            // Determine which season to load initially
+            let initialSeason = null;
+            let initialAnilistId = anilistId;
+            let initialTmdbId = tmdbId;
+            let initialSeasonNumber = 1;
+            
+            if (seasons && seasons.length > 0) {
+                // Use the first season from the group
+                initialSeason = seasons[0];
+                initialAnilistId = initialSeason.anilist_id;
+                initialTmdbId = initialSeason.tmdb_id;
+                initialSeasonNumber = initialSeason.season_number;
+            }
+            
+            // Fetch metadata for the initial season
+            const res = await fetch(`${API_BASE_URL}/info/${initialTmdbId}?season=${initialSeason.tmdb_season || 1}`);
             if (!res.ok) throw new Error("Anime metadata mapping not found in database.");
             
             const data = await res.json();
             setAnimeMetadata(data);
             setSelectedTmdbId(data.tmdb_id); 
-            setSelectedAnilistId(data.anilist_id);
-            setCurrentSeason(1);
-            setCurrentEpisode(1); 
+            setSelectedAnilistId(initialAnilistId);
+            setCurrentSeasonAnilistId(initialAnilistId);
+            setCurrentSeason(initialSeasonNumber);
+            setCurrentEpisode(1);
+            
             if (navigateToWatchView) navigateToWatchView();
         } catch (err) {
             console.error("Metadata fetch error:", err);
@@ -109,13 +163,44 @@ export function useAnimeStreamer() {
         }
     };
 
+    // Update metadata when season changes
+    const updateSeason = useCallback(async (seasonNumber) => {
+        if (!availableSeasons.length) return;
+        
+        const selectedSeason = availableSeasons.find(s => s.season_number === seasonNumber);
+        if (!selectedSeason) return;
+        
+        setCurrentSeason(seasonNumber);
+        setCurrentSeasonAnilistId(selectedSeason.anilist_id);
+        setCurrentEpisode(1);
+        setMetaLoading(true);
+        
+        try {
+            const res = await fetch(`${API_BASE_URL}/info/${selectedSeason.tmdb_id}?season=${selectedSeason.tmdb_season}`);
+            if (res.ok) {
+                const data = await res.json();
+                setAnimeMetadata(data);
+                setSelectedTmdbId(data.tmdb_id);
+                setSelectedAnilistId(selectedSeason.anilist_id);
+            }
+        } catch (err) {
+            console.error("Season update error:", err);
+            setApiError('Failed to load season data');
+        } finally {
+            setMetaLoading(false);
+        }
+    }, [availableSeasons]);
+
     // Dynamically fetch updated show data whenever the season choice changes
     useEffect(() => {
-        if (!selectedTmdbId) return;
+        if (!selectedTmdbId || !currentSeason) return;
 
         const updateSeasonMetadata = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/info/${selectedTmdbId}?season=${currentSeason}`);
+                const selectedSeason = availableSeasons.find(s => s.season_number === currentSeason);
+                const tmdbSeason = selectedSeason?.tmdb_season || currentSeason;
+                
+                const res = await fetch(`${API_BASE_URL}/info/${selectedTmdbId}?season=${tmdbSeason}`);
                 if (res.ok) {
                     const data = await res.json();
                     setAnimeMetadata(data);
@@ -127,17 +212,18 @@ export function useAnimeStreamer() {
         };
 
         updateSeasonMetadata();
-    }, [currentSeason, selectedTmdbId]);
+    }, [currentSeason, selectedTmdbId, availableSeasons]);
 
-    // Formulate stream scraper requests passing season and episode parameters
+    // Formulate stream scraper requests using the season-specific AniList ID
     useEffect(() => {
-        if (!selectedAnilistId) return;
+        const anilistIdToUse = currentSeasonAnilistId || selectedAnilistId;
+        if (!anilistIdToUse) return;
 
         setStreamLoading(true);
         setStreamData(null);
         setActiveStreamIdx(0); 
 
-        fetch(`${API_BASE_URL}/watch/${selectedAnilistId}/${currentEpisode}?season=${currentSeason}`)
+        fetch(`${API_BASE_URL}/watch/${anilistIdToUse}/${currentEpisode}`)
             .then((res) => {
                 if (!res.ok) throw new Error('Could not resolve streaming sources.');
                 return res.json();
@@ -149,17 +235,19 @@ export function useAnimeStreamer() {
             .catch((err) => {
                 console.error('Stream fetch error:', err);
                 setStreamLoading(false);
+                setApiError('Failed to load streaming sources');
             });
-    }, [selectedAnilistId, currentEpisode, currentSeason]);
+    }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode]);
 
     return {
         queryName, setQueryName,
         searchResults, showSuggestions, setShowSuggestions,
-        currentSeason, setCurrentSeason,
+        currentSeason, setCurrentSeason: updateSeason,
         currentEpisode, setCurrentEpisode,
         activeStreamIdx, setActiveStreamIdx,
         animeMetadata, streamData,
         metaLoading, streamLoading, apiError, setApiError,
+        availableSeasons, seasonGroups,
         handleSelectSuggestion
     };
 }
