@@ -1,6 +1,240 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
+import { wordlist } from '@scure/bip39/wordlists/english';
+import * as ed from '@noble/ed25519';
+import { Buffer } from 'buffer';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dev-backend.crimsonhaven.to';
+
+// Utility for hex conversion
+const toHex = (arr) => Buffer.from(arr).toString('hex');
+
+export function useAuth() {
+  const [sessionToken, setSessionToken] = useState(localStorage.getItem('crimson_session'));
+  const [publicKey, setPublicKey] = useState(localStorage.getItem('crimson_public_key'));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const isAuthenticated = !!sessionToken;
+
+  const deriveKeypair = async (mnemonic) => {
+    const seed = mnemonicToSeedSync(mnemonic).slice(0, 32);
+    const pubKeyArr = await ed.getPublicKeyAsync(seed);
+    const pubKeyHex = toHex(pubKeyArr);
+    return { seed, publicKey: pubKeyHex };
+  };
+
+  const login = async (mnemonic) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { seed, publicKey: pubKey } = await deriveKeypair(mnemonic);
+      
+      // 1. Get challenge
+      const challRes = await fetch(`${API_BASE_URL}/auth/challenge`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_key: pubKey })
+      });
+      if (!challRes.ok) throw new Error('Failed to get auth challenge');
+      const { challenge } = await challRes.json();
+
+      // 2. Sign challenge
+      const signatureArr = await ed.signAsync(new TextEncoder().encode(challenge), seed);
+      const signature = toHex(signatureArr);
+
+      // 3. Login or Register
+      // We try login first, if it fails because account doesn't exist, we might need a register step
+      // But usually /login or /register work similarly. Let's try /login.
+      let res = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_key: pubKey, challenge, signature })
+      });
+
+      if (!res.ok) {
+        // Try register if login failed
+        res = await fetch(`${API_BASE_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ public_key: pubKey, challenge, signature })
+        });
+      }
+
+      if (!res.ok) throw new Error('Authentication failed');
+      
+      const { session_token } = await res.json();
+      setSessionToken(session_token);
+      setPublicKey(pubKey);
+      localStorage.setItem('crimson_session', session_token);
+      localStorage.setItem('crimson_public_key', pubKey);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    if (sessionToken) {
+      try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${sessionToken}` }
+        });
+      } catch (e) {
+        console.error("Logout error:", e);
+      }
+    }
+    setSessionToken(null);
+    setPublicKey(null);
+    localStorage.removeItem('crimson_session');
+    localStorage.removeItem('crimson_public_key');
+  };
+
+  const createNewMnemonic = () => {
+    return generateMnemonic(wordlist);
+  };
+
+  return {
+    sessionToken,
+    publicKey,
+    isAuthenticated,
+    loading,
+    error,
+    login,
+    logout,
+    createNewMnemonic
+  };
+}
+
+export function useAccount() {
+  const [profile, setProfile] = useState(null);
+  const [favorites, setFavorites] = useState([]);
+  const [continueWatching, setContinueWatching] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const sessionToken = localStorage.getItem('crimson_session');
+
+  const fetchProfile = useCallback(async () => {
+    if (!sessionToken) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/account/me`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data);
+      }
+    } catch (e) {
+      console.error("Profile fetch error:", e);
+    }
+  }, [sessionToken]);
+
+  const fetchFavorites = useCallback(async () => {
+    if (!sessionToken) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/account/favorites`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setFavorites(data.favorites || []);
+      }
+    } catch (e) {
+      console.error("Favorites fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionToken]);
+
+  const fetchContinueWatching = useCallback(async () => {
+    if (!sessionToken) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/account/continue-watching`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setContinueWatching(data.continue_watching || []);
+      }
+    } catch (e) {
+      console.error("Continue watching fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionToken]);
+
+  const toggleFavorite = async (anime) => {
+    if (!sessionToken) return;
+    const isFavorite = favorites.some(f => f.anilist_id === anime.anilist_id || f.tmdb_id === anime.tmdb_id);
+    const method = isFavorite ? 'DELETE' : 'POST';
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/account/favorites`, {
+        method,
+        headers: { 
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          tmdb_id: anime.tmdb_id,
+          anilist_id: anime.anilist_id,
+          title: anime.title || anime.name,
+          poster: anime.poster
+        })
+      });
+      if (res.ok) {
+        fetchFavorites();
+        return true;
+      }
+    } catch (e) {
+      console.error("Favorite toggle error:", e);
+    }
+    return false;
+  };
+
+  const updateProgress = async (progressData) => {
+    if (!sessionToken) return;
+    try {
+      await fetch(`${API_BASE_URL}/account/progress`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${sessionToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(progressData)
+      });
+    } catch (e) {
+      console.error("Progress update error:", e);
+    }
+  };
+
+  useEffect(() => {
+    if (sessionToken) {
+      fetchProfile();
+      fetchFavorites();
+      fetchContinueWatching();
+    }
+  }, [sessionToken, fetchProfile, fetchFavorites, fetchContinueWatching]);
+
+  return {
+    profile,
+    favorites,
+    continueWatching,
+    loading,
+    error,
+    toggleFavorite,
+    updateProgress,
+    refreshFavorites: fetchFavorites,
+    refreshContinueWatching: fetchContinueWatching
+  };
+}
 
 export function useAnimeStreamer(externalProps = {}) {
   // Search & Autocomplete state

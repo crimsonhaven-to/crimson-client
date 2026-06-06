@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
-import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X, Heart, History, User } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useHealthStatus } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
+import AccountPage from './Account';
+import FavoritesPage from './Favorites';
+import RecentlyWatchedPage from './RecentlyWatched';
 
 const GithubIcon = () => (
+// ... (rest of the icons)
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
   </svg>
@@ -180,6 +184,8 @@ function LandingPage() {
 function WatchPage() {
   const { anilistId, season = '1', episode = '1' } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const progressTimerRef = useRef(null);
 
   const {
     animeMetadata, streamData,
@@ -191,12 +197,41 @@ function WatchPage() {
     initializeFromIds
   } = useAnimeStreamer({ initialAnilistId: anilistId, initialSeason: parseInt(season), initialEpisode: parseInt(episode) });
 
+  const { favorites, toggleFavorite, updateProgress } = useAccount();
+  const { isAuthenticated } = useAuth();
+  
+  const isFavorite = favorites.some(f => f.anilist_id === parseInt(anilistId) || String(f.tmdb_id) === String(animeMetadata?.tmdb_id));
+
   // Re-initialize if URL params change (e.g., manual edit)
-  React.useEffect(() => {
+  useEffect(() => {
     if (anilistId) {
       initializeFromIds(anilistId, parseInt(season), parseInt(episode));
     }
   }, [anilistId, season, episode, initializeFromIds]);
+
+  // Track progress after 30 seconds of being on the page
+  useEffect(() => {
+    if (!isAuthenticated || !animeMetadata) return;
+
+    // Reset timer on episode change
+    if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
+
+    progressTimerRef.current = setTimeout(() => {
+      updateProgress({
+        tmdb_id: animeMetadata.tmdb_id,
+        anilist_id: parseInt(anilistId),
+        season_number: parseInt(currentSeason),
+        episode_number: parseInt(currentEpisode),
+        title: animeMetadata.title,
+        poster: animeMetadata.poster,
+        position_seconds: 30, // Mocked for now as we use iframe
+        duration_seconds: 1440, // Mocked 24 mins
+        status: 'watching'
+      });
+    }, 30000);
+
+    return () => clearTimeout(progressTimerRef.current);
+  }, [anilistId, currentSeason, currentEpisode, animeMetadata, isAuthenticated, updateProgress]);
 
   // Update URL when season changes
   const handleSeasonChange = (newSeason) => {
@@ -211,7 +246,7 @@ function WatchPage() {
   };
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
+    <div className="max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 animate-in fade-in duration-700">
       {/* Main Video Area */}
       <div className="lg:col-span-3 space-y-6">
         <div className="relative aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden bg-black border border-crimson-900/80 shadow-[0_0_40px_rgba(26,0,5,0.6)] sm:shadow-[0_0_60px_rgba(26,0,5,0.8)]">
@@ -254,6 +289,19 @@ function WatchPage() {
                 <span className="text-[10px] text-crimson-400/80 font-mono">
                   Ref: {animeMetadata?.anilist_id}
                 </span>
+                {isAuthenticated && (
+                  <button 
+                    onClick={() => toggleFavorite({ ...animeMetadata, anilist_id: parseInt(anilistId) })}
+                    className={`ml-auto flex items-center gap-2 px-3 py-1 rounded-lg border transition-all text-[10px] font-black uppercase tracking-widest ${
+                      isFavorite 
+                        ? 'bg-crimson-500 border-crimson-400 text-white' 
+                        : 'bg-crimson-900/20 border-crimson-900 text-crimson-400 hover:text-white hover:border-crimson-700'
+                    }`}
+                  >
+                    <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-white' : ''}`} />
+                    {isFavorite ? 'Saved' : 'Save'}
+                  </button>
+                )}
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
                 {seasonGroups?.title || animeMetadata?.title || 'Unknown Cluster Title'}
@@ -313,7 +361,7 @@ function WatchPage() {
                     onClick={() => handleEpisodeChange(ep.episode_number)} 
                     className={`p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center gap-0.5 ${
                       currentEpisode === ep.episode_number 
-                        ? 'bg-crimson-500 border-crimson-400 text-white font-bold shadow-[0_4px_12px_rgba(255,0,30,0.3)] scale-105' 
+                        ? 'bg-crimson-500 border-crimson-400 text-white font-bold shadow-[0_4px_12px_rgba(255,0,30,0.3)] shadow-[0_4px_12px_rgba(255,0,30,0.3)] scale-105' 
                         : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-200 hover:border-crimson-700 hover:bg-crimson-900/20'
                     }`}
                   >
@@ -442,6 +490,17 @@ function AboutPage() {
 // ---------- Main App Component ----------
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+
+  const navLinks = [
+    { to: "/", label: "Search Home", icon: <Film className="w-4 h-4" /> },
+    { to: "/catalogue", label: "Catalogue", icon: <Hash className="w-4 h-4" /> },
+    { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
+    { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
+    { to: "/about", label: "About Us", icon: <HelpCircle className="w-4 h-4" /> },
+    { to: "/account", label: isAuthenticated ? "Profile" : "Link Account", icon: <User className="w-4 h-4" />, highlight: !isAuthenticated },
+  ];
 
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
@@ -459,16 +518,22 @@ function App() {
         </Link>
 
         {/* Desktop Navigation */}
-        <div className="hidden md:flex space-x-6 text-sm font-medium items-center">
-          <Link to="/" className="flex items-center gap-1.5 text-crimson-200/70 hover:text-crimson-400 transition-colors">
-            <Film className="w-4 h-4" /> Search Home
-          </Link>
-          <Link to="/catalogue" className="flex items-center gap-1.5 text-crimson-200/70 hover:text-crimson-400 transition-colors">
-            <Hash className="w-4 h-4" /> Catalogue
-          </Link>
-          <Link to="/about" className="flex items-center gap-1.5 text-crimson-200/70 hover:text-crimson-400 transition-colors">
-            <HelpCircle className="w-4 h-4" /> About Us
-          </Link>
+        <div className="hidden md:flex space-x-6 text-[11px] font-black uppercase tracking-widest items-center">
+          {navLinks.filter(l => !l.auth || isAuthenticated).map(link => (
+            <Link 
+              key={link.to} 
+              to={link.to} 
+              className={`flex items-center gap-1.5 transition-all ${
+                location.pathname === link.to 
+                  ? 'text-crimson-500' 
+                  : link.highlight 
+                    ? 'text-white bg-crimson-500/20 px-3 py-1 rounded-full border border-crimson-500/30 hover:bg-crimson-500/40' 
+                    : 'text-crimson-200/50 hover:text-crimson-400'
+              }`}
+            >
+              {link.icon} {link.label}
+            </Link>
+          ))}
         </div>
 
         {/* Mobile Menu Button */}
@@ -483,27 +548,18 @@ function App() {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
             <div className="flex flex-col p-4 space-y-4">
-              <Link 
-                to="/" 
-                className="flex items-center gap-3 p-3 text-crimson-100 font-bold hover:bg-crimson-900/40 rounded-xl transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Film className="w-5 h-5 text-crimson-500" /> Search Home
-              </Link>
-              <Link 
-                to="/catalogue" 
-                className="flex items-center gap-3 p-3 text-crimson-100 font-bold hover:bg-crimson-900/40 rounded-xl transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Hash className="w-5 h-5 text-crimson-500" /> Catalogue
-              </Link>
-              <Link 
-                to="/about" 
-                className="flex items-center gap-3 p-3 text-crimson-100 font-bold hover:bg-crimson-900/40 rounded-xl transition-all"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <HelpCircle className="w-5 h-5 text-crimson-500" /> About Us
-              </Link>
+              {navLinks.filter(l => !l.auth || isAuthenticated).map(link => (
+                <Link 
+                  key={link.to}
+                  to={link.to} 
+                  className={`flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-sm ${
+                    location.pathname === link.to ? 'bg-crimson-500/20 text-crimson-500' : 'text-crimson-100 hover:bg-crimson-900/40'
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <span className="text-crimson-500">{link.icon}</span> {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         )}
@@ -515,6 +571,9 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
+          <Route path="/account" element={<AccountPage />} />
+          <Route path="/favorites" element={<FavoritesPage />} />
+          <Route path="/recently-watched" element={<RecentlyWatchedPage />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
