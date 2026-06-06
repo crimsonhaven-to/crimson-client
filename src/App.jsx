@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus } from './hooks';
+import NotFound from './NotFound';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -133,7 +134,6 @@ function LandingPage() {
       <div className="mt-16 pt-8 border-t border-crimson-900/50">
         <h2 className="text-3xl font-black tracking-tight text-white uppercase mb-6 flex items-center gap-2">
           <Play className="w-6 h-6 text-crimson-500" /> Trending Streams 
-          <span className="text-base font-normal opacity-70">({trendingAnimes.length} Results)</span>
         </h2>
 
         {trendLoading && (
@@ -253,7 +253,7 @@ function WatchPage() {
                   <span className="text-lg text-crimson-400 ml-2">(Season {currentSeason})</span>
                 )}
               </h1>
-              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3">
+              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify">
                 {animeMetadata?.summary || 'No summary asset provided.'}
               </p>
             </div>
@@ -462,6 +462,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
 
