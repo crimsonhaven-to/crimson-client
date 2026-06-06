@@ -76,52 +76,52 @@ const CataloguePage = () => {
   }
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-6 py-12 space-y-10 my-auto animate-in fade-in duration-700">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8 sm:y-10 my-auto animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="space-y-4 border-b border-crimson-900/50 pb-8">
+      <div className="space-y-6 sm:space-y-4 border-b border-crimson-900/50 pb-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
-            <h1 className="text-5xl font-black text-white uppercase tracking-tight">
+            <h1 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tight">
               The <span className="text-crimson-500 font-light">Catalogue</span>
             </h1>
-            <p className="text-crimson-400 font-medium tracking-wide flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Browsing {catalogue.total} registered manifestations across the dark network.
+            <p className="text-crimson-400 font-medium tracking-wide flex items-center gap-2 text-xs sm:text-sm">
+              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Browsing {catalogue.total} registered manifestations.
             </p>
           </div>
 
           {/* Search Bar */}
           <div className="relative group max-w-md w-full">
             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="w-5 h-5 text-crimson-500/50 group-focus-within:text-crimson-500 transition-colors" />
+              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-crimson-500/50 group-focus-within:text-crimson-500 transition-colors" />
             </div>
             <input 
               type="text" 
-              placeholder="Search by title, romaji, or english..." 
+              placeholder="Search Archives..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-crimson-950/50 border-2 border-crimson-900 rounded-2xl py-3 pl-12 pr-4 text-crimson-100 placeholder-crimson-700 focus:outline-none focus:border-crimson-500 transition-all font-medium backdrop-blur-sm"
+              className="w-full bg-crimson-950/50 border-2 border-crimson-900 rounded-2xl py-2.5 sm:py-3 pl-10 sm:pl-12 pr-4 text-crimson-100 placeholder-crimson-700 focus:outline-none focus:border-crimson-500 transition-all font-medium backdrop-blur-sm text-sm sm:text-base"
             />
           </div>
         </div>
 
         {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 pt-4">
+        <div className="flex flex-wrap gap-2 pt-2 sm:pt-4 no-scrollbar">
           <button 
             onClick={() => setActiveCategory('ALL')}
-            className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border transition-all ${
+            className={`px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all ${
               activeCategory === 'ALL' 
                 ? 'bg-crimson-500 border-crimson-400 text-white shadow-[0_0_15px_rgba(255,0,60,0.3)]' 
                 : 'bg-crimson-900/20 border-crimson-900 text-crimson-400 hover:border-crimson-700'
             }`}
           >
-            All Manifestations
+            All
           </button>
           {catalogue.categories.map(cat => (
             <button 
               key={cat.category}
               onClick={() => setActiveCategory(cat.category)}
-              className={`px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest border transition-all ${
+              className={`px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all ${
                 activeCategory === cat.category 
                   ? 'bg-crimson-500 border-crimson-400 text-white shadow-[0_0_15px_rgba(255,0,60,0.3)]' 
                   : 'bg-crimson-900/20 border-crimson-900 text-crimson-400 hover:border-crimson-700'
