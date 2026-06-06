@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus } from './hooks';
 import NotFound from './NotFound';
