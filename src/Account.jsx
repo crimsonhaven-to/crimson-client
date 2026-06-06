@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Key, User, LogOut, Copy, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck, Info } from 'lucide-react';
-import { useAuth, useAccount } from './hooks';
+import { useAuth, useAccount, useTitle } from './hooks';
 
 const AccountPage = () => {
   const { login, logout, createNewMnemonic, isAuthenticated, publicKey, loading, error } = useAuth();
