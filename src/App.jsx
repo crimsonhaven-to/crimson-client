@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Github, Instagram } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useHealthStatus } from './hooks';
 
-// Helper component for anime cards (search suggestions & trending)
+const TikTokIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.22 8.22 0 0 0 4.82 1.55V6.79a4.85 4.85 0 0 1-1.05-.1z"/>
+  </svg>
+);
+
 const AnimeCard = ({ title, poster, onSelect }) => (
   <div 
     className="flex items-center justify-between p-3 cursor-pointer hover:bg-crimson-900/20 transition-colors border-b border-crimson-900/50" 
@@ -236,7 +241,7 @@ function WatchPage() {
                   <span className="text-lg text-crimson-400 ml-2">(Season {currentSeason})</span>
                 )}
               </h1>
-              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3 hover:line-clamp-none transition-all cursor-pointer">
+              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3">
                 {animeMetadata?.summary || 'No summary asset provided.'}
               </p>
             </div>
@@ -346,13 +351,22 @@ function WatchPage() {
 }
 
 // ---------- About Page Component ----------
+const SOCIAL_LINKS = [
+  { label: 'GitHub', href: 'https://github.com/crimsonhaven-to', icon: <Github className="w-5 h-5" /> },
+  { label: 'Instagram', href: 'https://www.instagram.com/crimsonhaven.to/', icon: <Instagram className="w-5 h-5" /> },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@crimsonhaven.to', icon: <TikTokIcon /> },
+];
+
 function AboutPage() {
+  const { health, healthLoading, healthError } = useHealthStatus();
+
   return (
-    <div className="max-w-2xl w-full mx-auto px-6 py-12 space-y-6 my-auto">
+    <div className="max-w-2xl w-full mx-auto px-6 py-12 space-y-8 my-auto">
       <div className="border-b border-crimson-900 pb-4">
         <h2 className="text-3xl font-black text-white uppercase tracking-tight">About CrimsonHaven</h2>
         <p className="text-sm text-crimson-400 font-medium">The architectural design manifest.</p>
       </div>
+
       <div className="space-y-4 text-sm text-crimson-200/80 leading-relaxed text-justify">
         <p><strong className="text-white">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame.</p>
         <div className="bg-crimson-900/20 border border-crimson-900 p-4 rounded-xl font-mono text-xs text-crimson-300 space-y-1">
@@ -360,6 +374,44 @@ function AboutPage() {
           <p>• Client Layer: React 18 / Vite / Tailwind CSS</p>
           <p>• Server Routing Pipeline: Python / FastAPI Asynchronous Engine</p>
           <p>• Multi-Season Support: Season grouping with automatic AniList ID mapping</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-crimson-500 uppercase tracking-widest">Find Us</h3>
+        <div className="flex flex-wrap gap-3">
+          {SOCIAL_LINKS.map(({ label, href, icon }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-crimson-900/20 border border-crimson-900/60 rounded-xl text-crimson-300 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/40 transition-all text-sm font-semibold"
+            >
+              {icon}
+              {label}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-crimson-500 uppercase tracking-widest flex items-center gap-2">
+          <Server className="w-4 h-4" /> Backend Status
+        </h3>
+        <div className="bg-crimson-900/20 border border-crimson-900 p-4 rounded-xl font-mono text-xs space-y-1.5">
+          {healthLoading && (
+            <p className="text-crimson-400 animate-pulse">Probing system nodes...</p>
+          )}
+          {healthError && (
+            <p className="text-crimson-500">• Error: {healthError}</p>
+          )}
+          {health && Object.entries(health).map(([key, value]) => (
+            <p key={key} className="text-crimson-300">
+              <span className="text-crimson-500">•</span> {key}:{' '}
+              <span className="text-white">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+            </p>
+          ))}
         </div>
       </div>
     </div>
