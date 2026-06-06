@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Heart, Play, Trash2, Hash } from 'lucide-react';
-import { useAccount, useAuth } from './hooks';
+import { useAccount, useAuth, useTitle } from './hooks';
 
 const FavoritesPage = () => {
   const { favorites, loading, toggleFavorite } = useAccount();
   const { isAuthenticated } = useAuth();
+  useTitle('Saved Manifestations');
   const navigate = useNavigate();
 
   if (!isAuthenticated) {

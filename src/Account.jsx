@@ -6,6 +6,7 @@ import { useAuth, useAccount } from './hooks';
 const AccountPage = () => {
   const { login, logout, createNewMnemonic, isAuthenticated, publicKey, loading, error } = useAuth();
   const { profile } = useAccount();
+  useTitle(isAuthenticated ? 'Your Sanctuary' : 'Establish Link');
   const [mnemonic, setMnemonic] = useState('');
   const [newMnemonic, setNewMnemonic] = useState('');
   const [showNewMnemonic, setShowNewMnemonic] = useState(false);
