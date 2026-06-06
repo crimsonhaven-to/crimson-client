@@ -4,9 +4,9 @@ import { Home, Library, Ghost } from 'lucide-react';
 
 const NotFound = () => {
   return (
-    <div className="max-w-6xl w-full mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-12 my-auto">
+    <div className="max-w-7xl w-full mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-12 my-auto relative min-h-[70vh]">
       {/* Text Content */}
-      <div className="flex-1 space-y-8 text-left z-10 animate-in fade-in slide-in-from-left-8 duration-700">
+      <div className="flex-1 space-y-8 text-left z-10 animate-in fade-in slide-in-from-left-8 duration-700 max-w-2xl">
         <div className="space-y-2">
           <h1 className="text-6xl font-black text-white uppercase tracking-tight drop-shadow-[0_4px_12px_rgba(255,0,60,0.25)]">
             404 <span className="text-crimson-500">·</span> The Crimson Veil
@@ -73,15 +73,20 @@ const NotFound = () => {
         </div>
       </div>
 
-      {/* Mascot Image */}
-      <div className="flex-1 flex justify-center md:justify-end animate-in fade-in zoom-in duration-1000">
-        <div className="relative group">
+      {/* Mascot Image - Dynamically Anchored to Bottom */}
+      <div className="md:absolute md:bottom-0 md:right-0 md:translate-y-12 lg:translate-y-0 w-full md:w-auto flex justify-center md:block animate-in fade-in zoom-in duration-1000 pointer-events-none">
+        <div className="relative group max-w-[450px] lg:max-w-[550px]">
+          {/* Ambient Glows */}
           <div className="absolute -inset-10 bg-crimson-500/10 rounded-full blur-[100px] group-hover:bg-crimson-500/20 transition-all duration-1000 animate-pulse" />
-          <div className="absolute -inset-4 bg-crimson-600/5 rounded-full blur-2xl" />
+          
           <img 
             src="/lumi_nobackground.png" 
             alt="Luminas mascot" 
-            className="relative w-full max-w-[480px] h-auto drop-shadow-[0_0_60px_rgba(255,0,60,0.4)] group-hover:drop-shadow-[0_0_80px_rgba(255,0,60,0.6)] transition-all duration-700 transform group-hover:scale-[1.02] wallpaper-img"
+            className="relative w-full h-auto drop-shadow-[0_-10px_60px_rgba(255,0,60,0.3)] transition-all duration-700 wallpaper-img block"
+            style={{ 
+              maskImage: 'linear-gradient(to top, transparent 0%, black 15%)',
+              WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 15%)'
+            }}
           />
         </div>
       </div>
