@@ -1,12 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
-// TODO: add production URL when deploying
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dev-backend.crimsonhaven.to';
 
-/**
- * Custom hook to handle autocomplete searches, metadata mappings, and stream resolutions.
- * Supports external initialisation for URL-driven navigation.
- */
 export function useAnimeStreamer(externalProps = {}) {
   // Search & Autocomplete state
   const [queryName, setQueryName] = useState('');
@@ -270,9 +265,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
   };
 }
 
-/**
- * Independent custom hook to manage trending items
- */
 export function useTrendingAnime() {
   const [trendingAnimes, setTrendingAnimes] = useState([]);
   const [trendLoading, setTrendLoading] = useState(true);
@@ -297,4 +289,23 @@ export function useTrendingAnime() {
   }, []);
 
   return { trendingAnimes, trendLoading };
+}
+
+export function useHealthStatus() {
+  const [health, setHealth] = useState(null);
+  const [healthLoading, setHealthLoading] = useState(true);
+  const [healthError, setHealthError] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/health`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(setHealth)
+      .catch(e => setHealthError(e.message))
+      .finally(() => setHealthLoading(false));
+  }, []);
+
+  return { health, healthLoading, healthError };
 }

@@ -2,9 +2,26 @@ import React, { useState } from 'react';
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useHealthStatus } from './hooks';
 
-// Helper component for anime cards (search suggestions & trending)
+const GithubIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+    <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+  </svg>
+);
+
+const InstagramIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.059 1.689.073 4.948.073 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+  </svg>
+);
+
+const TikTokIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.27 6.27 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.22 8.22 0 0 0 4.82 1.55V6.79a4.85 4.85 0 0 1-1.05-.1z"/>
+  </svg>
+);
+
 const AnimeCard = ({ title, poster, onSelect }) => (
   <div 
     className="flex items-center justify-between p-3 cursor-pointer hover:bg-crimson-900/20 transition-colors border-b border-crimson-900/50" 
@@ -236,7 +253,7 @@ function WatchPage() {
                   <span className="text-lg text-crimson-400 ml-2">(Season {currentSeason})</span>
                 )}
               </h1>
-              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3 hover:line-clamp-none transition-all cursor-pointer">
+              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3">
                 {animeMetadata?.summary || 'No summary asset provided.'}
               </p>
             </div>
@@ -346,13 +363,22 @@ function WatchPage() {
 }
 
 // ---------- About Page Component ----------
+const SOCIAL_LINKS = [
+  { label: 'GitHub', href: 'https://github.com/crimsonhaven-to', icon: <GithubIcon /> },
+  { label: 'Instagram', href: 'https://www.instagram.com/crimsonhaven.to/', icon: <InstagramIcon /> },
+  { label: 'TikTok', href: 'https://www.tiktok.com/@crimsonhaven.to', icon: <TikTokIcon /> },
+];
+
 function AboutPage() {
+  const { health, healthLoading, healthError } = useHealthStatus();
+
   return (
-    <div className="max-w-2xl w-full mx-auto px-6 py-12 space-y-6 my-auto">
+    <div className="max-w-2xl w-full mx-auto px-6 py-12 space-y-8 my-auto">
       <div className="border-b border-crimson-900 pb-4">
         <h2 className="text-3xl font-black text-white uppercase tracking-tight">About CrimsonHaven</h2>
         <p className="text-sm text-crimson-400 font-medium">The architectural design manifest.</p>
       </div>
+
       <div className="space-y-4 text-sm text-crimson-200/80 leading-relaxed text-justify">
         <p><strong className="text-white">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame.</p>
         <div className="bg-crimson-900/20 border border-crimson-900 p-4 rounded-xl font-mono text-xs text-crimson-300 space-y-1">
@@ -360,6 +386,44 @@ function AboutPage() {
           <p>• Client Layer: React 18 / Vite / Tailwind CSS</p>
           <p>• Server Routing Pipeline: Python / FastAPI Asynchronous Engine</p>
           <p>• Multi-Season Support: Season grouping with automatic AniList ID mapping</p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-crimson-500 uppercase tracking-widest">Find Us</h3>
+        <div className="flex flex-wrap gap-3">
+          {SOCIAL_LINKS.map(({ label, href, icon }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 bg-crimson-900/20 border border-crimson-900/60 rounded-xl text-crimson-300 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/40 transition-all text-sm font-semibold"
+            >
+              {icon}
+              {label}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-xs font-bold text-crimson-500 uppercase tracking-widest flex items-center gap-2">
+          <Server className="w-4 h-4" /> Backend Status
+        </h3>
+        <div className="bg-crimson-900/20 border border-crimson-900 p-4 rounded-xl font-mono text-xs space-y-1.5">
+          {healthLoading && (
+            <p className="text-crimson-400 animate-pulse">Probing system nodes...</p>
+          )}
+          {healthError && (
+            <p className="text-crimson-500">• Error: {healthError}</p>
+          )}
+          {health && Object.entries(health).map(([key, value]) => (
+            <p key={key} className="text-crimson-300">
+              <span className="text-crimson-500">•</span> {key}:{' '}
+              <span className="text-white">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+            </p>
+          ))}
         </div>
       </div>
     </div>
