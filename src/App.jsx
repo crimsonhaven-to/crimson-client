@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus } from './hooks';
+import NotFound from './NotFound';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -462,6 +463,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
 
