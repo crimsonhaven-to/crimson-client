@@ -253,7 +253,7 @@ function WatchPage() {
                   <span className="text-lg text-crimson-400 ml-2">(Season {currentSeason})</span>
                 )}
               </h1>
-              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-3">
+              <p className="text-sm text-crimson-200/70 leading-relaxed text-justify">
                 {animeMetadata?.summary || 'No summary asset provided.'}
               </p>
             </div>
