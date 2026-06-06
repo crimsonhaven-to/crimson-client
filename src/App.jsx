@@ -134,7 +134,6 @@ function LandingPage() {
       <div className="mt-16 pt-8 border-t border-crimson-900/50">
         <h2 className="text-3xl font-black tracking-tight text-white uppercase mb-6 flex items-center gap-2">
           <Play className="w-6 h-6 text-crimson-500" /> Trending Streams 
-          <span className="text-base font-normal opacity-70">({trendingAnimes.length} Results)</span>
         </h2>
 
         {trendLoading && (
