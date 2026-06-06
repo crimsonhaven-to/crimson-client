@@ -4,6 +4,7 @@ import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Serv
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus } from './hooks';
 import NotFound from './NotFound';
+import CataloguePage from './Catalogue';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -450,6 +451,9 @@ function App() {
           <Link to="/" className="flex items-center gap-1.5 text-crimson-200/70 hover:text-crimson-400 transition-colors">
             <Film className="w-4 h-4" /> Search Home
           </Link>
+          <Link to="/catalogue" className="flex items-center gap-1.5 text-crimson-200/70 hover:text-crimson-400 transition-colors">
+            <Hash className="w-4 h-4" /> Catalogue
+          </Link>
           <Link to="/about" className="flex items-center gap-1.5 text-crimson-200/70 hover:text-crimson-400 transition-colors">
             <HelpCircle className="w-4 h-4" /> About Us
           </Link>
@@ -461,6 +465,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

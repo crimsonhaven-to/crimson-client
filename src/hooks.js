@@ -309,3 +309,34 @@ export function useHealthStatus() {
 
   return { health, healthLoading, healthError };
 }
+
+export function useCatalogue() {
+  const [catalogue, setCatalogue] = useState({ animes: [], categories: [], total: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchCatalogue = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`${API_BASE_URL}/catalogue`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (data.success) {
+          setCatalogue({
+            animes: data.animes || [],
+            categories: data.categories || [],
+            total: data.total || 0
+          });
+        }
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCatalogue();
+  }, []);
+
+  return { catalogue, loading, error };
+}
