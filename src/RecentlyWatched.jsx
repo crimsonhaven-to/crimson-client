@@ -1,11 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History, Play, Clock, Hash } from 'lucide-react';
-import { useAccount, useAuth } from './hooks';
+import { useAccount, useAuth, useTitle } from './hooks';
 
 const RecentlyWatchedPage = () => {
   const { continueWatching, loading } = useAccount();
   const { isAuthenticated } = useAuth();
+  useTitle('Recent Echoes');
   const navigate = useNavigate();
 
   if (!isAuthenticated) {

@@ -1,10 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Filter, ChevronDown, ChevronRight, Hash, Calendar, BookOpen } from 'lucide-react';
-import { useCatalogue } from './hooks';
+import { useCatalogue, useTitle } from './hooks';
 
 const CataloguePage = () => {
   const { catalogue, loading, error } = useCatalogue();
+  useTitle('The Catalogue');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('ALL');
   const navigate = useNavigate();

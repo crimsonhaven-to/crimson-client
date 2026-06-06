@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X, Heart, History, User } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
 import AccountPage from './Account';
@@ -56,6 +56,7 @@ const AnimeCard = ({ title, poster, onSelect }) => (
 // ---------- Landing Page Component ----------
 function LandingPage() {
   const navigate = useNavigate();
+  useTitle('Search Home');
   const {
     queryName, setQueryName,
     searchResults, showSuggestions, setShowSuggestions,
@@ -200,6 +201,8 @@ function WatchPage() {
   const { favorites, toggleFavorite, updateProgress } = useAccount();
   const { isAuthenticated } = useAuth();
   
+  useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
+
   const isFavorite = favorites.some(f => f.anilist_id === parseInt(anilistId) || String(f.tmdb_id) === String(animeMetadata?.tmdb_id));
 
   // Re-initialize if URL params change (e.g., manual edit)
@@ -428,6 +431,7 @@ const SOCIAL_LINKS = [
 
 function AboutPage() {
   const { health, healthLoading, healthError } = useHealthStatus();
+  useTitle('About the Haven');
 
   return (
     <div className="max-w-2xl w-full mx-auto px-6 py-12 space-y-8 my-auto">
