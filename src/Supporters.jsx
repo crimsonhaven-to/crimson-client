@@ -1,4 +1,4 @@
-import { Sparkles, User, ShieldCheck } from 'lucide-react';
+import { Sparkles, User, ShieldCheck, Crown } from 'lucide-react';
 import { useSupporters, useTitle } from './hooks';
 
 const SupportersPage = () => {
@@ -61,17 +61,31 @@ const SupportersPage = () => {
                   <User className="w-6 h-6 text-crimson-400 group-hover:text-crimson-500 transition-colors" />
                 </div>
 
-                <div className="space-y-1">
-                  <h3 className="text-lg font-black text-white uppercase tracking-wide group-hover:text-crimson-400 transition-colors">
+                <div className="space-y-1 relative">
+                  {supporter.is_subscription && (
+                    <Crown className="w-3.5 h-3.5 text-crimson-400 absolute -top-4 left-0 animate-bounce duration-1000" />
+                  )}
+                  <h3 className={`text-lg font-black text-white uppercase tracking-wide transition-all duration-300 ${
+                    supporter.is_subscription 
+                      ? 'group-hover:text-crimson-300 group-hover:drop-shadow-[0_0_12px_rgba(255,0,60,0.8)]' 
+                      : 'group-hover:text-crimson-400'
+                  }`}>
                     {supporter.name || 'Anonymous Mortal'}
                   </h3>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[9px] font-bold px-2 py-0.5 bg-crimson-500/20 text-crimson-400 rounded uppercase tracking-tighter border border-crimson-500/20">
-                      {supporter.type === 'subscription' ? 'Eternal Bond' : 'Soul Offering'}
-                    </span>
-                    <span className="text-[9px] text-crimson-400/60 font-mono">
-                      {new Date(supporter.timestamp).toLocaleDateString()}
-                    </span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-bold px-2 py-0.5 bg-crimson-500/20 text-crimson-400 rounded uppercase tracking-tighter border border-crimson-500/20">
+                        {supporter.is_subscription ? 'Eternal Bond' : 'Soul Offering'}
+                      </span>
+                      <span className="text-[9px] text-crimson-400/60 font-mono">
+                        {new Date(supporter.last_payment_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {supporter.message && supporter.message !== (supporter.is_subscription ? 'Eternal Bond' : 'Soul Offering') && (
+                      <p className="text-[10px] text-crimson-300/60 italic line-clamp-1">
+                        "{supporter.message}"
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
