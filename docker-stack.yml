@@ -1,0 +1,78 @@
+# Docker Swarm stack for the Crimsonhaven client.
+#
+# Deploy:
+#   docker stack deploy -c docker-stack.yml crimson
+#
+# Override the image without editing this file:
+#   CRIMSON_IMAGE=registry.example.com/crimson-client:1.0 \
+#   docker stack deploy -c docker-stack.yml crimson
+#
+# Load balancing is handled by Swarm's ingress routing mesh: the published port
+# below is answered by any node and round-robined across healthy replicas.
+version: "3.8"
+
+services:
+  frontend:
+    image: ${CRIMSON_IMAGE:-reallordraymond/crimson-client:latest}
+    ports:
+      # Ingress (routing mesh) => built-in L4 load balancing across replicas.
+      - target: 80
+        published: 8080
+        protocol: tcp
+        mode: ingress
+
+    # Container-level probe (mirrors the Dockerfile HEALTHCHECK) so Swarm only
+    # routes to and counts replicas that actually serve traffic.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+    stop_grace_period: 20s
+
+    deploy:
+      mode: replicated
+      replicas: 3
+
+      # Self-healing: Swarm reschedules replicas that exit or fail health checks.
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 0
+        window: 30s
+
+      # Zero-downtime rolling updates; roll back automatically on failure.
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+        failure_action: rollback
+        monitor: 30s
+        max_failure_ratio: 0.3
+
+      rollback_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
+
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M
+        reservations:
+          cpus: "0.05"
+          memory: 32M
+
+      # Spread replicas across nodes for resilience (best-effort on single-node).
+      placement:
+        max_replicas_per_node: 2
+
+    networks:
+      - crimson_net
+
+networks:
+  crimson_net:
+    driver: overlay
+    attachable: true
