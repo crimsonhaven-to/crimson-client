@@ -33,7 +33,14 @@ const DiscordIcon = () => (
   </svg>
 );
 
+const RedditIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
+    <path d="M12 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm5.01 4.744c.688 0 1.25.561 1.25 1.249a1.25 1.25 0 0 1-2.498.056l-2.597-.547-.8 3.747c1.824.07 3.48.632 4.674 1.488.308-.309.73-.491 1.207-.491.97 0 1.754.784 1.754 1.754 0 .716-.435 1.333-1.056 1.597.011.198.017.397.017.597 0 3.042-3.508 5.508-7.835 5.508-4.327 0-7.835-2.466-7.835-5.508 0-.2.006-.399.017-.597a1.734 1.734 0 0 1-1.056-1.597c0-.97.784-1.754 1.754-1.754.477 0 .899.182 1.207.491 1.194-.856 2.85-1.419 4.674-1.488l.82-3.818a.125.125 0 0 1 .15-.097l2.876.605c.062-.25.298-.434.577-.434zm-8.244 9.396c-.693 0-1.256.563-1.256 1.256s.563 1.256 1.256 1.256c.693 0 1.256-.563 1.256-1.256s-.563-1.256-1.256-1.256zm6.468 0c-.693 0-1.256.563-1.256 1.256s.563 1.256 1.256 1.256c.693 0 1.256-.563 1.256-1.256s-.563-1.256-1.256-1.256zm-6.468 4.23a.322.322 0 0 0-.226.55c.73.73 2.033 1.149 3.468 1.149 1.435 0 2.738-.42 3.468-1.149a.322.322 0 1 0-.456-.456c-.529.528-1.582.904-3.012.904-1.43 0-2.483-.376-3.012-.904a.322.322 0 0 0-.226-.094z"/>
+  </svg>
+);
+
 const AnimeCard = ({ title, poster, onSelect }) => (
+
   <div 
     className="flex items-center justify-between p-3 cursor-pointer hover:bg-crimson-900/20 transition-colors border-b border-crimson-900/50" 
     onMouseDown={onSelect}
@@ -423,6 +430,7 @@ function WatchPage() {
 // ---------- About Page Component ----------
 const SOCIAL_LINKS = [
   { label: 'GitHub', href: 'https://github.com/crimsonhaven-to', icon: <GithubIcon /> },
+  { label: 'Reddit', href: 'https://www.reddit.com/r/crimsonhaven/', icon: <RedditIcon /> },
   { label: 'Discord', href: 'https://discord.crimsonhaven.to', icon: <DiscordIcon /> },
   { label: 'Instagram', href: 'https://www.instagram.com/crimsonhaven.to/', icon: <InstagramIcon /> },
   { label: 'TikTok', href: 'https://www.tiktok.com/@crimsonhaven.to', icon: <TikTokIcon /> },
@@ -441,7 +449,7 @@ function AboutPage() {
 
       <div className="space-y-4 text-sm text-crimson-200/80 leading-relaxed text-justify">
         <p><strong className="text-white">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame.</p>
-        <div className="bg-crimson-900/20 border border-crimson-900 p-4 rounded-xl font-mono text-xs text-crimson-300 space-y-1">
+        <div className="bg-crimson-950/50 backdrop-blur-md border border-crimson-900/50 p-4 rounded-xl font-mono text-xs text-crimson-300 space-y-1">
           <p className="font-bold text-white mb-1">// System Specification Diagnostics</p>
           <p>• Client Layer: React 18 / Vite / Tailwind CSS</p>
           <p>• Server Routing Pipeline: Python / FastAPI Asynchronous Engine</p>
@@ -458,7 +466,7 @@ function AboutPage() {
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-crimson-900/20 border border-crimson-900/60 rounded-xl text-crimson-300 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/40 transition-all text-sm font-semibold"
+              className="flex items-center gap-2 px-4 py-2 bg-crimson-950/50 backdrop-blur-sm border border-crimson-900/60 rounded-xl text-crimson-300 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/60 transition-all text-sm font-semibold"
             >
               {icon}
               {label}
@@ -471,7 +479,7 @@ function AboutPage() {
         <h3 className="text-xs font-bold text-crimson-500 uppercase tracking-widest flex items-center gap-2">
           <Server className="w-4 h-4" /> Backend Status
         </h3>
-        <div className="bg-crimson-900/20 border border-crimson-900 p-4 rounded-xl font-mono text-xs space-y-1.5">
+        <div className="bg-crimson-950/50 backdrop-blur-md border border-crimson-900/50 p-4 rounded-xl font-mono text-xs space-y-1.5">
           {healthLoading && (
             <p className="text-crimson-400 animate-pulse">Probing system nodes...</p>
           )}
