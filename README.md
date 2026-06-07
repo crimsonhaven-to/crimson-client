@@ -48,6 +48,54 @@ npm run dev
 
 ---
 
+## 🐳 Production Deployment (Infrastructure as Code)
+
+Everything needed to ship the Haven lives in the repo — no manual server tinkering.
+
+The API base URL is baked in at **build time** via the `VITE_API_BASE_URL` build
+arg (defaults to the dev backend). The image is a multi-stage build: Vite compiles
+the static bundle, then it's served by hardened Nginx (gzip, security headers,
+immutable hashing for content-addressed assets, `/healthz` probe).
+
+### Single host — Docker Compose
+```bash
+# Build + run locally on http://localhost:8080
+VITE_API_BASE_URL=https://backend.crimsonhaven.to docker compose up --build
+```
+
+### Cluster — Docker Swarm
+The stack publishes through Swarm's **ingress routing mesh** (built-in L4 load
+balancing), runs **3 replicas**, **self-heals** failed containers, and performs
+**zero-downtime rolling updates with automatic rollback**.
+
+```bash
+# Build & push to a registry your nodes can reach
+docker build --build-arg VITE_API_BASE_URL=https://backend.crimsonhaven.to \
+  -t registry.example.com/crimson-client:1.0 .
+docker push registry.example.com/crimson-client:1.0
+
+# Deploy the stack
+docker swarm init                       # once, if not already a manager
+CRIMSON_IMAGE=registry.example.com/crimson-client:1.0 \
+  docker stack deploy -c docker-stack.yml crimson
+
+docker service ls                       # watch replicas converge -> 3/3
+curl http://<any-node>:8080/healthz     # -> ok
+```
+
+Tuning lives in `docker-stack.yml` (`deploy.replicas`, `restart_policy`,
+`update_config`, `rollback_config`, `resources`). Each container exposes a
+`HEALTHCHECK` hitting `/healthz`, so Swarm only routes to healthy replicas.
+
+### 📲 Installable Web App (PWA)
+The client ships a web manifest (`public/manifest.webmanifest`) and a service
+worker (`public/sw.js`), so browsers offer **"Install app"** (desktop) /
+**Add to Home Screen** (mobile). The worker only caches the same-origin app
+shell — it **never** touches the cross-origin backend API, so streaming, auth
+and progress calls behave exactly as before.
+
+---
+
 ## 🦇 Architectural Integrity
 This project follows a strict **Atomic Design Manifest**:
 - **`src/hooks.js`:** The cerebral cortex; handles all API communications and stream scraping logic.

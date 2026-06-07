@@ -4,7 +4,7 @@ import { History, Play, Clock, Hash } from 'lucide-react';
 import { useAccount, useAuth, useTitle } from './hooks';
 
 const RecentlyWatchedPage = () => {
-  const { continueWatching, loading } = useAccount();
+  const { recentlyWatched, loading } = useAccount();
   const { isAuthenticated } = useAuth();
   useTitle('Recent Echoes');
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const RecentlyWatchedPage = () => {
     );
   }
 
-  if (loading && continueWatching.length === 0) {
+  if (loading && recentlyWatched.length === 0) {
     return (
       <div className="max-w-7xl w-full mx-auto px-6 py-20 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
@@ -50,9 +50,9 @@ const RecentlyWatchedPage = () => {
         </div>
       </div>
 
-      {continueWatching.length > 0 ? (
+      {recentlyWatched.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {continueWatching.map((item, idx) => {
+          {recentlyWatched.map((item, idx) => {
             const progressPercent = Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100));
             return (
               <div 

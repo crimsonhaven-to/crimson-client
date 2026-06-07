@@ -114,6 +114,7 @@ export function useAccount() {
   const [profile, setProfile] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [continueWatching, setContinueWatching] = useState([]);
+  const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   
@@ -161,10 +162,28 @@ export function useAccount() {
       });
       if (res.ok) {
         const data = await res.json();
-        setContinueWatching(data.continue_watching || []);
+        setContinueWatching(data.items || []);
       }
     } catch (e) {
       console.error("Continue watching fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionToken]);
+
+  const fetchRecent = useCallback(async () => {
+    if (!sessionToken) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/account/recent`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRecentlyWatched(data.items || []);
+      }
+    } catch (e) {
+      console.error("Recent fetch error:", e);
     } finally {
       setLoading(false);
     }
@@ -220,19 +239,22 @@ export function useAccount() {
       fetchProfile();
       fetchFavorites();
       fetchContinueWatching();
+      fetchRecent();
     }
-  }, [sessionToken, fetchProfile, fetchFavorites, fetchContinueWatching]);
+  }, [sessionToken, fetchProfile, fetchFavorites, fetchContinueWatching, fetchRecent]);
 
   return {
     profile,
     favorites,
     continueWatching,
+    recentlyWatched,
     loading,
     error,
     toggleFavorite,
     updateProgress,
     refreshFavorites: fetchFavorites,
-    refreshContinueWatching: fetchContinueWatching
+    refreshContinueWatching: fetchContinueWatching,
+    refreshRecent: fetchRecent
   };
 }
 
