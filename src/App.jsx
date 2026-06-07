@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle } from './hooks';
 import NotFound from './NotFound';
@@ -9,6 +9,7 @@ import AccountPage from './Account';
 import FavoritesPage from './Favorites';
 import RecentlyWatchedPage from './RecentlyWatched';
 import SupportUsPage from './SupportUs';
+import SupportersPage from './Supporters';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -511,6 +512,7 @@ function App() {
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
     { to: "/support", label: "Support Us", icon: <Coffee className="w-4 h-4" /> },
+    { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
     { to: "/about", label: "About Us", icon: <HelpCircle className="w-4 h-4" /> },
     { to: "/account", label: isAuthenticated ? "Profile" : "Link Account", icon: <User className="w-4 h-4" />, highlight: !isAuthenticated },
   ];
@@ -584,6 +586,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/support" element={<SupportUsPage />} />
+          <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />

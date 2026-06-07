@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as ed from '@noble/ed25519';
@@ -116,7 +116,6 @@ export function useAccount() {
   const [continueWatching, setContinueWatching] = useState([]);
   const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   
   const sessionToken = localStorage.getItem('crimson_session');
 
@@ -249,7 +248,6 @@ export function useAccount() {
     continueWatching,
     recentlyWatched,
     loading,
-    error,
     toggleFavorite,
     updateProgress,
     refreshFavorites: fetchFavorites,
@@ -667,4 +665,47 @@ export function useTitle(title) {
       document.title = prevTitle;
     };
   }, [title]);
+}
+
+export function useSupporters() {
+  const [supporters, setSupporters] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchSupportersData = async () => {
+      setLoading(true);
+      try {
+        const [suppRes, statsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/supporters`),
+          fetch(`${API_BASE_URL}/supporters/stats`)
+        ]);
+
+        if (!suppRes.ok) throw new Error(`Supporters: ${suppRes.status}`);
+        if (!statsRes.ok) throw new Error(`Stats: ${statsRes.status}`);
+
+        const suppData = await suppRes.json();
+        const statsData = await statsRes.json();
+
+        // Handle both array-only and {success, supporters} formats
+        if (Array.isArray(suppData)) {
+          setSupporters(suppData);
+        } else if (suppData && Array.isArray(suppData.supporters)) {
+          setSupporters(suppData.supporters);
+        } else {
+          setSupporters([]);
+        }
+
+        setStats(statsData);
+      } catch (e) {
+        setError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSupportersData();
+  }, []);
+
+  return { supporters, stats, loading, error };
 }
