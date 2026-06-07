@@ -248,7 +248,6 @@ export function useAccount() {
     continueWatching,
     recentlyWatched,
     loading,
-    error,
     toggleFavorite,
     updateProgress,
     refreshFavorites: fetchFavorites,
@@ -689,7 +688,15 @@ export function useSupporters() {
         const suppData = await suppRes.json();
         const statsData = await statsRes.json();
 
-        setSupporters(suppData);
+        // Handle both array-only and {success, supporters} formats
+        if (Array.isArray(suppData)) {
+          setSupporters(suppData);
+        } else if (suppData && Array.isArray(suppData.supporters)) {
+          setSupporters(suppData.supporters);
+        } else {
+          setSupporters([]);
+        }
+
         setStats(statsData);
       } catch (e) {
         setError(e.message);

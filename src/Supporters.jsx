@@ -48,7 +48,7 @@ const SupportersPage = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {supporters.map((supporter, idx) => (
+            {Array.isArray(supporters) && supporters.map((supporter, idx) => (
               <div 
                 key={idx}
                 className="group relative flex items-center gap-4 p-5 bg-crimson-950/40 border border-crimson-900/50 rounded-2xl hover:border-crimson-500/50 hover:bg-crimson-900/20 transition-all overflow-hidden"

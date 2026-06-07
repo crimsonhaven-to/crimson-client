@@ -91,7 +91,15 @@ self.addEventListener('fetch', (event) => {
           }
           return res;
         })
-        .catch(() => cached);
+        .catch(() => {
+          if (cached) return cached;
+          // Return a valid Response object to prevent "Failed to convert value to 'Response'"
+          return new Response('Network error', { 
+            status: 408, 
+            statusText: 'Network error',
+            headers: { 'Content-Type': 'text/plain' }
+          });
+        });
       return cached || network;
     })
   );
