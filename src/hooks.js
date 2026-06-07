@@ -453,29 +453,91 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     updateSeasonMetadata();
   }, [currentSeason, selectedTmdbId, availableSeasons]);
 
-  // ---------- Fetch streams when anilistId + episode changes ----------
+  // ---------- Stream sources progressively (NDJSON) when anilistId + episode changes ----------
+  // The backend now streams one JSON object per line: a `meta` line first, then a
+  // `stream` line the instant each scraper resolves, then a final `done` line.
+  // We read the body incrementally and append sources as they land instead of
+  // waiting for a single aggregated JSON blob.
   useEffect(() => {
     const anilistIdToUse = currentSeasonAnilistId || selectedAnilistId;
     if (!anilistIdToUse) return;
+
+    const controller = new AbortController();
 
     setStreamLoading(true);
     setStreamData(null);
     setActiveStreamIdx(0);
 
-    fetch(`${API_BASE_URL}/watch/${anilistIdToUse}/${currentEpisode}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Could not resolve streaming sources.');
-        return res.json();
-      })
-      .then((data) => {
-        setStreamData(data);
+    const handleLine = (line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      let msg;
+      try {
+        msg = JSON.parse(trimmed);
+      } catch {
+        console.warn('Skipping malformed stream line:', trimmed);
+        return;
+      }
+
+      if (msg.type === 'meta') {
+        // Initialise the container as soon as metadata flushes (before any scraper).
+        setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
+      } else if (msg.type === 'stream') {
+        // Append each source the instant it resolves. Normalise `streamType` -> `type`
+        // so the existing player/sidebar rendering keeps working unchanged.
+        setStreamData((prev) => ({
+          ...(prev || { streams: [] }),
+          streams: [
+            ...((prev && prev.streams) || []),
+            { source: msg.source, type: msg.streamType, url: msg.url },
+          ],
+        }));
+        // First playable source is in — drop the loading veil so it renders immediately.
         setStreamLoading(false);
-      })
-      .catch((err) => {
+      } else if (msg.type === 'done') {
+        setStreamLoading(false);
+      }
+    };
+
+    const consumeStream = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/watch/${anilistIdToUse}/${currentEpisode}`, {
+          signal: controller.signal,
+          headers: { Accept: 'application/x-ndjson' },
+        });
+        if (!res.ok || !res.body) throw new Error('Could not resolve streaming sources.');
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          let newlineIdx;
+          while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
+            const line = buffer.slice(0, newlineIdx);
+            buffer = buffer.slice(newlineIdx + 1);
+            handleLine(line);
+          }
+        }
+        // Flush any trailing line that wasn't newline-terminated.
+        if (buffer.trim()) handleLine(buffer);
+
+        setStreamLoading(false);
+      } catch (err) {
+        if (err.name === 'AbortError') return; // Superseded by a newer episode/season selection.
         console.error('Stream fetch error:', err);
         setStreamLoading(false);
         setApiError('Failed to load streaming sources');
-      });
+      }
+    };
+
+    consumeStream();
+
+    return () => controller.abort();
   }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode]);
 
   return {
