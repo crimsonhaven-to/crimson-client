@@ -269,7 +269,22 @@ function WatchPage() {
           )}
           {!streamLoading && streamData?.streams?.[activeStreamIdx] ? (
             streamData.streams[activeStreamIdx].type === 'iframe' ? (
-              <iframe src={streamData.streams[activeStreamIdx].url} title="Stream" className="w-full h-full" allowFullScreen scrolling="no" />
+              // Sandboxed: allow-scripts + allow-same-origin let our /player and
+              // proxy pages (and legit embed players) run, but the OMISSION of
+              // allow-popups / allow-top-navigation stops a third-party embed
+              // source from pop-under-ing or hijacking the top page with ad
+              // redirects. The frame is cross-origin (backend domain) to this
+              // app, so allow-same-origin can't be used to break out.
+              <iframe
+                src={streamData.streams[activeStreamIdx].url}
+                title="Stream"
+                className="w-full h-full"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock"
+                allow="fullscreen; encrypted-media; autoplay; picture-in-picture"
+                referrerPolicy="no-referrer"
+                allowFullScreen
+                scrolling="no"
+              />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-crimson-950">
                 <Server className="w-10 h-10 sm:w-12 sm:h-12 text-crimson-500 mb-3" />
