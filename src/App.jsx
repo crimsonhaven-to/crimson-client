@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
 import AccountPage from './Account';
@@ -269,7 +269,32 @@ function WatchPage() {
           )}
           {!streamLoading && streamData?.streams?.[activeStreamIdx] ? (
             streamData.streams[activeStreamIdx].type === 'iframe' ? (
-              <iframe src={streamData.streams[activeStreamIdx].url} title="Stream" className="w-full h-full" allowFullScreen scrolling="no" />
+              // Sandbox our own backend-served, ad-free proxy / player pages
+              // (same-origin): allow-scripts + allow-same-origin let them run while
+              // OMITTING allow-popups / allow-top-navigation kills any pop-under /
+              // ad-redirect. Two exceptions are left unsandboxed because their
+              // player breaks inside the sandbox: the VidKing proxy (/vidking_proxy,
+              // the VidKing SPA player) and genuinely third-party embeds (Direct
+              // Embed). We don't control those, and VidKing is already ad-stripped
+              // server-side by the proxy.
+              (() => {
+                const url = streamData.streams[activeStreamIdx].url;
+                const sandboxed = typeof url === 'string'
+                  && url.startsWith(API_BASE_URL)
+                  && !url.includes('/vidking_proxy');
+                return (
+                  <iframe
+                    src={url}
+                    title="Stream"
+                    className="w-full h-full"
+                    sandbox={sandboxed ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-pointer-lock" : undefined}
+                    allow="fullscreen; encrypted-media; autoplay; picture-in-picture"
+                    referrerPolicy="no-referrer"
+                    allowFullScreen
+                    scrolling="no"
+                  />
+                );
+              })()
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-crimson-950">
                 <Server className="w-10 h-10 sm:w-12 sm:h-12 text-crimson-500 mb-3" />
