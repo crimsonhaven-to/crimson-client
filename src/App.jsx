@@ -10,6 +10,7 @@ import FavoritesPage from './Favorites';
 import RecentlyWatchedPage from './RecentlyWatched';
 import SupportUsPage from './SupportUs';
 import SupportersPage from './Supporters';
+import CrimsonPlayer from './CrimsonPlayer';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -296,13 +297,14 @@ function WatchPage() {
                 );
               })()
             ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center bg-crimson-950">
-                <Server className="w-10 h-10 sm:w-12 sm:h-12 text-crimson-500 mb-3" />
-                <p className="font-bold text-base sm:text-lg text-white">Direct Link Found ({streamData.streams[activeStreamIdx].type.toUpperCase()})</p>
-                <p className="text-[10px] sm:text-xs text-crimson-400 mt-2 max-w-sm break-all font-mono p-2 bg-crimson-900/20 rounded border border-crimson-900">
-                  {streamData.streams[activeStreamIdx].url}
-                </p>
-              </div>
+              // Direct hls/mp4 streams play in the Haven's own branded player.
+              <CrimsonPlayer
+                key={streamData.streams[activeStreamIdx].url}
+                src={streamData.streams[activeStreamIdx].url}
+                type={streamData.streams[activeStreamIdx].type}
+                poster={animeMetadata?.poster}
+                title={animeMetadata?.title}
+              />
             )
           ) : (
             !streamLoading && (
