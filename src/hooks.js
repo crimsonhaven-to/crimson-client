@@ -505,11 +505,13 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       } else if (msg.type === 'stream') {
         // Append each source the instant it resolves. Normalise `streamType` -> `type`
         // so the existing player/sidebar rendering keeps working unchanged.
+        // `language` is optional (only some scrapers know it) and stays undefined
+        // otherwise, so the UI simply shows nothing for sources without one.
         setStreamData((prev) => ({
           ...(prev || { streams: [] }),
           streams: [
             ...((prev && prev.streams) || []),
-            { source: msg.source, type: msg.streamType, url: msg.url },
+            { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language },
           ],
         }));
         // First playable source is in — drop the loading veil so it renders immediately.
