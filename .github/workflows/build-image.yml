@@ -1,41 +1,104 @@
-name: Build and Tag Docker Image
+name: Build and Deploy
+
+# Build the Vite frontend, bake it into an nginx image, push it to the PRIVATE
+# GitHub Container Registry (GHCR), then roll it out to the Docker Swarm.
+#
+#   * push to `dev`       -> build + push ghcr.io/.../crimson-client:dev
+#                            with VITE_API_BASE_URL = https://dev-backend...
+#                            (no deploy).
+#   * a published Release -> build + push :<tag> and :latest with
+#                            VITE_API_BASE_URL = https://backend... then deploy
+#                            that immutable :<tag> to the swarm (zero-downtime,
+#                            health-gated, auto-rollback).
+#
+# IMPORTANT: VITE_API_BASE_URL is baked in at BUILD time (Vite), so dev and
+# release builds point at different backends. The image is PRIVATE; swarm nodes
+# pull it with the durable read:packages login already configured on the
+# managers, shipped by `docker stack deploy --with-registry-auth`.
+#
+# Runner: the same org-level self-hosted runner on the jumphost `server10` used
+# by crimson-backend (Docker + buildx + passwordless SSH to the managers).
 
 on:
   push:
     branches:
       - dev
-    tags:
-      - 'v*.*'
+  release:
+    types: [published]
+
+concurrency:
+  group: crimson-client-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/crimsonhaven-to/crimson-client
+  SWARM_MANAGER: crimsonswarm01
 
 jobs:
   build:
     runs-on: [self-hosted]
-
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      deploy: ${{ steps.meta.outputs.deploy }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1. Determine both the tags AND the API URL dynamically
-      - name: Set Build Variables
-        id: vars
+      - name: Compute image tags + API URL
+        id: meta
         run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/}
-            echo "IMAGE_TAGS=-t crimson-client:${VERSION} -t crimson-client:latest" >> $GITHUB_OUTPUT
-            echo "API_URL=https://backend.crimsonhaven.to" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VER="${{ github.event.release.tag_name }}"
+            echo "version=${VER}"  >> "$GITHUB_OUTPUT"
+            echo "deploy=true"      >> "$GITHUB_OUTPUT"
+            echo "tags=${IMAGE}:${VER},${IMAGE}:latest" >> "$GITHUB_OUTPUT"
+            echo "api_url=https://backend.crimsonhaven.to" >> "$GITHUB_OUTPUT"
           else
-            SHORT_SHA=$(git rev-parse --short HEAD)
-            echo "IMAGE_TAGS=-t crimson-client:dev -t crimson-client:dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
-            echo "API_URL=https://dev-backend.crimsonhaven.to" >> $GITHUB_OUTPUT
+            SHORT_SHA="$(git rev-parse --short HEAD)"
+            echo "version="         >> "$GITHUB_OUTPUT"
+            echo "deploy=false"     >> "$GITHUB_OUTPUT"
+            echo "tags=${IMAGE}:dev,${IMAGE}:dev-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
+            echo "api_url=https://dev-backend.crimsonhaven.to" >> "$GITHUB_OUTPUT"
           fi
 
-      # 2. Build the Docker image, passing the API URL as a build argument
-      - name: Build Docker Image
-        run: |
-          docker build \
-            --build-arg VITE_API_BASE_URL="${{ steps.vars.outputs.API_URL }}" \
-            ${{ steps.vars.outputs.IMAGE_TAGS }} .
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 3. Clean up dangling images to save disk space
-      - name: Prune old images
-        run: docker image prune -f
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push (private)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          build-args: |
+            VITE_API_BASE_URL=${{ steps.meta.outputs.api_url }}
+          cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
+
+  deploy:
+    needs: build
+    if: ${{ needs.build.outputs.deploy == 'true' }}
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout release
+        uses: actions/checkout@v4
+
+      - name: Ship stack file to the manager
+        run: |
+          scp -o BatchMode=yes -o StrictHostKeyChecking=accept-new \
+            docker-stack.yml "${SWARM_MANAGER}:/home/raymond/crimson-client-deploy/docker-stack.yml"
+
+      - name: Deploy to the swarm
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" \
+            "/home/raymond/crimson-client-deploy/deploy.sh '${{ needs.build.outputs.version }}'"
