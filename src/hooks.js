@@ -4,7 +4,7 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as ed from '@noble/ed25519';
 import { Buffer } from 'buffer';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://dev-backend.crimsonhaven.to';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
