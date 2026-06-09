@@ -1,23 +1,25 @@
 # Docker Swarm stack for the Crimsonhaven client.
 #
-# Deploy:
-#   docker stack deploy -c docker-stack.yml crimson
+# Deployed by CI (.github/workflows/build-image.yml) on a published release via
+#   CRIMSON_IMAGE=ghcr.io/crimsonhaven-to/crimson-client:<tag> \
+#   docker stack deploy --with-registry-auth -c docker-stack.yml crimson-client
+# (the image is PRIVATE; --with-registry-auth ships the manager's GHCR read
+# login to every node). The stack name MUST stay 'crimson-client'.
 #
-# Override the image without editing this file:
-#   CRIMSON_IMAGE=registry.example.com/crimson-client:1.0 \
-#   docker stack deploy -c docker-stack.yml crimson
-#
+# Load balancing is handled by Swarm's ingress routing mesh: the published port
+# below is answered by any node and round-robined across healthy replicas.
 # Load balancing is handled by Swarm's ingress routing mesh: the published port
 # below is answered by any node and round-robined across healthy replicas.
 version: "3.8"
 
 services:
   frontend:
-    image: ${CRIMSON_IMAGE:-reallordraymond/crimson-client:latest}
+    image: ${CRIMSON_IMAGE:-ghcr.io/crimsonhaven-to/crimson-client:latest}
     ports:
       # Ingress (routing mesh) => built-in L4 load balancing across replicas.
+      # Published port MUST match what the TLS reverse proxy forwards to (8800).
       - target: 80
-        published: 8080
+        published: 8800
         protocol: tcp
         mode: ingress
 
