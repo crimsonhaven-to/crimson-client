@@ -436,7 +436,18 @@ function WatchPage() {
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="text-[9px] uppercase tracking-wider opacity-70 font-bold leading-none mb-1">Type: {stream.type}</span>
+                    <div className="flex items-center gap-1.5 mb-1 leading-none">
+                      <span className="text-[9px] uppercase tracking-wider opacity-70 font-bold">Type: {stream.type}</span>
+                      {stream.language && (
+                        <span className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full ${
+                          activeStreamIdx === idx
+                            ? 'bg-white/20 text-white'
+                            : 'bg-crimson-500/15 text-crimson-300'
+                        }`}>
+                          {stream.language}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs font-extrabold tracking-wide text-white truncate max-w-[140px] sm:max-w-none lg:max-w-[160px]">
                       {stream.source}
                     </span>
