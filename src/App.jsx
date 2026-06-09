@@ -484,6 +484,15 @@ function AboutPage() {
           <p>• Server Routing Pipeline: Python / FastAPI Asynchronous Engine</p>
           <p>• Multi-Season Support: Season grouping with automatic AniList ID mapping</p>
         </div>
+
+        <div className="relative bg-crimson-950/40 backdrop-blur-md border border-crimson-900/50 p-4 pl-5 rounded-xl">
+          <span className="absolute left-0 top-3 bottom-3 w-1 rounded-full bg-crimson-500/60" />
+          <p className="italic text-crimson-200/90 leading-relaxed">
+            And a little secret between us, darling~ Ironically, this totally <span className="text-white not-italic font-semibold">morally correct</span> webpage
+            keeps all your data tucked away in <span className="text-white not-italic font-semibold">Switzerland</span>. Funny, isn't it?~
+          </p>
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-crimson-500">— Luminas, the Vampire Queen</p>
+        </div>
       </div>
 
       <div className="space-y-3">
