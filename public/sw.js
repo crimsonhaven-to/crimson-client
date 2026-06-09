@@ -8,7 +8,7 @@
  * and hits the network exactly as before. Non-GET requests are never touched.
  */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `crimson-shell-${VERSION}`;
 const RUNTIME_CACHE = `crimson-runtime-${VERSION}`;
 
@@ -18,7 +18,7 @@ const SHELL_ASSETS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/favicon.jpg',
+  '/favicon.png',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
 ];

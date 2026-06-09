@@ -2,8 +2,11 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Hls from 'hls.js';
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
-  Settings2, RotateCcw, AlertTriangle, PictureInPicture2, Sparkles,
+  Settings2, RotateCcw, RotateCw, AlertTriangle, PictureInPicture2, Sparkles,
 } from 'lucide-react';
+
+// How far the skip-back / skip-forward buttons (and ←/→ keys) jump, in seconds.
+const SKIP_SECONDS = 10;
 
 /**
  * CrimsonPlayer — the Haven's own HLS / MP4 player.
@@ -23,6 +26,10 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const hideTimer = useRef(null);
+  // Remembers whether the last interaction with the <video> was a touch or a
+  // mouse press, so the tap handler can treat the two differently (mobile taps
+  // reveal controls; desktop clicks play/pause). Set on pointerdown, read on click.
+  const lastPointerType = useRef('mouse');
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -167,6 +174,28 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
     revealControls();
   }, [revealControls]);
 
+  const skip = useCallback((delta) => {
+    const v = videoRef.current;
+    if (!v) return;
+    const dur = v.duration || duration || 0;
+    const target = v.currentTime + delta;
+    v.currentTime = dur ? Math.min(dur, Math.max(0, target)) : Math.max(0, target);
+    setCurrent(v.currentTime);
+    revealControls();
+  }, [duration, revealControls]);
+
+  // Tapping the video: on touch (mobile) the first tap only summons the controls
+  // and a second tap dismisses them — it must NOT pause, which is jarring on a
+  // phone. With a mouse, a click still toggles play/pause as usual.
+  const onVideoTap = useCallback(() => {
+    if (lastPointerType.current === 'touch') {
+      if (controlsVisible) setControlsVisible(false);
+      else revealControls();
+      return;
+    }
+    togglePlay();
+  }, [controlsVisible, revealControls, togglePlay]);
+
   const seekTo = useCallback((clientX, el) => {
     const v = videoRef.current;
     if (!v || !duration) return;
@@ -214,6 +243,32 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
 
   const retry = useCallback(() => { setError(null); setReloadKey((k) => k + 1); }, []);
 
+  // ---- Keyboard shortcuts -----------------------------------------------
+  // Active while the player is mounted (only one ever is). Ignored while typing
+  // in a field. Space/K play·pause, ←/→ (and J/L) seek, ↑/↓ volume, F fullscreen,
+  // M mute, P picture-in-picture.
+  useEffect(() => {
+    const onKey = (e) => {
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      const v = videoRef.current;
+      switch (e.key) {
+        case ' ': case 'k': case 'K': e.preventDefault(); togglePlay(); break;
+        case 'ArrowRight': case 'l': case 'L': e.preventDefault(); skip(SKIP_SECONDS); break;
+        case 'ArrowLeft': case 'j': case 'J': e.preventDefault(); skip(-SKIP_SECONDS); break;
+        case 'ArrowUp': e.preventDefault(); changeVolume(Math.min(1, (v?.volume ?? 1) + 0.1)); break;
+        case 'ArrowDown': e.preventDefault(); changeVolume(Math.max(0, (v?.volume ?? 0) - 0.1)); break;
+        case 'f': case 'F': e.preventDefault(); toggleFullscreen(); break;
+        case 'm': case 'M': e.preventDefault(); toggleMute(); break;
+        case 'p': case 'P': e.preventDefault(); togglePip(); break;
+        default: return;
+      }
+      revealControls();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [togglePlay, skip, changeVolume, toggleFullscreen, toggleMute, togglePip, revealControls]);
+
   const fmt = (s) => {
     if (!Number.isFinite(s)) return '0:00';
     const m = Math.floor(s / 60), sec = Math.floor(s % 60);
@@ -238,7 +293,8 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
         ref={videoRef}
         poster={poster || undefined}
         playsInline
-        onClick={togglePlay}
+        onPointerDown={(e) => { lastPointerType.current = e.pointerType || 'mouse'; }}
+        onClick={onVideoTap}
         className="w-full h-full bg-black object-contain"
       />
 
@@ -308,6 +364,16 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
           <div className="flex items-center gap-1.5 sm:gap-2.5 text-crimson-100">
             <button onClick={togglePlay} className="p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label={playing ? 'Pause' : 'Play'}>
               {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-px" />}
+            </button>
+
+            {/* Skip back / forward */}
+            <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label={`Back ${SKIP_SECONDS} seconds`}>
+              <RotateCcw className="w-5 h-5" />
+              <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
+            </button>
+            <button onClick={() => skip(SKIP_SECONDS)} className="relative p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label={`Forward ${SKIP_SECONDS} seconds`}>
+              <RotateCw className="w-5 h-5" />
+              <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
             </button>
 
             {/* Volume */}
