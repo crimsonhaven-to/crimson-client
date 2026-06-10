@@ -299,12 +299,15 @@ export function useAccount() {
     return false;
   };
 
-  const updateProgress = async (progressData) => {
+  // useCallback so the reference is stable across renders: the watch page keys a
+  // periodic-save effect on this, and an unstable identity would re-run that
+  // effect every render (redundant POSTs + losing the tracked playback position).
+  const updateProgress = useCallback(async (progressData) => {
     if (!sessionToken) return;
     try {
       await fetch(`${API_BASE_URL}/account/progress`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${sessionToken}`,
           'Content-Type': 'application/json'
         },
@@ -313,7 +316,7 @@ export function useAccount() {
     } catch (e) {
       console.error("Progress update error:", e);
     }
-  };
+  }, [sessionToken]);
 
   useEffect(() => {
     if (sessionToken) {
