@@ -8,6 +8,7 @@ const CataloguePage = () => {
   useTitle('The Catalogue');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('ALL');
+  const [activeGenre, setActiveGenre] = useState('ALL');
   const navigate = useNavigate();
 
   // Filter and categorize animes
@@ -16,7 +17,7 @@ const CataloguePage = () => {
 
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
-      result = result.filter(anime => 
+      result = result.filter(anime =>
         (anime.title || '').toLowerCase().includes(lowerSearch) ||
         (anime.title_romaji || '').toLowerCase().includes(lowerSearch) ||
         (anime.title_english || '').toLowerCase().includes(lowerSearch)
@@ -27,8 +28,12 @@ const CataloguePage = () => {
       result = result.filter(anime => anime.category === activeCategory);
     }
 
+    if (activeGenre !== 'ALL') {
+      result = result.filter(anime => (anime.genres || []).includes(activeGenre));
+    }
+
     return result;
-  }, [catalogue.animes, searchTerm, activeCategory]);
+  }, [catalogue.animes, searchTerm, activeCategory, activeGenre]);
 
   // Group filtered animes by category
   const groupedAnimes = useMemo(() => {
@@ -119,12 +124,12 @@ const CataloguePage = () => {
             All
           </button>
           {catalogue.categories.map(cat => (
-            <button 
+            <button
               key={cat.category}
               onClick={() => setActiveCategory(cat.category)}
               className={`px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all ${
-                activeCategory === cat.category 
-                  ? 'bg-crimson-500 border-crimson-400 text-white shadow-[0_0_15px_rgba(255,0,60,0.3)]' 
+                activeCategory === cat.category
+                  ? 'bg-crimson-500 border-crimson-400 text-white shadow-[0_0_15px_rgba(255,0,60,0.3)]'
                   : 'bg-crimson-900/20 border-crimson-900 text-crimson-400 hover:border-crimson-700'
               }`}
             >
@@ -132,6 +137,38 @@ const CataloguePage = () => {
             </button>
           ))}
         </div>
+
+        {/* Genre Filters */}
+        {(catalogue.genres || []).length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-1 no-scrollbar">
+            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-crimson-700 mr-1 flex items-center gap-1">
+              <Filter className="w-3 h-3" /> Genre
+            </span>
+            <button
+              onClick={() => setActiveGenre('ALL')}
+              className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border transition-all ${
+                activeGenre === 'ALL'
+                  ? 'bg-crimson-500/90 border-crimson-400 text-white'
+                  : 'bg-crimson-900/10 border-crimson-900/60 text-crimson-500 hover:border-crimson-700'
+              }`}
+            >
+              All
+            </button>
+            {(catalogue.genres || []).map(g => (
+              <button
+                key={g.genre}
+                onClick={() => setActiveGenre(g.genre === activeGenre ? 'ALL' : g.genre)}
+                className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border transition-all ${
+                  activeGenre === g.genre
+                    ? 'bg-crimson-500/90 border-crimson-400 text-white'
+                    : 'bg-crimson-900/10 border-crimson-900/60 text-crimson-500 hover:border-crimson-700'
+                }`}
+              >
+                {g.genre} <span className="opacity-40 ml-1">[{g.count}]</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Anime List Sections */}
@@ -166,6 +203,18 @@ const CataloguePage = () => {
                         </span>
                         <span className="opacity-50 text-[8px]">ID: {anime.anilist_id}</span>
                       </div>
+                      {(anime.genres || []).length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {anime.genres.slice(0, 3).map(g => (
+                            <span
+                              key={g}
+                              className="px-1.5 py-0.5 rounded bg-crimson-900/30 border border-crimson-900/50 text-[8px] font-bold uppercase tracking-wider text-crimson-500"
+                            >
+                              {g}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <ChevronRight className="w-4 h-4 text-crimson-900 group-hover:text-crimson-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
                   </button>
