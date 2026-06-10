@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles } from 'lucide-react';
 import Background from './assets/background.jpg';
@@ -196,6 +196,12 @@ function WatchPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const progressTimerRef = useRef(null);
+  // Latest real playback position from CrimsonPlayer (same-origin hls/mp4 sources
+  // only — opaque third-party iframes can't report it). Null until a frame plays.
+  const playbackRef = useRef(null);
+  const handlePlayerProgress = useCallback((position, duration) => {
+    playbackRef.current = { position, duration };
+  }, []);
 
   const {
     animeMetadata, streamData,
@@ -225,10 +231,17 @@ function WatchPage() {
   useEffect(() => {
     if (!isAuthenticated || !animeMetadata) return;
 
+    // New episode/season: drop any position carried over from the previous one
+    // so we don't save a stale timestamp against the wrong episode.
+    playbackRef.current = null;
+
     // Reset timer on episode change
     if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
 
     progressTimerRef.current = setTimeout(() => {
+      // Use the real playback position when the active source is the in-app
+      // CrimsonPlayer (hls/mp4); fall back to a nominal value for opaque iframes.
+      const pb = playbackRef.current;
       updateProgress({
         tmdb_id: animeMetadata.tmdb_id,
         anilist_id: parseInt(anilistId),
@@ -236,8 +249,8 @@ function WatchPage() {
         episode_number: parseInt(currentEpisode),
         title: animeMetadata.title,
         poster: animeMetadata.poster,
-        position_seconds: 30, // Mocked for now as we use iframe
-        duration_seconds: 1440, // Mocked 24 mins
+        position_seconds: pb ? Math.round(pb.position) : 30,
+        duration_seconds: pb && pb.duration ? Math.round(pb.duration) : 1440,
         status: 'watching'
       });
     }, 30000);
@@ -304,6 +317,7 @@ function WatchPage() {
                 type={streamData.streams[activeStreamIdx].type}
                 poster={animeMetadata?.poster}
                 title={animeMetadata?.title}
+                onProgress={handlePlayerProgress}
               />
             )
           ) : (

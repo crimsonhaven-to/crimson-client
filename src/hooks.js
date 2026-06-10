@@ -9,11 +9,77 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backen
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
 
+// --- Lightweight in-memory cache (per page session) -------------------------
+// Trending and the catalogue are global, slow-changing payloads. Without this,
+// navigating away and back re-downloads them on every mount (the catalogue can
+// be large). A short TTL keeps them fresh enough while removing the repeat
+// fetches. Lives in module scope so it persists across component remounts.
+const _memCache = new Map();
+const MEM_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function memGet(key) {
+  const hit = _memCache.get(key);
+  if (!hit) return null;
+  if (Date.now() > hit.expiry) {
+    _memCache.delete(key);
+    return null;
+  }
+  return hit.data;
+}
+
+function memSet(key, data, ttlMs = MEM_TTL_MS) {
+  _memCache.set(key, { data, expiry: Date.now() + ttlMs });
+}
+
+// --- Reactive session token -------------------------------------------------
+// The session token lives in localStorage, which isn't reactive. useAuth and
+// useAccount are independent hook instances, so a login/logout in one wouldn't
+// update the others without a remount. We bridge them with a window event:
+// auth mutations go through setAuthStorage (which dispatches 'crimson-auth'),
+// and every useSessionToken subscriber re-reads — so all instances stay in sync
+// within the tab (and across tabs via the native 'storage' event).
+const SESSION_KEY = 'crimson_session';
+const PUBKEY_KEY = 'crimson_public_key';
+
+function setAuthStorage(sessionToken, publicKey) {
+  if (sessionToken) localStorage.setItem(SESSION_KEY, sessionToken);
+  else localStorage.removeItem(SESSION_KEY);
+  if (publicKey) localStorage.setItem(PUBKEY_KEY, publicKey);
+  else localStorage.removeItem(PUBKEY_KEY);
+  window.dispatchEvent(new Event('crimson-auth'));
+}
+
+export function useSessionToken() {
+  const [token, setToken] = useState(() => localStorage.getItem(SESSION_KEY));
+  useEffect(() => {
+    const sync = () => setToken(localStorage.getItem(SESSION_KEY));
+    window.addEventListener('crimson-auth', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('crimson-auth', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  return token;
+}
+
 export function useAuth() {
-  const [sessionToken, setSessionToken] = useState(localStorage.getItem('crimson_session'));
-  const [publicKey, setPublicKey] = useState(localStorage.getItem('crimson_public_key'));
+  // Reactive across all hook instances in the tab (see useSessionToken).
+  const sessionToken = useSessionToken();
+  const [publicKey, setPublicKey] = useState(() => localStorage.getItem(PUBKEY_KEY));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Keep publicKey in sync when auth changes in another hook instance / tab.
+  useEffect(() => {
+    const sync = () => setPublicKey(localStorage.getItem(PUBKEY_KEY));
+    window.addEventListener('crimson-auth', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('crimson-auth', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const isAuthenticated = !!sessionToken;
 
@@ -62,12 +128,11 @@ export function useAuth() {
       }
 
       if (!res.ok) throw new Error('Authentication failed');
-      
+
       const { session_token } = await res.json();
-      setSessionToken(session_token);
-      setPublicKey(pubKey);
-      localStorage.setItem('crimson_session', session_token);
-      localStorage.setItem('crimson_public_key', pubKey);
+      // Persist + broadcast: updates this hook (via the event) and every other
+      // useAuth / useAccount instance in the tab.
+      setAuthStorage(session_token, pubKey);
       return true;
     } catch (err) {
       setError(err.message);
@@ -88,10 +153,7 @@ export function useAuth() {
         console.error("Logout error:", e);
       }
     }
-    setSessionToken(null);
-    setPublicKey(null);
-    localStorage.removeItem('crimson_session');
-    localStorage.removeItem('crimson_public_key');
+    setAuthStorage(null, null);
   };
 
   const createNewMnemonic = () => {
@@ -116,8 +178,9 @@ export function useAccount() {
   const [continueWatching, setContinueWatching] = useState([]);
   const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [loading, setLoading] = useState(false);
-  
-  const sessionToken = localStorage.getItem('crimson_session');
+
+  // Reactive: re-runs the fetch effect when the user logs in/out (see useAuth).
+  const sessionToken = useSessionToken();
 
   const fetchProfile = useCallback(async () => {
     if (!sessionToken) return;
@@ -263,7 +326,6 @@ export function useAnimeStreamer(externalProps = {}) {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Trackers
-  const [selectedTmdbId, setSelectedTmdbId] = useState(null);
   const [selectedAnilistId, setSelectedAnilistId] = useState(null);
   const [currentSeason, setCurrentSeason] = useState(1);
   const [currentEpisode, setCurrentEpisode] = useState(1);
@@ -371,7 +433,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       const data = await res.json();
 
       setAnimeMetadata(data);
-      setSelectedTmdbId(data.tmdb_id);
       setSelectedAnilistId(targetSeason.anilist_id);
       setCurrentSeasonAnilistId(targetSeason.anilist_id);
       setCurrentSeason(targetSeason.season_number);
@@ -437,7 +498,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       if (res.ok) {
         const data = await res.json();
         setAnimeMetadata(data);
-        setSelectedTmdbId(data.tmdb_id);
         setSelectedAnilistId(selectedSeason.anilist_id);
       } else {
         throw new Error('Season metadata fetch failed');
@@ -450,28 +510,10 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     }
   }, [availableSeasons]);
 
-  // ---------- Auto-refetch metadata when currentSeason changes (if using internal state) ----------
-  useEffect(() => {
-    if (!selectedTmdbId || !currentSeason) return;
-
-    const updateSeasonMetadata = async () => {
-      try {
-        const selectedSeason = availableSeasons.find(s => s.season_number === currentSeason);
-        const tmdbSeason = selectedSeason?.tmdb_season || currentSeason;
-        
-        const res = await fetch(`${API_BASE_URL}/info/${selectedTmdbId}?season=${tmdbSeason}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAnimeMetadata(data);
-          if (data.anilist_id) setSelectedAnilistId(data.anilist_id);
-        }
-      } catch (e) {
-        console.error("Failed to sync structural seasonal updates:", e);
-      }
-    };
-
-    updateSeasonMetadata();
-  }, [currentSeason, selectedTmdbId, availableSeasons]);
+  // NOTE: metadata for a season is fetched by initializeFromIds (on mount / URL
+  // change) and by updateSeason (when the user switches season). A previous
+  // effect here re-fetched /info on every currentSeason change too, which simply
+  // duplicated those requests — removed so each season switch hits /info once.
 
   // ---------- Stream sources progressively (NDJSON) when anilistId + episode changes ----------
   // The backend now streams one JSON object per line: a `meta` line first, then a
@@ -584,10 +626,13 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 }
 
 export function useTrendingAnime() {
-  const [trendingAnimes, setTrendingAnimes] = useState([]);
-  const [trendLoading, setTrendLoading] = useState(true);
+  // Seed from the in-memory cache so a remount within the TTL paints instantly
+  // and skips the fetch (no setState in the effect body).
+  const [trendingAnimes, setTrendingAnimes] = useState(() => memGet('trending') || []);
+  const [trendLoading, setTrendLoading] = useState(() => !memGet('trending'));
 
   useEffect(() => {
+    if (memGet('trending')) return; // already seeded from cache
     const fetchTrending = async () => {
       setTrendLoading(true);
       try {
@@ -596,6 +641,7 @@ export function useTrendingAnime() {
         const data = await res.json();
         if (data.success && Array.isArray(data.animes)) {
           setTrendingAnimes(data.animes);
+          memSet('trending', data.animes);
         }
       } catch (e) {
         console.error('Error fetching trending anime:', e);
@@ -629,11 +675,14 @@ export function useHealthStatus() {
 }
 
 export function useCatalogue() {
-  const [catalogue, setCatalogue] = useState({ animes: [], categories: [], total: 0 });
-  const [loading, setLoading] = useState(true);
+  // Seed from the in-memory cache so a remount within the TTL paints instantly
+  // and skips the fetch (no setState in the effect body).
+  const [catalogue, setCatalogue] = useState(() => memGet('catalogue') || { animes: [], categories: [], total: 0 });
+  const [loading, setLoading] = useState(() => !memGet('catalogue'));
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (memGet('catalogue')) return; // already seeded from cache
     const fetchCatalogue = async () => {
       setLoading(true);
       try {
@@ -641,11 +690,13 @@ export function useCatalogue() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.success) {
-          setCatalogue({
+          const next = {
             animes: data.animes || [],
             categories: data.categories || [],
             total: data.total || 0
-          });
+          };
+          setCatalogue(next);
+          memSet('catalogue', next);
         }
       } catch (e) {
         setError(e.message);
