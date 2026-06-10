@@ -660,7 +660,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     // season & episode
     currentSeason, setCurrentSeason: updateSeason,
     currentEpisode, setCurrentEpisode,
-    activeStreamIdx, setActiveStreamIdx: selectStream    
+    activeStreamIdx, setActiveStreamIdx: selectStream,   
     
     // data
     animeMetadata, streamData,
