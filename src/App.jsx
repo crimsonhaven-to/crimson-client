@@ -227,21 +227,25 @@ function WatchPage() {
     }
   }, [anilistId, season, episode, initializeFromIds]);
 
-  // Track progress after 30 seconds of being on the page
+  // Persist watch progress periodically (and once more on leave) so the saved
+  // position tracks real playback instead of freezing at a single early sample.
   useEffect(() => {
     if (!isAuthenticated || !animeMetadata) return;
 
     // New episode/season: drop any position carried over from the previous one
     // so we don't save a stale timestamp against the wrong episode.
     playbackRef.current = null;
+    const startedAt = Date.now();
 
-    // Reset timer on episode change
-    if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
-
-    progressTimerRef.current = setTimeout(() => {
-      // Use the real playback position when the active source is the in-app
-      // CrimsonPlayer (hls/mp4); fall back to a nominal value for opaque iframes.
+    const save = () => {
+      // The in-app CrimsonPlayer (hls/mp4) reports the true position/duration.
+      // Opaque third-party iframes can't be read, so approximate position by
+      // elapsed watch time — this keeps history recording AND growing instead
+      // of being pinned at a nominal ~2%.
       const pb = playbackRef.current;
+      const position = pb ? pb.position : (Date.now() - startedAt) / 1000;
+      const duration = pb && pb.duration ? pb.duration : 1440;
+      if (position < 1) return; // nothing meaningful watched yet
       updateProgress({
         tmdb_id: animeMetadata.tmdb_id,
         anilist_id: parseInt(anilistId),
@@ -249,13 +253,20 @@ function WatchPage() {
         episode_number: parseInt(currentEpisode),
         title: animeMetadata.title,
         poster: animeMetadata.poster,
-        position_seconds: pb ? Math.round(pb.position) : 30,
-        duration_seconds: pb && pb.duration ? Math.round(pb.duration) : 1440,
-        status: 'watching'
+        position_seconds: Math.round(position),
+        duration_seconds: Math.round(duration),
+        // status omitted: the backend infers 'completed' near the end.
       });
-    }, 30000);
+    };
 
-    return () => clearTimeout(progressTimerRef.current);
+    // Reset timer on episode change
+    if (progressTimerRef.current) clearInterval(progressTimerRef.current);
+    progressTimerRef.current = setInterval(save, 15000);
+
+    return () => {
+      clearInterval(progressTimerRef.current);
+      save(); // capture the latest position when switching episode / leaving
+    };
   }, [anilistId, currentSeason, currentEpisode, animeMetadata, isAuthenticated, updateProgress]);
 
   // Update URL when season changes
