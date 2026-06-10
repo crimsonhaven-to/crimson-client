@@ -21,11 +21,15 @@ const SKIP_SECONDS = 10;
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', poster = '', title = '', autoPlay = true }) {
+export default function CrimsonPlayer({ src, type = '', poster = '', title = '', autoPlay = true, onProgress }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const hideTimer = useRef(null);
+  // Keep the latest onProgress in a ref so the [] -dep event effect below always
+  // calls the current callback without needing to re-subscribe the listeners.
+  const onProgressRef = useRef(onProgress);
+  useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
   // Remembers whether the last interaction with the <video> was a touch or a
   // mouse press, so the tap handler can treat the two differently (mobile taps
   // reveal controls; desktop clicks play/pause). Set on pointerdown, read on click.
@@ -102,7 +106,12 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
     if (!video) return;
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
-    const onTime = () => setCurrent(video.currentTime || 0);
+    const onTime = () => {
+      const t = video.currentTime || 0;
+      setCurrent(t);
+      // Report real playback position up to the watch page for progress saving.
+      if (onProgressRef.current) onProgressRef.current(t, video.duration || 0);
+    };
     const onDur = () => setDuration(video.duration || 0);
     const onWaiting = () => setLoading(true);
     const onPlaying = () => setLoading(false);

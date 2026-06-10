@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as ed from '@noble/ed25519';
@@ -9,11 +9,96 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backen
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
 
+// --- Lightweight in-memory cache (per page session) -------------------------
+// Trending and the catalogue are global, slow-changing payloads. Without this,
+// navigating away and back re-downloads them on every mount (the catalogue can
+// be large). A short TTL keeps them fresh enough while removing the repeat
+// fetches. Lives in module scope so it persists across component remounts.
+const _memCache = new Map();
+const MEM_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+function memGet(key) {
+  const hit = _memCache.get(key);
+  if (!hit) return null;
+  if (Date.now() > hit.expiry) {
+    _memCache.delete(key);
+    return null;
+  }
+  return hit.data;
+}
+
+function memSet(key, data, ttlMs = MEM_TTL_MS) {
+  _memCache.set(key, { data, expiry: Date.now() + ttlMs });
+}
+
+// --- Stream source preference ----------------------------------------------
+// Sources resolve in a race and arrive in arbitrary order. This ranks them so
+// the most reliable/performant one is auto-selected as the active source the
+// moment it lands (lower rank = preferred). Voe is the standout — fast and
+// dependable — so it wins whenever it resolves. The list itself stays in
+// arrival order; only which source plays by default is affected.
+const STREAM_PRIORITY = [
+  { match: 'voe', rank: 0 },
+];
+
+function streamPriority(source) {
+  const s = (source || '').toLowerCase();
+  for (const { match, rank } of STREAM_PRIORITY) {
+    if (s.includes(match)) return rank;
+  }
+  return 100;
+}
+
+
+// --- Reactive session token -------------------------------------------------
+// The session token lives in localStorage, which isn't reactive. useAuth and
+// useAccount are independent hook instances, so a login/logout in one wouldn't
+// update the others without a remount. We bridge them with a window event:
+// auth mutations go through setAuthStorage (which dispatches 'crimson-auth'),
+// and every useSessionToken subscriber re-reads — so all instances stay in sync
+// within the tab (and across tabs via the native 'storage' event).
+const SESSION_KEY = 'crimson_session';
+const PUBKEY_KEY = 'crimson_public_key';
+
+function setAuthStorage(sessionToken, publicKey) {
+  if (sessionToken) localStorage.setItem(SESSION_KEY, sessionToken);
+  else localStorage.removeItem(SESSION_KEY);
+  if (publicKey) localStorage.setItem(PUBKEY_KEY, publicKey);
+  else localStorage.removeItem(PUBKEY_KEY);
+  window.dispatchEvent(new Event('crimson-auth'));
+}
+
+export function useSessionToken() {
+  const [token, setToken] = useState(() => localStorage.getItem(SESSION_KEY));
+  useEffect(() => {
+    const sync = () => setToken(localStorage.getItem(SESSION_KEY));
+    window.addEventListener('crimson-auth', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('crimson-auth', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  return token;
+}
+
 export function useAuth() {
-  const [sessionToken, setSessionToken] = useState(localStorage.getItem('crimson_session'));
-  const [publicKey, setPublicKey] = useState(localStorage.getItem('crimson_public_key'));
+  // Reactive across all hook instances in the tab (see useSessionToken).
+  const sessionToken = useSessionToken();
+  const [publicKey, setPublicKey] = useState(() => localStorage.getItem(PUBKEY_KEY));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Keep publicKey in sync when auth changes in another hook instance / tab.
+  useEffect(() => {
+    const sync = () => setPublicKey(localStorage.getItem(PUBKEY_KEY));
+    window.addEventListener('crimson-auth', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('crimson-auth', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
 
   const isAuthenticated = !!sessionToken;
 
@@ -62,12 +147,11 @@ export function useAuth() {
       }
 
       if (!res.ok) throw new Error('Authentication failed');
-      
+
       const { session_token } = await res.json();
-      setSessionToken(session_token);
-      setPublicKey(pubKey);
-      localStorage.setItem('crimson_session', session_token);
-      localStorage.setItem('crimson_public_key', pubKey);
+      // Persist + broadcast: updates this hook (via the event) and every other
+      // useAuth / useAccount instance in the tab.
+      setAuthStorage(session_token, pubKey);
       return true;
     } catch (err) {
       setError(err.message);
@@ -88,10 +172,7 @@ export function useAuth() {
         console.error("Logout error:", e);
       }
     }
-    setSessionToken(null);
-    setPublicKey(null);
-    localStorage.removeItem('crimson_session');
-    localStorage.removeItem('crimson_public_key');
+    setAuthStorage(null, null);
   };
 
   const createNewMnemonic = () => {
@@ -116,8 +197,9 @@ export function useAccount() {
   const [continueWatching, setContinueWatching] = useState([]);
   const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [loading, setLoading] = useState(false);
-  
-  const sessionToken = localStorage.getItem('crimson_session');
+
+  // Reactive: re-runs the fetch effect when the user logs in/out (see useAuth).
+  const sessionToken = useSessionToken();
 
   const fetchProfile = useCallback(async () => {
     if (!sessionToken) return;
@@ -263,12 +345,25 @@ export function useAnimeStreamer(externalProps = {}) {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   // Trackers
-  const [selectedTmdbId, setSelectedTmdbId] = useState(null);
   const [selectedAnilistId, setSelectedAnilistId] = useState(null);
   const [currentSeason, setCurrentSeason] = useState(1);
   const [currentEpisode, setCurrentEpisode] = useState(1);
   const [activeStreamIdx, setActiveStreamIdx] = useState(0);
   
+  // Mirror of the streams array (so we can pick the best source synchronously as
+  // each one arrives) + whether the user has manually chosen a source (so an
+  // auto-upgrade to a preferred source never overrides an explicit pick).
+  const streamsRef = useRef([]);
+  const userPickedRef = useRef(false);
+
+  // Manual source selection from the sidebar — pins the choice so later-arriving
+  // preferred sources don't yank it away.
+  const selectStream = useCallback((idx) => {
+    userPickedRef.current = true;
+    setActiveStreamIdx(idx);
+  }, []);
+
+
   // Multi-season support
   const [availableSeasons, setAvailableSeasons] = useState([]);
   const [seasonGroups, setSeasonGroups] = useState(null);
@@ -371,7 +466,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       const data = await res.json();
 
       setAnimeMetadata(data);
-      setSelectedTmdbId(data.tmdb_id);
       setSelectedAnilistId(targetSeason.anilist_id);
       setCurrentSeasonAnilistId(targetSeason.anilist_id);
       setCurrentSeason(targetSeason.season_number);
@@ -437,7 +531,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       if (res.ok) {
         const data = await res.json();
         setAnimeMetadata(data);
-        setSelectedTmdbId(data.tmdb_id);
         setSelectedAnilistId(selectedSeason.anilist_id);
       } else {
         throw new Error('Season metadata fetch failed');
@@ -450,28 +543,10 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     }
   }, [availableSeasons]);
 
-  // ---------- Auto-refetch metadata when currentSeason changes (if using internal state) ----------
-  useEffect(() => {
-    if (!selectedTmdbId || !currentSeason) return;
-
-    const updateSeasonMetadata = async () => {
-      try {
-        const selectedSeason = availableSeasons.find(s => s.season_number === currentSeason);
-        const tmdbSeason = selectedSeason?.tmdb_season || currentSeason;
-        
-        const res = await fetch(`${API_BASE_URL}/info/${selectedTmdbId}?season=${tmdbSeason}`);
-        if (res.ok) {
-          const data = await res.json();
-          setAnimeMetadata(data);
-          if (data.anilist_id) setSelectedAnilistId(data.anilist_id);
-        }
-      } catch (e) {
-        console.error("Failed to sync structural seasonal updates:", e);
-      }
-    };
-
-    updateSeasonMetadata();
-  }, [currentSeason, selectedTmdbId, availableSeasons]);
+  // NOTE: metadata for a season is fetched by initializeFromIds (on mount / URL
+  // change) and by updateSeason (when the user switches season). A previous
+  // effect here re-fetched /info on every currentSeason change too, which simply
+  // duplicated those requests — removed so each season switch hits /info once.
 
   // ---------- Stream sources progressively (NDJSON) when anilistId + episode changes ----------
   // The backend now streams one JSON object per line: a `meta` line first, then a
@@ -487,6 +562,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     setStreamLoading(true);
     setStreamData(null);
     setActiveStreamIdx(0);
+    streamsRef.current = [];
+    userPickedRef.current = false;
 
     const handleLine = (line) => {
       const trimmed = line.trim();
@@ -507,13 +584,25 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         // so the existing player/sidebar rendering keeps working unchanged.
         // `language` is optional (only some scrapers know it) and stays undefined
         // otherwise, so the UI simply shows nothing for sources without one.
-        setStreamData((prev) => ({
-          ...(prev || { streams: [] }),
-          streams: [
-            ...((prev && prev.streams) || []),
-            { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language },
-          ],
-        }));
+        const next = [
+          ...streamsRef.current,
+          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language },
+        ];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+
+        // Auto-select the most preferred source available (Voe first) unless the
+        // user has already picked one manually. The list keeps its arrival order;
+        // only the active/playing source is upgraded.
+        if (!userPickedRef.current) {
+          let bestIdx = 0;
+          let bestRank = Infinity;
+          next.forEach((s, i) => {
+            const r = streamPriority(s.source);
+            if (r < bestRank) { bestRank = r; bestIdx = i; }
+          });
+          setActiveStreamIdx(bestIdx);
+        }
         // First playable source is in — drop the loading veil so it renders immediately.
         setStreamLoading(false);
       } else if (msg.type === 'done') {
@@ -571,7 +660,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     // season & episode
     currentSeason, setCurrentSeason: updateSeason,
     currentEpisode, setCurrentEpisode,
-    activeStreamIdx, setActiveStreamIdx,
+    activeStreamIdx, setActiveStreamIdx: selectStream,   
     
     // data
     animeMetadata, streamData,
@@ -584,10 +673,13 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 }
 
 export function useTrendingAnime() {
-  const [trendingAnimes, setTrendingAnimes] = useState([]);
-  const [trendLoading, setTrendLoading] = useState(true);
+  // Seed from the in-memory cache so a remount within the TTL paints instantly
+  // and skips the fetch (no setState in the effect body).
+  const [trendingAnimes, setTrendingAnimes] = useState(() => memGet('trending') || []);
+  const [trendLoading, setTrendLoading] = useState(() => !memGet('trending'));
 
   useEffect(() => {
+    if (memGet('trending')) return; // already seeded from cache
     const fetchTrending = async () => {
       setTrendLoading(true);
       try {
@@ -596,6 +688,7 @@ export function useTrendingAnime() {
         const data = await res.json();
         if (data.success && Array.isArray(data.animes)) {
           setTrendingAnimes(data.animes);
+          memSet('trending', data.animes);
         }
       } catch (e) {
         console.error('Error fetching trending anime:', e);
@@ -629,11 +722,14 @@ export function useHealthStatus() {
 }
 
 export function useCatalogue() {
-  const [catalogue, setCatalogue] = useState({ animes: [], categories: [], total: 0 });
-  const [loading, setLoading] = useState(true);
+  // Seed from the in-memory cache so a remount within the TTL paints instantly
+  // and skips the fetch (no setState in the effect body).
+  const [catalogue, setCatalogue] = useState(() => memGet('catalogue') || { animes: [], categories: [], total: 0 });
+  const [loading, setLoading] = useState(() => !memGet('catalogue'));
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (memGet('catalogue')) return; // already seeded from cache
     const fetchCatalogue = async () => {
       setLoading(true);
       try {
@@ -641,11 +737,13 @@ export function useCatalogue() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.success) {
-          setCatalogue({
+          const next = {
             animes: data.animes || [],
             categories: data.categories || [],
             total: data.total || 0
-          });
+          };
+          setCatalogue(next);
+          memSet('catalogue', next);
         }
       } catch (e) {
         setError(e.message);
