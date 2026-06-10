@@ -724,7 +724,7 @@ export function useHealthStatus() {
 export function useCatalogue() {
   // Seed from the in-memory cache so a remount within the TTL paints instantly
   // and skips the fetch (no setState in the effect body).
-  const [catalogue, setCatalogue] = useState(() => memGet('catalogue') || { animes: [], categories: [], total: 0 });
+  const [catalogue, setCatalogue] = useState(() => memGet('catalogue') || { animes: [], categories: [], genres: [], total: 0 });
   const [loading, setLoading] = useState(() => !memGet('catalogue'));
   const [error, setError] = useState(null);
 
@@ -740,6 +740,7 @@ export function useCatalogue() {
           const next = {
             animes: data.animes || [],
             categories: data.categories || [],
+            genres: data.genres || [],
             total: data.total || 0
           };
           setCatalogue(next);
