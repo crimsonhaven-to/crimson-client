@@ -71,7 +71,7 @@ const NotFound = () => {
 
       {/* Mascot Image - Dynamically Anchored to Bottom */}
       <div className="md:absolute md:bottom-0 md:right-0 md:translate-y-12 lg:translate-y-0 w-full md:w-auto flex justify-center md:block animate-in fade-in zoom-in duration-1000 pointer-events-none opacity-40 md:opacity-100">
-        <div className="relative group max-w-[300px] sm:max-w-[400px] md:max-w-[450px] lg:max-w-[550px]">
+        <div className="relative group max-w-[240px] sm:max-w-[300px] md:max-w-[340px] lg:max-w-[400px]">
           {/* Ambient Glows */}
           <div className="absolute -inset-10 bg-crimson-500/10 rounded-full blur-[100px] group-hover:bg-crimson-500/20 transition-all duration-1000 animate-pulse" />
           
