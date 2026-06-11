@@ -11,7 +11,9 @@
 ### ✨ Key Capabilities
 - **Search Rituals:** A high-speed autocomplete search engine to summon any anime from the network.
 - **The Royal Catalogue:** A comprehensive, categorized directory of thousands of manifestations (TV, Movies, OVAs, etc.).
-- **Multi-Season Architecture:** Automatic AniList ID mapping for complex, multi-season clusters.
+- **Cryptographic Identity:** Secure, mnemonic-based account system (12-word seed phrases) for cross-device synchronization without centralized passwords.
+- **The Vault:** Integrated tracking for bookmarked manifestations (Favorites) and recently watched chronologies (History).
+- **Multi-Season Architecture:** Automatic AniList ID mapping for complex, multi-season clusters and metadata synchronization.
 - **Responsive Corridors:** A fully optimized mobile experience, ensuring the castle is accessible from any device.
 - **Persona-Driven 404s:** A custom "forgotten corridor" page featuring Luminas herself to guide lost souls back to the Haven.
 
@@ -20,11 +22,12 @@
 ## 🩸 Technical Specifications
 The client layer is forged using modern mortal technologies, refined for speed and visual impact.
 
-- **Interface:** [React 18](https://reactjs.org/) + [Vite](https://vitejs.dev/)
+- **Interface:** [React 19](https://react.dev/) + [Vite 8](https://vite.dev/)
 - **Styling:** [Tailwind CSS 4.0](https://tailwindcss.com/) (Neon Crimson Theme)
 - **Icons:** [Lucide React](https://lucide.dev/)
-- **Routing:** [React Router 6](https://reactrouter.com/)
-- **State Logic:** Custom hooks for asynchronous stream resolution and metadata synchronization.
+- **Routing:** [React Router 7](https://reactrouter.com/)
+- **Cryptography:** [@noble/ed25519](https://github.com/paulmillr/noble-ed25519) + [@scure/bip39](https://github.com/paulmillr/scure-bip39)
+- **State Logic:** Custom hooks for asynchronous stream resolution, in-memory caching, and reactive session management.
 
 ---
 
@@ -98,8 +101,11 @@ and progress calls behave exactly as before.
 
 ## 🦇 Architectural Integrity
 This project follows a strict **Atomic Design Manifest**:
-- **`src/hooks.js`:** The cerebral cortex; handles all API communications and stream scraping logic.
+- **`src/hooks.js`:** The cerebral cortex; handles API communications, stream scraping logic, and cryptographic state.
+- **`src/CrimsonPlayer.jsx`:** The Heart; a custom HLS/MP4 engine with vampiric controls and CSP-compliant demuxing.
+- **`src/Account.jsx`:** The Sanctuary; manages cryptographic links and profile integrity via mnemonic-based authentication.
 - **`src/Catalogue.jsx`:** The Royal Archives; a dynamic, filterable list of all indexed manifestations.
+- **`src/AnimeOverview.jsx`:** The Chronicle; provides detailed metadata, season mapping, and episode gateways.
 - **`src/App.jsx`:** The Castle Floorplan; manages routing and global layout persistence.
 - **`src/NotFound.jsx`:** The Forgotten Corridor; a thematic safety net for navigation errors.
 
@@ -115,3 +121,4 @@ This project follows a strict **Atomic Design Manifest**:
   <br>
   <b>Forged in the shadows for the anime community.</b>
 </p>
+

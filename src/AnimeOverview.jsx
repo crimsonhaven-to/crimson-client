@@ -99,10 +99,16 @@ const AnimeOverview = () => {
 
   return (
     <div className="w-full animate-in fade-in duration-700">
-      {/* Hero / backdrop */}
+      {/* Hero / backdrop. The backdrop stretches to the hero's own height (inset-0,
+          no fixed height) rather than a fixed 340/420px. A fixed height taller than
+          the hero content used to bleed past the hero — and because the hero is
+          positioned while the season/episode section below it isn't, that overflow
+          painted *on top of* the season tabs and half-hid them. Sizing it to the
+          hero keeps the gradient's opaque crimson-950 bottom flush with the page
+          background, so it blends seamlessly into the content below. */}
       <div className="relative">
         {overview.backdrop && (
-          <div className="absolute inset-0 h-[340px] sm:h-[420px] overflow-hidden pointer-events-none">
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <img src={overview.backdrop} alt="" className="w-full h-full object-cover opacity-30" />
             <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/70 to-transparent" />
           </div>
