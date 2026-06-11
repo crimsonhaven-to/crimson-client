@@ -292,8 +292,5 @@ const AnimeOverview = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default AnimeOverview;

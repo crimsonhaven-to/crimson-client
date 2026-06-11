@@ -238,8 +238,5 @@ const CataloguePage = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default CataloguePage;
