@@ -13,6 +13,9 @@ const CataloguePage = () => {
 
   // Filter and categorize animes
   const filteredAnimes = useMemo(() => {
+    if (!catalogue.genres?.length && catalogue.animes?.length) {
+      console.log('[Catalogue] No genres found in manifest metadata. API refresh may be required.');
+    }
     let result = catalogue.animes;
 
     if (searchTerm) {
