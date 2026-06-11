@@ -34,11 +34,16 @@ function memSet(key, data, ttlMs = MEM_TTL_MS) {
 // --- Stream source preference ----------------------------------------------
 // Sources resolve in a race and arrive in arbitrary order. This ranks them so
 // the most reliable/performant one is auto-selected as the active source the
-// moment it lands (lower rank = preferred). Voe is the standout — fast and
-// dependable — so it wins whenever it resolves. The list itself stays in
-// arrival order; only which source plays by default is affected.
+// moment it lands (lower rank = preferred; unranked sources sit at 100). Voe is
+// the standout — fast and dependable — so it wins whenever it resolves. The
+// VidKing experimental ad-free proxy is the opposite: it's the most fragile
+// source (a screen-scraped third-party SPA), so it's pinned to the worst rank
+// and only ever auto-plays when nothing else resolved for the episode. The list
+// itself stays in arrival order; only which source plays by default is affected,
+// and the user can still pick any source manually from the sidebar.
 const STREAM_PRIORITY = [
   { match: 'voe', rank: 0 },
+  { match: 'experimental', rank: 9999 },
 ];
 
 function streamPriority(source) {
