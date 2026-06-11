@@ -120,7 +120,7 @@ function LandingPage() {
             onFocus={() => { if (queryName.length >= 3) setShowSuggestions(true); }} 
             onChange={(e) => { setQueryName(e.target.value); if (e.target.value.length >= 3) setShowSuggestions(true); }} 
             onBlur={() => { setTimeout(() => setShowSuggestions(false), 200); }} 
-            className="w-full py-5 sm:py-6 pl-16 pr-24 focus:outline-none font-bold tracking-wide appearance-none bg-transparent text-crimson-50 placeholder-crimson-800 text-sm sm:text-lg"
+            className="w-full py-5 sm:py-6 pl-16 pr-24 focus:outline-none font-bold tracking-wide appearance-none bg-transparent text-crimson-50 placeholder-crimson-500/50 text-sm sm:text-lg"
           />
           <button 
             type="submit" 

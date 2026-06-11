@@ -1,4 +1,4 @@
-import { Sparkles, User, ShieldCheck, Crown } from 'lucide-react';
+import { Sparkles, User, ShieldCheck, Crown, ChevronRight } from 'lucide-react';
 import { useSupporters, useTitle } from './hooks';
 
 const SupportersPage = () => {
