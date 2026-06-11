@@ -76,7 +76,7 @@ const NotFound = () => {
           <div className="absolute -inset-10 bg-crimson-500/10 rounded-full blur-[100px] group-hover:bg-crimson-500/20 transition-all duration-1000 animate-pulse" />
           
           <img 
-            src="/lumi_nobackground.png" 
+            src="/lumi_404.png"
             alt="Luminas mascot" 
             className="relative w-full h-auto drop-shadow-[0_-10px_60px_rgba(255,0,60,0.3)] transition-all duration-700 wallpaper-img block"
             style={{ 
