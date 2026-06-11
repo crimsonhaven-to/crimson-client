@@ -319,16 +319,12 @@ function WatchPage() {
               // Sandbox our own backend-served, ad-free proxy / player pages
               // (same-origin): allow-scripts + allow-same-origin let them run while
               // OMITTING allow-popups / allow-top-navigation kills any pop-under /
-              // ad-redirect. Two exceptions are left unsandboxed because their
-              // player breaks inside the sandbox: the VidKing proxy (/vidking_proxy,
-              // the VidKing SPA player) and genuinely third-party embeds (Direct
-              // Embed). We don't control those, and VidKing is already ad-stripped
-              // server-side by the proxy.
+              // ad-redirect. Genuinely third-party embeds (Direct Embed) are left
+              // unsandboxed since they're not same-origin and we don't control them.
               (() => {
                 const url = streamData.streams[activeStreamIdx].url;
                 const sandboxed = typeof url === 'string'
-                  && url.startsWith(API_BASE_URL)
-                  && !url.includes('/vidking_proxy');
+                  && url.startsWith(API_BASE_URL);
                 return (
                   <iframe
                     src={url}
