@@ -11,6 +11,7 @@ import RecentlyWatchedPage from './RecentlyWatched';
 import SupportUsPage from './SupportUs';
 import SupportersPage from './Supporters';
 import CrimsonPlayer from './CrimsonPlayer';
+import AnimeOverview from './AnimeOverview';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -70,18 +71,28 @@ function LandingPage() {
     queryName, setQueryName,
     searchResults, showSuggestions, setShowSuggestions,
     metaLoading, apiError, setApiError,
-    handleSelectSuggestion
   } = useAnimeStreamer();
 
   const { trendingAnimes, trendLoading } = useTrendingAnime();
 
-  const handleSearchSubmit = async (e) => {
+  // Picking a show now opens its Overview page (seasons + episodes) instead of
+  // dropping the user straight onto episode 1.
+  const openOverview = (anime) => {
+    const anilistId = anime?.anilist_id;
+    if (!anilistId) {
+      setApiError('Selection failed: No AniList ID found.');
+      return;
+    }
+    setQueryName(anime.title || anime.name || '');
+    setShowSuggestions(false);
+    navigate(`/anime/${anilistId}`);
+  };
+
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (!queryName.trim()) return;
     if (searchResults.length > 0) {
-      await handleSelectSuggestion(searchResults[0], (anilistId, season, episode) => {
-        navigate(`/watch/${anilistId}/${season}/${episode}`);
-      });
+      openOverview(searchResults[0]);
     } else {
       setApiError('Please choose a valid choice from the loading results dropdown.');
     }
@@ -127,13 +138,11 @@ function LandingPage() {
           <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-1 bg-crimson-950 border border-crimson-800 shadow-xl max-h-[300px] overflow-y-auto z-20 text-left rounded-xl">
             {searchResults.length > 0 ? (
               searchResults.map((suggestion, index) => (
-                <AnimeCard 
-                  key={index} 
-                  title={suggestion.title || suggestion.name} 
-                  poster={suggestion.poster || null} 
-                  onSelect={() => handleSelectSuggestion(suggestion, (anilistId, season, episode) => {
-                    navigate(`/watch/${anilistId}/${season}/${episode}`);
-                  })}
+                <AnimeCard
+                  key={index}
+                  title={suggestion.title || suggestion.name}
+                  poster={suggestion.poster || null}
+                  onSelect={() => openOverview(suggestion)}
                 />
               ))
             ) : (
@@ -168,11 +177,9 @@ function LandingPage() {
         {!trendLoading && trendingAnimes.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
             {trendingAnimes.map((anime, index) => (
-              <div 
-                key={index} 
-                onClick={() => handleSelectSuggestion(anime, (anilistId, season, episode) => {
-                  navigate(`/watch/${anilistId}/${season}/${episode}`);
-                })}
+              <div
+                key={index}
+                onClick={() => openOverview(anime)}
                 className="bg-crimson-900/10 border border-crimson-900/40 rounded-xl overflow-hidden hover:border-crimson-500 transition-all group cursor-pointer transform hover:-translate-y-1 active:scale-95 sm:active:scale-100"
               >
                 <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-auto object-cover" />
@@ -663,6 +670,7 @@ function App() {
           <Route path="/account" element={<AccountPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/recently-watched" element={<RecentlyWatchedPage />} />
+          <Route path="/anime/:anilistId" element={<AnimeOverview />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

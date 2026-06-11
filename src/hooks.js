@@ -463,14 +463,27 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       if (!targetSeason && seasons.length) targetSeason = seasons[0];
       if (!targetSeason) throw new Error('No season data found for this anime');
 
+      // An anilist_id that matches none of the numbered seasons is an extra
+      // (special/OVA/movie). Those have no TMDB season, so we stream them
+      // directly through the 2-segment /watch/{anilist_id}/{episode} route by
+      // pinning selectedAnilistId to the requested id (the show's numbered
+      // seasons are still shown for metadata/context).
+      const requestedId = parseInt(anilistId);
+      const isExtra = seasons.length > 0 && !seasons.some(s => s.anilist_id === requestedId);
+
       // 3. Fetch metadata for that season using tmdb_id + tmdb_season
       const res = await fetch(`${API_BASE_URL}/info/${targetSeason.tmdb_id}?season=${targetSeason.tmdb_season}`);
       if (!res.ok) throw new Error(`Metadata fetch failed: ${res.status}`);
       const data = await res.json();
 
       setAnimeMetadata(data);
-      setSelectedAnilistId(targetSeason.anilist_id);
-      setCurrentSeasonAnilistId(targetSeason.anilist_id);
+      if (isExtra) {
+        setSelectedAnilistId(requestedId);
+        setCurrentSeasonAnilistId(null);
+      } else {
+        setSelectedAnilistId(targetSeason.anilist_id);
+        setCurrentSeasonAnilistId(targetSeason.anilist_id);
+      }
       setCurrentSeason(targetSeason.season_number);
       setCurrentEpisode(episodeNumber);
       
@@ -672,6 +685,95 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     // actions
     handleSelectSuggestion,
     initializeFromIds
+  };
+}
+
+// --- Per-anime overview page -------------------------------------------------
+// Fetches the aggregated /overview payload (show metadata + season list + extras)
+// in one round-trip, then lazily loads the episode list for whichever season is
+// active via /info (so we don't pull every season's episodes up front). Episode
+// lists are memoised per (tmdb_id, season) so flipping back to a season is
+// instant. This is what powers the new Overview page that sits between picking a
+// show and actually watching an episode.
+export function useAnimeOverview(anilistId) {
+  const [overview, setOverview] = useState(() => (anilistId ? memGet(`overview:${anilistId}`) : null));
+  const [loading, setLoading] = useState(() => !(anilistId && memGet(`overview:${anilistId}`)));
+  const [error, setError] = useState(null);
+
+  // Active season + its episodes.
+  const [activeSeason, setActiveSeason] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
+  const episodeCache = useRef(new Map());
+
+  // Load the show overview shell.
+  useEffect(() => {
+    if (!anilistId) return;
+    const cached = memGet(`overview:${anilistId}`);
+    if (cached) {
+      setOverview(cached);
+      setActiveSeason(cached.seasons?.[0]?.season_number ?? null);
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/overview/${anilistId}`);
+        if (!res.ok) throw new Error(`Failed to load overview (HTTP ${res.status})`);
+        const data = await res.json();
+        if (cancelled) return;
+        setOverview(data);
+        memSet(`overview:${anilistId}`, data);
+        setActiveSeason(data.seasons?.[0]?.season_number ?? null);
+      } catch (e) {
+        if (!cancelled) setError(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [anilistId]);
+
+  // Load episodes for the active season (lazily, cached per season).
+  useEffect(() => {
+    if (!overview || activeSeason == null) return;
+    const season = overview.seasons?.find(s => s.season_number === activeSeason);
+    if (!season) { setEpisodes([]); return; }
+
+    const cacheKey = `${season.tmdb_id}:${season.tmdb_season}`;
+    if (episodeCache.current.has(cacheKey)) {
+      setEpisodes(episodeCache.current.get(cacheKey));
+      return;
+    }
+
+    let cancelled = false;
+    setEpisodesLoading(true);
+    setEpisodes([]);
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/info/${season.tmdb_id}?season=${season.tmdb_season}`);
+        if (!res.ok) throw new Error(`Failed to load episodes (HTTP ${res.status})`);
+        const data = await res.json();
+        if (cancelled) return;
+        const list = Array.isArray(data.episodes_list) ? data.episodes_list : [];
+        episodeCache.current.set(cacheKey, list);
+        setEpisodes(list);
+      } catch (e) {
+        if (!cancelled) { console.error('Episode list fetch failed:', e); setEpisodes([]); }
+      } finally {
+        if (!cancelled) setEpisodesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [overview, activeSeason]);
+
+  return {
+    overview, loading, error,
+    activeSeason, setActiveSeason,
+    episodes, episodesLoading,
   };
 }
 
