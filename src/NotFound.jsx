@@ -21,7 +21,7 @@ const NotFound = () => {
             "Oh dear… you’ve wandered into a forgotten corridor of my castle."
           </p>
           <p className="text-[10px] sm:text-xs text-crimson-600 font-black uppercase tracking-[0.4em] flex items-center justify-center md:justify-start gap-4">
-            <div className="w-12 h-px bg-crimson-900/50 hidden md:block"></div>
+            <span className="w-12 h-px bg-crimson-900/50 hidden md:block"></span>
             Luminas, the Vampire Queen
           </p>
         </div>
@@ -66,7 +66,7 @@ const NotFound = () => {
             Don’t blush. Click the pretty button above and I’ll pretend this never happened."
           </p>
           <p className="text-crimson-600 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs flex items-center gap-3">
-             <div className="w-6 h-px bg-crimson-900"></div>
+             <span className="block w-6 h-px bg-crimson-900"></span>
              Lumi, adjusting her tiny velvet cape
           </p>
         </div>

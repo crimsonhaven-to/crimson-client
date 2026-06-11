@@ -595,7 +595,7 @@ function AboutPage() {
             keeps all your data tucked away in <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">Switzerland</span>. Funny, isn't it?~"
           </p>
           <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
-             <div className="w-8 h-px bg-crimson-500/50"></div>
+             <span className="block w-8 h-px bg-crimson-500/50"></span>
              Luminas, the Vampire Queen
           </p>
         </div>
