@@ -8,7 +8,7 @@
  * and hits the network exactly as before. Non-GET requests are never touched.
  */
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL_CACHE = `crimson-shell-${VERSION}`;
 const RUNTIME_CACHE = `crimson-runtime-${VERSION}`;
 
@@ -18,9 +18,9 @@ const SHELL_ASSETS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
-  '/favicon.png',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
+  '/icons/favicon.ico',
+  '/icons/android-chrome-192x192.png',
+  '/icons/android-chrome-512x512.png',
 ];
 
 self.addEventListener('install', (event) => {
