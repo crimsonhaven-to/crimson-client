@@ -104,7 +104,7 @@ const SupportersPage = () => {
             ))}
             {supporters.length === 0 && (
               <div className="col-span-full p-20 bg-crimson-950/20 border border-dashed border-crimson-900/40 rounded-[3rem] text-center backdrop-blur-sm">
-                <p className="text-crimson-800 font-black uppercase tracking-[0.3em] text-xs">No favored mortals have manifested yet</p>
+                <p className="text-crimson-400 font-black uppercase tracking-[0.3em] text-xs">No favored mortals have manifested yet</p>
               </div>
             )}
           </div>
