@@ -58,10 +58,10 @@ const SupportUsPage = () => {
         <div className="absolute top-0 right-0 p-3 opacity-5">
            <Heart className="w-12 h-12 text-crimson-500" />
         </div>
-        <p className="font-black text-crimson-50 mb-3 uppercase tracking-widest border-b border-crimson-900/50 pb-2 flex items-center gap-2">
+        <h3 className="font-black text-crimson-50 mb-3 uppercase tracking-widest border-b border-crimson-900/50 pb-2 flex items-center gap-2">
            <div className="w-1.5 h-1.5 rounded-full bg-crimson-500"></div>
            Contribution Diagnostics
-        </p>
+        </h3>
         <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> All manifestations are voluntary and non-reversible.</p>
         <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> Resources are allocated to node scaling and stability.</p>
         <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> Your support strengthens the dark network bonds.</p>

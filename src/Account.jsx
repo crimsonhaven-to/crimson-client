@@ -108,12 +108,12 @@ const AccountPage = () => {
         <div className="space-y-8">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 ml-1">12-Word Mnemonic Manifest</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500 ml-1">12-Word Mnemonic Manifest</label>
               <textarea 
                 placeholder="word1 word2 word3..." 
                 value={mnemonic}
                 onChange={(e) => setMnemonic(e.target.value)}
-                className="w-full h-32 bg-crimson-950/30 border border-crimson-900/50 rounded-3xl p-5 text-crimson-50 placeholder-crimson-900 focus:outline-none focus:border-crimson-500 focus:shadow-[0_0_30px_rgba(255,0,60,0.1)] transition-all font-bold resize-none text-sm backdrop-blur-md"
+                className="w-full h-32 bg-crimson-950/30 border border-crimson-900/50 rounded-3xl p-5 text-crimson-50 placeholder-crimson-500/50 focus:outline-none focus:border-crimson-500 focus:shadow-[0_0_30px_rgba(255,0,60,0.1)] transition-all font-bold resize-none text-sm backdrop-blur-md"
               />
             </div>
             <button 

@@ -567,10 +567,10 @@ function AboutPage() {
           <div className="absolute top-0 right-0 p-4 opacity-10">
              <Server className="w-12 h-12 text-crimson-500" />
           </div>
-          <p className="font-black text-crimson-50 mb-4 tracking-widest uppercase border-b border-crimson-900/50 pb-2 flex items-center gap-2">
+          <h3 className="font-black text-crimson-50 mb-4 tracking-widest uppercase border-b border-crimson-900/50 pb-2 flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-crimson-500 animate-pulse"></div>
             System Specification Diagnostics
-          </p>
+          </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT:</span> React 18 / Vite / Tailwind</p>
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">ROUTING:</span> FastAPI Asynchronous Engine</p>
