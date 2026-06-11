@@ -133,7 +133,7 @@ const CataloguePage = () => {
                 onClick={() => setActiveCategory(cat.category)}
                 className={`px-5 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all duration-300 ${
                   activeCategory === cat.category
-                    ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15_rgba(255,0,60,0.3)]'
+                    ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.3)]'
                     : 'bg-crimson-950/40 border-crimson-900/40 text-crimson-400 hover:border-crimson-700 hover:bg-crimson-900/20'
                 }`}
               >

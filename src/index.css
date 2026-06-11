@@ -8,11 +8,14 @@
   
   /* Mid-tones */
   --color-crimson-700: #8f071d;
-  
+  --color-crimson-600: #c7042d; /* Primary button fill (between 700 and 500) */
+
   /* Some High-Contrast Accents */
   --color-crimson-500: #ff003c; /* Piercing, vivid neon crimson */
   --color-crimson-400: #ff4066; /* Bright coral-crimson for hover states */
-  
+  --color-crimson-300: #ff7792; /* Soft rose accent */
+  --color-crimson-200: #ffaebe; /* Light pink, easing toward the text tones */
+
   /* Text elements */
   --color-crimson-100: #ffe5ea;
   --color-crimson-50: #fff5f6;

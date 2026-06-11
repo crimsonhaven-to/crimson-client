@@ -53,7 +53,9 @@ const RecentlyWatchedPage = () => {
       {recentlyWatched.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {recentlyWatched.map((item, idx) => {
-            const progressPercent = Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100));
+            const progressPercent = item.duration_seconds
+              ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
+              : 0;
             return (
               <div 
                 key={`${item.anilist_id}-${item.season_number}-${item.episode_number}-${idx}`}
