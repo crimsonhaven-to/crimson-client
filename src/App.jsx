@@ -12,6 +12,7 @@ import SupportUsPage from './SupportUs';
 import SupportersPage from './Supporters';
 import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
+import { stripHtml } from './utils';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -227,6 +228,20 @@ function WatchPage() {
 
   const isFavorite = favorites.some(f => f.anilist_id === parseInt(anilistId) || String(f.tmdb_id) === String(animeMetadata?.tmdb_id));
 
+  // Per-episode metadata for the currently selected episode (the backend already
+  // stores names/descriptions per episode — surface them here). The episode name
+  // only shows when it's a real title (not the generic "Episode N" placeholder).
+  const currentEpisodeData = animeMetadata?.episodes_list?.find(e => e.episode_number === currentEpisode);
+  const episodeTitle = currentEpisodeData?.title && currentEpisodeData.title !== `Episode ${currentEpisode}`
+    ? currentEpisodeData.title
+    : null;
+  // Description fallback chain: per-episode overview -> per-season summary ->
+  // anime (AniList) description. The AniList one carries HTML, so strip it.
+  const episodeDescription = currentEpisodeData?.overview
+    || animeMetadata?.summary
+    || stripHtml(animeMetadata?.description)
+    || 'No summary asset provided.';
+
   // Re-initialize if URL params change (e.g., manual edit)
   useEffect(() => {
     if (anilistId) {
@@ -379,8 +394,13 @@ function WatchPage() {
                   <span className="text-lg text-crimson-400 ml-2">(S{currentSeason})</span>
                 )}
               </h1>
+              {episodeTitle && (
+                <p className="text-sm sm:text-base font-bold text-crimson-300 leading-snug">
+                  <span className="text-crimson-500">E{currentEpisode}:</span> {episodeTitle}
+                </p>
+              )}
               <p className="text-xs sm:text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-4 sm:line-clamp-none">
-                {animeMetadata?.summary || 'No summary asset provided.'}
+                {episodeDescription}
               </p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">

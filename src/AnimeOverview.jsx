@@ -1,17 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard } from 'lucide-react';
 import { useAnimeOverview, useTitle } from './hooks';
-
-// AniList synopses arrive as HTML (<br>, <i>, source notes). Strip the tags for
-// the plain-text blurb we render in the hero.
-function stripHtml(html) {
-  if (!html) return '';
-  return html
-    .replace(/<br\s*\/?>/gi, ' ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+import { stripHtml } from './utils';
 
 // One episode tile: uses the per-episode metadata (thumbnail, title, air date,
 // overview) that the backend already stores but the player page never surfaced.
