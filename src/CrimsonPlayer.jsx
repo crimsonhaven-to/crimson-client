@@ -309,10 +309,10 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
 
       {/* Buffering sigil */}
       {loading && !error && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
           <div className="relative">
-            <div className="w-16 h-16 rounded-full border-[3px] border-crimson-500/20 border-t-crimson-500 animate-spin shadow-[0_0_40px_rgba(255,0,60,0.45)]" />
-            <Sparkles className="absolute inset-0 m-auto w-5 h-5 text-crimson-400/90 animate-pulse" />
+            <div className="w-20 h-20 rounded-full border-[3px] border-crimson-500/10 border-t-crimson-500 animate-spin shadow-[0_0_50px_rgba(255,0,60,0.3)]" />
+            <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-crimson-400 animate-pulse" />
           </div>
         </div>
       )}
@@ -321,29 +321,31 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
       {!playing && !loading && !error && (
         <button
           onClick={togglePlay}
-          className="absolute inset-0 m-auto w-20 h-20 sm:w-24 sm:h-24 grid place-items-center rounded-full bg-crimson-950/55 border border-crimson-500/40 backdrop-blur-md text-white shadow-[0_0_50px_rgba(255,0,60,0.4)] hover:bg-crimson-500/30 hover:border-crimson-400 hover:scale-105 transition-all"
+          className="absolute inset-0 m-auto w-24 h-24 sm:w-28 sm:h-24 grid place-items-center rounded-full bg-crimson-950/40 border border-crimson-500/30 backdrop-blur-md text-white shadow-[0_0_60px_rgba(255,0,60,0.4)] hover:bg-crimson-500/20 hover:border-crimson-400 hover:scale-110 transition-all duration-300 active:scale-95 group z-10"
           aria-label="Play"
         >
-          <Play className="w-9 h-9 sm:w-11 sm:h-11 translate-x-0.5 fill-current" />
+          <Play className="w-10 h-10 sm:w-12 sm:h-12 translate-x-0.5 fill-current drop-shadow-[0_0_15px_rgba(255,0,60,0.8)]" />
         </button>
       )}
 
       {/* Top title ribbon */}
-      <div className={`absolute top-0 inset-x-0 px-4 sm:px-5 pt-3 pb-8 bg-gradient-to-b from-crimson-950/80 via-crimson-950/30 to-transparent flex items-center gap-2 transition-opacity duration-300 ${controlsVisible || !playing ? 'opacity-100' : 'opacity-0'}`}>
-        <Sparkles className="w-3.5 h-3.5 text-crimson-500 shrink-0" />
-        <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-crimson-100/90 truncate drop-shadow">
-          {title || 'Crimson Haven'}
+      <div className={`absolute top-0 inset-x-0 px-6 sm:px-8 pt-6 pb-12 bg-gradient-to-b from-crimson-950/90 via-crimson-950/40 to-transparent flex items-center gap-3 transition-opacity duration-500 ${controlsVisible || !playing ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="w-1.5 h-1.5 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c]"></div>
+        <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-crimson-50 truncate drop-shadow-lg">
+          {title || 'Crimson Haven Manifest'}
         </span>
       </div>
 
       {/* Error sigil */}
       {error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/92 text-center p-6 backdrop-blur-sm">
-          <AlertTriangle className="w-10 h-10 text-crimson-500 mb-3" />
-          <p className="text-white font-black text-sm sm:text-base mb-1 uppercase tracking-wider">Playback Disrupted</p>
-          <p className="text-crimson-300/80 text-xs max-w-sm mb-4">{error}</p>
-          <button onClick={retry} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-crimson-500 hover:bg-crimson-400 text-white text-xs font-black uppercase tracking-widest transition-colors shadow-[0_4px_16px_rgba(255,0,60,0.35)]">
-            <RotateCcw className="w-3.5 h-3.5" /> Retry
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 text-center p-8 backdrop-blur-xl z-30">
+          <div className="p-5 rounded-full bg-crimson-500/10 border border-crimson-500/20 mb-6">
+             <AlertTriangle className="w-12 h-12 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.5)]" />
+          </div>
+          <p className="text-white font-black text-lg sm:text-2xl mb-2 uppercase tracking-tighter">Playback Link Severed</p>
+          <p className="text-crimson-400/80 text-xs sm:text-sm max-w-sm mb-8 font-medium leading-relaxed">{error}</p>
+          <button onClick={retry} className="flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-[0_10px_20px_rgba(255,0,60,0.3)] active:scale-95">
+            <RotateCcw className="w-4 h-4" /> Re-Establish Node
           </button>
         </div>
       )}
@@ -352,56 +354,62 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
       {!error && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className={`absolute bottom-0 inset-x-0 px-3 sm:px-4 pb-2.5 pt-10 bg-gradient-to-t from-crimson-950/95 via-crimson-950/55 to-transparent transition-opacity duration-300 ${controlsVisible || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+          className={`absolute bottom-0 inset-x-0 px-4 sm:px-6 pb-4 pt-20 bg-gradient-to-t from-crimson-950 via-crimson-950/70 to-transparent transition-opacity duration-500 ${controlsVisible || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         >
           {/* Seek bar */}
           <div
             onPointerDown={onScrubStart}
-            className="group/seek relative h-4 flex items-center cursor-pointer mb-1"
+            className="group/seek relative h-6 flex items-center cursor-pointer mb-2"
           >
-            <div className="absolute inset-x-0 h-1.5 rounded-full bg-crimson-100/15 overflow-hidden">
-              <div className="absolute inset-y-0 left-0 bg-crimson-400/25" style={{ width: `${bufPct}%` }} />
-              <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-crimson-700 via-crimson-500 to-crimson-400 shadow-[0_0_10px_rgba(255,0,60,0.6)]" style={{ width: `${pct}%` }} />
+            <div className="absolute inset-x-0 h-1.5 rounded-full bg-white/5 overflow-hidden backdrop-blur-sm border border-white/5 shadow-inner">
+              <div className="absolute inset-y-0 left-0 bg-crimson-500/20" style={{ width: `${bufPct}%` }} />
+              <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-crimson-800 via-crimson-600 to-crimson-400 shadow-[0_0_20px_rgba(255,0,60,0.8)]" style={{ width: `${pct}%` }}>
+                 <div className="absolute top-0 right-0 w-12 h-full bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>
+              </div>
             </div>
             <div
-              className="absolute w-3.5 h-3.5 rounded-full bg-crimson-400 border-2 border-white shadow-[0_0_12px_rgba(255,0,60,0.9)] -translate-x-1/2 scale-0 group-hover/seek:scale-100 transition-transform"
+              className="absolute w-4 h-4 rounded-full bg-white border-[3px] border-crimson-500 shadow-[0_0_15px_rgba(255,0,60,1)] -translate-x-1/2 scale-0 group-hover/seek:scale-100 transition-transform duration-200 z-10"
               style={{ left: `${pct}%` }}
             />
           </div>
 
           {/* Button row */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 text-crimson-100">
-            <button onClick={togglePlay} className="p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label={playing ? 'Pause' : 'Play'}>
-              {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-px" />}
+          <div className="flex items-center gap-2 sm:gap-4 text-crimson-100">
+            <button onClick={togglePlay} className="p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={playing ? 'Pause' : 'Play'}>
+              {playing ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current translate-x-px" />}
             </button>
 
             {/* Skip back / forward */}
-            <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label={`Back ${SKIP_SECONDS} seconds`}>
-              <RotateCcw className="w-5 h-5" />
-              <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
-            </button>
-            <button onClick={() => skip(SKIP_SECONDS)} className="relative p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label={`Forward ${SKIP_SECONDS} seconds`}>
-              <RotateCw className="w-5 h-5" />
-              <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
-            </button>
-
-            {/* Volume */}
-            <div className="flex items-center group/vol">
-              <button onClick={toggleMute} className="p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label="Mute">
-                {muted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+            <div className="flex items-center gap-1">
+              <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Back ${SKIP_SECONDS} seconds`}>
+                <RotateCcw className="w-5 h-5" />
+                <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
               </button>
-              <input
-                type="range" min="0" max="1" step="0.05"
-                value={muted ? 0 : volume}
-                onChange={(e) => changeVolume(parseFloat(e.target.value))}
-                className="w-0 group-hover/vol:w-16 sm:group-hover/vol:w-20 opacity-0 group-hover/vol:opacity-100 transition-all duration-200 h-1 cursor-pointer"
-                style={{ accentColor: '#ff003c' }}
-                aria-label="Volume"
-              />
+              <button onClick={() => skip(SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Forward ${SKIP_SECONDS} seconds`}>
+                <RotateCw className="w-5 h-5" />
+                <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
+              </button>
             </div>
 
-            <span className="text-[11px] font-mono font-semibold text-crimson-200/90 tabular-nums ml-0.5">
-              {fmt(current)} <span className="text-crimson-500/70">/</span> {fmt(duration)}
+            {/* Volume */}
+            <div className="flex items-center group/vol ml-2">
+              <button onClick={toggleMute} className="p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all" aria-label="Mute">
+                {muted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+              </button>
+              <div className="overflow-hidden w-0 group-hover/vol:w-20 sm:group-hover/vol:w-24 transition-all duration-300 ease-out flex items-center">
+                 <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={muted ? 0 : volume}
+                  onChange={(e) => changeVolume(parseFloat(e.target.value))}
+                  className="w-full opacity-0 group-hover/vol:opacity-100 transition-opacity duration-300 h-1 cursor-pointer mx-2"
+                  style={{ accentColor: '#ff003c' }}
+                  aria-label="Volume"
+                />
+              </div>
+            </div>
+
+            <span className="text-[11px] font-mono font-black text-crimson-100 tracking-tighter tabular-nums bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-white/5 ml-2">
+              {fmt(current)} <span className="text-crimson-500 mx-0.5">/</span> {fmt(duration)}
             </span>
 
             <div className="flex-1" />
@@ -409,14 +417,14 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
             {/* Quality */}
             {levels.length > 1 && (
               <div className="relative">
-                <button onClick={() => setShowQuality((s) => !s)} className="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label="Quality">
-                  <Settings2 className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-wider hidden sm:inline">{qLabel(currentLevel)}</span>
+                <button onClick={() => setShowQuality((s) => !s)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border border-white/5 hover:border-crimson-500/50 hover:text-white transition-all active:scale-95" aria-label="Quality">
+                  <Settings2 className="w-4 h-4 text-crimson-500" />
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{qLabel(currentLevel)}</span>
                 </button>
                 {showQuality && (
-                  <div className="absolute bottom-full right-0 mb-2 w-28 rounded-xl bg-crimson-950/90 border border-crimson-500/30 backdrop-blur-xl overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,0.7)]">
-                    {[-1, ...levels.map((_, i) => i)].map((lvl) => (
-                      <button key={lvl} onClick={() => pickLevel(lvl)} className={`w-full text-left px-3 py-2 text-[11px] font-bold transition-colors ${currentLevel === lvl ? 'bg-crimson-500 text-white' : 'text-crimson-200 hover:bg-crimson-500/20 hover:text-white'}`}>
+                  <div className="absolute bottom-full right-0 mb-4 w-32 rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-2 duration-300 z-50">
+                    {[-1, ...levels.map((_, i) => i)].reverse().map((lvl) => (
+                      <button key={lvl} onClick={() => pickLevel(lvl)} className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b border-white/5 last:border-0 ${currentLevel === lvl ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:bg-crimson-500/20 hover:text-white'}`}>
                         {qLabel(lvl)}
                       </button>
                     ))}
@@ -425,15 +433,17 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
               </div>
             )}
 
-            {document.pictureInPictureEnabled && (
-              <button onClick={togglePip} className={`p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors ${pipActive ? 'text-crimson-400' : ''}`} aria-label="Picture in picture">
-                <PictureInPicture2 className="w-5 h-5" />
-              </button>
-            )}
+            <div className="flex items-center gap-1">
+              {document.pictureInPictureEnabled && (
+                <button onClick={togglePip} className={`p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90 ${pipActive ? 'text-crimson-400' : ''}`} aria-label="Picture in picture">
+                  <PictureInPicture2 className="w-5 h-5" />
+                </button>
+              )}
 
-            <button onClick={toggleFullscreen} className="p-1.5 rounded-lg hover:bg-crimson-500/25 hover:text-white transition-colors" aria-label="Fullscreen">
-              {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-            </button>
+              <button onClick={toggleFullscreen} className="p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label="Fullscreen">
+                {fullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
         </div>
       )}

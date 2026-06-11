@@ -82,133 +82,135 @@ const CataloguePage = () => {
   }
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8 sm:y-10 my-auto animate-in fade-in duration-700">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-12 sm:space-y-16 my-auto animate-in fade-in duration-1000">
       {/* Header Section */}
-      <div className="space-y-6 sm:space-y-4 border-b border-crimson-900/50 pb-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-tight">
-              The <span className="text-crimson-500 font-light">Catalogue</span>
+      <div className="space-y-8 border-b border-crimson-900/30 pb-12">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="space-y-3">
+            <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">
+              The <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Catalogue</span>
             </h1>
-            <p className="text-crimson-400 font-medium tracking-wide flex items-center gap-2 text-xs sm:text-sm">
-              <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              Browsing {catalogue.total} registered manifestations.
+            <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
+              <BookOpen className="w-4 h-4 text-crimson-500" />
+              Browsing {catalogue.total} registered manifestations
             </p>
           </div>
 
           {/* Search Bar */}
-          <div className="relative group max-w-md w-full">
-            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-crimson-500/50 group-focus-within:text-crimson-500 transition-colors" />
+          <div className="relative group max-w-lg w-full">
+            <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none z-10">
+              <Search className="w-5 h-5 text-crimson-500 opacity-50 group-focus-within:opacity-100 transition-opacity" />
             </div>
             <input 
               type="text" 
               placeholder="Search Archives..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-crimson-950/50 border-2 border-crimson-900 rounded-2xl py-2.5 sm:py-3 pl-10 sm:pl-12 pr-4 text-crimson-100 placeholder-crimson-700 focus:outline-none focus:border-crimson-500 transition-all font-medium backdrop-blur-sm text-sm sm:text-base"
+              className="w-full bg-crimson-950/30 border border-crimson-900/50 rounded-2xl py-4 pl-14 pr-6 text-crimson-50 placeholder-crimson-800 focus:outline-none focus:border-crimson-500 focus:shadow-[0_0_30px_rgba(255,0,60,0.1)] transition-all font-bold tracking-wide backdrop-blur-md text-sm sm:text-base"
             />
           </div>
         </div>
 
-        {/* Category Filters */}
-        <div className="flex flex-wrap gap-2 pt-2 sm:pt-4 no-scrollbar">
-          <button 
-            onClick={() => setActiveCategory('ALL')}
-            className={`px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all ${
-              activeCategory === 'ALL' 
-                ? 'bg-crimson-500 border-crimson-400 text-white shadow-[0_0_15px_rgba(255,0,60,0.3)]' 
-                : 'bg-crimson-900/20 border-crimson-900 text-crimson-400 hover:border-crimson-700'
-            }`}
-          >
-            All
-          </button>
-          {catalogue.categories.map(cat => (
-            <button
-              key={cat.category}
-              onClick={() => setActiveCategory(cat.category)}
-              className={`px-3 sm:px-4 py-1.5 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all ${
-                activeCategory === cat.category
-                  ? 'bg-crimson-500 border-crimson-400 text-white shadow-[0_0_15px_rgba(255,0,60,0.3)]'
-                  : 'bg-crimson-900/20 border-crimson-900 text-crimson-400 hover:border-crimson-700'
+        <div className="space-y-6">
+          {/* Category Filters */}
+          <div className="flex flex-wrap gap-2 pt-2 no-scrollbar">
+            <button 
+              onClick={() => setActiveCategory('ALL')}
+              className={`px-5 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all duration-300 ${
+                activeCategory === 'ALL' 
+                  ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.3)]' 
+                  : 'bg-crimson-950/40 border-crimson-900/40 text-crimson-400 hover:border-crimson-700 hover:bg-crimson-900/20'
               }`}
             >
-              {cat.category} <span className="opacity-50 ml-1">[{cat.count}]</span>
+              All Types
             </button>
-          ))}
-        </div>
-
-        {/* Genre Filters */}
-        {(catalogue.genres || []).length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pt-1 no-scrollbar">
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-crimson-700 mr-1 flex items-center gap-1">
-              <Filter className="w-3 h-3" /> Genre
-            </span>
-            <button
-              onClick={() => setActiveGenre('ALL')}
-              className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border transition-all ${
-                activeGenre === 'ALL'
-                  ? 'bg-crimson-500/90 border-crimson-400 text-white'
-                  : 'bg-crimson-900/10 border-crimson-900/60 text-crimson-500 hover:border-crimson-700'
-              }`}
-            >
-              All
-            </button>
-            {(catalogue.genres || []).map(g => (
+            {catalogue.categories.map(cat => (
               <button
-                key={g.genre}
-                onClick={() => setActiveGenre(g.genre === activeGenre ? 'ALL' : g.genre)}
-                className={`px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider border transition-all ${
-                  activeGenre === g.genre
-                    ? 'bg-crimson-500/90 border-crimson-400 text-white'
-                    : 'bg-crimson-900/10 border-crimson-900/60 text-crimson-500 hover:border-crimson-700'
+                key={cat.category}
+                onClick={() => setActiveCategory(cat.category)}
+                className={`px-5 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest border transition-all duration-300 ${
+                  activeCategory === cat.category
+                    ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15_rgba(255,0,60,0.3)]'
+                    : 'bg-crimson-950/40 border-crimson-900/40 text-crimson-400 hover:border-crimson-700 hover:bg-crimson-900/20'
                 }`}
               >
-                {g.genre} <span className="opacity-40 ml-1">[{g.count}]</span>
+                {cat.category} <span className="opacity-40 ml-1.5 font-mono text-[9px]">({cat.count})</span>
               </button>
             ))}
           </div>
-        )}
+
+          {/* Genre Filters */}
+          {(catalogue.genres || []).length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-2 no-scrollbar border-t border-crimson-900/20 pt-6">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 mr-2 flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5" /> Filter by Genre
+              </span>
+              <button
+                onClick={() => setActiveGenre('ALL')}
+                className={`px-4 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${
+                  activeGenre === 'ALL'
+                    ? 'bg-crimson-500/20 border-crimson-500/50 text-crimson-400 shadow-[0_0_10px_rgba(255,0,60,0.1)]'
+                    : 'bg-crimson-900/10 border-crimson-900/30 text-crimson-700 hover:border-crimson-700 hover:text-crimson-500'
+                }`}
+              >
+                All
+              </button>
+              {(catalogue.genres || []).map(g => (
+                <button
+                  key={g.genre}
+                  onClick={() => setActiveGenre(g.genre === activeGenre ? 'ALL' : g.genre)}
+                  className={`px-4 py-1.5 rounded-lg text-[9px] sm:text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${
+                    activeGenre === g.genre
+                      ? 'bg-crimson-500/20 border-crimson-500/50 text-crimson-400 shadow-[0_0_10px_rgba(255,0,60,0.1)]'
+                      : 'bg-crimson-900/10 border-crimson-900/30 text-crimson-700 hover:border-crimson-700 hover:text-crimson-500'
+                  }`}
+                >
+                  {g.genre} <span className="opacity-40 ml-1 font-mono text-[8px]">({g.count})</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Anime List Sections */}
-      <div className="space-y-12 pb-20">
+      <div className="space-y-20 pb-24">
         {groupedAnimes.length > 0 ? (
           groupedAnimes.map(group => (
-            <div key={group.name} className="space-y-6">
-              <div className="flex items-center gap-4">
-                <h3 className="text-xl font-black text-white uppercase tracking-widest bg-crimson-900/30 px-4 py-1 rounded-lg border border-crimson-900/50">
+            <div key={group.name} className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+              <div className="flex items-center gap-6">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter bg-crimson-950/40 px-6 py-2 rounded-2xl border border-crimson-900/40 backdrop-blur-md shadow-xl">
                   {group.name}
                 </h3>
-                <div className="h-px bg-crimson-900/30 flex-grow" />
-                <span className="text-xs font-mono text-crimson-600 font-bold uppercase tracking-widest">
-                  {group.animes.length} entries
+                <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
+                <span className="text-[10px] font-black text-crimson-700 uppercase tracking-[0.3em]">
+                  {group.animes.length} Entries
                 </span>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-10 gap-y-3">
                 {group.animes.map(anime => (
                   <button
                     key={anime.anilist_id}
                     onClick={() => navigate(`/anime/${anime.anilist_id}`)}
-                    className="flex items-center justify-between group p-2 hover:bg-crimson-900/20 rounded-lg transition-all border-b border-transparent hover:border-crimson-900/50 text-left"
+                    className="flex items-center justify-between group p-3.5 hover:bg-crimson-900/10 rounded-2xl transition-all border border-transparent hover:border-crimson-900/30 text-left"
                   >
-                    <div className="flex flex-col truncate pr-4">
-                      <span className="text-crimson-100 font-bold group-hover:text-crimson-400 transition-colors truncate">
+                    <div className="flex flex-col truncate pr-6 space-y-1">
+                      <span className="text-crimson-50 font-bold group-hover:text-crimson-400 transition-colors truncate tracking-tight text-base">
                         {anime.title || anime.title_romaji || anime.title_english}
                       </span>
-                      <div className="flex items-center gap-3 text-[10px] text-crimson-600 font-black uppercase tracking-widest mt-0.5">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" /> {anime.year || 'N/A'}
+                      <div className="flex items-center gap-4 text-[10px] text-crimson-700 font-black uppercase tracking-widest mt-1">
+                        <span className="flex items-center gap-1.5 opacity-80">
+                          <Calendar className="w-3.5 h-3.5 text-crimson-600" /> {anime.year || 'N/A'}
                         </span>
-                        <span className="opacity-50 text-[8px]">ID: {anime.anilist_id}</span>
+                        <span className="opacity-40 font-mono text-[9px]">ID {anime.anilist_id}</span>
                       </div>
                       {(anime.genres || []).length > 0 && (
-                        <div className="flex flex-wrap gap-1 mt-1.5">
+                        <div className="flex flex-wrap gap-1.5 mt-2">
                           {anime.genres.slice(0, 3).map(g => (
                             <span
                               key={g}
-                              className="px-1.5 py-0.5 rounded bg-crimson-900/30 border border-crimson-900/50 text-[8px] font-bold uppercase tracking-wider text-crimson-500"
+                              className="px-2 py-0.5 rounded-md bg-crimson-500/5 border border-crimson-500/20 text-[8px] font-black uppercase tracking-widest text-crimson-500/80"
                             >
                               {g}
                             </span>
@@ -216,18 +218,26 @@ const CataloguePage = () => {
                         </div>
                       )}
                     </div>
-                    <ChevronRight className="w-4 h-4 text-crimson-900 group-hover:text-crimson-500 group-hover:translate-x-1 transition-all flex-shrink-0" />
+                    <div className="p-2 rounded-full bg-crimson-900/20 group-hover:bg-crimson-500 transition-all duration-300">
+                      <ChevronRight className="w-4 h-4 text-crimson-800 group-hover:text-white transition-colors" />
+                    </div>
                   </button>
                 ))}
               </div>
             </div>
           ))
         ) : (
-          <div className="py-20 text-center">
-            <p className="text-crimson-500 italic text-lg">No manifestation matches your search ritual.</p>
+          <div className="py-32 text-center space-y-6">
+            <div className="w-16 h-16 border-2 border-dashed border-crimson-900/40 rounded-full mx-auto flex items-center justify-center opacity-40">
+              <Search className="w-8 h-8 text-crimson-900" />
+            </div>
+            <p className="text-crimson-700 font-black uppercase tracking-[0.2em] text-sm">No manifestation matches your search ritual</p>
           </div>
         )}
       </div>
+    </div>
+  );
+};
     </div>
   );
 };
