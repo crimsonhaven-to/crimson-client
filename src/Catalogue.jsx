@@ -190,7 +190,7 @@ const CataloguePage = () => {
                 {group.animes.map(anime => (
                   <button
                     key={anime.anilist_id}
-                    onClick={() => navigate(`/watch/${anime.anilist_id}/${anime.season_number || 1}/1`)}
+                    onClick={() => navigate(`/anime/${anime.anilist_id}`)}
                     className="flex items-center justify-between group p-2 hover:bg-crimson-900/20 rounded-lg transition-all border-b border-transparent hover:border-crimson-900/50 text-left"
                   >
                     <div className="flex flex-col truncate pr-4">

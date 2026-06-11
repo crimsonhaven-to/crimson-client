@@ -11,6 +11,8 @@ import RecentlyWatchedPage from './RecentlyWatched';
 import SupportUsPage from './SupportUs';
 import SupportersPage from './Supporters';
 import CrimsonPlayer from './CrimsonPlayer';
+import AnimeOverview from './AnimeOverview';
+import { stripHtml } from './utils';
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -70,18 +72,28 @@ function LandingPage() {
     queryName, setQueryName,
     searchResults, showSuggestions, setShowSuggestions,
     metaLoading, apiError, setApiError,
-    handleSelectSuggestion
   } = useAnimeStreamer();
 
   const { trendingAnimes, trendLoading } = useTrendingAnime();
 
-  const handleSearchSubmit = async (e) => {
+  // Picking a show now opens its Overview page (seasons + episodes) instead of
+  // dropping the user straight onto episode 1.
+  const openOverview = (anime) => {
+    const anilistId = anime?.anilist_id;
+    if (!anilistId) {
+      setApiError('Selection failed: No AniList ID found.');
+      return;
+    }
+    setQueryName(anime.title || anime.name || '');
+    setShowSuggestions(false);
+    navigate(`/anime/${anilistId}`);
+  };
+
+  const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (!queryName.trim()) return;
     if (searchResults.length > 0) {
-      await handleSelectSuggestion(searchResults[0], (anilistId, season, episode) => {
-        navigate(`/watch/${anilistId}/${season}/${episode}`);
-      });
+      openOverview(searchResults[0]);
     } else {
       setApiError('Please choose a valid choice from the loading results dropdown.');
     }
@@ -127,13 +139,11 @@ function LandingPage() {
           <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-1 bg-crimson-950 border border-crimson-800 shadow-xl max-h-[300px] overflow-y-auto z-20 text-left rounded-xl">
             {searchResults.length > 0 ? (
               searchResults.map((suggestion, index) => (
-                <AnimeCard 
-                  key={index} 
-                  title={suggestion.title || suggestion.name} 
-                  poster={suggestion.poster || null} 
-                  onSelect={() => handleSelectSuggestion(suggestion, (anilistId, season, episode) => {
-                    navigate(`/watch/${anilistId}/${season}/${episode}`);
-                  })}
+                <AnimeCard
+                  key={index}
+                  title={suggestion.title || suggestion.name}
+                  poster={suggestion.poster || null}
+                  onSelect={() => openOverview(suggestion)}
                 />
               ))
             ) : (
@@ -168,11 +178,9 @@ function LandingPage() {
         {!trendLoading && trendingAnimes.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
             {trendingAnimes.map((anime, index) => (
-              <div 
-                key={index} 
-                onClick={() => handleSelectSuggestion(anime, (anilistId, season, episode) => {
-                  navigate(`/watch/${anilistId}/${season}/${episode}`);
-                })}
+              <div
+                key={index}
+                onClick={() => openOverview(anime)}
                 className="bg-crimson-900/10 border border-crimson-900/40 rounded-xl overflow-hidden hover:border-crimson-500 transition-all group cursor-pointer transform hover:-translate-y-1 active:scale-95 sm:active:scale-100"
               >
                 <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-auto object-cover" />
@@ -219,6 +227,20 @@ function WatchPage() {
   useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
 
   const isFavorite = favorites.some(f => f.anilist_id === parseInt(anilistId) || String(f.tmdb_id) === String(animeMetadata?.tmdb_id));
+
+  // Per-episode metadata for the currently selected episode (the backend already
+  // stores names/descriptions per episode — surface them here). The episode name
+  // only shows when it's a real title (not the generic "Episode N" placeholder).
+  const currentEpisodeData = animeMetadata?.episodes_list?.find(e => e.episode_number === currentEpisode);
+  const episodeTitle = currentEpisodeData?.title && currentEpisodeData.title !== `Episode ${currentEpisode}`
+    ? currentEpisodeData.title
+    : null;
+  // Description fallback chain: per-episode overview -> per-season summary ->
+  // anime (AniList) description. The AniList one carries HTML, so strip it.
+  const episodeDescription = currentEpisodeData?.overview
+    || animeMetadata?.summary
+    || stripHtml(animeMetadata?.description)
+    || 'No summary asset provided.';
 
   // Re-initialize if URL params change (e.g., manual edit)
   useEffect(() => {
@@ -297,16 +319,12 @@ function WatchPage() {
               // Sandbox our own backend-served, ad-free proxy / player pages
               // (same-origin): allow-scripts + allow-same-origin let them run while
               // OMITTING allow-popups / allow-top-navigation kills any pop-under /
-              // ad-redirect. Two exceptions are left unsandboxed because their
-              // player breaks inside the sandbox: the VidKing proxy (/vidking_proxy,
-              // the VidKing SPA player) and genuinely third-party embeds (Direct
-              // Embed). We don't control those, and VidKing is already ad-stripped
-              // server-side by the proxy.
+              // ad-redirect. Genuinely third-party embeds (Direct Embed) are left
+              // unsandboxed since they're not same-origin and we don't control them.
               (() => {
                 const url = streamData.streams[activeStreamIdx].url;
                 const sandboxed = typeof url === 'string'
-                  && url.startsWith(API_BASE_URL)
-                  && !url.includes('/vidking_proxy');
+                  && url.startsWith(API_BASE_URL);
                 return (
                   <iframe
                     src={url}
@@ -372,8 +390,13 @@ function WatchPage() {
                   <span className="text-lg text-crimson-400 ml-2">(S{currentSeason})</span>
                 )}
               </h1>
+              {episodeTitle && (
+                <p className="text-sm sm:text-base font-bold text-crimson-300 leading-snug">
+                  <span className="text-crimson-500">E{currentEpisode}:</span> {episodeTitle}
+                </p>
+              )}
               <p className="text-xs sm:text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-4 sm:line-clamp-none">
-                {animeMetadata?.summary || 'No summary asset provided.'}
+                {episodeDescription}
               </p>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
@@ -663,6 +686,7 @@ function App() {
           <Route path="/account" element={<AccountPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/recently-watched" element={<RecentlyWatchedPage />} />
+          <Route path="/anime/:anilistId" element={<AnimeOverview />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
