@@ -68,7 +68,7 @@ const FavoritesPage = () => {
                 {/* Actions Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/60 backdrop-blur-[2px]">
                   <button 
-                    onClick={() => navigate(`/watch/${anime.anilist_id || anime.tmdb_id}/1/1`)}
+                    onClick={() => navigate(`/anime/${anime.anilist_id || anime.tmdb_id}`)}
                     className="p-3 bg-crimson-500 text-white rounded-full hover:bg-crimson-400 transform hover:scale-110 transition-all"
                   >
                     <Play className="w-6 h-6 fill-current" />
