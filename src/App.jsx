@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, Info, AlertTriangle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
 import AccountPage from './Account';
@@ -13,6 +13,7 @@ import SupportersPage from './Supporters';
 import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
 import { stripHtml } from './utils';
+
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -76,8 +77,6 @@ function LandingPage() {
 
   const { trendingAnimes, trendLoading } = useTrendingAnime();
 
-  // Picking a show now opens its Overview page (seasons + episodes) instead of
-  // dropping the user straight onto episode 1.
   const openOverview = (anime) => {
     const anilistId = anime?.anilist_id;
     if (!anilistId) {
@@ -100,55 +99,62 @@ function LandingPage() {
   };
 
   return (
-    <div className="max-w-3xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 text-center space-y-8 my-auto">
-      <div className="space-y-3">
-        <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-white uppercase drop-shadow-[0_4px_12px_rgba(255,0,60,0.15)]">
-          crimson<span className="text-crimson-500 font-light">haven</span>
+    <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-20 sm:py-32 text-center space-y-12 my-auto animate-in fade-in zoom-in-95 duration-1000">
+      <div className="space-y-4">
+        <h1 className="text-5xl sm:text-8xl font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
+          crimson<span className="text-crimson-500 font-light opacity-90">haven</span>
         </h1>
-        <p className="text-crimson-300 text-base sm:text-lg tracking-wide font-medium px-4">
-          Stream dynamic links seamlessly straight from the dark network.
+        <p className="text-crimson-400 text-sm sm:text-base tracking-[0.4em] font-black uppercase opacity-70 px-4">
+          Seamlessly Streaming the Dark Network
         </p>
       </div>
 
-      <div className="relative max-w-xl mx-auto group px-2 sm:px-0">
-        <form onSubmit={handleSearchSubmit} className="flex items-end space-x-2 border-2 border-crimson-900/80 rounded-2xl shadow-2xl bg-crimson-900/30 transition-all">
+      <div className="relative max-w-2xl mx-auto group px-2 sm:px-0">
+        <form onSubmit={handleSearchSubmit} className="relative flex items-center border border-crimson-900/60 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-crimson-950/40 backdrop-blur-xl transition-all focus-within:border-crimson-500/50 focus-within:shadow-[0_0_40px_rgba(255,0,60,0.15)] overflow-hidden">
+          <div className="absolute left-6 flex items-center pointer-events-none">
+             <Search className="w-5 h-5 text-crimson-500 opacity-40 group-focus-within:opacity-100 transition-opacity" />
+          </div>
           <input 
             type="text" 
-            placeholder="Search Anime Name..." 
+            placeholder="Search manifestations..." 
             value={queryName} 
             onFocus={() => { if (queryName.length >= 3) setShowSuggestions(true); }} 
             onChange={(e) => { setQueryName(e.target.value); if (e.target.value.length >= 3) setShowSuggestions(true); }} 
             onBlur={() => { setTimeout(() => setShowSuggestions(false), 200); }} 
-            className="w-full py-3.5 sm:py-4 px-4 sm:px-5 focus:outline-none font-bold tracking-wide appearance-none bg-transparent text-red-300 placeholder-red-400/50 text-sm sm:text-base"
-            style={{ textShadow: '0 0 3px rgba(248,113,113,0.25)' }}
+            className="w-full py-5 sm:py-6 pl-16 pr-24 focus:outline-none font-bold tracking-wide appearance-none bg-transparent text-crimson-50 placeholder-crimson-500/50 text-sm sm:text-lg"
           />
           <button 
             type="submit" 
             disabled={metaLoading} 
-            className="bg-crimson-500 hover:bg-crimson-400 disabled:bg-crimson-800 text-white px-5 sm:px-6 py-[14px] sm:py-[18px] rounded-r-2xl transition-all shadow-md flex items-center justify-center self-stretch"
+            className="absolute right-2 top-2 bottom-2 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900 text-white px-6 rounded-2xl transition-all shadow-lg flex items-center justify-center group/btn"
           >
             {metaLoading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             ) : (
-              <Search className="w-5 h-5" />
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Invoke</span>
+                <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
+              </div>
             )}
           </button>
         </form>
 
         {showSuggestions && (
-          <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-1 bg-crimson-950 border border-crimson-800 shadow-xl max-h-[300px] overflow-y-auto z-20 text-left rounded-xl">
+          <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-h-[400px] overflow-y-auto z-50 text-left rounded-3xl animate-in slide-in-from-top-4 duration-300">
             {searchResults.length > 0 ? (
-              searchResults.map((suggestion, index) => (
-                <AnimeCard
-                  key={index}
-                  title={suggestion.title || suggestion.name}
-                  poster={suggestion.poster || null}
-                  onSelect={() => openOverview(suggestion)}
-                />
-              ))
+              <div className="p-2">
+                {searchResults.map((suggestion, index) => (
+                  <AnimeCard
+                    key={index}
+                    title={suggestion.title || suggestion.name}
+                    poster={suggestion.poster || null}
+                    onSelect={() => openOverview(suggestion)}
+                  />
+                ))}
+              </div>
             ) : (
-              <div className="p-4 text-sm text-crimson-400 text-center italic">
-                No tracked anime found matching that title.
+              <div className="p-8 text-xs font-black uppercase tracking-[0.2em] text-crimson-700 text-center italic">
+                No tracked manifestations found
               </div>
             )}
           </div>
@@ -156,36 +162,51 @@ function LandingPage() {
       </div>
 
       {apiError && (
-        <div className="max-w-md mx-auto p-4 bg-crimson-900/40 border border-crimson-500/30 rounded-xl text-xs sm:text-sm text-crimson-300 flex items-center gap-3 shadow-lg mt-8">
+        <div className="max-w-md mx-auto p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl animate-in shake duration-500">
           <AlertTriangle className="w-5 h-5 text-crimson-500 shrink-0" />
-          <span className="text-left">Status Message: {apiError}</span>
+          <span className="text-left leading-relaxed">System Message: {apiError}</span>
         </div>
       )}
 
-      <div className="mt-12 sm:mt-16 pt-8 border-t border-crimson-900/50">
-        <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white uppercase mb-6 flex items-center gap-2 justify-center sm:justify-start">
-          <Play className="w-5 h-5 sm:w-6 sm:h-6 text-crimson-500" /> Trending Streams 
-        </h2>
+      <div className="mt-20 sm:mt-32 pt-12 border-t border-crimson-900/30">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-white uppercase flex items-center gap-3">
+            <div className="w-2 h-8 bg-crimson-500 rounded-full"></div>
+            Trending <span className="text-crimson-500">Streams</span> 
+          </h2>
+          <div className="h-px bg-crimson-900/30 flex-grow hidden sm:block mx-8"></div>
+          <Link to="/catalogue" className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 hover:text-crimson-400 transition-colors">
+            View All Archives
+          </Link>
+        </div>
 
         {trendLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 animate-pulse">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 animate-pulse">
             {[1, 2, 3, 4, 5].map(n => (
-              <div key={n} className="aspect-[2/3] bg-gray-700/30 rounded-lg border border-dashed border-crimson-900/50"></div>
+              <div key={n} className="aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50"></div>
             ))}
           </div>
         )}
 
         {!trendLoading && trendingAnimes.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8">
             {trendingAnimes.map((anime, index) => (
               <div
                 key={index}
                 onClick={() => openOverview(anime)}
-                className="bg-crimson-900/10 border border-crimson-900/40 rounded-xl overflow-hidden hover:border-crimson-500 transition-all group cursor-pointer transform hover:-translate-y-1 active:scale-95 sm:active:scale-100"
+                className="group flex flex-col gap-3 cursor-pointer"
               >
-                <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-auto object-cover" />
-                <div className="p-2 sm:p-3 text-left">
-                  <h4 className="text-xs sm:text-sm font-bold text-white line-clamp-2 group-hover:text-crimson-400 transition-colors">
+                <div className="relative aspect-[2/3] bg-crimson-900/10 border border-crimson-900/40 rounded-2xl overflow-hidden transition-all duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_15px_30px_rgba(255,0,60,0.2)]">
+                  <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
+                     <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                        <Play className="w-6 h-6 fill-white text-white" />
+                     </div>
+                  </div>
+                </div>
+                <div className="text-left px-1">
+                  <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug">
                     {anime.title}
                   </h4>
                 </div>
@@ -204,8 +225,6 @@ function WatchPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const progressTimerRef = useRef(null);
-  // Latest real playback position from CrimsonPlayer (same-origin hls/mp4 sources
-  // only — opaque third-party iframes can't report it). Null until a frame plays.
   const playbackRef = useRef(null);
   const handlePlayerProgress = useCallback((position, duration) => {
     playbackRef.current = { position, duration };
@@ -228,46 +247,32 @@ function WatchPage() {
 
   const isFavorite = favorites.some(f => f.anilist_id === parseInt(anilistId) || String(f.tmdb_id) === String(animeMetadata?.tmdb_id));
 
-  // Per-episode metadata for the currently selected episode (the backend already
-  // stores names/descriptions per episode — surface them here). The episode name
-  // only shows when it's a real title (not the generic "Episode N" placeholder).
   const currentEpisodeData = animeMetadata?.episodes_list?.find(e => e.episode_number === currentEpisode);
   const episodeTitle = currentEpisodeData?.title && currentEpisodeData.title !== `Episode ${currentEpisode}`
     ? currentEpisodeData.title
     : null;
-  // Description fallback chain: per-episode overview -> per-season summary ->
-  // anime (AniList) description. The AniList one carries HTML, so strip it.
   const episodeDescription = currentEpisodeData?.overview
     || animeMetadata?.summary
     || stripHtml(animeMetadata?.description)
     || 'No summary asset provided.';
 
-  // Re-initialize if URL params change (e.g., manual edit)
   useEffect(() => {
     if (anilistId) {
       initializeFromIds(anilistId, parseInt(season), parseInt(episode));
     }
   }, [anilistId, season, episode, initializeFromIds]);
 
-  // Persist watch progress periodically (and once more on leave) so the saved
-  // position tracks real playback instead of freezing at a single early sample.
   useEffect(() => {
     if (!isAuthenticated || !animeMetadata) return;
 
-    // New episode/season: drop any position carried over from the previous one
-    // so we don't save a stale timestamp against the wrong episode.
     playbackRef.current = null;
     const startedAt = Date.now();
 
     const save = () => {
-      // The in-app CrimsonPlayer (hls/mp4) reports the true position/duration.
-      // Opaque third-party iframes can't be read, so approximate position by
-      // elapsed watch time — this keeps history recording AND growing instead
-      // of being pinned at a nominal ~2%.
       const pb = playbackRef.current;
       const position = pb ? pb.position : (Date.now() - startedAt) / 1000;
       const duration = pb && pb.duration ? pb.duration : 1440;
-      if (position < 1) return; // nothing meaningful watched yet
+      if (position < 1) return;
       updateProgress({
         tmdb_id: animeMetadata.tmdb_id,
         anilist_id: parseInt(anilistId),
@@ -277,50 +282,45 @@ function WatchPage() {
         poster: animeMetadata.poster,
         position_seconds: Math.round(position),
         duration_seconds: Math.round(duration),
-        // status omitted: the backend infers 'completed' near the end.
       });
     };
 
-    // Reset timer on episode change
     if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     progressTimerRef.current = setInterval(save, 15000);
 
     return () => {
       clearInterval(progressTimerRef.current);
-      save(); // capture the latest position when switching episode / leaving
+      save();
     };
   }, [anilistId, currentSeason, currentEpisode, animeMetadata, isAuthenticated, updateProgress]);
 
-  // Update URL when season changes
   const handleSeasonChange = (newSeason) => {
     setCurrentSeason(newSeason);
     navigate(`/watch/${anilistId}/${newSeason}/${currentEpisode}`);
   };
 
-  // Update URL when episode changes
   const handleEpisodeChange = (newEpisode) => {
     setCurrentEpisode(newEpisode);
     navigate(`/watch/${anilistId}/${currentSeason}/${newEpisode}`);
   };
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 py-6 sm:py-8 grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8 animate-in fade-in duration-700">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-4 gap-8 sm:gap-10 animate-in fade-in duration-1000">
       {/* Main Video Area */}
-      <div className="lg:col-span-3 space-y-6">
-        <div className="relative aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden bg-black border border-crimson-900/80 shadow-[0_0_40px_rgba(26,0,5,0.6)] sm:shadow-[0_0_60px_rgba(26,0,5,0.8)]">
+      <div className="lg:col-span-3 space-y-8">
+        <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black border border-crimson-900/60 shadow-[0_30px_100px_rgba(0,0,0,0.8)]">
           {streamLoading && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950 z-20 p-4 text-center">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-              <p className="text-crimson-400 font-bold tracking-wide animate-pulse text-sm sm:text-base">Resolving manifest vectors...</p>
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 z-20 p-6 text-center backdrop-blur-md">
+              <div className="relative w-16 h-16 mb-6">
+                <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
+                <div className="absolute inset-0 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
+                <div className="absolute inset-0 blur-xl bg-crimson-500/20 rounded-full animate-pulse"></div>
+              </div>
+              <p className="text-crimson-400 font-black tracking-[0.3em] animate-pulse text-xs uppercase">Resolving manifest vectors</p>
             </div>
           )}
           {!streamLoading && streamData?.streams?.[activeStreamIdx] ? (
             streamData.streams[activeStreamIdx].type === 'iframe' ? (
-              // Sandbox our own backend-served, ad-free proxy / player pages
-              // (same-origin): allow-scripts + allow-same-origin let them run while
-              // OMITTING allow-popups / allow-top-navigation kills any pop-under /
-              // ad-redirect. Genuinely third-party embeds (Direct Embed) are left
-              // unsandboxed since they're not same-origin and we don't control them.
               (() => {
                 const url = streamData.streams[activeStreamIdx].url;
                 const sandboxed = typeof url === 'string'
@@ -339,7 +339,6 @@ function WatchPage() {
                 );
               })()
             ) : (
-              // Direct hls/mp4 streams play in the Haven's own branded player.
               <CrimsonPlayer
                 key={streamData.streams[activeStreamIdx].url}
                 src={streamData.streams[activeStreamIdx].url}
@@ -351,84 +350,88 @@ function WatchPage() {
             )
           ) : (
             !streamLoading && (
-              <div className="absolute inset-0 flex flex-col items-center justify-center p-4 sm:p-6 text-center">
-                <AlertTriangle className="w-10 h-10 sm:w-12 sm:h-12 text-crimson-500 mb-2" />
-                <p className="text-white font-bold text-sm sm:text-base">No stream links scraped</p>
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-crimson-950/50 backdrop-blur-sm">
+                <AlertTriangle className="w-16 h-16 text-crimson-500 mb-4 opacity-50" />
+                <p className="text-white font-black uppercase tracking-widest text-sm">No transport nodes active</p>
               </div>
             )
           )}
         </div>
 
         {/* Anime Info Panel */}
-        <div className="p-4 sm:p-6 bg-crimson-900/10 border border-crimson-900/40 rounded-xl sm:rounded-2xl backdrop-blur-sm relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row items-start justify-between gap-6 relative z-10">
-            <div className="space-y-3 w-full">
-              <div className="flex flex-wrap gap-2 items-center">
-                <span className="bg-crimson-500/20 text-crimson-400 text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider border border-crimson-500/30">
-                  {animeMetadata?.status || 'Synchronized'}
-                </span>
-                <span className="text-[10px] text-crimson-400/80 font-mono">
-                  Ref: {animeMetadata?.anilist_id}
+        <div className="p-6 sm:p-10 bg-crimson-950/40 border border-crimson-900/40 rounded-[2.5rem] backdrop-blur-xl relative overflow-hidden shadow-2xl">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-8 relative z-10">
+            <div className="space-y-6 w-full">
+              <div className="flex flex-wrap gap-3 items-center">
+                {animeMetadata?.status && (
+                  <span className="bg-crimson-500/10 text-crimson-400 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-crimson-500/30 backdrop-blur-md">
+                    {animeMetadata.status}
+                  </span>
+                )}
+                <span className="text-[10px] text-crimson-600 font-black tracking-widest uppercase opacity-70">
+                  REF: {animeMetadata?.anilist_id || 'UNK'}
                 </span>
                 {isAuthenticated && (
                   <button 
                     onClick={() => toggleFavorite({ ...animeMetadata, anilist_id: parseInt(anilistId) })}
-                    className={`ml-auto flex items-center gap-2 px-3 py-1 rounded-lg border transition-all text-[10px] font-black uppercase tracking-widest ${
+                    className={`ml-auto flex items-center gap-2.5 px-5 py-2 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest ${
                       isFavorite 
-                        ? 'bg-crimson-500 border-crimson-400 text-white' 
-                        : 'bg-crimson-900/20 border-crimson-900 text-crimson-400 hover:text-white hover:border-crimson-700'
+                        ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.3)]' 
+                        : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-500 hover:text-white hover:border-crimson-600'
                     }`}
                   >
-                    <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-white' : ''}`} />
+                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
                     {isFavorite ? 'Saved' : 'Save'}
                   </button>
                 )}
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
-                {seasonGroups?.title || animeMetadata?.title || 'Unknown Cluster Title'}
-                {seasonGroups?.totalSeasons > 1 && (
-                  <span className="text-lg text-crimson-400 ml-2">(S{currentSeason})</span>
+              <div className="space-y-2">
+                <h1 className="text-3xl sm:text-5xl font-black tracking-tighter text-white leading-[1.1]">
+                  {seasonGroups?.title || animeMetadata?.title || 'Unknown Cluster'}
+                  {seasonGroups?.totalSeasons > 1 && (
+                    <span className="text-xl text-crimson-500 ml-3 opacity-80">S{currentSeason}</span>
+                  )}
+                </h1>
+                {episodeTitle && (
+                  <p className="text-base sm:text-xl font-bold text-crimson-400 tracking-tight leading-snug">
+                    <span className="text-crimson-600 font-black uppercase text-sm mr-2 opacity-60">E{currentEpisode}</span> {episodeTitle}
+                  </p>
                 )}
-              </h1>
-              {episodeTitle && (
-                <p className="text-sm sm:text-base font-bold text-crimson-300 leading-snug">
-                  <span className="text-crimson-500">E{currentEpisode}:</span> {episodeTitle}
-                </p>
-              )}
-              <p className="text-xs sm:text-sm text-crimson-200/70 leading-relaxed text-justify line-clamp-4 sm:line-clamp-none">
+              </div>
+              <p className="text-sm sm:text-base text-crimson-100/60 leading-relaxed text-justify line-clamp-4 sm:line-clamp-none font-medium">
                 {episodeDescription}
               </p>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <div className="flex-1 sm:flex-none bg-crimson-950/60 border border-crimson-900/60 px-4 py-2 rounded-xl text-center min-w-[70px]">
-                <p className="text-[9px] uppercase text-crimson-500 font-extrabold tracking-widest">S</p>
-                <p className="text-lg font-black text-white">{currentSeason}</p>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <div className="flex-1 sm:flex-none bg-crimson-950/80 border border-crimson-900/60 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
+                <p className="text-[10px] uppercase text-crimson-500 font-black tracking-[0.3em] mb-1">SN</p>
+                <p className="text-2xl font-black text-white">{currentSeason}</p>
               </div>
-              <div className="flex-1 sm:flex-none bg-crimson-900/40 border border-crimson-800/40 px-4 py-2 rounded-xl text-center min-w-[70px]">
-                <p className="text-[9px] uppercase text-crimson-400 font-extrabold tracking-widest">E</p>
-                <p className="text-lg font-black text-white">{currentEpisode}</p>
+              <div className="flex-1 sm:flex-none bg-crimson-900/20 border border-crimson-800/40 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
+                <p className="text-[10px] uppercase text-crimson-400 font-black tracking-[0.3em] mb-1">EP</p>
+                <p className="text-2xl font-black text-white">{currentEpisode}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Season & Episode Selectors */}
-        <div className="space-y-4">
-          {availableSeasons && availableSeasons.length > 0 && (
-            <div className="p-3 sm:p-4 bg-crimson-950/40 border border-crimson-900/40 rounded-xl sm:rounded-2xl flex items-center gap-3 overflow-x-auto no-scrollbar">
-              <span className="text-[10px] font-bold uppercase text-crimson-500 tracking-wider whitespace-nowrap">Seasons:</span>
-              <div className="flex gap-1.5">
+        <div className="space-y-8">
+          {availableSeasons && availableSeasons.length > 1 && (
+            <div className="p-4 sm:p-5 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl flex items-center gap-4 overflow-x-auto no-scrollbar backdrop-blur-sm">
+              <span className="text-[10px] font-black uppercase text-crimson-700 tracking-[0.3em] whitespace-nowrap pl-2">Archives</span>
+              <div className="flex gap-2">
                 {availableSeasons.map((season) => (
                   <button 
                     key={season.season_number} 
                     onClick={() => handleSeasonChange(season.season_number)} 
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold border transition-all whitespace-nowrap ${
+                    className={`px-5 py-2.5 rounded-xl text-[11px] font-black border transition-all duration-300 whitespace-nowrap uppercase tracking-widest ${
                       currentSeason === season.season_number 
-                        ? 'bg-crimson-500 border-crimson-400 text-white' 
-                        : 'bg-crimson-900/20 border-crimson-900/50 text-crimson-300 hover:border-crimson-700'
+                        ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.2)]' 
+                        : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-400 hover:border-crimson-600 hover:bg-crimson-900/30'
                     }`}
                   >
-                    S{season.season_number}
+                    Season {season.season_number}
                   </button>
                 ))}
               </div>
@@ -436,23 +439,26 @@ function WatchPage() {
           )}
 
           {animeMetadata?.episodes_list && (
-            <div className="p-4 sm:p-6 bg-crimson-900/10 border border-crimson-900/40 rounded-xl sm:rounded-2xl space-y-4">
-              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2 uppercase tracking-wide">
-                <Info className="w-5 h-5 text-crimson-500" /> Episode Index
-              </h3>
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+            <div className="p-6 sm:p-10 bg-crimson-950/30 border border-crimson-900/30 rounded-[2.5rem] space-y-8 backdrop-blur-sm shadow-2xl">
+              <div className="flex items-center gap-4">
+                <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
+                  <Info className="w-6 h-6 text-crimson-500" /> Manifest Segments
+                </h3>
+                <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
+              </div>
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
                 {animeMetadata.episodes_list.map((ep) => (
                   <button 
                     key={ep.episode_number} 
                     onClick={() => handleEpisodeChange(ep.episode_number)} 
-                    className={`p-2.5 rounded-lg border text-center transition-all flex flex-col items-center justify-center gap-0.5 ${
+                    className={`aspect-square rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-0.5 group/ep ${
                       currentEpisode === ep.episode_number 
-                        ? 'bg-crimson-500 border-crimson-400 text-white font-bold shadow-[0_4px_12px_rgba(255,0,30,0.3)] shadow-[0_4px_12px_rgba(255,0,30,0.3)] scale-105' 
-                        : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-200 hover:border-crimson-700 hover:bg-crimson-900/20'
+                        ? 'bg-crimson-600 border-crimson-400 text-white font-black shadow-[0_10px_20px_rgba(255,0,30,0.4)] scale-110 z-10' 
+                        : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-200 hover:border-crimson-600 hover:bg-crimson-900/30'
                     }`}
                   >
-                    <span className="text-[8px] uppercase font-bold opacity-60">E</span>
-                    <span className="text-base font-black">{ep.episode_number}</span>
+                    <span className={`text-[8px] uppercase font-black tracking-widest opacity-40 group-hover/ep:opacity-100 transition-opacity ${currentEpisode === ep.episode_number ? 'opacity-100' : ''}`}>E</span>
+                    <span className="text-lg font-black">{ep.episode_number}</span>
                   </button>
                 ))}
               </div>
@@ -462,53 +468,73 @@ function WatchPage() {
       </div>
 
       {/* Stream Sources Sidebar */}
-      <div className="lg:col-span-1 space-y-4">
-        <div className="bg-crimson-900/20 border border-crimson-900/50 p-4 sm:p-6 rounded-xl sm:rounded-2xl sticky top-24">
-          <h3 className="text-base sm:text-lg font-bold text-white mb-4 flex items-center gap-2 uppercase tracking-wide">
-            <span className="w-1.5 h-1.5 rounded-full bg-crimson-500 animate-ping" /> Scraped Targets
+      <div className="lg:col-span-1 space-y-6">
+        <div className="bg-crimson-950/40 border border-crimson-900/40 p-6 sm:p-8 rounded-[2rem] sticky top-28 backdrop-blur-xl shadow-2xl overflow-hidden">
+          {/* Decorative background element */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
+          
+          <h3 className="text-lg font-black text-white mb-8 flex items-center gap-3 uppercase tracking-tighter relative z-10">
+            <div className="relative">
+               <div className="w-2.5 h-2.5 rounded-full bg-crimson-500 animate-ping absolute inset-0"></div>
+               <div className="w-2.5 h-2.5 rounded-full bg-crimson-600 relative"></div>
+            </div>
+            Scraped Targets
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2">
-            {streamLoading ? (
-              [1, 2].map((n) => (
-                <div key={n} className="h-12 bg-crimson-900/10 animate-pulse rounded-xl border border-crimson-900/20"></div>
+          <div className="grid grid-cols-1 gap-3 relative z-10">
+            {streamLoading && !streamData?.streams?.length ? (
+              [1, 2, 3].map((n) => (
+                <div key={n} className="h-16 bg-crimson-950/40 animate-pulse rounded-2xl border border-crimson-900/30"></div>
               ))
             ) : streamData?.streams && streamData.streams.length > 0 ? (
               streamData.streams.map((stream, idx) => (
                 <button 
                   key={idx} 
                   onClick={() => setActiveStreamIdx(idx)} 
-                  className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between group ${
+                  className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
                     activeStreamIdx === idx 
-                      ? 'bg-crimson-500 text-white font-bold border-crimson-400 shadow-[0_4px_12px_rgba(255,0,60,0.2)]' 
-                      : 'bg-crimson-950/60 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-700'
+                      ? 'bg-crimson-600 text-white font-black border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]' 
+                      : 'bg-crimson-950/60 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-600'
                   }`}
                 >
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-1.5 mb-1 leading-none">
-                      <span className="text-[9px] uppercase tracking-wider opacity-70 font-bold">Type: {stream.type}</span>
+                  <div className="flex flex-col min-w-0 pr-4">
+                    <div className="flex items-center gap-2 mb-1.5 leading-none">
+                      <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
+                        activeStreamIdx === idx
+                          ? 'bg-white/20 border-white/20 text-white'
+                          : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
+                      }`}>
+                        {stream.type}
+                      </span>
                       {stream.language && (
-                        <span className={`text-[9px] uppercase tracking-wider font-bold px-1.5 py-0.5 rounded-full ${
+                        <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md ${
                           activeStreamIdx === idx
-                            ? 'bg-white/20 text-white'
-                            : 'bg-crimson-500/15 text-crimson-300'
+                            ? 'bg-crimson-950/40 text-white'
+                            : 'bg-crimson-900 text-crimson-400'
                         }`}>
                           {stream.language}
                         </span>
                       )}
                     </div>
-                    <span className="text-xs font-extrabold tracking-wide text-white truncate max-w-[140px] sm:max-w-none lg:max-w-[160px]">
+                    <span className="text-xs font-black tracking-wide text-white truncate">
                       {stream.source}
                     </span>
                   </div>
-                  <ChevronRight className={`w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 ${activeStreamIdx === idx ? 'text-white' : 'text-crimson-700'}`} />
+                  <ChevronRight className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 ${activeStreamIdx === idx ? 'text-white' : 'text-crimson-800'}`} />
                 </button>
               ))
             ) : (
-              <div className="col-span-full p-4 bg-crimson-950/80 rounded-xl text-center border border-crimson-900/40 text-[10px] text-crimson-400/80 italic">
-                Zero transport nodes active.
+              <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-800 italic">Zero transport nodes active</p>
               </div>
             )}
           </div>
+          
+          {streamLoading && streamData?.streams?.length > 0 && (
+            <div className="mt-6 flex items-center justify-center gap-2 animate-pulse">
+               <div className="w-1.5 h-1.5 bg-crimson-500 rounded-full"></div>
+               <span className="text-[8px] font-black uppercase tracking-[0.3em] text-crimson-600">Probing more nodes</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -526,67 +552,97 @@ const SOCIAL_LINKS = [
 
 function AboutPage() {
   const { health, healthLoading, healthError } = useHealthStatus();
+  const [backendVersion, setBackendVersion] = useState('Resolving...');
   useTitle('About the Haven');
 
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/`)
+      .then(res => res.json())
+      .then(data => setBackendVersion(data.Version || data.version || 'Unknown'))
+      .catch(() => setBackendVersion('Offline'));
+  }, []);
+
   return (
-    <div className="max-w-2xl w-full mx-auto px-6 py-12 space-y-8 my-auto">
-      <div className="border-b border-crimson-900 pb-4">
-        <h2 className="text-3xl font-black text-white uppercase tracking-tight">About CrimsonHaven</h2>
-        <p className="text-sm text-crimson-400 font-medium">The architectural design manifest.</p>
+    <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      <div className="border-b border-crimson-900/30 pb-8 space-y-2">
+        <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">About <span className="text-crimson-500">CrimsonHaven</span></h2>
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">The architectural design manifest</p>
       </div>
 
-      <div className="space-y-4 text-sm text-crimson-200/80 leading-relaxed text-justify">
-        <p><strong className="text-white">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame.</p>
-        <div className="bg-crimson-950/50 backdrop-blur-md border border-crimson-900/50 p-4 rounded-xl font-mono text-xs text-crimson-300 space-y-1">
-          <p className="font-bold text-white mb-1">// System Specification Diagnostics</p>
-          <p>• Client Layer: React 18 / Vite / Tailwind CSS</p>
-          <p>• Server Routing Pipeline: Python / FastAPI Asynchronous Engine</p>
-          <p>• Multi-Season Support: Season grouping with automatic AniList ID mapping</p>
+      <div className="space-y-8 text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium">
+        <p><strong className="text-white font-black tracking-tight">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame, engineered for the most discerning mortals.</p>
+        
+        <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 p-6 sm:p-8 rounded-[2rem] font-mono text-xs text-crimson-400 space-y-3 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+             <Server className="w-12 h-12 text-crimson-500" />
+          </div>
+          <h3 className="font-black text-crimson-50 mb-4 tracking-widest uppercase border-b border-crimson-900/50 pb-2 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-crimson-500 animate-pulse"></div>
+            System Specification Diagnostics
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT:</span> React 18 / Vite / Tailwind</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">ROUTING:</span> FastAPI Asynchronous Engine</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">BACKEND VERSION:</span> {backendVersion}</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT VERSION:</span> {CLIENT_VERSION}</p>
+          </div>
         </div>
 
-        <div className="relative bg-crimson-950/40 backdrop-blur-md border border-crimson-900/50 p-4 pl-5 rounded-xl">
-          <span className="absolute left-0 top-3 bottom-3 w-1 rounded-full bg-crimson-500/60" />
-          <p className="italic text-crimson-200/90 leading-relaxed">
-            And a little secret between us, darling~ Ironically, this totally <span className="text-white not-italic font-semibold">morally correct</span> webpage
-            keeps all your data tucked away in <span className="text-white not-italic font-semibold">Switzerland</span>. Funny, isn't it?~
+        <div className="relative bg-crimson-500/5 backdrop-blur-md border border-crimson-500/20 p-8 rounded-[2.5rem] shadow-xl">
+          <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
+          <p className="italic text-crimson-100/90 leading-relaxed text-lg tracking-tight">
+            "And a little secret between us, darling~ Ironically, this totally <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">morally correct</span> webpage
+            keeps all your data tucked away in <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">Switzerland</span>. Funny, isn't it?~"
           </p>
-          <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.2em] text-crimson-500">— Luminas, the Vampire Queen</p>
+          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
+             <span className="block w-8 h-px bg-crimson-500/50"></span>
+             Luminas, the Vampire Queen
+          </p>
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="text-xs font-bold text-crimson-500 uppercase tracking-widest">Find Us</h3>
-        <div className="flex flex-wrap gap-3">
+      <div className="space-y-6">
+        <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
+           Invoke Social Nodes
+           <div className="h-px bg-crimson-900/30 flex-grow"></div>
+        </h3>
+        <div className="flex flex-wrap gap-4">
           {SOCIAL_LINKS.map(({ label, href, icon }) => (
             <a
               key={label}
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-crimson-950/50 backdrop-blur-sm border border-crimson-900/60 rounded-xl text-crimson-300 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/60 transition-all text-sm font-semibold"
+              className="flex items-center gap-3 px-6 py-3 bg-crimson-950/40 backdrop-blur-sm border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/40 transition-all text-xs font-black uppercase tracking-widest shadow-lg group"
             >
-              {icon}
+              <div className="group-hover:scale-110 transition-transform">{icon}</div>
               {label}
             </a>
           ))}
         </div>
       </div>
 
-      <div className="space-y-3">
-        <h3 className="text-xs font-bold text-crimson-500 uppercase tracking-widest flex items-center gap-2">
-          <Server className="w-4 h-4" /> Backend Status
+      <div className="space-y-6">
+        <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
+          <Server className="w-4 h-4" /> Node Status
+          <div className="h-px bg-crimson-900/30 flex-grow"></div>
         </h3>
-        <div className="bg-crimson-950/50 backdrop-blur-md border border-crimson-900/50 p-4 rounded-xl font-mono text-xs space-y-1.5">
+        <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] space-y-2 shadow-inner">
           {healthLoading && (
-            <p className="text-crimson-400 animate-pulse">Probing system nodes...</p>
+            <p className="text-crimson-500 animate-pulse flex items-center gap-2">
+               <RefreshCw className="w-3 h-3 animate-spin" /> Probing system nodes...
+            </p>
           )}
           {healthError && (
-            <p className="text-crimson-500">• Error: {healthError}</p>
+            <p className="text-crimson-500 font-bold flex items-center gap-2">
+               <AlertCircle className="w-3 h-3" /> System Link Severed: {healthError}
+            </p>
           )}
           {health && Object.entries(health).map(([key, value]) => (
-            <p key={key} className="text-crimson-300">
-              <span className="text-crimson-500">•</span> {key}:{' '}
-              <span className="text-white">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+            <p key={key} className="text-crimson-400/80 group">
+              <span className="text-crimson-600 font-black mr-2">/</span> 
+              <span className="font-black uppercase tracking-wider text-crimson-700">{key}:</span>{' '}
+              <span className="text-crimson-100 group-hover:text-white transition-colors">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
             </p>
           ))}
         </div>
