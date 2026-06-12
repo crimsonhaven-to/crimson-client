@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
-import Background from './assets/background.svg';
+import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
@@ -14,8 +14,6 @@ import DisclaimerPage from './Disclaimer';
 import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
 import { stripHtml } from './utils';
-
-//TODO: Test new svg background. Is it good enough?
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
