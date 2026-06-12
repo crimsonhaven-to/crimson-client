@@ -14,6 +14,9 @@ import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
 import { stripHtml } from './utils';
 
+// TODO: Fix "CRIMSONHAVEN"-Text on main page to be centered even on mobile (dynamically tossing it into the middle?)
+// TODO2: Change current backrgound to background_svg (while still retaining the colours? If possible?)
+
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
