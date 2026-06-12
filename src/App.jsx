@@ -10,6 +10,7 @@ import FavoritesPage from './Favorites';
 import RecentlyWatchedPage from './RecentlyWatched';
 import SupportUsPage from './SupportUs';
 import SupportersPage from './Supporters';
+import DisclaimerPage from './Disclaimer';
 import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
 import { stripHtml } from './utils';
@@ -763,6 +764,7 @@ function App() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/support" element={<SupportUsPage />} />
           <Route path="/supporters" element={<SupportersPage />} />
+          <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
@@ -776,7 +778,10 @@ function App() {
       {/* Footer */}
       <footer className="w-full border-t border-crimson-900/40 bg-crimson-950/90 text-center py-6 px-4 z-10 relative">
         <p className="text-[11px] font-medium tracking-wide text-crimson-600 max-w-3xl mx-auto uppercase leading-normal">
-          Disclaimer: <span className="text-crimson-400/70">crimsonhaven does not host, store, or upload any file assets locally. Any legal issues should be taken up with the providers directly :3</span>
+          Disclaimer: <span className="text-crimson-400/70">crimsonhaven does not host, store, or upload any file assets locally. Any legal issues should be taken up with the providers directly :3</span>{' '}
+          <Link to="/disclaimer" className="text-crimson-500 hover:text-crimson-400 underline underline-offset-2 transition-colors font-black">
+            Read More
+          </Link>
         </p>
       </footer>
     </div>
