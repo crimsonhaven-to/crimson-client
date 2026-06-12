@@ -56,10 +56,15 @@ const RecentlyWatchedPage = () => {
             const progressPercent = item.duration_seconds
               ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
               : 0;
+            // A finished episode resumes into the *next* one; an in-progress
+            // episode resumes into itself (the watch page seeks to the saved
+            // position). See WatchPage's resume effect.
+            const isFinished = item.status === 'completed';
+            const resumeEpisode = isFinished ? item.episode_number + 1 : item.episode_number;
             return (
-              <div 
+              <div
                 key={`${item.anilist_id}-${item.season_number}-${item.episode_number}-${idx}`}
-                onClick={() => navigate(`/watch/${item.anilist_id}/${item.season_number}/${item.episode_number}`)}
+                onClick={() => navigate(`/watch/${item.anilist_id}/${item.season_number}/${resumeEpisode}`)}
                 className="group relative flex gap-5 p-4 bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 rounded-3xl hover:border-crimson-500/50 hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] transition-all duration-300 cursor-pointer overflow-hidden"
               >
                 {/* Subtle background glow on hover */}
@@ -100,7 +105,7 @@ const RecentlyWatchedPage = () => {
                       )}
                     </div>
                     <button className="flex items-center gap-2.5 text-[10px] font-black text-white uppercase tracking-[0.2em] group-hover:translate-x-2 transition-all duration-300">
-                      <span>Resume Journey</span>
+                      <span>{isFinished ? `Next Episode (E${resumeEpisode})` : 'Resume Journey'}</span>
                       <div className="p-1.5 rounded-full bg-crimson-500 shadow-[0_0_10px_rgba(255,0,60,0.5)]">
                         <Play className="w-3 h-3 fill-white" />
                       </div>

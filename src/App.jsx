@@ -227,8 +227,13 @@ function WatchPage() {
   const location = useLocation();
   const progressTimerRef = useRef(null);
   const playbackRef = useRef(null);
+  // Latest live playback position, so that re-mounting the player (switching
+  // source/quality, or the auto-upgrade to Voe) resumes where the viewer is now
+  // — not back at the load-time saved position.
+  const livePositionRef = useRef(0);
   const handlePlayerProgress = useCallback((position, duration) => {
     playbackRef.current = { position, duration };
+    livePositionRef.current = position;
   }, []);
 
   const {
@@ -241,8 +246,26 @@ function WatchPage() {
     initializeFromIds
   } = useAnimeStreamer({ initialAnilistId: anilistId, initialSeason: parseInt(season), initialEpisode: parseInt(episode) });
 
-  const { favorites, toggleFavorite, updateProgress } = useAccount();
+  const { favorites, toggleFavorite, updateProgress, fetchResumePosition } = useAccount();
   const { isAuthenticated } = useAuth();
+
+  // Saved-position resume: look up where the user left off on this exact episode
+  // and hand it to the player as a start time. Re-runs per episode/season change;
+  // resets to 0 first so switching to a fresh episode never inherits a stale seek.
+  const [resumeAt, setResumeAt] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setResumeAt(0);
+    livePositionRef.current = 0; // new episode: forget the previous one's live spot
+    if (!isAuthenticated) return;
+    fetchResumePosition(anilistId, parseInt(currentSeason), parseInt(currentEpisode))
+      .then(pos => { if (!cancelled && pos) setResumeAt(pos); });
+    return () => { cancelled = true; };
+  }, [anilistId, currentSeason, currentEpisode, isAuthenticated, fetchResumePosition]);
+
+  // Where a freshly-mounted player should start: the live spot once playback has
+  // advanced (source switches keep their place), else the saved resume position.
+  const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
   
   useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
 
@@ -346,6 +369,7 @@ function WatchPage() {
                 type={streamData.streams[activeStreamIdx].type}
                 poster={animeMetadata?.poster}
                 title={animeMetadata?.title}
+                startAt={playerStartAt}
                 onProgress={handlePlayerProgress}
               />
             )

@@ -21,11 +21,18 @@ const SKIP_SECONDS = 10;
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', poster = '', title = '', autoPlay = true, onProgress }) {
+export default function CrimsonPlayer({ src, type = '', poster = '', title = '', autoPlay = true, startAt = 0, onProgress }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const hideTimer = useRef(null);
+  // Resume support: seek to `startAt` (seconds) once the media is ready. Kept in
+  // a ref so the [] -dep events effect can read the latest value, and guarded by
+  // `seekedRef` so we only auto-seek once per loaded source (not on every
+  // loadedmetadata, and never fighting the user after they start scrubbing).
+  const startAtRef = useRef(startAt);
+  const seekedRef = useRef(false);
+  useEffect(() => { startAtRef.current = startAt; }, [startAt]);
   // Keep the latest onProgress in a ref so the [] -dep event effect below always
   // calls the current callback without needing to re-subscribe the listeners.
   const onProgressRef = useRef(onProgress);
@@ -62,6 +69,7 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
     setError(null);
     setLevels([]);
     setCurrentLevel(-1);
+    seekedRef.current = false; // new source: allow one resume-seek again
 
     let hls;
     if (isHls && Hls.isSupported()) {
@@ -100,6 +108,22 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
     };
   }, [src, isHls, autoPlay, reloadKey]);
 
+  // Seek to the saved resume position once the media knows its duration. No-op
+  // unless we have a positive startAt we haven't applied yet for this source.
+  const maybeResume = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || seekedRef.current) return;
+    const at = startAtRef.current || 0;
+    if (at > 0 && Number.isFinite(v.duration) && at < v.duration - 1) {
+      try { v.currentTime = at; } catch { /* seek not ready yet */ }
+      seekedRef.current = true;
+    }
+  }, []);
+
+  // Resume position can land after metadata already loaded (the lookup is async),
+  // so attempt the seek whenever startAt changes too — not just on loadedmetadata.
+  useEffect(() => { maybeResume(); }, [startAt, maybeResume]);
+
   // ---- <video> element events -------------------------------------------
   useEffect(() => {
     const video = videoRef.current;
@@ -112,7 +136,7 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
       // Report real playback position up to the watch page for progress saving.
       if (onProgressRef.current) onProgressRef.current(t, video.duration || 0);
     };
-    const onDur = () => setDuration(video.duration || 0);
+    const onDur = () => { setDuration(video.duration || 0); maybeResume(); };
     const onWaiting = () => setLoading(true);
     const onPlaying = () => setLoading(false);
     const onCanPlay = () => setLoading(false);
