@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend 
-export const CLIENT_VERSION = '2.3.6';
+export const CLIENT_VERSION = '3.0.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -69,6 +69,33 @@ function setAuthStorage(sessionToken, publicKey) {
   if (publicKey) localStorage.setItem(PUBKEY_KEY, publicKey);
   else localStorage.removeItem(PUBKEY_KEY);
   window.dispatchEvent(new Event('crimson-auth'));
+}
+
+// Pull a human-readable message out of a FastAPI error body (detail can be a
+// string, or an array of validation errors on a 422).
+function extractError(data, fallback = 'Something went wrong') {
+  const d = data?.detail;
+  if (typeof d === 'string') return d;
+  if (Array.isArray(d) && d.length) return d[0]?.msg || fallback;
+  return fallback;
+}
+
+// The backend now enforces a login wall: every content/account endpoint needs a
+// valid session bearer token. apiFetch is the single choke point that attaches
+// it. Pass a path ("/trending") or an absolute URL; the token is read live from
+// storage so it always reflects the current session. A 401 on a request we
+// *thought* was authed means the session expired/was revoked server-side, so we
+// clear it — which re-renders the app behind the login wall.
+export async function apiFetch(path, options = {}) {
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
+  const token = localStorage.getItem(SESSION_KEY);
+  const headers = { ...(options.headers || {}) };
+  if (token && !headers.Authorization) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401 && token) {
+    setAuthStorage(null, null);
+  }
+  return res;
 }
 
 export function useSessionToken() {
@@ -182,15 +209,134 @@ export function useAuth() {
     return generateMnemonic(wordlist);
   };
 
+  // --- email + password auth ------------------------------------------------
+  const emailLogin = async (email, password) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/email/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = extractError(data, 'Login failed');
+        setError(err);
+        // 403 == account exists but email isn't verified yet.
+        return { ok: false, error: err, needsVerification: res.status === 403 };
+      }
+      setAuthStorage(data.session_token, null);
+      return { ok: true };
+    } catch (e) {
+      setError(e.message);
+      return { ok: false, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const emailRegister = async (email, password, inviteCode) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/email/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, invite_code: inviteCode }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const err = extractError(data, 'Registration failed');
+        setError(err);
+        return { ok: false, error: err };
+      }
+      return { ok: true, message: data.message, requiresVerification: data.requires_verification };
+    } catch (e) {
+      setError(e.message);
+      return { ok: false, error: e.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Used by the /verify page: confirms the email and (server-side) returns a
+  // session so the user lands logged straight in.
+  const verifyEmail = async (token) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/email/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: extractError(data, 'Verification failed') };
+      if (data.session_token) setAuthStorage(data.session_token, null);
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  };
+
+  const resendVerification = async (email) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/email/resend`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, message: data.message };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  };
+
+  const requestPasswordReset = async (email) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/email/forgot`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json().catch(() => ({}));
+      return { ok: res.ok, message: data.message };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  };
+
+  const resetPassword = async (token, password) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/email/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: extractError(data, 'Reset failed') };
+      return { ok: true, message: data.message };
+    } catch (e) {
+      return { ok: false, error: e.message };
+    }
+  };
+
   return {
     sessionToken,
     publicKey,
     isAuthenticated,
     loading,
     error,
+    setError,
     login,
     logout,
-    createNewMnemonic
+    createNewMnemonic,
+    emailLogin,
+    emailRegister,
+    verifyEmail,
+    resendVerification,
+    requestPasswordReset,
+    resetPassword,
   };
 }
 
@@ -207,9 +353,7 @@ export function useAccount() {
   const fetchProfile = useCallback(async () => {
     if (!sessionToken) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/account/me`, {
-        headers: { 'Authorization': `Bearer ${sessionToken}` }
-      });
+      const res = await apiFetch(`/account/me`);
       if (res.ok) {
         const data = await res.json();
         setProfile(data);
@@ -223,9 +367,7 @@ export function useAccount() {
     if (!sessionToken) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/account/favorites`, {
-        headers: { 'Authorization': `Bearer ${sessionToken}` }
-      });
+      const res = await apiFetch(`/account/favorites`);
       if (res.ok) {
         const data = await res.json();
         setFavorites(data.favorites || []);
@@ -241,9 +383,7 @@ export function useAccount() {
     if (!sessionToken) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/account/continue-watching`, {
-        headers: { 'Authorization': `Bearer ${sessionToken}` }
-      });
+      const res = await apiFetch(`/account/continue-watching`);
       if (res.ok) {
         const data = await res.json();
         setContinueWatching(data.items || []);
@@ -259,9 +399,7 @@ export function useAccount() {
     if (!sessionToken) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/account/recent`, {
-        headers: { 'Authorization': `Bearer ${sessionToken}` }
-      });
+      const res = await apiFetch(`/account/recent`);
       if (res.ok) {
         const data = await res.json();
         setRecentlyWatched(data.items || []);
@@ -279,12 +417,9 @@ export function useAccount() {
     const method = isFavorite ? 'DELETE' : 'POST';
     
     try {
-      const res = await fetch(`${API_BASE_URL}/account/favorites`, {
+      const res = await apiFetch(`/account/favorites`, {
         method,
-        headers: { 
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tmdb_id: anime.tmdb_id,
           anilist_id: anime.anilist_id,
@@ -308,12 +443,9 @@ export function useAccount() {
   const updateProgress = useCallback(async (progressData) => {
     if (!sessionToken) return;
     try {
-      await fetch(`${API_BASE_URL}/account/progress`, {
+      await apiFetch(`/account/progress`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${sessionToken}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(progressData)
       });
     } catch (e) {
@@ -329,9 +461,7 @@ export function useAccount() {
   const fetchResumePosition = useCallback(async (anilistId, season, episode) => {
     if (!sessionToken) return null;
     try {
-      const res = await fetch(`${API_BASE_URL}/account/progress`, {
-        headers: { 'Authorization': `Bearer ${sessionToken}` }
-      });
+      const res = await apiFetch(`/account/progress`);
       if (!res.ok) return null;
       const data = await res.json();
       const row = (data.progress || []).find(p =>
@@ -417,7 +547,7 @@ export function useAnimeStreamer(externalProps = {}) {
   const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.trim().length < 3) return;
     try {
-      const res = await fetch(`${API_BASE_URL}/search/anime?query_name=${encodeURIComponent(query)}`);
+      const res = await apiFetch(`/search/anime?query_name=${encodeURIComponent(query)}`);
       if (!res.ok) throw new Error(`Failed to fetch search suggestions. HTTP Status: ${res.status}`);
       const data = await res.json();
 
@@ -450,7 +580,7 @@ export function useAnimeStreamer(externalProps = {}) {
   // ---------- Helper: fetch available seasons for an anime ----------
 const fetchAvailableSeasons = useCallback(async (anilistId) => {
     try {
-        const res = await fetch(`${API_BASE_URL}/seasons/${anilistId}`);
+        const res = await apiFetch(`/seasons/${anilistId}`);
         if (!res.ok) throw new Error('Failed to fetch season information');
         const data = await res.json();
         
@@ -460,7 +590,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
             // If title is missing or "Unknown Anime", try to get it from first season's metadata
             if ((!title || title === "Unknown Anime") && data.seasons.length > 0) {
                 const firstSeason = data.seasons[0];
-                const metaRes = await fetch(`${API_BASE_URL}/info/${firstSeason.tmdb_id}?season=${firstSeason.tmdb_season}`);
+                const metaRes = await apiFetch(`/info/${firstSeason.tmdb_id}?season=${firstSeason.tmdb_season}`);
                 if (metaRes.ok) {
                     const metaData = await metaRes.json();
                     title = metaData.title;
@@ -506,7 +636,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       const isExtra = seasons.length > 0 && !seasons.some(s => s.anilist_id === requestedId);
 
       // 3. Fetch metadata for that season using tmdb_id + tmdb_season
-      const res = await fetch(`${API_BASE_URL}/info/${targetSeason.tmdb_id}?season=${targetSeason.tmdb_season}`);
+      const res = await apiFetch(`/info/${targetSeason.tmdb_id}?season=${targetSeason.tmdb_season}`);
       if (!res.ok) throw new Error(`Metadata fetch failed: ${res.status}`);
       const data = await res.json();
 
@@ -577,7 +707,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     setMetaLoading(true);
     
     try {
-      const res = await fetch(`${API_BASE_URL}/info/${selectedSeason.tmdb_id}?season=${selectedSeason.tmdb_season}`);
+      const res = await apiFetch(`/info/${selectedSeason.tmdb_id}?season=${selectedSeason.tmdb_season}`);
       if (res.ok) {
         const data = await res.json();
         setAnimeMetadata(data);
@@ -662,7 +792,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
     const consumeStream = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/watch/${anilistIdToUse}/${currentEpisode}`, {
+        const res = await apiFetch(`/watch/${anilistIdToUse}/${currentEpisode}`, {
           signal: controller.signal,
           headers: { Accept: 'application/x-ndjson' },
         });
@@ -755,7 +885,7 @@ export function useAnimeOverview(anilistId) {
     setError(null);
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/overview/${anilistId}`);
+        const res = await apiFetch(`/overview/${anilistId}`);
         if (!res.ok) throw new Error(`Failed to load overview (HTTP ${res.status})`);
         const data = await res.json();
         if (cancelled) return;
@@ -788,7 +918,7 @@ export function useAnimeOverview(anilistId) {
     setEpisodes([]);
     (async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/info/${season.tmdb_id}?season=${season.tmdb_season}`);
+        const res = await apiFetch(`/info/${season.tmdb_id}?season=${season.tmdb_season}`);
         if (!res.ok) throw new Error(`Failed to load episodes (HTTP ${res.status})`);
         const data = await res.json();
         if (cancelled) return;
@@ -822,7 +952,7 @@ export function useTrendingAnime() {
     const fetchTrending = async () => {
       setTrendLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/trending`);
+        const res = await apiFetch(`/trending`);
         if (!res.ok) throw new Error('Failed to fetch trending data.');
         const data = await res.json();
         if (data.success && Array.isArray(data.animes)) {
@@ -872,7 +1002,7 @@ export function useCatalogue() {
     const fetchCatalogue = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/catalogue`);
+        const res = await apiFetch(`/catalogue`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (data.success) {
@@ -918,8 +1048,8 @@ export function useSupporters() {
       setLoading(true);
       try {
         const [suppRes, statsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/supporters`),
-          fetch(`${API_BASE_URL}/supporters/stats`)
+          apiFetch(`/supporters`),
+          apiFetch(`/supporters/stats`)
         ]);
 
         if (!suppRes.ok) throw new Error(`Supporters: ${suppRes.status}`);

@@ -61,16 +61,18 @@ const AccountPage = () => {
             
             <div className="space-y-8 font-mono text-xs relative z-10">
               <div className="space-y-3">
-                <p className="text-[10px] text-crimson-600 font-black uppercase tracking-[0.2em] mb-1 opacity-70">Public Signature (Account ID)</p>
+                <p className="text-[10px] text-crimson-600 font-black uppercase tracking-[0.2em] mb-1 opacity-70">
+                  {profile?.email ? 'Email (Account ID)' : 'Public Signature (Account ID)'}
+                </p>
                 <div className="p-5 bg-crimson-950/80 border border-crimson-900/60 rounded-2xl text-crimson-400 break-all select-all font-mono shadow-inner">
-                  {publicKey}
+                  {profile?.email || publicKey || '—'}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
                   <p className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Favorites</p>
-                  <p className="text-4xl font-black text-white tracking-tighter">{profile?.favorite_count || 0}</p>
+                  <p className="text-4xl font-black text-white tracking-tighter">{profile?.favorites_count || 0}</p>
                 </div>
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
                   <p className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Manifests</p>
@@ -85,10 +87,11 @@ const AccountPage = () => {
                <Info className="w-6 h-6 text-crimson-500" />
             </div>
             <div className="space-y-2">
-              <h4 className="text-sm font-black text-crimson-100 uppercase tracking-widest">Cryptography Notice</h4>
+              <h4 className="text-sm font-black text-crimson-100 uppercase tracking-widest">Security Notice</h4>
               <p className="text-xs text-crimson-300/60 leading-relaxed font-medium">
-                Your account is bound to your 12-word mnemonic. We do not store your private keys. 
-                If you lose your mnemonic, your data is lost forever in the void.
+                {profile?.email
+                  ? 'Your account is secured with your email and password. Keep them safe — use the reset link if you ever forget your password.'
+                  : 'Your account is bound to your 12-word mnemonic. We do not store your private keys. If you lose your mnemonic, your data is lost forever in the void.'}
               </p>
             </div>
           </div>

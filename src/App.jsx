@@ -4,6 +4,9 @@ import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, Chevr
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
+import LoginWall from './Login';
+import VerifyEmail from './VerifyEmail';
+import ResetPassword from './ResetPassword';
 import CataloguePage from './Catalogue';
 import AccountPage from './Account';
 import FavoritesPage from './Favorites';
@@ -683,11 +686,45 @@ function AboutPage() {
   );
 }
 
+// ---------- Auth Gate (login wall) ----------
+// Shown to everyone who isn't signed in. The site is members-only, so an
+// unauthenticated visitor can only reach the login wall and the email
+// verify/reset landing pages — every other path falls through to the wall.
+// Kept in the main bundle (not lazy) since it's on the critical first-paint
+// path for logged-out users; the heavier authenticated pages load after login.
+function AuthGate() {
+  return (
+    <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col relative overflow-x-hidden">
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-40 wallpaper-img" />
+        <div className="absolute inset-0 bg-gradient-to-b from-crimson-950/40 via-crimson-950/70 to-crimson-950" />
+      </div>
+      <div className="flex-grow z-10 flex flex-col justify-center">
+        <Routes>
+          <Route path="/verify" element={<VerifyEmail />} />
+          <Route path="/reset" element={<ResetPassword />} />
+          <Route path="*" element={<LoginWall />} />
+        </Routes>
+      </div>
+      <footer className="w-full text-center py-6 px-4 z-10 relative">
+        <p className="text-[10px] font-medium tracking-wide text-crimson-700 uppercase">
+          crimsonhaven — members only · your data stays in Switzerland
+        </p>
+      </footer>
+    </div>
+  );
+}
+
 // ---------- Main App Component ----------
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const location = useLocation();
+
+  // Site-wide login wall: nothing past this point renders until authenticated.
+  if (!isAuthenticated) {
+    return <AuthGate />;
+  }
 
   const navLinks = [
     { to: "/", label: "Search Home", icon: <Film className="w-4 h-4" /> },
