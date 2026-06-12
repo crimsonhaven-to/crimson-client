@@ -1,18 +1,26 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, ArrowLeft, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
-import CataloguePage from './Catalogue';
-import AccountPage from './Account';
-import FavoritesPage from './Favorites';
-import RecentlyWatchedPage from './RecentlyWatched';
+// Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
+// in the main bundle avoids a chunk round-trip on the critical path.
+import LoginWall from './Login';
+import VerifyEmail from './VerifyEmail';
+import ResetPassword from './ResetPassword';
+// Authenticated pages — lazy. They (and the heavy hls.js player) only download
+// once a signed-in user actually navigates to them, so the login wall + landing
+// ship a much smaller bundle. See the <Suspense> fallback below.
+const CataloguePage = lazy(() => import('./Catalogue'));
+const AccountPage = lazy(() => import('./Account'));
+const FavoritesPage = lazy(() => import('./Favorites'));
+const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
 // import SupportUsPage from './SupportUs'; // Temporarily hidden for legal reasons
-import SupportersPage from './Supporters';
-import DisclaimerPage from './Disclaimer';
-import CrimsonPlayer from './CrimsonPlayer';
-import AnimeOverview from './AnimeOverview';
+const SupportersPage = lazy(() => import('./Supporters'));
+const DisclaimerPage = lazy(() => import('./Disclaimer'));
+const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
+const AnimeOverview = lazy(() => import('./AnimeOverview'));
 import { stripHtml } from './utils';
 
 const GithubIcon = () => (
@@ -370,15 +378,17 @@ function WatchPage() {
                 );
               })()
             ) : (
-              <CrimsonPlayer
-                key={streamData.streams[activeStreamIdx].url}
-                src={streamData.streams[activeStreamIdx].url}
-                type={streamData.streams[activeStreamIdx].type}
-                poster={animeMetadata?.poster}
-                title={animeMetadata?.title}
-                startAt={playerStartAt}
-                onProgress={handlePlayerProgress}
-              />
+              <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
+                <CrimsonPlayer
+                  key={streamData.streams[activeStreamIdx].url}
+                  src={streamData.streams[activeStreamIdx].url}
+                  type={streamData.streams[activeStreamIdx].type}
+                  poster={animeMetadata?.poster}
+                  title={animeMetadata?.title}
+                  startAt={playerStartAt}
+                  onProgress={handlePlayerProgress}
+                />
+              </Suspense>
             )
           ) : (
             !streamLoading && (
@@ -683,11 +693,58 @@ function AboutPage() {
   );
 }
 
+// Themed fallback shown while a lazy route chunk loads.
+function PageLoader() {
+  return (
+    <div className="flex flex-col items-center justify-center py-32 gap-5">
+      <div className="relative w-12 h-12">
+        <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
+        <div className="absolute inset-0 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+      <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-600 animate-pulse">Summoning manifest</p>
+    </div>
+  );
+}
+
+// ---------- Auth Gate (login wall) ----------
+// Shown to everyone who isn't signed in. The site is members-only, so an
+// unauthenticated visitor can only reach the login wall and the email
+// verify/reset landing pages — every other path falls through to the wall.
+// Kept in the main bundle (not lazy) since it's on the critical first-paint
+// path for logged-out users; the heavier authenticated pages load after login.
+function AuthGate() {
+  return (
+    <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col relative overflow-x-hidden">
+      <div className="absolute inset-0 pointer-events-none z-0">
+        <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-40 wallpaper-img" />
+        <div className="absolute inset-0 bg-gradient-to-b from-crimson-950/40 via-crimson-950/70 to-crimson-950" />
+      </div>
+      <div className="flex-grow z-10 flex flex-col justify-center">
+        <Routes>
+          <Route path="/verify" element={<VerifyEmail />} />
+          <Route path="/reset" element={<ResetPassword />} />
+          <Route path="*" element={<LoginWall />} />
+        </Routes>
+      </div>
+      <footer className="w-full text-center py-6 px-4 z-10 relative">
+        <p className="text-[10px] font-medium tracking-wide text-crimson-700 uppercase">
+          crimsonhaven — members only · your data stays in Switzerland
+        </p>
+      </footer>
+    </div>
+  );
+}
+
 // ---------- Main App Component ----------
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const location = useLocation();
+
+  // Site-wide login wall: nothing past this point renders until authenticated.
+  if (!isAuthenticated) {
+    return <AuthGate />;
+  }
 
   const navLinks = [
     { to: "/", label: "Search Home", icon: <Film className="w-4 h-4" /> },
@@ -765,6 +822,7 @@ function App() {
 
       {/* Main Content */}
       <div className="flex-grow z-10 flex flex-col justify-center px-4 sm:px-6 md:px-0">
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
@@ -779,6 +837,7 @@ function App() {
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </Suspense>
       </div>
 
       {/* Footer */}
