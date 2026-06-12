@@ -21,7 +21,7 @@
   --color-crimson-50: #fff5f6;
 }
 
-/* Wallpaper tweak: boost brightness/saturation for the background SVG only */
+/* Wallpaper tweak: boost brightness/saturation for the background image only */
 .wallpaper-img {
   filter: brightness(1.25) saturate(1.08);
   /* keep the opacity control in JSX (opacity-70) so we can adjust there if needed */

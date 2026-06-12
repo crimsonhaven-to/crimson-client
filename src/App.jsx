@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
-import Background from './assets/background.svg';
+import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
@@ -14,8 +14,6 @@ import DisclaimerPage from './Disclaimer';
 import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
 import { stripHtml } from './utils';
-
-//TODO: Test new svg background. Is it good enough?
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -198,8 +196,8 @@ function LandingPage() {
                 onClick={() => openOverview(anime)}
                 className="group flex flex-col gap-3 cursor-pointer"
               >
-                <div className="relative aspect-[2/3] bg-crimson-900/10 border border-crimson-900/40 rounded-2xl overflow-hidden transition-all duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_15px_30px_rgba(255,0,60,0.2)]">
-                  <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                <div className="relative aspect-[2/3] bg-crimson-900/10 border border-crimson-900/40 rounded-2xl overflow-hidden transition-[border-color,box-shadow] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_15px_30px_rgba(255,0,60,0.2)]">
+                  <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
                   <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
                      <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">

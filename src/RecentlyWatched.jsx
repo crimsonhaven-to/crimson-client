@@ -65,13 +65,13 @@ const RecentlyWatchedPage = () => {
               <div
                 key={`${item.anilist_id}-${item.season_number}-${item.episode_number}-${idx}`}
                 onClick={() => navigate(`/watch/${item.anilist_id}/${item.season_number}/${resumeEpisode}`)}
-                className="group relative flex gap-5 p-4 bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 rounded-3xl hover:border-crimson-500/50 hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] transition-all duration-300 cursor-pointer overflow-hidden"
+                className="group relative flex gap-5 p-4 bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 rounded-3xl hover:border-crimson-500/50 hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] transition-[border-color,box-shadow] duration-300 cursor-pointer overflow-hidden"
               >
                 {/* Subtle background glow on hover */}
-                <div className="absolute -inset-24 bg-crimson-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+                <div className="absolute -inset-24 bg-crimson-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none transform-gpu"></div>
 
                 <div className="w-28 sm:w-36 aspect-[2/3] shrink-0 relative rounded-2xl overflow-hidden shadow-2xl border border-crimson-900/50">
-                  <img src={item.poster} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                  <img src={item.poster} alt={item.title} className="w-full h-full object-cover transform-gpu group-hover:scale-110 transition-transform duration-700" />
                   <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
                   
                   {/* Progress Bar (Integrated) */}
