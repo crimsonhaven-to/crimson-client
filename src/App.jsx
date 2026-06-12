@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
-import Background from './assets/background.jpg';
+import Background from './assets/background_svg.svg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
@@ -13,10 +13,6 @@ import SupportersPage from './Supporters';
 import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
 import { stripHtml } from './utils';
-
-// TODO: Fix "CRIMSONHAVEN"-Text on main page to be centered even on mobile (dynamically tossing it into the middle?)
-// TODO2: Change current backrgound to background_svg (while still retaining the colours? If possible?)
-
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -104,7 +100,7 @@ function LandingPage() {
   return (
     <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-20 sm:py-32 text-center space-y-12 my-auto animate-in fade-in zoom-in-95 duration-1000">
       <div className="space-y-4">
-        <h1 className="text-5xl sm:text-8xl font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
+        <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
           crimson<span className="text-crimson-500 font-light opacity-90">haven</span>
         </h1>
         <p className="text-crimson-400 text-sm sm:text-base tracking-[0.4em] font-black uppercase opacity-70 px-4">
