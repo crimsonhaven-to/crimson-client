@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend 
-export const CLIENT_VERSION = '2.3.2';
+export const CLIENT_VERSION = '2.3.3';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');

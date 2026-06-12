@@ -57,11 +57,11 @@ const FavoritesPage = () => {
               key={anime.anilist_id || anime.tmdb_id} 
               className="group relative flex flex-col"
             >
-              <div className="aspect-[2/3] relative overflow-hidden rounded-2xl border border-crimson-900/40 shadow-2xl transition-all duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_0_30px_rgba(255,0,60,0.2)]">
-                <img 
-                  src={anime.poster} 
-                  alt={anime.title} 
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+              <div className="aspect-[2/3] relative overflow-hidden rounded-2xl border border-crimson-900/40 shadow-2xl transition-[border-color,box-shadow] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_0_30px_rgba(255,0,60,0.2)]">
+                <img
+                  src={anime.poster}
+                  alt={anime.title}
+                  className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/20 to-transparent opacity-80"></div>
                 
