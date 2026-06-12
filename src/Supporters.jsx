@@ -117,6 +117,7 @@ const SupportersPage = () => {
           "Your offerings fuel the sanctuary's fires and keep the dark network nodes humming. 
           Every mortal listed here has earned a special place in the Haven."
         </p>
+        {/* Temporarily hidden for legal reasons — link to the "Support Us" page
         <div>
           <button
             onClick={() => navigate('/support')}
@@ -126,6 +127,7 @@ const SupportersPage = () => {
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </div>
+        */}
       </div>
     </div>
   );
