@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard } from 'lucide-react';
 import { useAnimeOverview, useTitle } from './hooks';
@@ -52,6 +53,7 @@ const EpisodeCard = ({ ep, onSelect }) => {
 const AnimeOverview = () => {
   const { anilistId } = useParams();
   const navigate = useNavigate();
+  const [synopsisExpanded, setSynopsisExpanded] = useState(false);
   const {
     overview, loading, error,
     activeSeason, setActiveSeason,
@@ -115,7 +117,7 @@ const AnimeOverview = () => {
           </div>
         )}
 
-        <div className="relative max-w-7xl w-full mx-auto px-6 pt-12 sm:pt-20 pb-16 flex-grow">
+        <div className="relative max-w-7xl w-full mx-auto px-6 pt-12 sm:pt-20 pb-24 sm:pb-32 flex-grow">
           <button
             onClick={() => navigate(-1)}
             className="group flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400 transition-all mb-10"
@@ -163,9 +165,17 @@ const AnimeOverview = () => {
 
               {synopsis && (
                 <div className="max-w-3xl">
-                  <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify line-clamp-4 md:line-clamp-6 font-medium">
+                  <p className={`text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium ${synopsisExpanded ? '' : 'line-clamp-4 md:line-clamp-6'}`}>
                     {synopsis}
                   </p>
+                  {synopsis.length > 280 && (
+                    <button
+                      onClick={() => setSynopsisExpanded(v => !v)}
+                      className="mt-2 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400 transition-colors"
+                    >
+                      {synopsisExpanded ? 'Show Less' : 'Read More'}
+                    </button>
+                  )}
                 </div>
               )}
 

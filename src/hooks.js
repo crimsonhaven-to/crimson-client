@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend 
-export const CLIENT_VERSION = '2.3.0';
+export const CLIENT_VERSION = '2.3.1';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -321,6 +321,36 @@ export function useAccount() {
     }
   }, [sessionToken]);
 
+  // Saved playback position for one specific episode, so the watch page can seek
+  // the player to where the user left off ("resume"). Returns the position in
+  // seconds, or null when there's nothing meaningful to resume to — no row, a
+  // finished episode, a position right at the start, or one within the last few
+  // seconds of the runtime (treat those as "done", start fresh).
+  const fetchResumePosition = useCallback(async (anilistId, season, episode) => {
+    if (!sessionToken) return null;
+    try {
+      const res = await fetch(`${API_BASE_URL}/account/progress`, {
+        headers: { 'Authorization': `Bearer ${sessionToken}` }
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const row = (data.progress || []).find(p =>
+        String(p.anilist_id) === String(anilistId) &&
+        Number(p.season_number) === Number(season) &&
+        Number(p.episode_number) === Number(episode)
+      );
+      if (!row || row.status === 'completed') return null;
+      const pos = row.position_seconds || 0;
+      const dur = row.duration_seconds || 0;
+      if (pos < 5) return null;
+      if (dur && pos > dur - 15) return null;
+      return pos;
+    } catch (e) {
+      console.error("Resume position fetch error:", e);
+      return null;
+    }
+  }, [sessionToken]);
+
   useEffect(() => {
     if (sessionToken) {
       fetchProfile();
@@ -338,6 +368,7 @@ export function useAccount() {
     loading,
     toggleFavorite,
     updateProgress,
+    fetchResumePosition,
     refreshFavorites: fetchFavorites,
     refreshContinueWatching: fetchContinueWatching,
     refreshRecent: fetchRecent

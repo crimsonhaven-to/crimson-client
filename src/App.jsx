@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
-import Background from './assets/background.jpg';
+import Background from './assets/background.svg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
 import CataloguePage from './Catalogue';
@@ -14,6 +14,7 @@ import CrimsonPlayer from './CrimsonPlayer';
 import AnimeOverview from './AnimeOverview';
 import { stripHtml } from './utils';
 
+//TODO: Test new svg background. Is it good enough?
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -101,7 +102,7 @@ function LandingPage() {
   return (
     <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-20 sm:py-32 text-center space-y-12 my-auto animate-in fade-in zoom-in-95 duration-1000">
       <div className="space-y-4">
-        <h1 className="text-5xl sm:text-8xl font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
+        <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
           crimson<span className="text-crimson-500 font-light opacity-90">haven</span>
         </h1>
         <p className="text-crimson-400 text-sm sm:text-base tracking-[0.4em] font-black uppercase opacity-70 px-4">
@@ -226,8 +227,13 @@ function WatchPage() {
   const location = useLocation();
   const progressTimerRef = useRef(null);
   const playbackRef = useRef(null);
+  // Latest live playback position, so that re-mounting the player (switching
+  // source/quality, or the auto-upgrade to Voe) resumes where the viewer is now
+  // — not back at the load-time saved position.
+  const livePositionRef = useRef(0);
   const handlePlayerProgress = useCallback((position, duration) => {
     playbackRef.current = { position, duration };
+    livePositionRef.current = position;
   }, []);
 
   const {
@@ -240,8 +246,26 @@ function WatchPage() {
     initializeFromIds
   } = useAnimeStreamer({ initialAnilistId: anilistId, initialSeason: parseInt(season), initialEpisode: parseInt(episode) });
 
-  const { favorites, toggleFavorite, updateProgress } = useAccount();
+  const { favorites, toggleFavorite, updateProgress, fetchResumePosition } = useAccount();
   const { isAuthenticated } = useAuth();
+
+  // Saved-position resume: look up where the user left off on this exact episode
+  // and hand it to the player as a start time. Re-runs per episode/season change;
+  // resets to 0 first so switching to a fresh episode never inherits a stale seek.
+  const [resumeAt, setResumeAt] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    setResumeAt(0);
+    livePositionRef.current = 0; // new episode: forget the previous one's live spot
+    if (!isAuthenticated) return;
+    fetchResumePosition(anilistId, parseInt(currentSeason), parseInt(currentEpisode))
+      .then(pos => { if (!cancelled && pos) setResumeAt(pos); });
+    return () => { cancelled = true; };
+  }, [anilistId, currentSeason, currentEpisode, isAuthenticated, fetchResumePosition]);
+
+  // Where a freshly-mounted player should start: the live spot once playback has
+  // advanced (source switches keep their place), else the saved resume position.
+  const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
   
   useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
 
@@ -345,6 +369,7 @@ function WatchPage() {
                 type={streamData.streams[activeStreamIdx].type}
                 poster={animeMetadata?.poster}
                 title={animeMetadata?.title}
+                startAt={playerStartAt}
                 onProgress={handlePlayerProgress}
               />
             )
