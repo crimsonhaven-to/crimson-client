@@ -8,7 +8,7 @@ import CataloguePage from './Catalogue';
 import AccountPage from './Account';
 import FavoritesPage from './Favorites';
 import RecentlyWatchedPage from './RecentlyWatched';
-import SupportUsPage from './SupportUs';
+// import SupportUsPage from './SupportUs'; // Temporarily hidden for legal reasons
 import SupportersPage from './Supporters';
 import DisclaimerPage from './Disclaimer';
 import CrimsonPlayer from './CrimsonPlayer';
@@ -686,7 +686,7 @@ function App() {
     { to: "/catalogue", label: "Catalogue", icon: <Hash className="w-4 h-4" /> },
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
-    { to: "/support", label: "Support Us", icon: <Coffee className="w-4 h-4" /> },
+    // { to: "/support", label: "Support Us", icon: <Coffee className="w-4 h-4" /> }, // Temporarily hidden for legal reasons
     { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
     { to: "/about", label: "About Us", icon: <HelpCircle className="w-4 h-4" /> },
     { to: "/account", label: isAuthenticated ? "Profile" : "Link Account", icon: <User className="w-4 h-4" />, highlight: !isAuthenticated },
@@ -760,7 +760,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/support" element={<SupportUsPage />} />
+          {/* <Route path="/support" element={<SupportUsPage />} /> */} {/* Temporarily hidden for legal reasons */}
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
