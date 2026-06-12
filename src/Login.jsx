@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Mail, Lock, KeyRound, LogIn, UserPlus, RefreshCw, AlertCircle,
-  CheckCircle2, MailCheck, ArrowLeft, ShieldCheck, Ticket, Eye, EyeOff,
+  CheckCircle2, MailCheck, ArrowLeft, Ticket, Eye, EyeOff,
 } from 'lucide-react';
 import { useAuth, useTitle } from './hooks';
 
@@ -31,7 +31,7 @@ const primaryBtn =
 const LoginWall = () => {
   const {
     emailLogin, emailRegister, requestPasswordReset, resendVerification,
-    login, createNewMnemonic, loading, error, setError,
+    loading, error, setError,
   } = useAuth();
   const navigate = useNavigate();
   useTitle('Enter the Haven');
@@ -43,9 +43,8 @@ const LoginWall = () => {
   const [invite, setInvite] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [notice, setNotice] = useState(null);      // success / info banner
-  const [pending, setPending] = useState(false);   // local spinner (forgot/mnemonic)
+  const [pending, setPending] = useState(false);   // local spinner (forgot flow)
   const [awaitingVerify, setAwaitingVerify] = useState(false);
-  const [mnemonic, setMnemonic] = useState('');
 
   const switchMode = (next) => {
     setError && setError(null);
@@ -90,14 +89,6 @@ const LoginWall = () => {
     const res = await resendVerification(email.trim());
     setPending(false);
     setNotice(res.message || 'Verification link sent.');
-  };
-
-  const handleMnemonic = async (e) => {
-    e.preventDefault();
-    setPending(true);
-    const ok = await login(mnemonic.trim());
-    setPending(false);
-    if (ok) navigate('/');
   };
 
   const busy = loading || pending;
@@ -153,33 +144,6 @@ const LoginWall = () => {
             className="w-full flex items-center justify-center gap-2 text-[10px] text-crimson-700 hover:text-crimson-500 transition-colors font-black uppercase tracking-[0.2em]">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
           </button>
-        </form>
-      </Shell>
-    );
-  }
-
-  // --- cryptographic mnemonic (advanced / legacy) ---------------------------
-  if (mode === 'mnemonic') {
-    return (
-      <Shell subtitle="Sign in with your 12-word manifest">
-        <form onSubmit={handleMnemonic} className="space-y-6">
-          <div className="flex items-center gap-3 text-crimson-500">
-            <ShieldCheck className="w-6 h-6" />
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Cryptographic Link</h3>
-          </div>
-          <textarea placeholder="word1 word2 word3..." value={mnemonic}
-            onChange={(e) => setMnemonic(e.target.value)}
-            className="w-full h-28 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl p-4 text-crimson-50 placeholder-crimson-500/40 focus:outline-none focus:border-crimson-500 transition-all font-semibold resize-none text-sm backdrop-blur-md" />
-          {error && <Banner kind="err" text={error} />}
-          <button type="submit" disabled={busy || !mnemonic.trim()} className={primaryBtn}>
-            {busy ? <RefreshCw className="w-5 h-5 animate-spin" /> : <>Establish Connection <KeyRound className="w-4 h-4" /></>}
-          </button>
-          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]">
-            <button type="button" onClick={() => setMnemonic(createNewMnemonic())}
-              className="text-crimson-700 hover:text-crimson-500 transition-colors">Generate new</button>
-            <button type="button" onClick={() => switchMode('login')}
-              className="text-crimson-700 hover:text-crimson-500 transition-colors">Use email instead</button>
-          </div>
         </form>
       </Shell>
     );
@@ -243,16 +207,13 @@ const LoginWall = () => {
       </form>
 
       {/* Footer links */}
-      <div className="mt-8 flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em]">
-        {!isRegister ? (
+      {!isRegister && (
+        <div className="mt-8 text-center text-[10px] font-black uppercase tracking-[0.2em]">
           <button onClick={() => switchMode('forgot')} className="text-crimson-700 hover:text-crimson-500 transition-colors">
             Forgot password?
           </button>
-        ) : <span />}
-        <button onClick={() => switchMode('mnemonic')} className="text-crimson-700 hover:text-crimson-500 transition-colors">
-          Use mnemonic
-        </button>
-      </div>
+        </div>
+      )}
     </Shell>
   );
 };
