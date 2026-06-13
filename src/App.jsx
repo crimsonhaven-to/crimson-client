@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, Settings, LogOut, Shield } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useTitle, apiFetch, CLIENT_VERSION } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, apiFetch, CLIENT_VERSION } from './hooks';
 import WatchView from './WatchView';
 import NotFound from './NotFound';
 // Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
@@ -21,6 +21,8 @@ const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
 const SupportersPage = lazy(() => import('./Supporters'));
 const DisclaimerPage = lazy(() => import('./Disclaimer'));
 const AnimeOverview = lazy(() => import('./AnimeOverview'));
+// Admin dashboard — lazy, and only ever reached by admin accounts.
+const AdminPage = lazy(() => import('./Admin'));
 // Non-anime TV show pages — the TMDB-keyed twins of the anime overview/watch pages.
 const ShowOverview = lazy(() => import('./ShowOverview'));
 const ShowWatch = lazy(() => import('./ShowWatch'));
@@ -574,6 +576,8 @@ function App() {
   const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated, logout } = useAuth();
   const { health } = useHealthStatus();
+  const profile = useProfile();
+  const isAdmin = !!profile?.is_admin;
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -605,6 +609,8 @@ function App() {
     { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
     { to: "/about", label: "About Us", icon: <HelpCircle className="w-4 h-4" /> },
     { to: "/account", label: isAuthenticated ? "Profile" : "Link Account", icon: <User className="w-4 h-4" />, highlight: !isAuthenticated },
+    // Admin-only — surfaced only to accounts flagged is_admin.
+    { to: "/admin", label: "Admin", icon: <Shield className="w-4 h-4" />, admin: true },
   ];
 
   return (
@@ -629,7 +635,7 @@ function App() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-6 text-[11px] font-black uppercase tracking-widest items-center">
-            {navLinks.filter(l => !l.auth || isAuthenticated).map(link => (
+            {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin)).map(link => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -678,6 +684,15 @@ function App() {
                     >
                       <Settings className="w-4 h-4" /> Account Settings
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                      >
+                        <Shield className="w-4 h-4" /> Admin Dashboard
+                      </Link>
+                    )}
                     <button
                       onClick={handleLogout}
                       className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-500 hover:bg-crimson-600/10 rounded-xl transition-all"
@@ -703,7 +718,7 @@ function App() {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
             <div className="flex flex-col p-4 space-y-4">
-              {navLinks.filter(l => !l.auth || isAuthenticated).map(link => (
+              {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin)).map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -731,6 +746,7 @@ function App() {
           <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/admin" element={<AdminPage />} />
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/recently-watched" element={<RecentlyWatchedPage />} />
           <Route path="/anime/:anilistId" element={<AnimeOverview />} />
