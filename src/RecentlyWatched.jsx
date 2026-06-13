@@ -64,7 +64,7 @@ const RecentlyWatchedPage = () => {
             return (
               <div
                 key={`${item.anilist_id}-${item.season_number}-${item.episode_number}-${idx}`}
-                onClick={() => navigate(`/watch/${item.anilist_id}/${item.season_number}/${resumeEpisode}`)}
+                onClick={() => navigate(item.anilist_id ? `/watch/${item.anilist_id}/${item.season_number}/${resumeEpisode}` : `/watch-show/${item.tmdb_id}/${item.season_number}/${resumeEpisode}`)}
                 className="group relative flex gap-5 p-4 bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 rounded-3xl hover:border-crimson-500/50 hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] transition-[border-color,box-shadow] duration-300 cursor-pointer overflow-hidden"
               >
                 {/* Subtle background glow on hover */}
