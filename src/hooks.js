@@ -4,6 +4,10 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as ed from '@noble/ed25519';
 import { Buffer } from 'buffer';
 
+
+//TODO: Separate Extension-Part into separate repository
+//TODO2: Sanitize backend, client + extension code to legally be able to share it
+
 /* global __EXTENSION__ */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
