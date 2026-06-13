@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, ArrowLeft, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, ArrowLeft, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw, Settings, LogOut, Shield } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, apiFetch, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
@@ -741,8 +741,26 @@ function AuthGate() {
 // ---------- Main App Component ----------
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
+  const { health } = useHealthStatus();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Nav sits transparent over the wallpaper at the very top, then darkens/blurs
+  // into a solid bar once the page is scrolled — purely a visual effect.
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const handleLogout = () => {
+    setUserMenuOpen(false);
+    logout();
+    navigate('/');
+  };
 
   // Site-wide login wall: nothing past this point renders until authenticated.
   if (!isAuthenticated) {
@@ -767,49 +785,99 @@ function App() {
         <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-50 wallpaper-img" />
       </div>
 
-      {/* Navigation Bar */}
-      <nav className="border-b border-crimson-900/60 bg-crimson-950/80 backdrop-blur-lg sticky top-0 z-50 px-4 sm:px-6 py-4 flex items-center justify-between shadow-lg">
-        <Link to="/" className="flex items-center space-x-2 cursor-pointer group" onClick={() => setIsMenuOpen(false)}>
-          <span className="text-xl sm:text-2xl font-black tracking-tighter text-crimson-500 group-hover:text-crimson-400 transition-colors">
-            crimson<span className="text-crimson-100 font-light">haven</span>
-          </span>
-        </Link>
+      {/* Navigation Bar — transparent over the wallpaper at the top, solid once scrolled */}
+      <nav className={`sticky top-0 z-50 px-4 sm:px-6 transition-all duration-500 ${
+        scrolled
+          ? 'bg-crimson-950/80 backdrop-blur-lg border-b border-crimson-900/60 shadow-lg py-3'
+          : 'bg-transparent py-4'
+      }`}>
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to="/" className="flex items-center space-x-2 cursor-pointer group" onClick={() => { setIsMenuOpen(false); setUserMenuOpen(false); }}>
+            <span className="text-xl sm:text-2xl font-black tracking-tighter text-crimson-500 group-hover:text-crimson-400 transition-colors">
+              crimson<span className="text-crimson-100 font-light">haven</span>
+            </span>
+          </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex space-x-6 text-[11px] font-black uppercase tracking-widest items-center">
-          {navLinks.filter(l => !l.auth || isAuthenticated).map(link => (
-            <Link 
-              key={link.to} 
-              to={link.to} 
-              className={`flex items-center gap-1.5 transition-all ${
-                location.pathname === link.to 
-                  ? 'text-crimson-500' 
-                  : link.highlight 
-                    ? 'text-white bg-crimson-500/20 px-3 py-1 rounded-full border border-crimson-500/30 hover:bg-crimson-500/40' 
-                    : 'text-crimson-200/50 hover:text-crimson-400'
-              }`}
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex space-x-6 text-[11px] font-black uppercase tracking-widest items-center">
+            {navLinks.filter(l => !l.auth || isAuthenticated).map(link => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={`flex items-center gap-1.5 transition-all ${
+                  location.pathname === link.to
+                    ? 'text-crimson-500'
+                    : link.highlight
+                      ? 'text-white bg-crimson-500/20 px-3 py-1 rounded-full border border-crimson-500/30 hover:bg-crimson-500/40'
+                      : 'text-crimson-200/50 hover:text-crimson-400'
+                }`}
+              >
+                {link.icon} {link.label}
+              </Link>
+            ))}
+          </div>
+
+          {/* Right cluster: backend status pill, account dropdown, mobile menu toggle */}
+          <div className="flex items-center gap-3">
+            {health && (
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl">
+                <div className={`w-2 h-2 rounded-full ${health?.status === 'ok' ? 'bg-green-500' : 'bg-crimson-600'} animate-pulse`}></div>
+                <span className="text-[10px] font-black text-crimson-700 uppercase tracking-widest">{health?.mode || 'ONLINE'}</span>
+              </div>
+            )}
+
+            <div className="relative">
+              <button
+                onClick={() => { setUserMenuOpen(o => !o); setIsMenuOpen(false); }}
+                className="w-10 h-10 rounded-xl bg-crimson-950/40 border border-crimson-900/60 flex items-center justify-center hover:bg-crimson-900/20 hover:border-crimson-600 transition-all group"
+                aria-label="Account menu"
+              >
+                <User className="w-5 h-5 text-crimson-400 group-hover:text-crimson-500" />
+              </button>
+
+              {userMenuOpen && (
+                <div className="absolute top-full right-0 mt-4 w-64 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 rounded-2xl z-50">
+                  <div className="p-4 border-b border-crimson-900/20 bg-crimson-600/5">
+                    <p className="text-xs font-black text-crimson-600 uppercase tracking-widest mb-1">Session</p>
+                    <p className="text-white font-bold truncate">Sanctuary Dweller</p>
+                  </div>
+                  <div className="p-2">
+                    <Link
+                      to="/account"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                    >
+                      <Settings className="w-4 h-4" /> Account Settings
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-500 hover:bg-crimson-600/10 rounded-xl transition-all"
+                    >
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="md:hidden p-2 text-crimson-400 hover:text-white transition-colors"
+              onClick={() => { setIsMenuOpen(!isMenuOpen); setUserMenuOpen(false); }}
             >
-              {link.icon} {link.label}
-            </Link>
-          ))}
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
-
-        {/* Mobile Menu Button */}
-        <button 
-          className="md:hidden p-2 text-crimson-400 hover:text-white transition-colors"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-        >
-          {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
 
         {/* Mobile Navigation Dropdown */}
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
             <div className="flex flex-col p-4 space-y-4">
               {navLinks.filter(l => !l.auth || isAuthenticated).map(link => (
-                <Link 
+                <Link
                   key={link.to}
-                  to={link.to} 
+                  to={link.to}
                   className={`flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-sm ${
                     location.pathname === link.to ? 'bg-crimson-500/20 text-crimson-500' : 'text-crimson-100 hover:bg-crimson-900/40'
                   }`}
@@ -844,13 +912,59 @@ function App() {
       </div>
 
       {/* Footer */}
-      <footer className="w-full border-t border-crimson-900/40 bg-crimson-950/90 text-center py-6 px-4 z-10 relative">
-        <p className="text-[11px] font-medium tracking-wide text-crimson-600 max-w-3xl mx-auto uppercase leading-normal">
-          Disclaimer: <span className="text-crimson-400/70">crimsonhaven does not host, store, or upload any file assets locally. Any legal issues should be taken up with the providers directly :3</span>{' '}
-          <Link to="/disclaimer" className="text-crimson-500 hover:text-crimson-400 underline underline-offset-2 transition-colors font-black">
-            Read More
-          </Link>
-        </p>
+      <footer className="w-full border-t border-crimson-900/40 bg-crimson-950/90 backdrop-blur-md py-12 px-6 z-10 relative">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
+          <div className="md:col-span-2">
+            <span className="text-xl sm:text-2xl font-black tracking-tighter text-crimson-500">
+              crimson<span className="text-crimson-100 font-light">haven</span>
+            </span>
+            <p className="text-crimson-400 text-sm leading-relaxed max-w-sm mt-5 mb-6">
+              Your regal sanctuary for seamless anime streaming — curated by Lumi, your crimson curator. ✨
+            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">v{CLIENT_VERSION}</div>
+              <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">Members Only</div>
+              <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">Hosted in 🇨🇭 Switzerland</div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-white font-black uppercase text-xs tracking-widest mb-6">Navigate</h4>
+            <div className="flex flex-col gap-3">
+              <Link to="/catalogue" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Catalogue</Link>
+              <Link to="/favorites" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Favorites</Link>
+              <Link to="/about" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">About Us</Link>
+              <Link to="/supporters" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Mortals</Link>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="text-white font-black uppercase text-xs tracking-widest mb-6">Connect</h4>
+            <div className="flex flex-col gap-3">
+              <Link to="/disclaimer" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Disclaimer</Link>
+              {SOCIAL_LINKS.slice(0, 3).map(({ label, href }) => (
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">{label}</a>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto mt-10 pt-8 border-t border-crimson-900/20 flex flex-col gap-4">
+          <p className="text-[11px] font-medium tracking-wide text-crimson-600 uppercase leading-normal">
+            Disclaimer: <span className="text-crimson-400/70">crimsonhaven does not host, store, or upload any file assets locally. Any legal issues should be taken up with the providers directly :3</span>{' '}
+            <Link to="/disclaimer" className="text-crimson-500 hover:text-crimson-400 underline underline-offset-2 transition-colors font-black">
+              Read More
+            </Link>
+          </p>
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-crimson-700 text-[10px] font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Crimsonhaven. All rites reserved.</p>
+            <div className="flex items-center gap-4 text-crimson-700">
+              <Shield className="w-4 h-4" />
+              <Server className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );
