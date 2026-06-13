@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.0.1';
+export const CLIENT_VERSION = '4.0.2';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -1378,3 +1378,58 @@ export function useSupporters() {
 
   return { supporters, stats, loading, error };
 }
+
+// Lightweight profile hook — fetches /account/me only (no favorites/progress).
+// Used by the nav to decide whether to surface the Admin link (profile.is_admin)
+// without paying for the full useAccount fan-out on every page.
+export function useProfile() {
+  const sessionToken = useSessionToken();
+  const [profile, setProfile] = useState(null);
+
+  useEffect(() => {
+    if (!sessionToken) { setProfile(null); return; }
+    let cancelled = false;
+    apiFetch('/account/me')
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => { if (!cancelled) setProfile(data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [sessionToken]);
+
+  return profile;
+}
+
+// --- Admin dashboard API ----------------------------------------------------
+// Thin wrappers over the gated /admin endpoints (require an admin session; the
+// bearer token is attached by apiFetch). Each returns the parsed JSON body.
+const _json = (res) => res.json();
+const _qs = (params) =>
+  new URLSearchParams(
+    Object.entries(params || {}).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  ).toString();
+
+export const adminApi = {
+  stats: () => apiFetch('/admin/stats').then(_json),
+  health: () => apiFetch('/health').then(_json),
+  listUsers: (params) => apiFetch(`/admin/users?${_qs(params)}`).then(_json),
+  updateUser: (id, body) =>
+    apiFetch(`/admin/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(_json),
+  deleteUser: (id) => apiFetch(`/admin/users/${id}`, { method: 'DELETE' }).then(_json),
+  revokeUserSessions: (id) =>
+    apiFetch(`/admin/users/${id}/revoke-sessions`, { method: 'POST' }).then(_json),
+  listInvites: (params) => apiFetch(`/admin/invites?${_qs(params)}`).then(_json),
+  createInvites: (body) =>
+    apiFetch('/admin/invites', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(_json),
+  revokeInvite: (code) =>
+    apiFetch(`/admin/invites/${encodeURIComponent(code)}`, { method: 'DELETE' }).then(_json),
+  resync: () => apiFetch('/admin/resync', { method: 'POST' }).then(_json),
+  resyncStatus: () => apiFetch('/admin/resync/status').then(_json),
+};
