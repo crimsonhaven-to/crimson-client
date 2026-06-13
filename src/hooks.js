@@ -4,9 +4,16 @@ import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as ed from '@noble/ed25519';
 import { Buffer } from 'buffer';
 
+/* global __EXTENSION__ */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
-//export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend 
-export const CLIENT_VERSION = '3.0.0';
+//export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
+export const CLIENT_VERSION = '4.0.0';
+
+// In the Chromium extension build there is no remote server: every API call is
+// served by the in-page local backend (src/local-backend). This constant is a
+// build-time literal (see vite.config*.js), so the web build dead-eliminates the
+// extension branches and never bundles the chrome.* code.
+const IS_EXTENSION = __EXTENSION__;
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -87,6 +94,13 @@ function extractError(data, fallback = 'Something went wrong') {
 // *thought* was authed means the session expired/was revoked server-side, so we
 // clear it — which re-renders the app behind the login wall.
 export async function apiFetch(path, options = {}) {
+  if (IS_EXTENSION) {
+    // Served entirely locally — returns a real Response (incl. a ReadableStream
+    // body for /watch), so all callers below work unchanged. Dynamic import keeps
+    // the local backend out of the web bundle.
+    const { localFetch } = await import('./local-backend');
+    return localFetch(path, options);
+  }
   const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
   const token = localStorage.getItem(SESSION_KEY);
   const headers = { ...(options.headers || {}) };
@@ -99,8 +113,11 @@ export async function apiFetch(path, options = {}) {
 }
 
 export function useSessionToken() {
-  const [token, setToken] = useState(() => localStorage.getItem(SESSION_KEY));
+  // In the extension there are no server sessions; a constant truthy token keeps
+  // the account hooks (favorites/progress over local storage) active.
+  const [token, setToken] = useState(() => (IS_EXTENSION ? 'local' : localStorage.getItem(SESSION_KEY)));
   useEffect(() => {
+    if (IS_EXTENSION) return undefined;
     const sync = () => setToken(localStorage.getItem(SESSION_KEY));
     window.addEventListener('crimson-auth', sync);
     window.addEventListener('storage', sync);
@@ -130,7 +147,8 @@ export function useAuth() {
     };
   }, []);
 
-  const isAuthenticated = !!sessionToken;
+  // The extension has no login wall — the app is always "authenticated" locally.
+  const isAuthenticated = IS_EXTENSION || !!sessionToken;
 
   const deriveKeypair = async (mnemonic) => {
     const seed = mnemonicToSeedSync(mnemonic).slice(0, 32);
@@ -977,7 +995,7 @@ export function useHealthStatus() {
   const [healthError, setHealthError] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/health`)
+    apiFetch(`/health`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();

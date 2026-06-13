@@ -1,0 +1,76 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "referer", "operation": "set", "value": "https://cinema.bz/" },
+        { "header": "origin", "operation": "set", "value": "https://cinema.bz" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||cinema.bz/",
+      "resourceTypes": ["xmlhttprequest", "media", "sub_frame", "other"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "referer", "operation": "set", "value": "https://nextgencloudfabric.com/" },
+        { "header": "origin", "operation": "set", "value": "https://nextgencloudfabric.com" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||streamdata.vaplayer.ru/",
+      "resourceTypes": ["xmlhttprequest", "media", "sub_frame", "other"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "referer", "operation": "set", "value": "https://aniworld.to/" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||aniworld.to/",
+      "resourceTypes": ["xmlhttprequest", "sub_frame", "other"]
+    }
+  },
+  {
+    "id": 4,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "referer", "operation": "set", "value": "https://aniwatch.co.at/" },
+        { "header": "origin", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||aniwatch.co.at/",
+      "resourceTypes": ["xmlhttprequest", "sub_frame", "other"]
+    }
+  },
+  {
+    "id": 5,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        { "header": "referer", "operation": "set", "value": "https://megaplay.buzz/" },
+        { "header": "origin", "operation": "remove" }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||megaplay.buzz/",
+      "resourceTypes": ["xmlhttprequest", "media", "sub_frame", "other"]
+    }
+  }
+]

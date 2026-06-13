@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, Info, AlertTriangle, AlertCircle, ChevronRight, ArrowLeft, Server, Hash, Menu, X, Heart, History, User, Coffee, Sparkles, RefreshCw } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, API_BASE_URL, CLIENT_VERSION } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useHealthStatus, useAuth, useAccount, useTitle, apiFetch, API_BASE_URL, CLIENT_VERSION } from './hooks';
 import NotFound from './NotFound';
 // Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
 // in the main bundle avoids a chunk round-trip on the critical path.
@@ -362,8 +362,11 @@ function WatchPage() {
             streamData.streams[activeStreamIdx].type === 'iframe' ? (
               (() => {
                 const url = streamData.streams[activeStreamIdx].url;
+                // Sandbox iframes we host ourselves (the backend player page on
+                // the web build, or our extension-hosted player page). Both are
+                // same-origin, so keying off our own origin covers each build.
                 const sandboxed = typeof url === 'string'
-                  && url.startsWith(API_BASE_URL);
+                  && (url.startsWith(API_BASE_URL) || url.startsWith(window.location.origin));
                 return (
                   <iframe
                     src={url}
@@ -598,7 +601,7 @@ function AboutPage() {
   useTitle('About the Haven');
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/`)
+    apiFetch(`/`)
       .then(res => res.json())
       .then(data => setBackendVersion(data.Version || data.version || 'Unknown'))
       .catch(() => setBackendVersion('Offline'));
