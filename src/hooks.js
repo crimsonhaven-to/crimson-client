@@ -5,8 +5,8 @@ import * as ed from '@noble/ed25519';
 import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
-//export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend 
-export const CLIENT_VERSION = '3.0.0';
+//export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
+export const CLIENT_VERSION = '4.0.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -977,7 +977,7 @@ export function useHealthStatus() {
   const [healthError, setHealthError] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/health`)
+    apiFetch(`/health`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
