@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.2.0';
+export const CLIENT_VERSION = '4.2.1';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -139,48 +139,79 @@ export function useAuth() {
     return { seed, publicKey: pubKeyHex };
   };
 
+  // Get a one-time challenge for this key and sign it with the private seed —
+  // the shared first half of both mnemonic login and registration.
+  const challengeAndSign = async (pubKey, seed) => {
+    const challRes = await fetch(`${API_BASE_URL}/auth/challenge`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ public_key: pubKey })
+    });
+    if (!challRes.ok) throw new Error('Failed to get auth challenge');
+    const { challenge } = await challRes.json();
+    const signatureArr = await ed.signAsync(new TextEncoder().encode(challenge), seed);
+    return { challenge, signature: toHex(signatureArr) };
+  };
+
+  // Sign in to an EXISTING mnemonic account. No invite code: creating new
+  // accounts is a separate, invite-gated step (registerMnemonic) so a freshly
+  // generated mnemonic can't bypass the invite system. A 404 here means "no such
+  // account yet" — the UI steers the user to the create-identity flow.
   const login = async (mnemonic) => {
     setLoading(true);
     setError(null);
     try {
       const { seed, publicKey: pubKey } = await deriveKeypair(mnemonic);
-      
-      // 1. Get challenge
-      const challRes = await fetch(`${API_BASE_URL}/auth/challenge`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ public_key: pubKey })
-      });
-      if (!challRes.ok) throw new Error('Failed to get auth challenge');
-      const { challenge } = await challRes.json();
+      const { challenge, signature } = await challengeAndSign(pubKey, seed);
 
-      // 2. Sign challenge
-      const signatureArr = await ed.signAsync(new TextEncoder().encode(challenge), seed);
-      const signature = toHex(signatureArr);
-
-      // 3. Login or Register
-      // We try login first, if it fails because account doesn't exist, we might need a register step
-      // But usually /login or /register work similarly. Let's try /login.
-      let res = await fetch(`${API_BASE_URL}/auth/login`, {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ public_key: pubKey, challenge, signature })
       });
-
       if (!res.ok) {
-        // Try register if login failed
-        res = await fetch(`${API_BASE_URL}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ public_key: pubKey, challenge, signature })
-        });
+        const data = await res.json().catch(() => ({}));
+        throw new Error(extractError(
+          data,
+          res.status === 404 ? 'No account for this mnemonic — create a new identity instead.' : 'Authentication failed',
+        ));
       }
-
-      if (!res.ok) throw new Error('Authentication failed');
-
       const { session_token } = await res.json();
       // Persist + broadcast: updates this hook (via the event) and every other
       // useAuth / useAccount instance in the tab.
+      setAuthStorage(session_token, pubKey);
+      return true;
+    } catch (err) {
+      setError(err.message);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Create a NEW mnemonic account. Invite-gated exactly like email signup: the
+  // backend /auth/register now requires a valid invite_code, so this is the only
+  // way to mint a mnemonic account and it can't sidestep the invite gate.
+  const registerMnemonic = async (mnemonic, inviteCode) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { seed, publicKey: pubKey } = await deriveKeypair(mnemonic);
+      const { challenge, signature } = await challengeAndSign(pubKey, seed);
+
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ public_key: pubKey, challenge, signature, invite_code: inviteCode })
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(extractError(
+          data,
+          res.status === 409 ? 'This mnemonic is already registered — sign in instead.' : 'Registration failed',
+        ));
+      }
+      const { session_token } = await res.json();
       setAuthStorage(session_token, pubKey);
       return true;
     } catch (err) {
@@ -329,6 +360,7 @@ export function useAuth() {
     error,
     setError,
     login,
+    registerMnemonic,
     logout,
     createNewMnemonic,
     emailLogin,
