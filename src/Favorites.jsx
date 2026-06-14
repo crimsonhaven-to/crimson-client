@@ -1,13 +1,46 @@
-import React from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Play, Trash2, Hash } from 'lucide-react';
-import { useAccount, useAuth, useTitle } from './hooks';
+import { Heart, Play, Trash2, Plus, ListPlus, X } from 'lucide-react';
+import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST } from './hooks';
 
+// Watchlists page (formerly "Favorites"). Lists run along the top as tabs; the
+// active list's shows render in the grid below. Users can spin up new lists,
+// remove a show from the current list, or delete an entire custom list.
 const FavoritesPage = () => {
-  const { favorites, loading, toggleFavorite } = useAccount();
+  const { items, lists, loading, removeFromList, createList, deleteList } = useWatchlists();
   const { isAuthenticated } = useAuth();
-  useTitle('Saved Manifestations');
+  useTitle('Watchlists');
   const navigate = useNavigate();
+
+  const [activeList, setActiveList] = useState(DEFAULT_LIST);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState('');
+
+  // Derive the list actually shown: if the selected one vanished (e.g. it was just
+  // deleted) fall back to the default, without an extra effect/render.
+  const effectiveList = lists.some(l => l.name === activeList) ? activeList : DEFAULT_LIST;
+
+  const shows = useMemo(
+    () => items.filter(i => i.list_name === effectiveList),
+    [items, effectiveList]
+  );
+
+  const handleCreate = (e) => {
+    e.preventDefault();
+    const name = newName.trim();
+    if (!name) return;
+    createList(name);
+    setActiveList(name);
+    setNewName('');
+    setCreating(false);
+  };
+
+  const handleDeleteList = async () => {
+    if (effectiveList === DEFAULT_LIST) return;
+    if (!window.confirm(`Delete the "${effectiveList}" list? The shows in it will be unbound. This cannot be undone.`)) return;
+    await deleteList(effectiveList);
+    setActiveList(DEFAULT_LIST);
+  };
 
   if (!isAuthenticated) {
     return (
@@ -15,8 +48,8 @@ const FavoritesPage = () => {
         <div className="bg-crimson-900/20 border border-crimson-500/50 p-8 rounded-2xl">
           <Heart className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-white uppercase">Authentication Required</h2>
-          <p className="text-crimson-300 mt-2">You must establish a link to view your favorited manifestations.</p>
-          <button 
+          <p className="text-crimson-300 mt-2">You must establish a link to view your watchlists.</p>
+          <button
             onClick={() => navigate('/account')}
             className="mt-6 px-6 py-2 bg-crimson-500 hover:bg-crimson-400 text-white font-bold rounded-xl transition-all"
           >
@@ -27,34 +60,99 @@ const FavoritesPage = () => {
     );
   }
 
-  if (loading && favorites.length === 0) {
+  if (loading && items.length === 0) {
     return (
       <div className="max-w-7xl w-full mx-auto px-6 py-20 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-crimson-400 font-bold animate-pulse tracking-widest uppercase text-sm">Retrieving Favorites...</p>
+        <p className="text-crimson-400 font-bold animate-pulse tracking-widest uppercase text-sm">Retrieving Watchlists...</p>
       </div>
     );
   }
 
+  const totalCount = items.length;
+
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-12 animate-in fade-in duration-1000">
-      <div className="border-b border-crimson-900/30 pb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
+      <div className="border-b border-crimson-900/30 pb-10 space-y-8">
         <div className="space-y-3">
           <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">
-            Saved <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Manifestations</span>
+            Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Watchlists</span>
           </h1>
           <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
             <Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />
-            {favorites.length} items bound to your identity
+            {totalCount} item{totalCount === 1 ? '' : 's'} across {lists.length} list{lists.length === 1 ? '' : 's'}
           </p>
+        </div>
+
+        {/* List tabs */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {lists.map((l) => {
+            const active = l.name === effectiveList;
+            return (
+              <button
+                key={l.name}
+                onClick={() => setActiveList(l.name)}
+                className={`group inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest transition-all active:scale-95 ${
+                  active
+                    ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_8px_20px_rgba(255,0,60,0.25)]'
+                    : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600'
+                }`}
+              >
+                {l.name === DEFAULT_LIST && <Heart className={`w-3.5 h-3.5 ${active ? 'fill-white' : 'fill-crimson-800'}`} />}
+                <span>{listLabel(l.name)}</span>
+                <span className={`text-[10px] tabular-nums ${active ? 'text-crimson-100/80' : 'text-crimson-700'}`}>{l.count}</span>
+              </button>
+            );
+          })}
+
+          {/* Create new list */}
+          {creating ? (
+            <form onSubmit={handleCreate} className="inline-flex items-center gap-2">
+              <div className="relative">
+                <ListPlus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-crimson-700 pointer-events-none" />
+                <input
+                  autoFocus
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onBlur={() => { if (!newName.trim()) setCreating(false); }}
+                  maxLength={100}
+                  placeholder="List name…"
+                  className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-white placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+                />
+              </div>
+              <button type="submit" disabled={!newName.trim()} aria-label="Create list"
+                className="p-2 rounded-xl bg-crimson-600 text-white hover:bg-crimson-500 disabled:opacity-40 transition-all active:scale-95">
+                <Plus className="w-4 h-4" strokeWidth={3} />
+              </button>
+            </form>
+          ) : (
+            <button
+              onClick={() => setCreating(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-crimson-800/70 text-crimson-500 text-xs font-black uppercase tracking-widest hover:text-white hover:border-crimson-600 transition-all active:scale-95"
+            >
+              <Plus className="w-3.5 h-3.5" strokeWidth={3} />
+              <span>New List</span>
+            </button>
+          )}
+
+          {/* Delete the active custom list */}
+          {effectiveList !== DEFAULT_LIST && (
+            <button
+              onClick={handleDeleteList}
+              className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-600 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 hover:bg-crimson-900/30 transition-all active:scale-95"
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={3} />
+              <span>Delete "{listLabel(effectiveList)}"</span>
+            </button>
+          )}
         </div>
       </div>
 
-      {favorites.length > 0 ? (
+      {shows.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-8">
-          {favorites.map((anime) => (
-            <div 
-              key={anime.anilist_id || anime.tmdb_id} 
+          {shows.map((anime) => (
+            <div
+              key={anime.anilist_id || anime.tmdb_id}
               className="group relative flex flex-col"
             >
               <div className="aspect-[2/3] relative overflow-hidden rounded-2xl border border-crimson-900/40 shadow-2xl transition-[border-color,box-shadow] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_0_30px_rgba(255,0,60,0.2)]">
@@ -64,21 +162,21 @@ const FavoritesPage = () => {
                   className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/20 to-transparent opacity-80"></div>
-                
+
                 {/* Actions Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-crimson-950/40 backdrop-blur-[2px]">
-                  <button 
+                  <button
                     onClick={() => navigate(anime.anilist_id ? `/anime/${anime.anilist_id}` : `/show/${anime.tmdb_id}`)}
                     className="p-4 bg-crimson-500 text-white rounded-full hover:bg-crimson-400 transform hover:scale-110 transition-all shadow-[0_10px_20px_rgba(255,0,60,0.4)]"
                   >
                     <Play className="w-6 h-6 fill-current" />
                   </button>
-                  <button 
-                    onClick={() => toggleFavorite(anime)}
+                  <button
+                    onClick={() => removeFromList(anime, effectiveList)}
                     className="flex items-center gap-2 px-4 py-1.5 bg-crimson-950/80 text-[10px] font-black uppercase tracking-widest text-crimson-400 rounded-full border border-crimson-900 hover:text-white hover:border-crimson-600 transition-all"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>Unbind</span>
+                    <span>Remove</span>
                   </button>
                 </div>
 
@@ -104,10 +202,12 @@ const FavoritesPage = () => {
              <Heart className="relative w-20 h-20 text-crimson-950 fill-crimson-900/20" />
           </div>
           <div className="space-y-2">
-            <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">Your library is currently empty</p>
-            <p className="text-crimson-700 font-medium text-xs">No manifestations have been bound to your identity yet.</p>
+            <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">
+              "{listLabel(effectiveList)}" is currently empty
+            </p>
+            <p className="text-crimson-700 font-medium text-xs">Add shows to this list from any overview or watch page.</p>
           </div>
-          <button 
+          <button
             onClick={() => navigate('/catalogue')}
             className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
           >

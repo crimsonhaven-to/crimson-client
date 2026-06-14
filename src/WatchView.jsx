@@ -1,8 +1,9 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, AlertTriangle, ChevronRight, ArrowLeft, Heart } from 'lucide-react';
+import { Info, AlertTriangle, ChevronRight, ArrowLeft } from 'lucide-react';
 import { API_BASE_URL } from './hooks';
 import { stripHtml } from './utils';
+import WatchlistButton from './WatchlistButton';
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
 
@@ -21,7 +22,7 @@ const WatchView = ({
   // selectors
   availableSeasons = [], onSeasonChange, onEpisodeChange,
   // account
-  isAuthenticated, isFavorite, onToggleFavorite,
+  isAuthenticated, watchlistItem,
   // nav
   backUrl,
 }) => {
@@ -117,18 +118,10 @@ const WatchView = ({
                 <span className="text-[10px] text-crimson-600 font-black tracking-widest uppercase opacity-70">
                   REF: {refLabel || 'UNK'}
                 </span>
-                {isAuthenticated && (
-                  <button
-                    onClick={onToggleFavorite}
-                    className={`ml-auto flex items-center gap-2.5 px-5 py-2 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest ${
-                      isFavorite
-                        ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.3)]'
-                        : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-500 hover:text-white hover:border-crimson-600'
-                    }`}
-                  >
-                    <Heart className={`w-4 h-4 ${isFavorite ? 'fill-white' : ''}`} />
-                    {isFavorite ? 'Saved' : 'Save'}
-                  </button>
+                {isAuthenticated && watchlistItem && (
+                  <div className="ml-auto">
+                    <WatchlistButton item={watchlistItem} variant="watch" />
+                  </div>
                 )}
               </div>
               <div className="space-y-2">
