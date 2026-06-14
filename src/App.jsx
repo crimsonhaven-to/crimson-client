@@ -318,7 +318,7 @@ function WatchPage() {
     initializeFromIds
   } = useAnimeStreamer({ initialAnilistId: anilistId, initialSeason: parseInt(season), initialEpisode: parseInt(episode) });
 
-  const { favorites, toggleFavorite, updateProgress, fetchResumePosition } = useAccount();
+  const { updateProgress, fetchResumePosition } = useAccount();
   const { isAuthenticated } = useAuth();
 
   // Saved-position resume: look up where the user left off on this exact episode
@@ -341,7 +341,7 @@ function WatchPage() {
   
   useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
 
-  const isFavorite = favorites.some(f => f.anilist_id === parseInt(anilistId) || String(f.tmdb_id) === String(animeMetadata?.tmdb_id));
+  const watchlistItem = { ...animeMetadata, anilist_id: parseInt(anilistId) };
 
   useEffect(() => {
     if (anilistId) {
@@ -410,8 +410,7 @@ function WatchPage() {
       onSeasonChange={handleSeasonChange}
       onEpisodeChange={handleEpisodeChange}
       isAuthenticated={isAuthenticated}
-      isFavorite={isFavorite}
-      onToggleFavorite={() => toggleFavorite({ ...animeMetadata, anilist_id: parseInt(anilistId) })}
+      watchlistItem={watchlistItem}
       backUrl={`/anime/${anilistId}`}
     />
   );
@@ -603,7 +602,7 @@ function App() {
   const navLinks = [
     { to: "/", label: "Search Home", icon: <Film className="w-4 h-4" /> },
     { to: "/catalogue", label: "Catalogue", icon: <Hash className="w-4 h-4" /> },
-    { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
+    { to: "/watchlists", label: "Watchlists", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
     // { to: "/support", label: "Support Us", icon: <Coffee className="w-4 h-4" /> }, // Temporarily hidden for legal reasons
     { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
@@ -747,6 +746,8 @@ function App() {
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/watchlists" element={<FavoritesPage />} />
+          {/* Legacy path — keep old bookmarks/links working. */}
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/recently-watched" element={<RecentlyWatchedPage />} />
           <Route path="/anime/:anilistId" element={<AnimeOverview />} />
@@ -780,7 +781,7 @@ function App() {
             <h4 className="text-white font-black uppercase text-xs tracking-widest mb-6">Navigate</h4>
             <div className="flex flex-col gap-3">
               <Link to="/catalogue" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Catalogue</Link>
-              <Link to="/favorites" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Favorites</Link>
+              <Link to="/watchlists" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Watchlists</Link>
               <Link to="/about" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">About Us</Link>
               <Link to="/supporters" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Mortals</Link>
             </div>

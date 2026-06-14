@@ -20,7 +20,7 @@ function ShowWatch() {
     activeStreamIdx, selectStream,
   } = useShowStreamer(tmdbId, currentSeason, currentEpisode);
 
-  const { favorites, toggleFavorite, updateProgress } = useAccount();
+  const { updateProgress } = useAccount();
   const { isAuthenticated } = useAuth();
 
   const availableSeasons = overview?.seasons || [];
@@ -94,9 +94,7 @@ function ShowWatch() {
     return () => { clearInterval(timer); save(); };
   }, [tmdbId, currentSeason, currentEpisode, metadata, isAuthenticated, updateProgress, displayTitle, poster]);
 
-  const isFavorite = favorites.some(f => String(f.tmdb_id) === String(tmdbId) && !f.anilist_id);
-  const onToggleFavorite = () =>
-    toggleFavorite({ tmdb_id: parseInt(tmdbId), anilist_id: null, title: displayTitle, poster });
+  const watchlistItem = { tmdb_id: parseInt(tmdbId), anilist_id: null, title: displayTitle, poster };
 
   const onSeasonChange = (newSeason) => navigate(`/watch-show/${tmdbId}/${newSeason}/1`);
   const onEpisodeChange = (newEpisode) => navigate(`/watch-show/${tmdbId}/${currentSeason}/${newEpisode}`);
@@ -120,8 +118,7 @@ function ShowWatch() {
       onSeasonChange={onSeasonChange}
       onEpisodeChange={onEpisodeChange}
       isAuthenticated={isAuthenticated}
-      isFavorite={isFavorite}
-      onToggleFavorite={onToggleFavorite}
+      watchlistItem={watchlistItem}
       backUrl={`/show/${tmdbId}`}
     />
   );

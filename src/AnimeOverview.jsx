@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAnimeOverview, useAccount, useTitle } from './hooks';
+import { useAnimeOverview, useTitle } from './hooks';
 import OverviewView from './OverviewView';
 
 // Anime overview page (/anime/:anilistId). Thin wrapper: it owns the anime data
@@ -17,14 +17,12 @@ const AnimeOverview = () => {
 
   useTitle(overview?.title || 'Overview');
 
-  // Favorites — keyed by anilist_id (the overview payload carries one; fall back
-  // to the URL param). toggleFavorite stores the minimal {id, title, poster} the
-  // Favorites grid renders, mirroring the watch page's save button.
-  const { favorites, toggleFavorite } = useAccount();
+  // Watchlists — keyed by anilist_id (the overview payload carries one; fall back
+  // to the URL param). The minimal {id, title, poster} identity is handed to the
+  // <WatchlistButton> in the view, which owns the add/remove/create UI.
   const favId = overview?.anilist_id ?? Number(anilistId);
-  const isFavorite = favorites.some(f => f.anilist_id === favId);
-  const onToggleFavorite = overview
-    ? () => toggleFavorite({ anilist_id: favId, title: overview.title, poster: overview.poster })
+  const watchlistItem = overview
+    ? { anilist_id: favId, title: overview.title, poster: overview.poster }
     : undefined;
 
   // A season can have its own anilist_id (TMDB-split long runs fall back to the
@@ -48,8 +46,7 @@ const AnimeOverview = () => {
       onBack={() => navigate(-1)}
       onPlayEpisode={goToEpisode}
       onPlayExtra={goToExtra}
-      isFavorite={isFavorite}
-      onToggleFavorite={onToggleFavorite}
+      watchlistItem={watchlistItem}
       notFoundText="This anime could not be summoned from the archives."
     />
   );

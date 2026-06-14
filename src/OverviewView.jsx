@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, Heart } from 'lucide-react';
+import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard } from 'lucide-react';
 import { stripHtml } from './utils';
+import WatchlistButton from './WatchlistButton';
 
 // Presentational overview UI shared by the anime Overview (/anime/:anilistId) and
 // the non-anime show Overview (/show/:tmdbId). It is purely props-driven — the two
@@ -63,7 +64,7 @@ const OverviewView = ({
   activeSeason, setActiveSeason,
   episodes, episodesLoading,
   onBack, onPlayEpisode, onPlayExtra,
-  isFavorite, onToggleFavorite,
+  watchlistItem,
   notFoundText = 'This title could not be summoned from the archives.',
 }) => {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
@@ -179,7 +180,7 @@ const OverviewView = ({
                 </div>
               )}
 
-              {(currentSeason || onToggleFavorite) && (
+              {(currentSeason || watchlistItem) && (
                 <div className="pt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
                   {currentSeason && (
                     <button
@@ -191,20 +192,7 @@ const OverviewView = ({
                       <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                     </button>
                   )}
-                  {onToggleFavorite && (
-                    <button
-                      onClick={onToggleFavorite}
-                      aria-pressed={isFavorite}
-                      className={`group inline-flex items-center gap-3 font-black uppercase tracking-[0.2em] text-xs px-8 py-4 rounded-2xl border transition-all active:scale-95 ${
-                        isFavorite
-                          ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_15px_30px_rgba(255,0,60,0.3)] hover:bg-crimson-500'
-                          : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-300 hover:text-white hover:border-crimson-600 hover:bg-crimson-900/30 backdrop-blur-sm'
-                      }`}
-                    >
-                      <Heart className={`w-4 h-4 transition-transform group-hover:scale-110 ${isFavorite ? 'fill-white' : ''}`} />
-                      <span>{isFavorite ? 'Saved to Favorites' : 'Save to Favorites'}</span>
-                    </button>
-                  )}
+                  {watchlistItem && <WatchlistButton item={watchlistItem} variant="overview" />}
                 </div>
               )}
             </div>

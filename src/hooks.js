@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
 import { wordlist } from '@scure/bip39/wordlists/english.js';
 import * as ed from '@noble/ed25519';
@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.1.0';
+export const CLIENT_VERSION = '4.2.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -340,9 +340,177 @@ export function useAuth() {
   };
 }
 
+// The default list every account has (the original single "Favorites" tab). Any
+// other list_name is a user-made watchlist (e.g. "Todo", "Done", "Paused").
+export const DEFAULT_LIST = 'favorites';
+const CUSTOM_LISTS_KEY = 'crimson:watchlists';
+
+// Human label for a list name — the default list reads as "Favorites".
+export const listLabel = (name) =>
+  name === DEFAULT_LIST ? 'Favorites' : name;
+
+const loadCustomLists = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(CUSTOM_LISTS_KEY) || '[]');
+    return Array.isArray(raw) ? raw.filter(n => typeof n === 'string') : [];
+  } catch {
+    return [];
+  }
+};
+const saveCustomLists = (names) =>
+  localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(names));
+
+// True when a stored favorite row refers to the same show as `item`. Mirrors the
+// backend dedup key (account_engine/routes.py:_favorite_item_key): AniList id is
+// preferred, otherwise it's a TMDB-only row.
+const rowMatchesItem = (row, item) => {
+  if (item.anilist_id != null) return row.anilist_id === item.anilist_id;
+  if (item.tmdb_id != null)
+    return String(row.tmdb_id) === String(item.tmdb_id) && row.anilist_id == null;
+  return false;
+};
+
+// Query params identifying one show for the DELETE endpoint (AniList preferred).
+const itemQuery = (item, listName) => {
+  const p = new URLSearchParams();
+  if (item.anilist_id != null) p.set('anilist_id', item.anilist_id);
+  else if (item.tmdb_id != null) p.set('tmdb_id', item.tmdb_id);
+  if (listName != null) p.set('list_name', listName);
+  return p;
+};
+
+// Watchlists data layer. Lighter than useAccount (no profile/history fetches), so
+// it's cheap to mount inside the per-show "add to list" button as well as the
+// Watchlists page. Empty lists (created but not yet populated) live in
+// localStorage, since the server only knows a list once it has ≥1 item.
+export function useWatchlists() {
+  const sessionToken = useSessionToken();
+  const [items, setItems] = useState([]);        // every favorite row, all lists
+  const [serverLists, setServerLists] = useState([]); // [{list_name, count}]
+  const [customLists, setCustomLists] = useState(loadCustomLists);
+  const [loading, setLoading] = useState(false);
+
+  const refresh = useCallback(async () => {
+    if (!sessionToken) { setItems([]); setServerLists([]); return; }
+    setLoading(true);
+    try {
+      const [favRes, listRes] = await Promise.all([
+        apiFetch(`/account/favorites`),
+        apiFetch(`/account/watchlists`),
+      ]);
+      if (favRes.ok) setItems((await favRes.json()).favorites || []);
+      if (listRes.ok) setServerLists((await listRes.json()).watchlists || []);
+    } catch (e) {
+      console.error("Watchlists fetch error:", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [sessionToken]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  // Union of the default list, server lists (with counts) and any empty
+  // client-side lists, ordered with "Favorites" first then alphabetical.
+  const lists = useMemo(() => {
+    const map = new Map();
+    map.set(DEFAULT_LIST, { name: DEFAULT_LIST, count: 0 });
+    customLists.forEach(n => { if (!map.has(n)) map.set(n, { name: n, count: 0 }); });
+    serverLists.forEach(l => map.set(l.list_name, { name: l.list_name, count: l.count }));
+    return Array.from(map.values()).sort((a, b) => {
+      if (a.name === DEFAULT_LIST) return -1;
+      if (b.name === DEFAULT_LIST) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [serverLists, customLists]);
+
+  // Names of the lists a given show currently belongs to.
+  const listsForItem = useCallback(
+    (item) => items.filter(r => rowMatchesItem(r, item)).map(r => r.list_name),
+    [items]
+  );
+
+  const addToList = useCallback(async (item, listName) => {
+    if (!sessionToken) return false;
+    try {
+      const res = await apiFetch(`/account/favorites`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tmdb_id: item.tmdb_id ?? null,
+          anilist_id: item.anilist_id ?? null,
+          title: item.title || item.name,
+          poster: item.poster,
+          list_name: listName,
+        }),
+      });
+      if (res.ok) { await refresh(); return true; }
+    } catch (e) {
+      console.error("Add to list error:", e);
+    }
+    return false;
+  }, [sessionToken, refresh]);
+
+  const removeFromList = useCallback(async (item, listName) => {
+    if (!sessionToken) return false;
+    try {
+      const res = await apiFetch(`/account/favorites?${itemQuery(item, listName)}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) { await refresh(); return true; }
+    } catch (e) {
+      console.error("Remove from list error:", e);
+    }
+    return false;
+  }, [sessionToken, refresh]);
+
+  const toggleInList = useCallback(async (item, listName) => {
+    const inList = items.some(r => rowMatchesItem(r, item) && r.list_name === listName);
+    return inList ? removeFromList(item, listName) : addToList(item, listName);
+  }, [items, addToList, removeFromList]);
+
+  // Create an (initially empty) list. Persists client-side until it gets items.
+  const createList = useCallback((name) => {
+    const clean = (name || '').trim().slice(0, 100);
+    if (!clean || clean === DEFAULT_LIST) return false;
+    setCustomLists(prev => {
+      if (prev.includes(clean)) return prev;
+      const next = [...prev, clean];
+      saveCustomLists(next);
+      return next;
+    });
+    return true;
+  }, []);
+
+  // Remove a whole list: delete its server rows, then drop the client entry. The
+  // default list can be emptied but not removed.
+  const deleteList = useCallback(async (name) => {
+    if (name === DEFAULT_LIST) return false;
+    const rows = items.filter(r => r.list_name === name);
+    await Promise.all(rows.map(r =>
+      apiFetch(`/account/favorites?${itemQuery(r, name)}`, { method: 'DELETE' }).catch(() => {})
+    ));
+    setCustomLists(prev => {
+      const next = prev.filter(n => n !== name);
+      saveCustomLists(next);
+      return next;
+    });
+    await refresh();
+    return true;
+  }, [items, refresh]);
+
+  return {
+    items, lists, loading,
+    listsForItem, addToList, removeFromList, toggleInList,
+    createList, deleteList,
+    refresh,
+  };
+}
+
+// Profile + watch-history layer. Watchlists are intentionally NOT fetched here —
+// they live in useWatchlists() (used by the Watchlists page and the per-show
+// WatchlistButton), so watch/account pages don't pay for an unused fetch.
 export function useAccount() {
   const [profile, setProfile] = useState(null);
-  const [favorites, setFavorites] = useState([]);
   const [continueWatching, setContinueWatching] = useState([]);
   const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -360,22 +528,6 @@ export function useAccount() {
       }
     } catch (e) {
       console.error("Profile fetch error:", e);
-    }
-  }, [sessionToken]);
-
-  const fetchFavorites = useCallback(async () => {
-    if (!sessionToken) return;
-    setLoading(true);
-    try {
-      const res = await apiFetch(`/account/favorites`);
-      if (res.ok) {
-        const data = await res.json();
-        setFavorites(data.favorites || []);
-      }
-    } catch (e) {
-      console.error("Favorites fetch error:", e);
-    } finally {
-      setLoading(false);
     }
   }, [sessionToken]);
 
@@ -411,31 +563,6 @@ export function useAccount() {
     }
   }, [sessionToken]);
 
-  const toggleFavorite = async (anime) => {
-    if (!sessionToken) return;
-    const isFavorite = favorites.some(f => f.anilist_id === anime.anilist_id || f.tmdb_id === anime.tmdb_id);
-    const method = isFavorite ? 'DELETE' : 'POST';
-    
-    try {
-      const res = await apiFetch(`/account/favorites`, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tmdb_id: anime.tmdb_id,
-          anilist_id: anime.anilist_id,
-          title: anime.title || anime.name,
-          poster: anime.poster
-        })
-      });
-      if (res.ok) {
-        fetchFavorites();
-        return true;
-      }
-    } catch (e) {
-      console.error("Favorite toggle error:", e);
-    }
-    return false;
-  };
 
   // useCallback so the reference is stable across renders: the watch page keys a
   // periodic-save effect on this, and an unstable identity would re-run that
@@ -484,22 +611,18 @@ export function useAccount() {
   useEffect(() => {
     if (sessionToken) {
       fetchProfile();
-      fetchFavorites();
       fetchContinueWatching();
       fetchRecent();
     }
-  }, [sessionToken, fetchProfile, fetchFavorites, fetchContinueWatching, fetchRecent]);
+  }, [sessionToken, fetchProfile, fetchContinueWatching, fetchRecent]);
 
   return {
     profile,
-    favorites,
     continueWatching,
     recentlyWatched,
     loading,
-    toggleFavorite,
     updateProgress,
     fetchResumePosition,
-    refreshFavorites: fetchFavorites,
     refreshContinueWatching: fetchContinueWatching,
     refreshRecent: fetchRecent
   };
