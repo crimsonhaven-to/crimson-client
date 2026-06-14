@@ -21,6 +21,16 @@
   --color-crimson-50: #fff5f6;
 }
 
+/* Paint the document canvas itself the app's darkest crimson. Without this the
+   browser's default white shows through wherever the React tree doesn't cover the
+   viewport — most visibly as the brief white seam between the sticky nav and the
+   content during the overscroll "rubber band" when you fling back to the very top
+   (the pinned nav stays put while the content bounces down, exposing the canvas). */
+html,
+body {
+  background-color: var(--color-crimson-950);
+}
+
 /* Wallpaper tweak: boost brightness/saturation for the background image only */
 .wallpaper-img {
   filter: brightness(1.25) saturate(1.08);
