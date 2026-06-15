@@ -620,10 +620,10 @@ function App() {
       </div>
 
       {/* Navigation Bar — transparent over the wallpaper at the top, solid once scrolled */}
-      <nav className={`sticky top-0 z-50 px-4 sm:px-6 transition-all duration-500 ${
+      <nav className={`sticky top-0 z-50 px-4 sm:px-6 border-b transition-all duration-500 ${
         scrolled
-          ? 'bg-crimson-950/80 backdrop-blur-lg border-b border-crimson-900/60 shadow-lg py-3'
-          : 'bg-transparent py-4'
+          ? 'bg-crimson-950/80 backdrop-blur-lg border-crimson-900/60 shadow-lg py-3'
+          : 'bg-transparent border-transparent py-4'
       }`}>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-2 cursor-pointer group" onClick={() => { setIsMenuOpen(false); setUserMenuOpen(false); }}>
