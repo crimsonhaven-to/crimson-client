@@ -3,6 +3,7 @@ import Hls from 'hls.js';
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
   Settings2, RotateCcw, RotateCw, AlertTriangle, PictureInPicture2, Sparkles,
+  Captions,
 } from 'lucide-react';
 
 // How far the skip-back / skip-forward buttons (and ←/→ keys) jump, in seconds.
@@ -21,7 +22,7 @@ const SKIP_SECONDS = 10;
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', poster = '', title = '', autoPlay = true, startAt = 0, onProgress }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', autoPlay = true, startAt = 0, onProgress }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -57,6 +58,13 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
   const [showQuality, setShowQuality] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  // External subtitle tracks (ShowBox/Febbox). -1 = off. Index maps to both the
+  // `tracks` array below and the <track> elements rendered in DOM order.
+  const [subtitleIdx, setSubtitleIdx] = useState(-1);
+  const [showSubs, setShowSubs] = useState(false);
+
+  // Defensive: only keep well-formed subtitle entries (need a url to load).
+  const tracks = Array.isArray(subtitles) ? subtitles.filter((s) => s && s.url) : [];
 
   const isHls = type === 'hls' || (typeof src === 'string' && src.toLowerCase().includes('.m3u8'));
 
@@ -180,6 +188,19 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
       video.removeEventListener('leavepictureinpicture', onLeave);
     };
   }, []);
+
+  // ---- Subtitle tracks ---------------------------------------------------
+  // The browser exposes one TextTrack per <track> element in DOM order, which
+  // matches our `tracks` array. Drive visibility off `subtitleIdx` (-1 = off)
+  // rather than the <track default> attribute so the CC menu stays in control.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const tt = v.textTracks;
+    for (let i = 0; i < tt.length; i++) {
+      tt[i].mode = i === subtitleIdx ? 'showing' : 'disabled';
+    }
+  }, [subtitleIdx, tracks.length, reloadKey]);
 
   // ---- Fullscreen state --------------------------------------------------
   useEffect(() => {
@@ -326,10 +347,24 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
         ref={videoRef}
         poster={poster || undefined}
         playsInline
+        // Only opt into CORS when we actually have external <track>s to fetch:
+        // cross-origin text tracks need it, but forcing it on every source would
+        // make plain media playback depend on CORS headers unnecessarily.
+        crossOrigin={tracks.length ? 'anonymous' : undefined}
         onPointerDown={(e) => { lastPointerType.current = e.pointerType || 'mouse'; }}
         onClick={onVideoTap}
         className="w-full h-full bg-black object-contain"
-      />
+      >
+        {tracks.map((s, i) => (
+          <track
+            key={`${s.url}-${i}`}
+            kind="subtitles"
+            src={s.url}
+            srcLang={s.lang || undefined}
+            label={s.label || s.lang || `Track ${i + 1}`}
+          />
+        ))}
+      </video>
 
       {/* Buffering sigil */}
       {loading && !error && (
@@ -438,10 +473,47 @@ export default function CrimsonPlayer({ src, type = '', poster = '', title = '',
 
             <div className="flex-1" />
 
+            {/* Subtitles / captions */}
+            {tracks.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => { setShowSubs((s) => !s); setShowQuality(false); }}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border transition-all active:scale-95 hover:text-white ${
+                    subtitleIdx >= 0 ? 'border-crimson-500/60 text-white' : 'border-white/5 hover:border-crimson-500/50'
+                  }`}
+                  aria-label="Subtitles"
+                >
+                  <Captions className={`w-4 h-4 ${subtitleIdx >= 0 ? 'text-crimson-400' : 'text-crimson-500'}`} />
+                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+                    {subtitleIdx >= 0 ? (tracks[subtitleIdx]?.label || 'On') : 'Off'}
+                  </span>
+                </button>
+                {showSubs && (
+                  <div className="absolute bottom-full right-0 mb-4 w-44 max-h-72 overflow-y-auto no-scrollbar rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl shadow-2xl animate-in slide-in-from-bottom-2 duration-300 z-50">
+                    <button
+                      onClick={() => { setSubtitleIdx(-1); setShowSubs(false); }}
+                      className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b border-white/5 ${subtitleIdx === -1 ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:bg-crimson-500/20 hover:text-white'}`}
+                    >
+                      Off
+                    </button>
+                    {tracks.map((s, i) => (
+                      <button
+                        key={`${s.url}-${i}`}
+                        onClick={() => { setSubtitleIdx(i); setShowSubs(false); }}
+                        className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b border-white/5 last:border-0 ${subtitleIdx === i ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:bg-crimson-500/20 hover:text-white'}`}
+                      >
+                        {s.label || s.lang || `Track ${i + 1}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Quality */}
             {levels.length > 1 && (
               <div className="relative">
-                <button onClick={() => setShowQuality((s) => !s)} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border border-white/5 hover:border-crimson-500/50 hover:text-white transition-all active:scale-95" aria-label="Quality">
+                <button onClick={() => { setShowQuality((s) => !s); setShowSubs(false); }} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border border-white/5 hover:border-crimson-500/50 hover:text-white transition-all active:scale-95" aria-label="Quality">
                   <Settings2 className="w-4 h-4 text-crimson-500" />
                   <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{qLabel(currentLevel)}</span>
                 </button>
