@@ -921,7 +921,9 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         // otherwise, so the UI simply shows nothing for sources without one.
         const next = [
           ...streamsRef.current,
-          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language },
+          // `subtitles` is optional (only ShowBox/Febbox supplies external tracks)
+          // and stays undefined otherwise, so the player simply renders none.
+          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles },
         ];
         streamsRef.current = next;
         setStreamData((prev) => ({ ...(prev || {}), streams: next }));
@@ -1447,7 +1449,7 @@ export function useShowStreamer(tmdbId, season, episode) {
       } else if (msg.type === 'stream') {
         const next = [
           ...streamsRef.current,
-          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language },
+          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles },
         ];
         streamsRef.current = next;
         setStreamData((prev) => ({ ...(prev || {}), streams: next }));

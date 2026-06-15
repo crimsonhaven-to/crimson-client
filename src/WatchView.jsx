@@ -88,6 +88,7 @@ const WatchView = ({
                   key={activeStream.url}
                   src={activeStream.url}
                   type={activeStream.type}
+                  subtitles={activeStream.subtitles}
                   poster={poster}
                   title={displayTitle}
                   startAt={playerStartAt}
