@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.3.2';
+export const CLIENT_VERSION = '4.3.3';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -559,10 +559,36 @@ export function useWatchlists() {
     }
   }, [sessionToken]);
 
+  // Restore watchlists from an exported CSV/JSON file. The file is sent as the
+  // raw request body (the backend sniffs CSV vs JSON from the content). `mode` is
+  // 'merge' (default — add to existing lists) or 'replace' (wipe all lists first).
+  // Resolves to the server's summary ({ imported, skipped, total, ... }) so the
+  // UI can report what happened; refreshes so imported lists/items show at once.
+  const importWatchlists = useCallback(async (file, mode = 'merge') => {
+    if (!sessionToken) return { ok: false, error: 'You need to be signed in.' };
+    if (!file) return { ok: false, error: 'No file selected.' };
+    try {
+      const text = await file.text();
+      const isJson = (file.name || '').toLowerCase().endsWith('.json');
+      const res = await apiFetch(`/account/favorites/import?mode=${mode}`, {
+        method: 'POST',
+        headers: { 'Content-Type': isJson ? 'application/json' : 'text/csv' },
+        body: text,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) return { ok: false, error: data.detail || 'Import failed.' };
+      await refresh();
+      return { ok: true, ...data };
+    } catch (e) {
+      console.error('Import watchlists error:', e);
+      return { ok: false, error: e.message || 'Import failed.' };
+    }
+  }, [sessionToken, refresh]);
+
   return {
     items, lists, loading,
     listsForItem, addToList, removeFromList, toggleInList,
-    createList, deleteList, exportWatchlists,
+    createList, deleteList, exportWatchlists, importWatchlists,
     refresh,
   };
 }

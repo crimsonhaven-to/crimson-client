@@ -82,6 +82,7 @@ The API will be available at `http://localhost:8000`. You can explore the intera
 - **`/movish_proxy`**: Proxies Movish streams to handle headers/CORS.
 - **`/playimdb_proxy`**: Signed HLS proxy for the PlayIMDb source (injects the referer the PlayIMDb CDNs require; the raw stream is extracted server-side so no PlayIMDb player/ad code is ever loaded).
 - **`/jellyfin_proxy`**: Proxies Jellyfin HLS segments for same-origin playback.
+- **`/changelog`**: Public, cached view of the repo's GitHub Releases (newest first). Each entry is `{tag, name, body (Markdown), published_at, url, prerelease, author}`. Returns `503` until `GITHUB_TOKEN` is configured. Works with a **private** repo (read-only token). See `.env.example` (Changelog section).
 - **`/health`**: Check system status and database health.
 
 ---
@@ -107,6 +108,7 @@ exposes no credential. User data (favorites + watch progress) lives in a separat
 | `GET`/`POST`/`DELETE` | `/account/favorites` | Bearer | List / add / remove a favorited show. `?list_name=` selects a watchlist. |
 | `GET`  | `/account/watchlists` | Bearer | Distinct list names, each with its item count. |
 | `GET`  | `/account/favorites/export` | Bearer | Download every watchlist as one file. `?format=csv` (default) or `?format=json`; served as an attachment. |
+| `POST` | `/account/favorites/import` | Bearer | Restore watchlists from an exported CSV/JSON file (sent as the raw request body; format sniffed from content). `?mode=merge` (default, adds/updates) or `?mode=replace` (wipes all lists first). Returns an `{imported, skipped, total}` summary. |
 | `GET`/`POST`/`DELETE` | `/account/progress` | Bearer | List / upsert / remove per-episode watch progress. |
 | `GET`  | `/account/continue-watching` | Bearer | In-progress episodes only, most recent first. |
 | `GET`  | `/account/recent` | Bearer | Recently-watched episodes of **any** status (incl. completed), most recent first. `?limit=` (default 20). |
