@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.3.1';
+export const CLIENT_VERSION = '4.3.2';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -530,10 +530,39 @@ export function useWatchlists() {
     return true;
   }, [items, refresh]);
 
+  // Download every watchlist as one file. `format` is 'csv' (spreadsheet-friendly,
+  // default) or 'json' (a round-trippable backup). The export is auth-gated, so we
+  // fetch it through apiFetch (which attaches the bearer token) and trigger the
+  // save from the resulting blob — a plain <a download> wouldn't carry the token.
+  const exportWatchlists = useCallback(async (format = 'csv') => {
+    if (!sessionToken) return false;
+    try {
+      const res = await apiFetch(`/account/favorites/export?format=${format}`);
+      if (!res.ok) return false;
+      const blob = await res.blob();
+      // Honour the server's filename (Content-Disposition) when present.
+      const disp = res.headers.get('Content-Disposition') || '';
+      const match = disp.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : `crimson-watchlists.${format}`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return true;
+    } catch (e) {
+      console.error('Export watchlists error:', e);
+      return false;
+    }
+  }, [sessionToken]);
+
   return {
     items, lists, loading,
     listsForItem, addToList, removeFromList, toggleInList,
-    createList, deleteList,
+    createList, deleteList, exportWatchlists,
     refresh,
   };
 }

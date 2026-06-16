@@ -1,13 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Play, Trash2, Plus, ListPlus, X } from 'lucide-react';
+import { Heart, Play, Trash2, Plus, ListPlus, X, Download, ChevronDown } from 'lucide-react';
 import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST } from './hooks';
 
 // Watchlists page (formerly "Favorites"). Lists run along the top as tabs; the
 // active list's shows render in the grid below. Users can spin up new lists,
 // remove a show from the current list, or delete an entire custom list.
 const FavoritesPage = () => {
-  const { items, lists, loading, removeFromList, createList, deleteList } = useWatchlists();
+  const { items, lists, loading, removeFromList, createList, deleteList, exportWatchlists } = useWatchlists();
   const { isAuthenticated } = useAuth();
   useTitle('Watchlists');
   const navigate = useNavigate();
@@ -15,6 +15,24 @@ const FavoritesPage = () => {
   const [activeList, setActiveList] = useState(DEFAULT_LIST);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
+  const [exporting, setExporting] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const exportRef = useRef(null);
+
+  // Close the export format menu on any outside click.
+  useEffect(() => {
+    if (!exportOpen) return;
+    const onClick = (e) => { if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false); };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [exportOpen]);
+
+  const handleExport = async (format) => {
+    setExportOpen(false);
+    setExporting(true);
+    await exportWatchlists(format);
+    setExporting(false);
+  };
 
   // Derive the list actually shown: if the selected one vanished (e.g. it was just
   // deleted) fall back to the default, without an extra effect/render.
@@ -74,14 +92,48 @@ const FavoritesPage = () => {
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
       <div className="border-b border-crimson-900/30 pb-10 space-y-8">
-        <div className="space-y-3">
-          <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">
-            Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Watchlists</span>
-          </h1>
-          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
-            <Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />
-            {totalCount} item{totalCount === 1 ? '' : 's'} across {lists.length} list{lists.length === 1 ? '' : 's'}
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+          <div className="space-y-3">
+            <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">
+              Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Watchlists</span>
+            </h1>
+            <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
+              <Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />
+              {totalCount} item{totalCount === 1 ? '' : 's'} across {lists.length} list{lists.length === 1 ? '' : 's'}
+            </p>
+          </div>
+
+          {/* Export every list at once (CSV for spreadsheets, JSON for a backup) */}
+          <div ref={exportRef} className="relative shrink-0">
+            <button
+              onClick={() => setExportOpen(o => !o)}
+              disabled={exporting || totalCount === 0}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-crimson-900/60 bg-crimson-950/40 text-crimson-300 text-xs font-black uppercase tracking-widest hover:text-white hover:border-crimson-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+            >
+              <Download className={`w-4 h-4 ${exporting ? 'animate-pulse' : ''}`} />
+              <span>{exporting ? 'Exporting…' : 'Export'}</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${exportOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {exportOpen && (
+              <div className="absolute right-0 mt-2 w-44 z-20 rounded-xl border border-crimson-900/60 bg-crimson-950 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors"
+                >
+                  <span>CSV</span>
+                  <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Spreadsheet</span>
+                </button>
+                <button
+                  onClick={() => handleExport('json')}
+                  className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors border-t border-crimson-900/40"
+                >
+                  <span>JSON</span>
+                  <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Backup</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* List tabs */}
