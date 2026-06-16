@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.3.4';
+export const CLIENT_VERSION = '4.3.5';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -1589,6 +1589,54 @@ export function useSupporters() {
   }, []);
 
   return { supporters, stats, loading, error };
+}
+
+// --- Changelog ---------------------------------------------------------------
+// Public view of the repo's GitHub Releases, surfaced by the backend's changelog
+// engine (GET /changelog → { changelog: [{tag, name, body(Markdown),
+// published_at, url, prerelease, author}], repo, count, stale }). The endpoint
+// 503s until the backend has a GITHUB_TOKEN configured — we treat that as a
+// distinct "slumbering" state rather than an error so the page can say so kindly.
+// Cached in the shared in-memory store (same TTL as trending/catalogue) so the
+// About-page preview and the full page don't double-fetch.
+export function useChangelog() {
+  const seed = memGet('changelog');
+  const [entries, setEntries] = useState(() => seed?.entries || []);
+  const [meta, setMeta] = useState(() => seed?.meta || null);
+  const [loading, setLoading] = useState(() => !seed);
+  const [error, setError] = useState(null);
+  const [notConfigured, setNotConfigured] = useState(false);
+
+  useEffect(() => {
+    if (memGet('changelog')) return; // already seeded from cache
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const res = await apiFetch(`/changelog`);
+        // 503 == backend changelog engine has no GITHUB_TOKEN yet (not an error).
+        if (res.status === 503) {
+          if (!cancelled) setNotConfigured(true);
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (cancelled) return;
+        const list = Array.isArray(data.changelog) ? data.changelog : [];
+        const m = { repo: data.repo, stale: !!data.stale, count: data.count ?? list.length };
+        setEntries(list);
+        setMeta(m);
+        memSet('changelog', { entries: list, meta: m });
+      } catch (e) {
+        if (!cancelled) setError(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { entries, meta, loading, error, notConfigured };
 }
 
 // Lightweight profile hook — fetches /account/me only (no favorites/progress).
