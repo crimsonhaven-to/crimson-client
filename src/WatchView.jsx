@@ -37,6 +37,15 @@ const WatchView = ({
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
 
+  // Filename for the in-player Download button, e.g.
+  // "Frieren - S1E04 - The Land Where Souls Rest". Season is only stamped when
+  // the title actually has more than one.
+  const downloadName = [
+    displayTitle || 'video',
+    totalSeasons > 1 ? `S${currentSeason}E${currentEpisode}` : `E${currentEpisode}`,
+    episodeTitle,
+  ].filter(Boolean).join(' - ');
+
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-4 gap-8 sm:gap-10 animate-in fade-in duration-1000">
       {/* Main Video Area */}
@@ -91,6 +100,7 @@ const WatchView = ({
                   subtitles={activeStream.subtitles}
                   poster={poster}
                   title={displayTitle}
+                  downloadName={downloadName}
                   startAt={playerStartAt}
                   onProgress={onPlayerProgress}
                 />

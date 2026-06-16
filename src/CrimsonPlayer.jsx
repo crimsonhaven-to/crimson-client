@@ -3,8 +3,9 @@ import Hls from 'hls.js';
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
   Settings2, RotateCcw, RotateCw, AlertTriangle, PictureInPicture2, Sparkles,
-  Captions,
+  Captions, Download, Loader2,
 } from 'lucide-react';
+import { downloadStream } from './streamDownload';
 
 // How far the skip-back / skip-forward buttons (and ←/→ keys) jump, in seconds.
 const SKIP_SECONDS = 10;
@@ -22,7 +23,7 @@ const SKIP_SECONDS = 10;
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', autoPlay = true, startAt = 0, onProgress }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -62,6 +63,11 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   // `tracks` array below and the <track> elements rendered in DOM order.
   const [subtitleIdx, setSubtitleIdx] = useState(-1);
   const [showSubs, setShowSubs] = useState(false);
+  // Download state. `downloading` gates the button; `dlProgress` is 0..1, or null
+  // for an indeterminate (size-unknown) download.
+  const [downloading, setDownloading] = useState(false);
+  const [dlProgress, setDlProgress] = useState(0);
+  const dlAbortRef = useRef(null);
 
   // Defensive: only keep well-formed subtitle entries (need a url to load).
   const tracks = Array.isArray(subtitles) ? subtitles.filter((s) => s && s.url) : [];
@@ -297,6 +303,35 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
   const retry = useCallback(() => { setError(null); setReloadKey((k) => k + 1); }, []);
 
+  // Download the current source to disk. For mp4 this streams the file straight
+  // through; for HLS it fetches + concatenates (and AES-decrypts) every segment,
+  // so on long episodes it can take a while — hence the live progress + cancel.
+  const handleDownload = useCallback(async () => {
+    if (downloading) { dlAbortRef.current?.abort(); return; }
+    const controller = new AbortController();
+    dlAbortRef.current = controller;
+    setDownloading(true);
+    setDlProgress(0);
+    try {
+      await downloadStream(
+        { url: src, type, name: downloadName || title },
+        (fraction) => setDlProgress(fraction == null ? null : fraction),
+        controller.signal,
+      );
+    } catch (err) {
+      if (err?.name !== 'AbortError') {
+        console.error('Download failed:', err);
+        setError(`Download failed: ${err.message || 'unknown error'}. Try another source.`);
+      }
+    } finally {
+      setDownloading(false);
+      dlAbortRef.current = null;
+    }
+  }, [downloading, src, type, downloadName, title]);
+
+  // Abort an in-flight download if the source changes or the player unmounts.
+  useEffect(() => () => dlAbortRef.current?.abort(), [src]);
+
   // ---- Keyboard shortcuts -----------------------------------------------
   // Active while the player is mounted (only one ever is). Ignored while typing
   // in a field. Space/K play·pause, ←/→ (and J/L) seek, ↑/↓ volume, F fullscreen,
@@ -530,6 +565,22 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
             )}
 
             <div className="flex items-center gap-1">
+              {/* Download the current source to disk. Disabled label flips to a
+                  live %/cancel affordance while a download is in flight. */}
+              <button
+                onClick={handleDownload}
+                className={`flex items-center gap-1.5 p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90 ${downloading ? 'text-crimson-400' : ''}`}
+                aria-label={downloading ? 'Cancel download' : 'Download video'}
+                title={downloading ? 'Click to cancel download' : 'Download this source'}
+              >
+                {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+                {downloading && (
+                  <span className="text-[10px] font-black tabular-nums tracking-tighter">
+                    {dlProgress == null ? '…' : `${Math.round(dlProgress * 100)}%`}
+                  </span>
+                )}
+              </button>
+
               {document.pictureInPictureEnabled && (
                 <button onClick={togglePip} className={`p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90 ${pipActive ? 'text-crimson-400' : ''}`} aria-label="Picture in picture">
                   <PictureInPicture2 className="w-5 h-5" />
