@@ -8,3 +8,35 @@ export function stripHtml(html) {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
+// Pretty, human date for a release. Falls back to the raw string if unparseable.
+// (Shared by the changelog page and the About-page preview — kept here, in a
+// JSX-free module, so the preview doesn't pull in the lazy Changelog chunk.)
+export function formatReleaseDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// Strip markdown down to a one-glance plain-text excerpt (used by the About-page
+// preview). Drops headings/list markers/emphasis/links so a few clean lines show.
+export function changelogExcerpt(body, maxChars = 240) {
+  if (!body) return '';
+  const text = body
+    .replace(/\r\n/g, '\n')
+    .replace(/^#{1,6}\s+/gm, '')              // heading markers
+    .replace(/^[-*+]\s+/gm, '• ')             // bullets → •
+    .replace(/^\d+[.)]\s+/gm, '')             // numbered markers
+    .replace(/\*\*([^*]+)\*\*/g, '$1')        // bold
+    .replace(/__([^_]+)__/g, '$1')
+    .replace(/\*([^*\n]+)\*/g, '$1')          // italic
+    .replace(/_([^_\n]+)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')              // inline code
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')  // links → text
+    .replace(/^[-*_]{3,}$/gm, '')             // rules
+    .replace(/\n{2,}/g, '\n')
+    .trim();
+  if (text.length <= maxChars) return text;
+  return text.slice(0, maxChars).replace(/\s+\S*$/, '') + '…';
+}

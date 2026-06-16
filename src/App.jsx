@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, Settings, LogOut, Shield } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, Settings, LogOut, Shield, ScrollText, Tag } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, apiFetch, CLIENT_VERSION } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
+import { changelogExcerpt, formatReleaseDate } from './utils';
 import WatchView from './WatchView';
 import NotFound from './NotFound';
 // Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
@@ -20,6 +21,7 @@ const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
 // import SupportUsPage from './SupportUs'; // Temporarily hidden for legal reasons
 const SupportersPage = lazy(() => import('./Supporters'));
 const DisclaimerPage = lazy(() => import('./Disclaimer'));
+const ChangelogPage = lazy(() => import('./Changelog'));
 const AnimeOverview = lazy(() => import('./AnimeOverview'));
 // Admin dashboard — lazy, and only ever reached by admin accounts.
 const AdminPage = lazy(() => import('./Admin'));
@@ -427,8 +429,11 @@ const SOCIAL_LINKS = [
 
 function AboutPage() {
   const { health, healthLoading, healthError } = useHealthStatus();
+  const { entries: changelog, loading: changelogLoading, notConfigured: changelogUnavailable } = useChangelog();
   const [backendVersion, setBackendVersion] = useState('Resolving...');
   useTitle('About the Haven');
+
+  const latestRelease = changelog[0];
 
   useEffect(() => {
     apiFetch(`/`)
@@ -475,6 +480,66 @@ function AboutPage() {
           </p>
         </div>
       </div>
+
+      {/* Changelog preview — the first few lines of the latest decree, with a
+          Read More link through to the full Chronicle page. Hidden entirely when
+          the backend changelog engine isn't configured (503). */}
+      {!changelogUnavailable && (
+        <div className="space-y-6">
+          <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
+            <ScrollText className="w-4 h-4" /> Latest Chronicle
+            <div className="h-px bg-crimson-900/30 flex-grow"></div>
+          </h3>
+
+          <div className="relative bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 p-6 sm:p-8 rounded-[2rem] shadow-2xl overflow-hidden">
+            <div className="absolute top-0 right-0 p-5 opacity-[0.07] pointer-events-none">
+              <ScrollText className="w-20 h-20 text-crimson-500" />
+            </div>
+
+            {changelogLoading && (
+              <p className="text-crimson-500 animate-pulse flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em]">
+                <RefreshCw className="w-3 h-3 animate-spin" /> Unsealing the latest decree...
+              </p>
+            )}
+
+            {!changelogLoading && latestRelease && (
+              <>
+                <div className="flex flex-wrap items-center gap-3 mb-4">
+                  <span className="inline-flex items-center gap-2 px-3 py-1.5 bg-crimson-500/10 border border-crimson-500/30 rounded-xl text-crimson-300 font-black tracking-tight text-sm">
+                    <Tag className="w-3.5 h-3.5" />
+                    {latestRelease.tag || latestRelease.name}
+                  </span>
+                  {latestRelease.published_at && (
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600">
+                      {formatReleaseDate(latestRelease.published_at)}
+                    </span>
+                  )}
+                </div>
+                {latestRelease.name && latestRelease.name !== latestRelease.tag && (
+                  <h4 className="text-lg font-black text-white tracking-tight mb-3 leading-tight">{latestRelease.name}</h4>
+                )}
+                <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed font-medium whitespace-pre-line">
+                  {changelogExcerpt(latestRelease.body)}
+                </p>
+              </>
+            )}
+
+            {!changelogLoading && !latestRelease && (
+              <p className="text-sm text-crimson-300/60 italic font-medium">
+                "No decrees etched yet, darling — but the first page awaits."
+              </p>
+            )}
+
+            <Link
+              to="/changelog"
+              className="inline-flex items-center gap-2 mt-6 text-[10px] font-black uppercase tracking-[0.25em] text-crimson-500 hover:text-crimson-400 transition-colors group"
+            >
+              Read the Full Chronicle
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6">
         <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
@@ -743,6 +808,7 @@ function App() {
           {/* <Route path="/support" element={<SupportUsPage />} /> */} {/* Temporarily hidden for legal reasons */}
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/disclaimer" element={<DisclaimerPage />} />
+          <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/admin" element={<AdminPage />} />
@@ -791,6 +857,7 @@ function App() {
             <h4 className="text-white font-black uppercase text-xs tracking-widest mb-6">Connect</h4>
             <div className="flex flex-col gap-3">
               <Link to="/disclaimer" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Disclaimer</Link>
+              <Link to="/changelog" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Chronicle</Link>
               {SOCIAL_LINKS.slice(0, 3).map(({ label, href }) => (
                 <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">{label}</a>
               ))}
