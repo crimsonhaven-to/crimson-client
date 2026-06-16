@@ -64,9 +64,9 @@ const WatchView = ({
             activeStream.type === 'iframe' ? (
               (() => {
                 const url = activeStream.url;
-                // Sandbox iframes we host ourselves (the backend player page on the
-                // web build, or our extension-hosted player page). Both are
-                // same-origin, so keying off our own origin covers each build.
+                // Sandbox iframes we host ourselves (the backend player page, or
+                // anything served from our own origin) — those are trusted, so we
+                // grant the looser sandbox; third-party embeds get none.
                 const sandboxed = typeof url === 'string'
                   && (url.startsWith(API_BASE_URL) || url.startsWith(window.location.origin));
                 return (

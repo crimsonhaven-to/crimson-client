@@ -104,7 +104,9 @@ exposes no credential. User data (favorites + watch progress) lives in a separat
 | `POST` | `/auth/login` | – | Log in to an existing account via signed challenge → session. |
 | `POST` | `/auth/logout` | Bearer | Revoke the current session. |
 | `GET`  | `/account/me` | Bearer | Profile + favorite/progress counts. |
-| `GET`/`POST`/`DELETE` | `/account/favorites` | Bearer | List / add / remove a favorited show. |
+| `GET`/`POST`/`DELETE` | `/account/favorites` | Bearer | List / add / remove a favorited show. `?list_name=` selects a watchlist. |
+| `GET`  | `/account/watchlists` | Bearer | Distinct list names, each with its item count. |
+| `GET`  | `/account/favorites/export` | Bearer | Download every watchlist as one file. `?format=csv` (default) or `?format=json`; served as an attachment. |
 | `GET`/`POST`/`DELETE` | `/account/progress` | Bearer | List / upsert / remove per-episode watch progress. |
 | `GET`  | `/account/continue-watching` | Bearer | In-progress episodes only, most recent first. |
 | `GET`  | `/account/recent` | Bearer | Recently-watched episodes of **any** status (incl. completed), most recent first. `?limit=` (default 20). |
