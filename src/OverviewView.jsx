@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard } from 'lucide-react';
+import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, Tag } from 'lucide-react';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
 
@@ -65,6 +65,7 @@ const OverviewView = ({
   episodes, episodesLoading,
   onBack, onPlayEpisode, onPlayExtra,
   watchlistItem,
+  genres = [],
   notFoundText = 'This title could not be summoned from the archives.',
 }) => {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
@@ -163,6 +164,22 @@ const OverviewView = ({
                   <p className="text-sm sm:text-lg text-crimson-400/60 font-bold tracking-tight italic opacity-80">{overview.title_romaji}</p>
                 )}
               </div>
+
+              {/* Genre tags — only present for anime (the catalogue carries genres);
+                  shows pass an empty list, so this row simply doesn't render. */}
+              {genres.length > 0 && (
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                  <Tag className="w-3.5 h-3.5 text-crimson-500 opacity-70" />
+                  {genres.map(g => (
+                    <span
+                      key={g}
+                      className="px-3 py-1 rounded-full bg-crimson-500/10 backdrop-blur-md border border-crimson-500/20 text-[10px] font-black uppercase tracking-widest text-crimson-300/80 hover:border-crimson-500/40 hover:text-crimson-300 transition-colors"
+                    >
+                      {g}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {synopsis && (
                 <div className="max-w-3xl">
