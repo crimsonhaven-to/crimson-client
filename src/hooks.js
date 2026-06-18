@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.3.6';
+export const CLIENT_VERSION = '4.3.7';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -375,11 +375,17 @@ export function useAuth() {
 // The default list every account has (the original single "Favorites" tab). Any
 // other list_name is a user-made watchlist (e.g. "Todo", "Done", "Paused").
 export const DEFAULT_LIST = 'favorites';
+// A virtual, read-only list surfaced only on the Watchlists page: the
+// de-duplicated union of every list's shows. It is NOT a real list_name and is
+// never sent to the server — keep it out of the hook's `lists` so it can't show
+// up as an "add to list" target in WatchlistButton.
+export const ALL_LIST = '__all__';
 const CUSTOM_LISTS_KEY = 'crimson:watchlists';
 
-// Human label for a list name — the default list reads as "Favorites".
+// Human label for a list name — the default list reads as "Favorites", the
+// virtual aggregate reads as "All".
 export const listLabel = (name) =>
-  name === DEFAULT_LIST ? 'Favorites' : name;
+  name === DEFAULT_LIST ? 'Favorites' : name === ALL_LIST ? 'All' : name;
 
 const loadCustomLists = () => {
   try {

@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Play, Trash2, Plus, ListPlus, X, Download, Upload, ChevronDown, Check, AlertTriangle } from 'lucide-react';
-import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST } from './hooks';
+import { Heart, Play, Trash2, Plus, ListPlus, X, Download, Upload, ChevronDown, Check, AlertTriangle, Search, Layers } from 'lucide-react';
+import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST, ALL_LIST } from './hooks';
 
 // Watchlists page (formerly "Favorites"). Lists run along the top as tabs; the
 // active list's shows render in the grid below. Users can spin up new lists,
@@ -12,7 +12,8 @@ const FavoritesPage = () => {
   useTitle('Watchlists');
   const navigate = useNavigate();
 
-  const [activeList, setActiveList] = useState(DEFAULT_LIST);
+  const [activeList, setActiveList] = useState(ALL_LIST);
+  const [query, setQuery] = useState('');
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
   const [exporting, setExporting] = useState(false);
@@ -72,13 +73,38 @@ const FavoritesPage = () => {
     }
   };
 
+  // The virtual "All" list: every show across every list, de-duplicated by the
+  // same identity key the backend uses (AniList id preferred, else TMDB id).
+  const allShows = useMemo(() => {
+    const map = new Map();
+    for (const it of items) {
+      const key = it.anilist_id != null ? `a:${it.anilist_id}` : `t:${it.tmdb_id}`;
+      if (!map.has(key)) map.set(key, it);
+    }
+    return Array.from(map.values());
+  }, [items]);
+
+  // Tabs rendered on the page: the read-only "All" aggregate first, then the
+  // real lists from the hook (which never includes ALL_LIST).
+  const displayLists = useMemo(
+    () => [{ name: ALL_LIST, count: allShows.length }, ...lists],
+    [lists, allShows.length]
+  );
+
   // Derive the list actually shown: if the selected one vanished (e.g. it was just
-  // deleted) fall back to the default, without an extra effect/render.
-  const effectiveList = lists.some(l => l.name === activeList) ? activeList : DEFAULT_LIST;
+  // deleted) fall back to "All", without an extra effect/render.
+  const effectiveList = displayLists.some(l => l.name === activeList) ? activeList : ALL_LIST;
 
   const shows = useMemo(
-    () => items.filter(i => i.list_name === effectiveList),
-    [items, effectiveList]
+    () => (effectiveList === ALL_LIST ? allShows : items.filter(i => i.list_name === effectiveList)),
+    [items, effectiveList, allShows]
+  );
+
+  // Narrow the visible shows by the search query (title substring, case-insensitive).
+  const q = query.trim().toLowerCase();
+  const filteredShows = useMemo(
+    () => (q ? shows.filter(s => (s.title || '').toLowerCase().includes(q)) : shows),
+    [shows, q]
   );
 
   const handleCreate = (e) => {
@@ -237,7 +263,7 @@ const FavoritesPage = () => {
 
         {/* List tabs */}
         <div className="flex flex-wrap items-center gap-2.5">
-          {lists.map((l) => {
+          {displayLists.map((l) => {
             const active = l.name === effectiveList;
             return (
               <button
@@ -249,6 +275,7 @@ const FavoritesPage = () => {
                     : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600'
                 }`}
               >
+                {l.name === ALL_LIST && <Layers className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-crimson-600'}`} />}
                 {l.name === DEFAULT_LIST && <Heart className={`w-3.5 h-3.5 ${active ? 'fill-white' : 'fill-crimson-800'}`} />}
                 <span>{listLabel(l.name)}</span>
                 <span className={`text-[10px] tabular-nums ${active ? 'text-crimson-100/80' : 'text-crimson-700'}`}>{l.count}</span>
@@ -286,8 +313,8 @@ const FavoritesPage = () => {
             </button>
           )}
 
-          {/* Delete the active custom list */}
-          {effectiveList !== DEFAULT_LIST && (
+          {/* Delete the active custom list (never the default or the virtual "All") */}
+          {effectiveList !== DEFAULT_LIST && effectiveList !== ALL_LIST && (
             <button
               onClick={handleDeleteList}
               className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-600 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 hover:bg-crimson-900/30 transition-all active:scale-95"
@@ -297,11 +324,80 @@ const FavoritesPage = () => {
             </button>
           )}
         </div>
+
+        {/* Search within the active list */}
+        {shows.length > 0 && (
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700 pointer-events-none" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={`Search "${listLabel(effectiveList)}"…`}
+                className="w-full pl-11 pr-10 py-3 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-white placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+              />
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  aria-label="Clear search"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-crimson-600 hover:text-white transition-colors active:scale-90"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            {q && (
+              <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-600 tabular-nums">
+                {filteredShows.length} match{filteredShows.length === 1 ? '' : 'es'}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      {shows.length > 0 ? (
+      {shows.length === 0 ? (
+        <div className="py-32 text-center space-y-8 bg-crimson-950/20 rounded-[3rem] border border-dashed border-crimson-900/30 backdrop-blur-sm">
+          <div className="relative w-20 h-20 mx-auto">
+             <div className="absolute inset-0 bg-crimson-500/10 blur-2xl rounded-full"></div>
+             <Heart className="relative w-20 h-20 text-crimson-950 fill-crimson-900/20" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">
+              "{listLabel(effectiveList)}" is currently empty
+            </p>
+            <p className="text-crimson-700 font-medium text-xs">Add shows to this list from any overview or watch page.</p>
+          </div>
+          <button
+            onClick={() => navigate('/catalogue')}
+            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+          >
+            Explore the Catalogue
+          </button>
+        </div>
+      ) : filteredShows.length === 0 ? (
+        <div className="py-28 text-center space-y-6 bg-crimson-950/20 rounded-[3rem] border border-dashed border-crimson-900/30 backdrop-blur-sm">
+          <div className="relative w-16 h-16 mx-auto">
+            <div className="absolute inset-0 bg-crimson-500/10 blur-2xl rounded-full"></div>
+            <Search className="relative w-16 h-16 text-crimson-900" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">
+              No matches in "{listLabel(effectiveList)}"
+            </p>
+            <p className="text-crimson-700 font-medium text-xs">
+              Nothing here matches "<span className="text-crimson-400">{query.trim()}</span>".
+            </p>
+          </div>
+          <button
+            onClick={() => setQuery('')}
+            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+          >
+            Clear Search
+          </button>
+        </div>
+      ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 sm:gap-8">
-          {shows.map((anime) => (
+          {filteredShows.map((anime) => (
             <div
               key={anime.anilist_id || anime.tmdb_id}
               className="group relative flex flex-col"
@@ -322,13 +418,15 @@ const FavoritesPage = () => {
                   >
                     <Play className="w-6 h-6 fill-current" />
                   </button>
-                  <button
-                    onClick={() => removeFromList(anime, effectiveList)}
-                    className="flex items-center gap-2 px-4 py-1.5 bg-crimson-950/80 text-[10px] font-black uppercase tracking-widest text-crimson-400 rounded-full border border-crimson-900 hover:text-white hover:border-crimson-600 transition-all"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>Remove</span>
-                  </button>
+                  {effectiveList !== ALL_LIST && (
+                    <button
+                      onClick={() => removeFromList(anime, effectiveList)}
+                      className="flex items-center gap-2 px-4 py-1.5 bg-crimson-950/80 text-[10px] font-black uppercase tracking-widest text-crimson-400 rounded-full border border-crimson-900 hover:text-white hover:border-crimson-600 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Remove</span>
+                    </button>
+                  )}
                 </div>
 
                 {/* Quick Info Badge */}
@@ -345,25 +443,6 @@ const FavoritesPage = () => {
               </div>
             </div>
           ))}
-        </div>
-      ) : (
-        <div className="py-32 text-center space-y-8 bg-crimson-950/20 rounded-[3rem] border border-dashed border-crimson-900/30 backdrop-blur-sm">
-          <div className="relative w-20 h-20 mx-auto">
-             <div className="absolute inset-0 bg-crimson-500/10 blur-2xl rounded-full"></div>
-             <Heart className="relative w-20 h-20 text-crimson-950 fill-crimson-900/20" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">
-              "{listLabel(effectiveList)}" is currently empty
-            </p>
-            <p className="text-crimson-700 font-medium text-xs">Add shows to this list from any overview or watch page.</p>
-          </div>
-          <button
-            onClick={() => navigate('/catalogue')}
-            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
-          >
-            Explore the Catalogue
-          </button>
         </div>
       )}
     </div>
