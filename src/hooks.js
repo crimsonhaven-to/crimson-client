@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.3.7';
+export const CLIENT_VERSION = '4.3.8';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -644,7 +644,9 @@ export function useAccount() {
     if (!sessionToken) return;
     setLoading(true);
     try {
-      const res = await apiFetch(`/account/recent`);
+      // Pull the full history (server caps at 100) so the History page's search
+      // and filters operate over everything, not just the latest handful.
+      const res = await apiFetch(`/account/recent?limit=100`);
       if (res.ok) {
         const data = await res.json();
         setRecentlyWatched(data.items || []);
@@ -655,6 +657,34 @@ export function useAccount() {
       setLoading(false);
     }
   }, [sessionToken]);
+
+  // Remove a show from watch history entirely. The history is collapsed to one
+  // card per show, but a show can have many episode-level progress rows — so we
+  // fetch the full progress list and delete every row for this show, otherwise it
+  // would just reappear carrying an older episode. Optimistically drops it from
+  // the visible list first for a snappy feel.
+  const removeFromHistory = useCallback(async (item) => {
+    if (!sessionToken) return false;
+    const matches = (r) =>
+      item.anilist_id != null
+        ? String(r.anilist_id) === String(item.anilist_id)
+        : String(r.tmdb_id) === String(item.tmdb_id) && r.anilist_id == null;
+    setRecentlyWatched(prev => prev.filter(r => !matches(r)));
+    try {
+      const res = await apiFetch(`/account/progress`);
+      const rows = res.ok ? ((await res.json()).progress || []) : [];
+      const targets = rows.filter(matches);
+      await Promise.all(targets.map(r =>
+        apiFetch(`/account/progress?item_key=${encodeURIComponent(r.item_key)}`, { method: 'DELETE' }).catch(() => {})
+      ));
+      return true;
+    } catch (e) {
+      console.error("Remove from history error:", e);
+      // Re-sync so the optimistic removal doesn't desync from the server.
+      fetchRecent();
+      return false;
+    }
+  }, [sessionToken, fetchRecent]);
 
 
   // useCallback so the reference is stable across renders: the watch page keys a
@@ -716,6 +746,7 @@ export function useAccount() {
     loading,
     updateProgress,
     fetchResumePosition,
+    removeFromHistory,
     refreshContinueWatching: fetchContinueWatching,
     refreshRecent: fetchRecent
   };
