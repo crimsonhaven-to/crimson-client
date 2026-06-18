@@ -47,6 +47,7 @@ const AnimeOverview = () => {
       onPlayEpisode={goToEpisode}
       onPlayExtra={goToExtra}
       watchlistItem={watchlistItem}
+      genres={overview?.genres || []}
       notFoundText="This anime could not be summoned from the archives."
     />
   );
