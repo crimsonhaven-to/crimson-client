@@ -464,6 +464,8 @@ function AboutPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT:</span> React 18 / Vite / Tailwind</p>
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">ROUTING:</span> FastAPI Asynchronous Engine</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">BLOOD ARCHIVE:</span> 3-Node PostgreSQL HA Coven · Off-Site Crypt Backup</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">DOMINION:</span> 3-Node Docker Swarm · Eternal Zero-Interruption CI/CD Ritual</p>
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">BACKEND VERSION:</span> {backendVersion}</p>
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT VERSION:</span> {CLIENT_VERSION}</p>
           </div>
