@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAnimeOverview, useTitle } from './hooks';
+import { useAnimeOverview, useShowResume, useTitle } from './hooks';
 import OverviewView from './OverviewView';
 
 // Anime overview page (/anime/:anilistId). Thin wrapper: it owns the anime data
@@ -25,6 +25,9 @@ const AnimeOverview = () => {
     ? { anilist_id: favId, title: overview.title, poster: overview.poster }
     : undefined;
 
+  // "Pick up where you left off" — latest tracked episode for this anime (or null).
+  const resume = useShowResume({ anilistId: favId });
+
   // A season can have its own anilist_id (TMDB-split long runs fall back to the
   // show's id) — unchanged from the original behaviour.
   const goToEpisode = (season, episodeNumber) => {
@@ -47,6 +50,7 @@ const AnimeOverview = () => {
       onPlayEpisode={goToEpisode}
       onPlayExtra={goToExtra}
       watchlistItem={watchlistItem}
+      resume={resume}
       genres={overview?.genres || []}
       notFoundText="This anime could not be summoned from the archives."
     />

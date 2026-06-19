@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.3.8';
+export const CLIENT_VERSION = '4.3.9';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -789,6 +789,9 @@ export function useAnimeStreamer(externalProps = {}) {
   const [metaLoading, setMetaLoading] = useState(false);
   const [streamLoading, setStreamLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
+  // Set (to { airDate }) when the backend reports the episode hasn't aired yet, so
+  // the watch UI shows a "not yet aired" notice instead of resolving zero sources.
+  const [unaired, setUnaired] = useState(null);
 
   // ---------- Helper: fetch search suggestions ----------
   const fetchSuggestions = useCallback(async (query) => {
@@ -989,6 +992,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     setStreamLoading(true);
     setStreamData(null);
     setActiveStreamIdx(0);
+    setUnaired(null);
     streamsRef.current = [];
     userPickedRef.current = false;
 
@@ -1003,7 +1007,12 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         return;
       }
 
-      if (msg.type === 'meta') {
+      if (msg.type === 'unaired') {
+        // Episode is dated in the future — no scraping happened server-side. Show
+        // the "coming soon" state instead of an empty sources list.
+        setUnaired({ airDate: msg.air_date });
+        setStreamLoading(false);
+      } else if (msg.type === 'meta') {
         // Initialise the container as soon as metadata flushes (before any scraper).
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
@@ -1092,9 +1101,10 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     activeStreamIdx, setActiveStreamIdx: selectStream,   
     
     // data
-    animeMetadata, streamData,
+    animeMetadata, streamData, streamLoading,
     availableSeasons, seasonGroups,
-    
+    unaired,
+
     // actions
     handleSelectSuggestion,
     initializeFromIds
@@ -1457,6 +1467,38 @@ export function useShowOverview(tmdbId) {
   return { overview, loading, error, activeSeason, setActiveSeason, episodes, episodesLoading };
 }
 
+// Latest watch-progress row for ONE show, so an overview page can surface a
+// "continue where you left off" banner. Anime match on anilist_id; non-anime shows
+// match on tmdb_id (and a null anilist_id, mirroring the backend dedup key). Rows
+// come back newest-first (updated_at DESC), so the first match is the most recent
+// episode. Returns the row (with season/episode/status/position) or null. Reactive
+// to login/logout; best-effort and silent on failure.
+export function useShowResume({ anilistId = null, tmdbId = null } = {}) {
+  const sessionToken = useSessionToken();
+  const [resume, setResume] = useState(null);
+
+  useEffect(() => {
+    if (!sessionToken || (anilistId == null && tmdbId == null)) { setResume(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch(`/account/progress`);
+        if (!res.ok) return;
+        const rows = (await res.json()).progress || [];
+        const match = (r) =>
+          anilistId != null
+            ? String(r.anilist_id) === String(anilistId)
+            : String(r.tmdb_id) === String(tmdbId) && r.anilist_id == null;
+        const latest = rows.find(match) || null;
+        if (!cancelled) setResume(latest);
+      } catch { /* best-effort: no banner on failure */ }
+    })();
+    return () => { cancelled = true; };
+  }, [sessionToken, anilistId, tmdbId]);
+
+  return resume;
+}
+
 // TMDB-keyed twin of useAnimeStreamer's playback half. Season/episode are driven
 // by the URL (the show watch page passes them in), so this is simpler than the
 // anime version: no anilist->season mapping. Loads the season list + season
@@ -1469,6 +1511,8 @@ export function useShowStreamer(tmdbId, season, episode) {
   const [streamLoading, setStreamLoading] = useState(false);
   const [activeStreamIdx, setActiveStreamIdx] = useState(0);
   const [apiError, setApiError] = useState(null);
+  // Set (to { airDate }) when the backend reports the episode hasn't aired yet.
+  const [unaired, setUnaired] = useState(null);
 
   const streamsRef = useRef([]);
   const userPickedRef = useRef(false);
@@ -1527,6 +1571,7 @@ export function useShowStreamer(tmdbId, season, episode) {
     setStreamLoading(true);
     setStreamData(null);
     setActiveStreamIdx(0);
+    setUnaired(null);
     streamsRef.current = [];
     userPickedRef.current = false;
 
@@ -1536,7 +1581,10 @@ export function useShowStreamer(tmdbId, season, episode) {
       let msg;
       try { msg = JSON.parse(trimmed); } catch { return; }
 
-      if (msg.type === 'meta') {
+      if (msg.type === 'unaired') {
+        setUnaired({ airDate: msg.air_date });
+        setStreamLoading(false);
+      } else if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
         const next = [
@@ -1579,7 +1627,7 @@ export function useShowStreamer(tmdbId, season, episode) {
 
   return {
     overview, metadata, metaLoading,
-    streamData, streamLoading,
+    streamData, streamLoading, unaired,
     activeStreamIdx, selectStream,
     apiError,
   };

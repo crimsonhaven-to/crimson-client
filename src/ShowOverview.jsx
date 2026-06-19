@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { useShowOverview, useTitle } from './hooks';
+import { useShowOverview, useShowResume, useTitle } from './hooks';
 import OverviewView from './OverviewView';
 
 // Non-anime show overview page (/show/:tmdbId). The TMDB-keyed twin of
@@ -22,6 +22,9 @@ const ShowOverview = () => {
     ? { tmdb_id: Number(tmdbId), title: overview.title, poster: overview.poster }
     : undefined;
 
+  // "Pick up where you left off" — latest tracked episode for this show (or null).
+  const resume = useShowResume({ tmdbId: Number(tmdbId) });
+
   const goToEpisode = (season, episodeNumber) =>
     navigate(`/watch-show/${tmdbId}/${season.season_number}/${episodeNumber}`);
 
@@ -38,6 +41,7 @@ const ShowOverview = () => {
       onPlayEpisode={goToEpisode}
       onPlayExtra={() => {}}
       watchlistItem={watchlistItem}
+      resume={resume}
       notFoundText="This show could not be summoned from the archives."
     />
   );
