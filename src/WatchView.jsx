@@ -1,11 +1,20 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, AlertTriangle, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Info, AlertTriangle, ChevronRight, ArrowLeft, CalendarClock } from 'lucide-react';
 import { API_BASE_URL } from './hooks';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
+
+// Format a TMDB air date ('YYYY-MM-DD') as a readable day, e.g. "Jul 1, 2026".
+// Falls back to the raw string if it can't be parsed.
+const formatAirDate = (iso) => {
+  if (!iso) return '';
+  const t = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(t.getTime())) return iso;
+  return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 // Presentational watch UI shared by the anime watch page (/watch/:anilistId/...)
 // and the non-anime show watch page (/watch-show/:tmdbId/...). Both feed it the
@@ -15,6 +24,7 @@ const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
 const WatchView = ({
   // playback / sources
   streams = [], streamLoading, activeStreamIdx, onSelectStream,
+  unaired,
   poster, playerStartAt, onPlayerProgress,
   // header / info
   metadata, displayTitle, totalSeasons,
@@ -59,7 +69,7 @@ const WatchView = ({
           Back to Overview
         </Link>
         <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black border border-crimson-900/60 shadow-[0_30px_100px_rgba(0,0,0,0.8)]">
-          {streamLoading && (
+          {streamLoading && !unaired && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 z-20 p-6 text-center backdrop-blur-md">
               <div className="relative w-16 h-16 mb-6">
                 <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
@@ -69,7 +79,18 @@ const WatchView = ({
               <p className="text-crimson-400 font-black tracking-[0.3em] animate-pulse text-xs uppercase">Resolving manifest vectors</p>
             </div>
           )}
-          {activeStream ? (
+          {unaired ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-crimson-950/70 backdrop-blur-sm">
+              <CalendarClock className="w-16 h-16 text-crimson-500 mb-5 opacity-70" />
+              <p className="text-white font-black uppercase tracking-[0.2em] text-base sm:text-lg">Not Yet Manifested</p>
+              <p className="text-crimson-300/80 mt-3 max-w-md font-medium text-sm leading-relaxed">
+                This segment hasn't crossed into our dimension yet.
+                {unaired.airDate && (
+                  <> It materialises <span className="text-crimson-400 font-black">{formatAirDate(unaired.airDate)}</span>.</>
+                )}
+              </p>
+            </div>
+          ) : activeStream ? (
             activeStream.type === 'iframe' ? (
               (() => {
                 const url = activeStream.url;
@@ -230,7 +251,14 @@ const WatchView = ({
             Scraped Targets
           </h3>
           <div className="grid grid-cols-1 gap-3 relative z-10">
-            {streamLoading && !streams.length ? (
+            {unaired ? (
+              <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-2">
+                <CalendarClock className="w-6 h-6 text-crimson-700 mx-auto" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 italic">
+                  Awaiting transmission{unaired.airDate ? ` · ${formatAirDate(unaired.airDate)}` : ''}
+                </p>
+              </div>
+            ) : streamLoading && !streams.length ? (
               [1, 2, 3].map((n) => (
                 <div key={n} className="h-16 bg-crimson-950/40 animate-pulse rounded-2xl border border-crimson-900/30"></div>
               ))

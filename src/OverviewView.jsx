@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, Tag } from 'lucide-react';
+import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, Tag, History } from 'lucide-react';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
 
@@ -65,6 +65,9 @@ const OverviewView = ({
   episodes, episodesLoading,
   onBack, onPlayEpisode, onPlayExtra,
   watchlistItem,
+  // Latest watch-progress row for this title (or null) — drives the "pick up where
+  // you left off" banner. Resuming reuses onPlayEpisode with the row's season.
+  resume,
   genres = [],
   notFoundText = 'This title could not be summoned from the archives.',
 }) => {
@@ -196,6 +199,45 @@ const OverviewView = ({
                   )}
                 </div>
               )}
+
+              {/* Pick up where you left off — only when this account has tracked
+                  progress on this title. Reuses onPlayEpisode (so it routes to the
+                  right anilist/tmdb watch URL) with the last-watched season. */}
+              {resume && (() => {
+                const resumeSeason = seasons.find(s => s.season_number === resume.season_number);
+                const pct = resume.duration_seconds
+                  ? Math.min(100, Math.round((resume.position_seconds / resume.duration_seconds) * 100))
+                  : 0;
+                const done = resume.status === 'completed';
+                return (
+                  <div className="max-w-xl mx-auto md:mx-0 flex items-center gap-4 rounded-2xl border border-crimson-500/30 bg-crimson-950/50 backdrop-blur-md p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+                    <div className="hidden sm:flex p-2.5 rounded-xl bg-crimson-500/10 border border-crimson-500/20 shrink-0">
+                      <History className="w-5 h-5 text-crimson-400" />
+                    </div>
+                    <div className="flex-1 min-w-0 text-left">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500">
+                        {done ? 'You finished this' : 'Pick up where you left off'}
+                      </p>
+                      <p className="text-sm font-bold text-crimson-50 mt-1 truncate">
+                        {overview.total_seasons > 1 ? `Season ${resume.season_number} · ` : ''}Episode {resume.episode_number}
+                        {!done && pct > 0 && <span className="text-crimson-500 font-black"> · {pct}%</span>}
+                      </p>
+                      {!done && pct > 0 && (
+                        <div className="mt-2 h-1 w-full max-w-[16rem] bg-crimson-900/70 rounded-full overflow-hidden">
+                          <div className="h-full bg-crimson-500" style={{ width: `${pct}%` }} />
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => onPlayEpisode(resumeSeason || currentSeason, resume.episode_number)}
+                      className="shrink-0 inline-flex items-center gap-2 bg-crimson-500 hover:bg-crimson-400 text-white font-black uppercase tracking-[0.15em] text-[11px] px-5 py-3 rounded-xl transition-all shadow-[0_10px_20px_rgba(255,0,60,0.3)] active:scale-95"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-white" />
+                      {done ? 'Watch Again' : 'Resume'}
+                    </button>
+                  </div>
+                );
+              })()}
 
               {(currentSeason || watchlistItem) && (
                 <div className="pt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">

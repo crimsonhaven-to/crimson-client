@@ -45,23 +45,68 @@ const timeAgo = (iso) => {
   return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Resume target for an item: a finished episode resumes into the *next* one; an
-// in-progress one resumes into itself (the watch page seeks to the saved spot).
+// Whether an ISO date ('YYYY-MM-DD') is strictly in the future (calendar-day).
+const isFutureDate = (iso) => {
+  if (!iso) return false;
+  const t = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(t.getTime())) return false;
+  return startOfDay(t) > startOfDay(new Date());
+};
+
+// Resume target for an item. In-progress items resume into themselves (the watch
+// page seeks to the saved spot). A finished episode normally resumes into the
+// *next* one — but only when that next episode actually exists (no phantom "E13"
+// after a 12-episode finale) and has already aired. The backend annotates rows
+// with next_episode_exists / next_episode_air_date / season_episode_count; when
+// those are absent (older payloads) we fall back to the season episode count, then
+// finally to the original always-advance behaviour.
 const resumeInfo = (item) => {
-  const isFinished = item.status === 'completed';
-  const ep = isFinished ? item.episode_number + 1 : item.episode_number;
+  const finished = item.status === 'completed';
+  const cur = item.episode_number;
+
+  const count = item.season_episode_count;
+  const nextExists = item.next_episode_exists != null
+    ? item.next_episode_exists
+    : (count != null ? cur + 1 <= count : true);
+  const nextAired = !isFutureDate(item.next_episode_air_date);
+  const advance = finished && nextExists && nextAired;
+  const ep = advance ? cur + 1 : cur;
+
   const href = item.anilist_id
     ? `/watch/${item.anilist_id}/${item.season_number}/${ep}`
     : `/watch-show/${item.tmdb_id}/${item.season_number}/${ep}`;
   const percent = item.duration_seconds
     ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
     : 0;
-  return { isFinished, ep, href, percent };
+
+  // What the card's action communicates:
+  //   'resume'   — partway through, jump back in
+  //   'next'     — finished, the next episode is ready to watch
+  //   'upcoming' — finished all that's aired; the next episode hasn't dropped yet
+  //   'rewatch'  — finished the finale (no further episodes); offer a re-watch
+  let mode = 'resume';
+  if (finished) mode = advance ? 'next' : (nextExists ? 'upcoming' : 'rewatch');
+  const actionLabel = {
+    resume: 'Resume Journey',
+    next: `Next Episode (E${ep})`,
+    upcoming: 'All Caught Up',
+    rewatch: 'Watch Again',
+  }[mode];
+
+  return { finished, ep, href, percent, mode, actionLabel, nextAirDate: item.next_episode_air_date };
+};
+
+// Readable day label for an air date ('YYYY-MM-DD'), e.g. "Jul 1, 2026".
+const airDateLabel = (iso) => {
+  if (!iso) return '';
+  const t = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(t.getTime())) return iso;
+  return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 // One history entry, rendered as a tall poster card ('grid') or a dense row ('list').
 const HistoryCard = ({ item, view, onOpen, onRemove }) => {
-  const { isFinished, ep, percent } = resumeInfo(item);
+  const { mode, actionLabel, percent, nextAirDate } = resumeInfo(item);
   const ago = timeAgo(item.updated_at);
   const handleRemove = (e) => { e.stopPropagation(); onRemove(item); };
 
@@ -156,8 +201,11 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
               <span className="text-crimson-400 bg-crimson-400/10 px-2 py-0.5 rounded-md border border-crimson-400/20">Finished</span>
             )}
           </div>
-          <button className="flex items-center gap-2.5 text-[10px] font-black text-white uppercase tracking-[0.2em] group-hover:translate-x-2 transition-all duration-300">
-            <span>{isFinished ? `Next Episode (E${ep})` : 'Resume Journey'}</span>
+          <button
+            title={mode === 'upcoming' && nextAirDate ? `Next episode airs ${airDateLabel(nextAirDate)}` : undefined}
+            className="flex items-center gap-2.5 text-[10px] font-black text-white uppercase tracking-[0.2em] group-hover:translate-x-2 transition-all duration-300"
+          >
+            <span>{actionLabel}</span>
             <div className="p-1.5 rounded-full bg-crimson-500 shadow-[0_0_10px_rgba(255,0,60,0.5)]">
               <Play className="w-3 h-3 fill-white" />
             </div>

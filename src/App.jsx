@@ -312,7 +312,7 @@ function WatchPage() {
 
   const {
     animeMetadata, streamData,
-    streamLoading,
+    streamLoading, unaired,
     availableSeasons, seasonGroups,
     currentSeason, setCurrentSeason,
     currentEpisode, setCurrentEpisode,
@@ -397,6 +397,7 @@ function WatchPage() {
     <WatchView
       streams={streamData?.streams || []}
       streamLoading={streamLoading}
+      unaired={unaired}
       activeStreamIdx={activeStreamIdx}
       onSelectStream={setActiveStreamIdx}
       poster={animeMetadata?.poster}

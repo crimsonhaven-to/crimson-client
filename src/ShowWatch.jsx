@@ -16,7 +16,7 @@ function ShowWatch() {
 
   const {
     overview, metadata,
-    streamData, streamLoading,
+    streamData, streamLoading, unaired,
     activeStreamIdx, selectStream,
   } = useShowStreamer(tmdbId, currentSeason, currentEpisode);
 
@@ -103,6 +103,7 @@ function ShowWatch() {
     <WatchView
       streams={streamData?.streams || []}
       streamLoading={streamLoading}
+      unaired={unaired}
       activeStreamIdx={activeStreamIdx}
       onSelectStream={selectStream}
       poster={poster}
