@@ -130,6 +130,24 @@ const OverviewView = ({
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back
           </button>
 
+          {/* Degraded notice — when the backend couldn't reach TMDB and rebuilt this
+              page from local/AniList metadata only. Phrased by the backend (Lumi). */}
+          {overview.notice && (
+            <div className="mb-10 flex items-start gap-4 rounded-2xl border border-amber-500/40 bg-amber-950/30 backdrop-blur-md p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
+              <div className="flex p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+              </div>
+              <div className="min-w-0 text-left">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400">
+                  {overview.notice.title || 'The Archives Flicker'}
+                </p>
+                <p className="text-sm text-amber-100/70 leading-relaxed font-medium mt-1.5">
+                  {overview.notice.message}
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col md:flex-row gap-10 lg:gap-14 items-center md:items-start text-center md:text-left">
             {overview.poster && (
               <div className="relative group flex-shrink-0">
