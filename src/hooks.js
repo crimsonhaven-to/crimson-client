@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.4.4';
+export const CLIENT_VERSION = '4.4.5';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -1024,7 +1024,9 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
           ...streamsRef.current,
           // `subtitles` is optional (only ShowBox/Febbox supplies external tracks)
           // and stays undefined otherwise, so the player simply renders none.
-          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles },
+          // `cacheTicket` (optional) lets the player confirm this exact source for
+          // server-side caching once the viewer has actually watched it.
+          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket },
         ];
         streamsRef.current = next;
         setStreamData((prev) => ({ ...(prev || {}), streams: next }));
@@ -1589,7 +1591,7 @@ export function useShowStreamer(tmdbId, season, episode) {
       } else if (msg.type === 'stream') {
         const next = [
           ...streamsRef.current,
-          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles },
+          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket },
         ];
         streamsRef.current = next;
         setStreamData((prev) => ({ ...(prev || {}), streams: next }));
