@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.4.5';
+export const CLIENT_VERSION = '4.4.6';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -36,16 +36,21 @@ function memSet(key, data, ttlMs = MEM_TTL_MS) {
 // --- Stream source preference ----------------------------------------------
 // Sources resolve in a race and arrive in arbitrary order. This ranks them so
 // the most reliable/performant one is auto-selected as the active source the
-// moment it lands (lower rank = preferred; unranked sources sit at 100). Voe is
-// the standout — fast and dependable — so it wins whenever it resolves. The list
-// itself stays in arrival order; only which source plays by default is affected,
-// and the user can still pick any source manually from the sidebar.
+// moment it lands (lower rank = preferred; unranked sources sit at 100). The
+// preferred order is: server-side Cache (bytes off our own NAS — fastest and most
+// reliable) > Voe > Jellyfin; everything else stays unranked. The list itself
+// stays in arrival order; only which source plays by default is affected, and the
+// user can still pick any source manually from the sidebar.
 const STREAM_PRIORITY = [
-  { match: 'voe', rank: 0 },
+  { match: 'voe', rank: 1 },
+  { match: 'jellyfin', rank: 2 },
 ];
 
-function streamPriority(source) {
-  const s = (source || '').toLowerCase();
+function streamPriority(stream) {
+  // Cache sources carry a dynamic, admin-set label (the NAS target's name), so
+  // they can't be matched on the source string — detect them by their proxy URL.
+  if ((stream?.url || '').includes('/cache_proxy/')) return 0;
+  const s = (stream?.source || '').toLowerCase();
   for (const { match, rank } of STREAM_PRIORITY) {
     if (s.includes(match)) return rank;
   }
@@ -1038,7 +1043,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
           let bestIdx = 0;
           let bestRank = Infinity;
           next.forEach((s, i) => {
-            const r = streamPriority(s.source);
+            const r = streamPriority(s);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
@@ -1598,7 +1603,7 @@ export function useShowStreamer(tmdbId, season, episode) {
         if (!userPickedRef.current) {
           let bestIdx = 0, bestRank = Infinity;
           next.forEach((s, i) => {
-            const r = streamPriority(s.source);
+            const r = streamPriority(s);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
