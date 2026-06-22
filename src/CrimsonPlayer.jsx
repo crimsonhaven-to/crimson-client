@@ -209,10 +209,26 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   }, [subtitleIdx, tracks.length, reloadKey]);
 
   // ---- Fullscreen state --------------------------------------------------
+  // Tracks both the standard Fullscreen API (desktop, Android, iPad Safari) and
+  // iOS's native <video> fullscreen, which fires webkitbegin/endfullscreen on
+  // the element instead of updating document.fullscreenElement.
   useEffect(() => {
-    const onFs = () => setFullscreen(document.fullscreenElement === wrapRef.current);
+    const v = videoRef.current;
+    const onFs = () => setFullscreen(
+      (document.fullscreenElement || document.webkitFullscreenElement) === wrapRef.current
+    );
+    const onIosBegin = () => setFullscreen(true);
+    const onIosEnd = () => setFullscreen(false);
     document.addEventListener('fullscreenchange', onFs);
-    return () => document.removeEventListener('fullscreenchange', onFs);
+    document.addEventListener('webkitfullscreenchange', onFs);
+    v?.addEventListener('webkitbeginfullscreen', onIosBegin);
+    v?.addEventListener('webkitendfullscreen', onIosEnd);
+    return () => {
+      document.removeEventListener('fullscreenchange', onFs);
+      document.removeEventListener('webkitfullscreenchange', onFs);
+      v?.removeEventListener('webkitbeginfullscreen', onIosBegin);
+      v?.removeEventListener('webkitendfullscreen', onIosEnd);
+    };
   }, []);
 
   // ---- Controls auto-hide ------------------------------------------------
@@ -282,8 +298,21 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    if (document.fullscreenElement) document.exitFullscreen?.();
-    else wrapRef.current?.requestFullscreen?.();
+    const wrap = wrapRef.current;
+    const v = videoRef.current;
+    // Already fullscreen via the standard API? Exit it.
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
+      return;
+    }
+    // Standard Fullscreen API (desktop, Android, iPad Safari in-browser), with
+    // the webkit-prefixed form for older Safari.
+    if (wrap?.requestFullscreen) { wrap.requestFullscreen(); return; }
+    if (wrap?.webkitRequestFullscreen) { wrap.webkitRequestFullscreen(); return; }
+    // iOS fallback: iPhones (every browser) and iPad homescreen webapps can't
+    // fullscreen an arbitrary element — only the <video> itself can, and it's
+    // dismissed with the native "Done" button rather than an exit call.
+    if (v?.webkitEnterFullscreen) { v.webkitEnterFullscreen(); return; }
   }, []);
 
   const togglePip = useCallback(async () => {
