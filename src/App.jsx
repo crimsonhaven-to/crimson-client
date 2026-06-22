@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, Settings, LogOut, Shield, ScrollText, Tag } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -675,7 +675,7 @@ function App() {
     // { to: "/support", label: "Support Us", icon: <Coffee className="w-4 h-4" /> }, // Temporarily hidden for legal reasons
     { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
     { to: "/about", label: "About Us", icon: <HelpCircle className="w-4 h-4" /> },
-    { to: "/account", label: isAuthenticated ? "Profile" : "Link Account", icon: <User className="w-4 h-4" />, highlight: !isAuthenticated },
+    // Profile/account lives in the top-right account dropdown rather than the main nav.
     // Admin-only — surfaced only to accounts flagged is_admin.
     { to: "/admin", label: "Admin", icon: <Shield className="w-4 h-4" />, admin: true },
   ];
@@ -700,21 +700,23 @@ function App() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-6 text-[11px] font-black uppercase tracking-widest items-center">
+          {/* Desktop Navigation — icon-only on medium screens, icons + labels on large (xl) up */}
+          <div className="hidden md:flex gap-1 lg:gap-2 xl:gap-6 text-[11px] font-black uppercase tracking-widest items-center">
             {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin)).map(link => (
               <Link
                 key={link.to}
                 to={link.to}
-                className={`flex items-center gap-1.5 transition-all ${
+                title={link.label}
+                aria-label={link.label}
+                className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 xl:px-0 xl:py-0 xl:rounded-none transition-all ${
                   location.pathname === link.to
-                    ? 'text-crimson-500'
+                    ? 'text-crimson-500 bg-crimson-500/10 xl:bg-transparent'
                     : link.highlight
-                      ? 'text-white bg-crimson-500/20 px-3 py-1 rounded-full border border-crimson-500/30 hover:bg-crimson-500/40'
-                      : 'text-crimson-200/50 hover:text-crimson-400'
+                      ? 'text-white bg-crimson-500/20 border border-crimson-500/30 hover:bg-crimson-500/40 xl:px-3 xl:py-1 xl:rounded-full'
+                      : 'text-crimson-200/50 hover:text-crimson-400 hover:bg-crimson-900/30 xl:hover:bg-transparent'
                 }`}
               >
-                {link.icon} {link.label}
+                {link.icon} <span className="hidden xl:inline">{link.label}</span>
               </Link>
             ))}
           </div>
@@ -749,7 +751,7 @@ function App() {
                       onClick={() => setUserMenuOpen(false)}
                       className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
                     >
-                      <Settings className="w-4 h-4" /> Account Settings
+                      <User className="w-4 h-4" /> Profile
                     </Link>
                     {isAdmin && (
                       <Link
