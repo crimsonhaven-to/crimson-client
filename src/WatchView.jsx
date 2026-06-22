@@ -1,11 +1,16 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, AlertTriangle, ChevronRight, ArrowLeft, CalendarClock } from 'lucide-react';
-import { API_BASE_URL } from './hooks';
+import { API_BASE_URL, apiFetch } from './hooks';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
+
+// How many seconds of playback before we tell the backend "the viewer actually
+// watched this source" so it may cache it. Keeps the fastest-resolving source
+// from being cached over the one the viewer settled on (quality / language).
+const CACHE_CONFIRM_SECONDS = 10;
 
 // Format a TMDB air date ('YYYY-MM-DD') as a readable day, e.g. "Jul 1, 2026".
 // Falls back to the raw string if it can't be parsed.
@@ -46,6 +51,25 @@ const WatchView = ({
     || 'No summary asset provided.';
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
+
+  // Server-side cache trigger: once the viewer has watched the *active* source for
+  // CACHE_CONFIRM_SECONDS, redeem its signed cacheTicket exactly once so the
+  // backend caches that source (not whichever resolved first). Tickets already
+  // confirmed are remembered so source-switching / re-renders don't re-POST.
+  const confirmedTicketsRef = useRef(new Set());
+  const handlePlayerProgress = useCallback((position, duration) => {
+    if (onPlayerProgress) onPlayerProgress(position, duration);
+    const ticket = activeStream?.cacheTicket;
+    if (!ticket || position < CACHE_CONFIRM_SECONDS) return;
+    if (confirmedTicketsRef.current.has(ticket)) return;
+    confirmedTicketsRef.current.add(ticket);
+    // Fire-and-forget; on failure drop it so a later progress tick can retry.
+    apiFetch('/cache/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticket }),
+    }).catch(() => confirmedTicketsRef.current.delete(ticket));
+  }, [onPlayerProgress, activeStream]);
 
   // Filename for the in-player Download button, e.g.
   // "Frieren - S1E04 - The Land Where Souls Rest". Season is only stamped when
@@ -123,7 +147,7 @@ const WatchView = ({
                   title={displayTitle}
                   downloadName={downloadName}
                   startAt={playerStartAt}
-                  onProgress={onPlayerProgress}
+                  onProgress={handlePlayerProgress}
                 />
               </Suspense>
             )
