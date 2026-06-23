@@ -69,6 +69,13 @@ const OverviewView = ({
   // you left off" banner. Resuming reuses onPlayEpisode with the row's season.
   resume,
   genres = [],
+  // Movie mode (additive): a movie has no seasons/episodes, so the seasons badge
+  // becomes a runtime badge, the single Start Watching / Resume buttons call
+  // `onPlay()` instead of onPlayEpisode, and the seasons+episodes+extras content
+  // area is hidden. Anime/show render byte-identically when isMovie is false.
+  isMovie = false,
+  onPlay,
+  runtime,
   notFoundText = 'This title could not be summoned from the archives.',
 }) => {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
@@ -172,9 +179,15 @@ const OverviewView = ({
                     <Calendar className="w-3.5 h-3.5 text-crimson-500" /> {overview.year}
                   </span>
                 )}
-                <span className="flex items-center gap-1.5 text-[10px] text-crimson-300 font-black uppercase tracking-widest opacity-70">
-                  <Layers className="w-3.5 h-3.5 text-crimson-500" /> {overview.total_seasons} Season{overview.total_seasons === 1 ? '' : 's'}
-                </span>
+                {isMovie ? (
+                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-300 font-black uppercase tracking-widest opacity-70">
+                    <Clapperboard className="w-3.5 h-3.5 text-crimson-500" /> Movie{runtime ? ` • ${Math.floor(runtime / 60)}h ${runtime % 60}m` : ''}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-300 font-black uppercase tracking-widest opacity-70">
+                    <Layers className="w-3.5 h-3.5 text-crimson-500" /> {overview.total_seasons} Season{overview.total_seasons === 1 ? '' : 's'}
+                  </span>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -237,7 +250,9 @@ const OverviewView = ({
                         {done ? 'You finished this' : 'Pick up where you left off'}
                       </p>
                       <p className="text-sm font-bold text-crimson-50 mt-1 truncate">
-                        {overview.total_seasons > 1 ? `Season ${resume.season_number} · ` : ''}Episode {resume.episode_number}
+                        {isMovie
+                          ? (overview.title || 'Movie')
+                          : `${overview.total_seasons > 1 ? `Season ${resume.season_number} · ` : ''}Episode ${resume.episode_number}`}
                         {!done && pct > 0 && <span className="text-crimson-500 font-black"> · {pct}%</span>}
                       </p>
                       {!done && pct > 0 && (
@@ -247,7 +262,7 @@ const OverviewView = ({
                       )}
                     </div>
                     <button
-                      onClick={() => onPlayEpisode(resumeSeason || currentSeason, resume.episode_number)}
+                      onClick={() => (isMovie ? onPlay() : onPlayEpisode(resumeSeason || currentSeason, resume.episode_number))}
                       className="shrink-0 inline-flex items-center gap-2 bg-crimson-500 hover:bg-crimson-400 text-white font-black uppercase tracking-[0.15em] text-[11px] px-5 py-3 rounded-xl transition-all shadow-[0_10px_20px_rgba(255,0,60,0.3)] active:scale-95"
                     >
                       <Play className="w-3.5 h-3.5 fill-white" />
@@ -257,11 +272,11 @@ const OverviewView = ({
                 );
               })()}
 
-              {(currentSeason || watchlistItem) && (
+              {(currentSeason || isMovie || watchlistItem) && (
                 <div className="pt-4 flex flex-wrap items-center justify-center md:justify-start gap-3">
-                  {currentSeason && (
+                  {(currentSeason || isMovie) && (
                     <button
-                      onClick={() => onPlayEpisode(currentSeason, 1)}
+                      onClick={() => (isMovie ? onPlay() : onPlayEpisode(currentSeason, 1))}
                       className="group relative inline-flex items-center gap-3 bg-crimson-500 hover:bg-crimson-400 text-white font-black uppercase tracking-[0.2em] text-xs px-8 py-4 rounded-2xl transition-all shadow-[0_15px_30px_rgba(255,0,60,0.3)] hover:shadow-[0_15px_40px_rgba(255,0,60,0.5)] active:scale-95"
                     >
                       <Play className="w-4 h-4 fill-white" />
@@ -277,7 +292,8 @@ const OverviewView = ({
         </div>
       </div>
 
-      {/* Main Content Area: Seasons + Episodes */}
+      {/* Main Content Area: Seasons + Episodes (hidden for movies — no seasons) */}
+      {!isMovie && (
       <div className="relative -mt-10 sm:-mt-20 z-10 max-w-7xl w-full mx-auto px-6 pb-20 space-y-12">
         {/* Season Navigation */}
         {seasons.length > 1 && (
@@ -380,6 +396,7 @@ const OverviewView = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 };

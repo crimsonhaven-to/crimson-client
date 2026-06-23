@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag } from 'lucide-react';
 import Background from './assets/background.jpg';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { changelogExcerpt, formatReleaseDate } from './utils';
 import WatchView from './WatchView';
 import NotFound from './NotFound';
@@ -28,6 +28,8 @@ const AdminPage = lazy(() => import('./Admin'));
 // Non-anime TV show pages — the TMDB-keyed twins of the anime overview/watch pages.
 const ShowOverview = lazy(() => import('./ShowOverview'));
 const ShowWatch = lazy(() => import('./ShowWatch'));
+const MovieOverview = lazy(() => import('./MovieOverview'));
+const MovieWatch = lazy(() => import('./MovieWatch'));
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -76,13 +78,13 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
       <span className="text-base font-semibold text-crimson-300 truncate max-w-[240px]">{title}</span>
     </div>
     <div className="flex items-center gap-2 flex-shrink-0">
-      {/* Tag so anime vs non-anime show is obvious at a glance. */}
+      {/* Tag so anime vs non-anime show vs movie is obvious at a glance. */}
       <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${
-        kind === 'show'
+        kind === 'show' || kind === 'movie'
           ? 'bg-crimson-900/30 border-crimson-800/50 text-crimson-400'
           : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
       }`}>
-        {kind === 'show' ? 'Show' : 'Anime'}
+        {kind === 'show' ? 'Show' : kind === 'movie' ? 'Movie' : 'Anime'}
       </span>
       <ChevronRight className="w-4 h-4 text-crimson-700" />
     </div>
@@ -104,12 +106,16 @@ function LandingPage() {
 
   const { trendingAnimes, trendLoading } = useTrendingAnime();
   const { trendingShows, trendLoading: showsLoading } = useTrendingShows();
+  const { trendingMovies, trendLoading: moviesLoading } = useTrendingMovies();
 
-  // Anime -> /anime/{anilist_id}; non-anime show -> /show/{tmdb_id}.
+  // Anime -> /anime/{anilist_id}; non-anime show -> /show/{tmdb_id};
+  // movie -> /movie/{tmdb_id}.
   const openOverview = (item) => {
     setQueryName(item.title || item.name || '');
     setShowSuggestions(false);
-    if (item.kind === 'show' || (!item.anilist_id && item.tmdb_id)) {
+    if (item.kind === 'movie') {
+      navigate(`/movie/${item.tmdb_id}`);
+    } else if (item.kind === 'show' || (!item.anilist_id && item.tmdb_id)) {
       navigate(`/show/${item.tmdb_id}`);
     } else if (item.anilist_id) {
       navigate(`/anime/${item.anilist_id}`);
@@ -284,6 +290,51 @@ function LandingPage() {
                 <div className="text-left px-1">
                   <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug">
                     {show.title}
+                  </h4>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Trending movies — a third row beneath anime + shows. Anime stays the
+            primary surface; movies are an additive, secondary catalogue. */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 mt-20 sm:mt-28">
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-white uppercase flex items-center gap-3">
+            <div className="w-2 h-8 bg-crimson-500 rounded-full"></div>
+            Trending <span className="text-crimson-500">Movies</span>
+          </h2>
+          <div className="h-px bg-crimson-900/30 flex-grow hidden sm:block mx-8"></div>
+        </div>
+
+        {moviesLoading && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 animate-pulse">
+            {[1, 2, 3, 4, 5].map(n => (
+              <div key={n} className="aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50"></div>
+            ))}
+          </div>
+        )}
+
+        {!moviesLoading && trendingMovies.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8">
+            {trendingMovies.map((movie, index) => (
+              <div
+                key={index}
+                onClick={() => openOverview(movie)}
+                className="group flex flex-col gap-3 cursor-pointer"
+              >
+                <div className="relative aspect-[2/3] bg-crimson-900/10 border border-crimson-900/40 rounded-2xl overflow-hidden transition-[border-color,box-shadow] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_15px_30px_rgba(255,0,60,0.2)]">
+                  <img src={movie.poster} alt={`${movie.title} poster`} className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
+                     <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                        <Play className="w-6 h-6 fill-white text-white" />
+                     </div>
+                  </div>
+                </div>
+                <div className="text-left px-1">
+                  <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug">
+                    {movie.title}
                   </h4>
                 </div>
               </div>
@@ -826,6 +877,8 @@ function App() {
           {/* Non-anime TV shows — TMDB-keyed twins of the anime routes above. */}
           <Route path="/show/:tmdbId" element={<ShowOverview />} />
           <Route path="/watch-show/:tmdbId/:season?/:episode?" element={<ShowWatch />} />
+          <Route path="/movie/:tmdbId" element={<MovieOverview />} />
+          <Route path="/watch-movie/:tmdbId" element={<MovieWatch />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>

@@ -40,6 +40,9 @@ const WatchView = ({
   isAuthenticated, watchlistItem,
   // nav
   backUrl,
+  // Movie mode (additive): hide the season/episode stat boxes + selectors and
+  // drop the SxEx from the download name. TV/anime render unchanged (default false).
+  isMovie = false,
 }) => {
   const currentEpisodeData = metadata?.episodes_list?.find(e => e.episode_number === currentEpisode);
   const episodeTitle = currentEpisodeData?.title && currentEpisodeData.title !== `Episode ${currentEpisode}`
@@ -74,11 +77,13 @@ const WatchView = ({
   // Filename for the in-player Download button, e.g.
   // "Frieren - S1E04 - The Land Where Souls Rest". Season is only stamped when
   // the title actually has more than one.
-  const downloadName = [
-    displayTitle || 'video',
-    totalSeasons > 1 ? `S${currentSeason}E${currentEpisode}` : `E${currentEpisode}`,
-    episodeTitle,
-  ].filter(Boolean).join(' - ');
+  const downloadName = isMovie
+    ? (displayTitle || 'video')
+    : [
+        displayTitle || 'video',
+        totalSeasons > 1 ? `S${currentSeason}E${currentEpisode}` : `E${currentEpisode}`,
+        episodeTitle,
+      ].filter(Boolean).join(' - ');
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-4 gap-8 sm:gap-10 animate-in fade-in duration-1000">
@@ -197,20 +202,23 @@ const WatchView = ({
                 {episodeDescription}
               </p>
             </div>
-            <div className="flex gap-3 w-full sm:w-auto">
-              <div className="flex-1 sm:flex-none bg-crimson-950/80 border border-crimson-900/60 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
-                <p className="text-[10px] uppercase text-crimson-500 font-black tracking-[0.3em] mb-1">SN</p>
-                <p className="text-2xl font-black text-white">{currentSeason}</p>
+            {!isMovie && (
+              <div className="flex gap-3 w-full sm:w-auto">
+                <div className="flex-1 sm:flex-none bg-crimson-950/80 border border-crimson-900/60 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
+                  <p className="text-[10px] uppercase text-crimson-500 font-black tracking-[0.3em] mb-1">SN</p>
+                  <p className="text-2xl font-black text-white">{currentSeason}</p>
+                </div>
+                <div className="flex-1 sm:flex-none bg-crimson-900/20 border border-crimson-800/40 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
+                  <p className="text-[10px] uppercase text-crimson-400 font-black tracking-[0.3em] mb-1">EP</p>
+                  <p className="text-2xl font-black text-white">{currentEpisode}</p>
+                </div>
               </div>
-              <div className="flex-1 sm:flex-none bg-crimson-900/20 border border-crimson-800/40 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
-                <p className="text-[10px] uppercase text-crimson-400 font-black tracking-[0.3em] mb-1">EP</p>
-                <p className="text-2xl font-black text-white">{currentEpisode}</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Season & Episode Selectors */}
+        {/* Season & Episode Selectors (hidden for movies — single feature) */}
+        {!isMovie && (
         <div className="space-y-8">
           {availableSeasons && availableSeasons.length > 1 && (
             <div className="p-4 sm:p-5 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl flex items-center gap-4 overflow-x-auto no-scrollbar backdrop-blur-sm">
@@ -260,6 +268,7 @@ const WatchView = ({
             </div>
           )}
         </div>
+        )}
       </div>
 
       {/* Stream Sources Sidebar */}
