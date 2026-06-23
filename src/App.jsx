@@ -17,6 +17,9 @@ import ResetPassword from './ResetPassword';
 const CataloguePage = lazy(() => import('./Catalogue'));
 const AccountPage = lazy(() => import('./Account'));
 const SettingsPage = lazy(() => import('./UserSettings'));
+// Luminas' welcome ritual — shown once per login (see the auth-transition effect
+// in App). Lazy so it never weighs on the login wall / first paint.
+const WelcomeTour = lazy(() => import('./WelcomeTour'));
 const FavoritesPage = lazy(() => import('./Favorites'));
 const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
 // import SupportUsPage from './SupportUs'; // Temporarily hidden for legal reasons
@@ -700,6 +703,17 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Luminas' welcome ritual — fires on a fresh login, i.e. an authentication
+  // transition from signed-out to signed-in *during this page's lifetime*. A
+  // reload while already signed in starts authed (wasAuthedRef begins true), so
+  // it does NOT re-show; only an actual login (false -> true) opens it.
+  const [showTour, setShowTour] = useState(false);
+  const wasAuthedRef = useRef(isAuthenticated);
+  useEffect(() => {
+    if (!wasAuthedRef.current && isAuthenticated) setShowTour(true);
+    wasAuthedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
   // Nav sits transparent over the wallpaper at the very top, then darkens/blurs
   // into a solid bar once the page is scrolled — purely a visual effect.
   useEffect(() => {
@@ -734,6 +748,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
+      {/* Welcome ritual — opens once on a fresh login (see showTour above). */}
+      {showTour && (
+        <Suspense fallback={null}>
+          <WelcomeTour onClose={() => setShowTour(false)} />
+        </Suspense>
+      )}
+
       {/* Background Image */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-50 wallpaper-img" />
