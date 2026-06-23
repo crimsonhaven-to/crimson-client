@@ -20,9 +20,9 @@ name: Build and Deploy
 # by crimson-backend (Docker + buildx + passwordless SSH to the managers).
 
 on:
-  push:
-    branches:
-      - dev
+#  push:
+#    branches:
+#      - dev
   release:
     types: [published]
 
