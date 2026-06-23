@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -16,6 +16,10 @@ import ResetPassword from './ResetPassword';
 // ship a much smaller bundle. See the <Suspense> fallback below.
 const CataloguePage = lazy(() => import('./Catalogue'));
 const AccountPage = lazy(() => import('./Account'));
+const SettingsPage = lazy(() => import('./UserSettings'));
+// Luminas' welcome ritual — shown once per login (see the auth-transition effect
+// in App). Lazy so it never weighs on the login wall / first paint.
+const WelcomeTour = lazy(() => import('./WelcomeTour'));
 const FavoritesPage = lazy(() => import('./Favorites'));
 const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
 // import SupportUsPage from './SupportUs'; // Temporarily hidden for legal reasons
@@ -699,6 +703,17 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Luminas' welcome ritual — fires on a fresh login, i.e. an authentication
+  // transition from signed-out to signed-in *during this page's lifetime*. A
+  // reload while already signed in starts authed (wasAuthedRef begins true), so
+  // it does NOT re-show; only an actual login (false -> true) opens it.
+  const [showTour, setShowTour] = useState(false);
+  const wasAuthedRef = useRef(isAuthenticated);
+  useEffect(() => {
+    if (!wasAuthedRef.current && isAuthenticated) setShowTour(true);
+    wasAuthedRef.current = isAuthenticated;
+  }, [isAuthenticated]);
+
   // Nav sits transparent over the wallpaper at the very top, then darkens/blurs
   // into a solid bar once the page is scrolled — purely a visual effect.
   useEffect(() => {
@@ -733,6 +748,13 @@ function App() {
 
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
+      {/* Welcome ritual — opens once on a fresh login (see showTour above). */}
+      {showTour && (
+        <Suspense fallback={null}>
+          <WelcomeTour onClose={() => setShowTour(false)} />
+        </Suspense>
+      )}
+
       {/* Background Image */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-50 wallpaper-img" />
@@ -804,6 +826,13 @@ function App() {
                     >
                       <User className="w-4 h-4" /> Profile
                     </Link>
+                    <Link
+                      to="/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                    >
+                      <SlidersHorizontal className="w-4 h-4" /> Preferences
+                    </Link>
                     {isAdmin && (
                       <Link
                         to="/admin"
@@ -867,6 +896,7 @@ function App() {
           <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/watchlists" element={<FavoritesPage />} />
           {/* Legacy path — keep old bookmarks/links working. */}
