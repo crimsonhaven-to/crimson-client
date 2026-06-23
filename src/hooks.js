@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '4.4.6';
+export const CLIENT_VERSION = '5.0.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -408,8 +408,12 @@ const saveCustomLists = (names) =>
 // preferred, otherwise it's a TMDB-only row.
 const rowMatchesItem = (row, item) => {
   if (item.anilist_id != null) return row.anilist_id === item.anilist_id;
-  if (item.tmdb_id != null)
-    return String(row.tmdb_id) === String(item.tmdb_id) && row.anilist_id == null;
+  if (item.tmdb_id != null) {
+    // Movies share the TMDB id space with shows, so a movie favorite must only
+    // match movie rows (and vice-versa) — mirrors the backend's movie: namespace.
+    if (item.media_type === 'movie') return String(row.tmdb_id) === String(item.tmdb_id) && row.media_type === 'movie';
+    return String(row.tmdb_id) === String(item.tmdb_id) && row.anilist_id == null && row.media_type !== 'movie';
+  }
   return false;
 };
 
@@ -417,7 +421,10 @@ const rowMatchesItem = (row, item) => {
 const itemQuery = (item, listName) => {
   const p = new URLSearchParams();
   if (item.anilist_id != null) p.set('anilist_id', item.anilist_id);
-  else if (item.tmdb_id != null) p.set('tmdb_id', item.tmdb_id);
+  else if (item.tmdb_id != null) {
+    p.set('tmdb_id', item.tmdb_id);
+    if (item.media_type === 'movie') p.set('media_type', 'movie');
+  }
   if (listName != null) p.set('list_name', listName);
   return p;
 };
@@ -481,6 +488,7 @@ export function useWatchlists() {
         body: JSON.stringify({
           tmdb_id: item.tmdb_id ?? null,
           anilist_id: item.anilist_id ?? null,
+          media_type: item.media_type ?? null,
           title: item.title || item.name,
           poster: item.poster,
           list_name: listName,
@@ -670,10 +678,11 @@ export function useAccount() {
   // the visible list first for a snappy feel.
   const removeFromHistory = useCallback(async (item) => {
     if (!sessionToken) return false;
-    const matches = (r) =>
-      item.anilist_id != null
-        ? String(r.anilist_id) === String(item.anilist_id)
-        : String(r.tmdb_id) === String(item.tmdb_id) && r.anilist_id == null;
+    const matches = (r) => {
+      if (item.anilist_id != null) return String(r.anilist_id) === String(item.anilist_id);
+      if (item.media_type === 'movie') return String(r.tmdb_id) === String(item.tmdb_id) && r.media_type === 'movie';
+      return String(r.tmdb_id) === String(item.tmdb_id) && r.anilist_id == null && r.media_type !== 'movie';
+    };
     setRecentlyWatched(prev => prev.filter(r => !matches(r)));
     try {
       const res = await apiFetch(`/account/progress`);
@@ -1344,13 +1353,15 @@ export function useUnifiedSearch() {
   const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.trim().length < 3) return;
     try {
-      const [animeRes, showRes] = await Promise.all([
+      const [animeRes, showRes, movieRes] = await Promise.all([
         apiFetch(`/search/anime?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch(`/search/shows?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        apiFetch(`/search/movies?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       const anime = (animeRes?.suggestions || []).map(s => ({ ...s, kind: 'anime' }));
       const shows = (showRes?.suggestions || []).map(s => ({ ...s, kind: 'show' }));
-      setResults([...anime, ...shows]); // anime first
+      const movies = (movieRes?.suggestions || []).map(s => ({ ...s, kind: 'movie' }));
+      setResults([...anime, ...shows, ...movies]); // anime first, then shows, then movies
     } catch (e) {
       console.error('Unified search failed:', e);
       setResults([]);
@@ -1480,7 +1491,7 @@ export function useShowOverview(tmdbId) {
 // come back newest-first (updated_at DESC), so the first match is the most recent
 // episode. Returns the row (with season/episode/status/position) or null. Reactive
 // to login/logout; best-effort and silent on failure.
-export function useShowResume({ anilistId = null, tmdbId = null } = {}) {
+export function useShowResume({ anilistId = null, tmdbId = null, mediaType = null } = {}) {
   const sessionToken = useSessionToken();
   const [resume, setResume] = useState(null);
 
@@ -1492,16 +1503,18 @@ export function useShowResume({ anilistId = null, tmdbId = null } = {}) {
         const res = await apiFetch(`/account/progress`);
         if (!res.ok) return;
         const rows = (await res.json()).progress || [];
-        const match = (r) =>
-          anilistId != null
-            ? String(r.anilist_id) === String(anilistId)
-            : String(r.tmdb_id) === String(tmdbId) && r.anilist_id == null;
+        const match = (r) => {
+          if (anilistId != null) return String(r.anilist_id) === String(anilistId);
+          // Movies share the TMDB id space with shows — disambiguate by media_type.
+          if (mediaType === 'movie') return String(r.tmdb_id) === String(tmdbId) && r.media_type === 'movie';
+          return String(r.tmdb_id) === String(tmdbId) && r.anilist_id == null && r.media_type !== 'movie';
+        };
         const latest = rows.find(match) || null;
         if (!cancelled) setResume(latest);
       } catch { /* best-effort: no banner on failure */ }
     })();
     return () => { cancelled = true; };
-  }, [sessionToken, anilistId, tmdbId]);
+  }, [sessionToken, anilistId, tmdbId, mediaType]);
 
   return resume;
 }
@@ -1638,6 +1651,171 @@ export function useShowStreamer(tmdbId, season, episode) {
     activeStreamIdx, selectStream,
     apiError,
   };
+}
+
+// --- General (non-anime) movies (secondary surface) -------------------------
+// The movie twins of the show hooks. A movie has no seasons/episodes, so these
+// are simpler: one /movie-overview payload and a single /watch/movie stream. Anime
+// and shows are untouched.
+
+// Trending general movies for the landing page's secondary row.
+export function useTrendingMovies() {
+  const [trendingMovies, setTrendingMovies] = useState(() => memGet('trending-movies') || []);
+  const [trendLoading, setTrendLoading] = useState(() => !memGet('trending-movies'));
+
+  useEffect(() => {
+    if (memGet('trending-movies')) return;
+    (async () => {
+      setTrendLoading(true);
+      try {
+        const res = await apiFetch(`/trending/movies`);
+        if (!res.ok) throw new Error('Failed to fetch trending movies.');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.movies)) {
+          setTrendingMovies(data.movies);
+          memSet('trending-movies', data.movies);
+        }
+      } catch (e) {
+        console.error('Error fetching trending movies:', e);
+      } finally {
+        setTrendLoading(false);
+      }
+    })();
+  }, []);
+
+  return { trendingMovies, trendLoading };
+}
+
+// Movie overview: fetches /movie-overview/{tmdbId}. No seasons/episodes — the page
+// renders a single "Start Watching" using the shared OverviewView in movie mode.
+export function useMovieOverview(tmdbId) {
+  const [overview, setOverview] = useState(() => (tmdbId ? memGet(`movie-overview:${tmdbId}`) : null));
+  const [loading, setLoading] = useState(() => !(tmdbId && memGet(`movie-overview:${tmdbId}`)));
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (!tmdbId) return;
+    const cached = memGet(`movie-overview:${tmdbId}`);
+    if (cached) { setOverview(cached); setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      try {
+        const res = await apiFetch(`/movie-overview/${tmdbId}`);
+        if (!res.ok) throw new Error(`Failed to load overview (HTTP ${res.status})`);
+        const data = await res.json();
+        if (cancelled) return;
+        setOverview(data);
+        memSet(`movie-overview:${tmdbId}`, data);
+      } catch (e) {
+        if (!cancelled) setError(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [tmdbId]);
+
+  return { overview, loading, error };
+}
+
+// Movie streamer: loads the overview (title/poster) + streams sources via the
+// /watch/movie/{tmdbId} NDJSON route. No season/episode dimension.
+export function useMovieStreamer(tmdbId) {
+  const [overview, setOverview] = useState(() => (tmdbId ? memGet(`movie-overview:${tmdbId}`) : null));
+  const [streamData, setStreamData] = useState(null);
+  const [streamLoading, setStreamLoading] = useState(false);
+  const [activeStreamIdx, setActiveStreamIdx] = useState(0);
+  const [apiError, setApiError] = useState(null);
+
+  const streamsRef = useRef([]);
+  const userPickedRef = useRef(false);
+  const selectStream = useCallback((idx) => {
+    userPickedRef.current = true;
+    setActiveStreamIdx(idx);
+  }, []);
+
+  // Movie metadata (title/poster) — reuses the overview payload / its cache.
+  useEffect(() => {
+    if (!tmdbId) return;
+    const cached = memGet(`movie-overview:${tmdbId}`);
+    if (cached) { setOverview(cached); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiFetch(`/movie-overview/${tmdbId}`);
+        if (!res.ok) throw new Error(`overview ${res.status}`);
+        const data = await res.json();
+        if (cancelled) return;
+        setOverview(data);
+        memSet(`movie-overview:${tmdbId}`, data);
+      } catch (e) {
+        if (!cancelled) setApiError('Could not load movie information');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [tmdbId]);
+
+  // Progressive NDJSON source streaming via /watch/movie/{tmdbId}.
+  useEffect(() => {
+    if (!tmdbId) return;
+    const controller = new AbortController();
+
+    setStreamLoading(true);
+    setStreamData(null);
+    setActiveStreamIdx(0);
+    streamsRef.current = [];
+    userPickedRef.current = false;
+
+    const handleLine = (line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+      let msg;
+      try { msg = JSON.parse(trimmed); } catch { return; }
+
+      if (msg.type === 'meta') {
+        setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
+      } else if (msg.type === 'stream') {
+        const next = [
+          ...streamsRef.current,
+          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles },
+        ];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        if (!userPickedRef.current) {
+          let bestIdx = 0, bestRank = Infinity;
+          next.forEach((s, i) => {
+            const r = streamPriority(s);
+            if (r < bestRank) { bestRank = r; bestIdx = i; }
+          });
+          setActiveStreamIdx(bestIdx);
+        }
+        setStreamLoading(false);
+      } else if (msg.type === 'done') {
+        setStreamLoading(false);
+      }
+    };
+
+    (async () => {
+      try {
+        await streamWatchNdjson(`/watch/movie/${tmdbId}`, {
+          signal: controller.signal,
+          onLine: handleLine,
+        });
+        setStreamLoading(false);
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        console.error('Stream fetch error:', err);
+        setStreamLoading(false);
+        setApiError('Failed to load streaming sources');
+      }
+    })();
+
+    return () => controller.abort();
+  }, [tmdbId]);
+
+  return { overview, streamData, streamLoading, activeStreamIdx, selectStream, apiError };
 }
 
 export function useSupporters() {

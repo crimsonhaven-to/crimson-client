@@ -78,7 +78,9 @@ const FavoritesPage = () => {
   const allShows = useMemo(() => {
     const map = new Map();
     for (const it of items) {
-      const key = it.anilist_id != null ? `a:${it.anilist_id}` : `t:${it.tmdb_id}`;
+      const key = it.anilist_id != null
+        ? `a:${it.anilist_id}`
+        : (it.media_type === 'movie' ? `m:${it.tmdb_id}` : `t:${it.tmdb_id}`);
       if (!map.has(key)) map.set(key, it);
     }
     return Array.from(map.values());
@@ -413,7 +415,13 @@ const FavoritesPage = () => {
                 {/* Actions Overlay */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-crimson-950/40 backdrop-blur-[2px]">
                   <button
-                    onClick={() => navigate(anime.anilist_id ? `/anime/${anime.anilist_id}` : `/show/${anime.tmdb_id}`)}
+                    onClick={() => navigate(
+                      anime.anilist_id
+                        ? `/anime/${anime.anilist_id}`
+                        : anime.media_type === 'movie'
+                          ? `/movie/${anime.tmdb_id}`
+                          : `/show/${anime.tmdb_id}`
+                    )}
                     className="p-4 bg-crimson-500 text-white rounded-full hover:bg-crimson-400 transform hover:scale-110 transition-all shadow-[0_10px_20px_rgba(255,0,60,0.4)]"
                   >
                     <Play className="w-6 h-6 fill-current" />

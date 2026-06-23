@@ -62,6 +62,18 @@ const isFutureDate = (iso) => {
 // finally to the original always-advance behaviour.
 const resumeInfo = (item) => {
   const finished = item.status === 'completed';
+  // Movies are a single feature — no next-episode logic, just resume / rewatch.
+  if (item.media_type === 'movie') {
+    const percent = item.duration_seconds
+      ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
+      : 0;
+    return {
+      finished, ep: 1, href: `/watch-movie/${item.tmdb_id}`, percent,
+      mode: finished ? 'rewatch' : 'resume',
+      actionLabel: finished ? 'Watch Again' : 'Resume Journey',
+      nextAirDate: null,
+    };
+  }
   const cur = item.episode_number;
 
   const count = item.season_episode_count;
@@ -74,7 +86,9 @@ const resumeInfo = (item) => {
 
   const href = item.anilist_id
     ? `/watch/${item.anilist_id}/${item.season_number}/${ep}`
-    : `/watch-show/${item.tmdb_id}/${item.season_number}/${ep}`;
+    : item.media_type === 'movie'
+      ? `/watch-movie/${item.tmdb_id}`
+      : `/watch-show/${item.tmdb_id}/${item.season_number}/${ep}`;
   const percent = item.duration_seconds
     ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
     : 0;
@@ -128,7 +142,7 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
             {item.title}
           </h4>
           <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-600">
-            <span className="text-crimson-400">S{item.season_number}<span className="text-crimson-700 mx-0.5">•</span>E{item.episode_number}</span>
+            <span className="text-crimson-400">{item.media_type === 'movie' ? 'Movie' : <>S{item.season_number}<span className="text-crimson-700 mx-0.5">•</span>E{item.episode_number}</>}</span>
             <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{percent}%</span>
             {item.status === 'completed' && <span className="text-crimson-400">Finished</span>}
             {ago && <span className="text-crimson-700 normal-case tracking-normal">· {ago}</span>}
@@ -186,7 +200,7 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
           </h4>
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 bg-crimson-500/10 text-crimson-400 text-[10px] font-black uppercase rounded-lg border border-crimson-500/20 tracking-widest">
-              S{item.season_number} <span className="text-crimson-700 mx-0.5">•</span> E{item.episode_number}
+              {item.media_type === 'movie' ? 'Movie' : <>S{item.season_number} <span className="text-crimson-700 mx-0.5">•</span> E{item.episode_number}</>}
             </span>
             {ago && <span className="text-[10px] font-bold text-crimson-700">{ago}</span>}
           </div>
