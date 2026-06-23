@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal } from 'lucide-react';
 import Background from './assets/background.jpg';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -16,6 +16,7 @@ import ResetPassword from './ResetPassword';
 // ship a much smaller bundle. See the <Suspense> fallback below.
 const CataloguePage = lazy(() => import('./Catalogue'));
 const AccountPage = lazy(() => import('./Account'));
+const SettingsPage = lazy(() => import('./UserSettings'));
 const FavoritesPage = lazy(() => import('./Favorites'));
 const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
 // import SupportUsPage from './SupportUs'; // Temporarily hidden for legal reasons
@@ -804,6 +805,13 @@ function App() {
                     >
                       <User className="w-4 h-4" /> Profile
                     </Link>
+                    <Link
+                      to="/settings"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                    >
+                      <SlidersHorizontal className="w-4 h-4" /> Preferences
+                    </Link>
                     {isAdmin && (
                       <Link
                         to="/admin"
@@ -867,6 +875,7 @@ function App() {
           <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/catalogue" element={<CataloguePage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/watchlists" element={<FavoritesPage />} />
           {/* Legacy path — keep old bookmarks/links working. */}

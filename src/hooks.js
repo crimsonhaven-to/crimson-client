@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '5.1.0';
+export const CLIENT_VERSION = '5.2.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -55,6 +55,125 @@ function streamPriority(stream) {
     if (s.includes(match)) return rank;
   }
   return 100;
+}
+
+// --- User language / dub-sub preference -------------------------------------
+// A purely client-side preference (stored in localStorage, exactly like the
+// custom watchlists above) that biases which source auto-plays. It layers ON TOP
+// of the global source priority: streams whose `language` tag matches the user's
+// preferred language/type are ranked first, and WITHIN that matching tier the
+// global source order (Cache > Voe > Jellyfin) still decides — so "Cache German
+// Dub" still beats "Voe German Dub". With no preference set, every stream scores
+// equal on language and pure source priority is restored (the original behaviour).
+//
+// localStorage is the synchronous cache the ranker reads; the choice is also
+// synced to the account (see persistPlaybackPrefsRemote / syncPlaybackPrefsFromAccount)
+// so it follows the user across devices. The sync is best-effort — if the backend
+// is unreachable the local cache stays authoritative, so ranking never breaks.
+const PLAYBACK_PREFS_KEY = 'crimson:playback-prefs';
+const EMPTY_PLAYBACK_PREFS = { language: '', type: '' };
+
+// The languages/types offered in the settings UI. `value` is matched as a
+// case-insensitive substring against the scraper's language tag ("German Dub",
+// "English Sub", …), so it stays robust to minor label variations.
+export const PREF_LANGUAGES = ['German', 'English', 'Japanese', 'Spanish', 'French', 'Italian'];
+export const PREF_TYPES = ['Dub', 'Sub'];
+
+export function getPlaybackPrefs() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PLAYBACK_PREFS_KEY) || '{}');
+    return {
+      language: typeof raw.language === 'string' ? raw.language : '',
+      type: typeof raw.type === 'string' ? raw.type : '',
+    };
+  } catch {
+    return { ...EMPTY_PLAYBACK_PREFS };
+  }
+}
+
+export function setPlaybackPrefs(prefs) {
+  const clean = {
+    language: typeof prefs?.language === 'string' ? prefs.language : '',
+    type: typeof prefs?.type === 'string' ? prefs.type : '',
+  };
+  localStorage.setItem(PLAYBACK_PREFS_KEY, JSON.stringify(clean));
+  // Broadcast so any open watch page / other tab can pick up the change live.
+  window.dispatchEvent(new Event('crimson-playback-prefs'));
+  return clean;
+}
+
+// Durably persist the preference to the account so it follows the user across
+// devices. Fire-and-forget: the local cache (read by the ranker) is already
+// updated, so a failed/offline write never blocks the UI — the next change or the
+// next login re-syncs. Skipped when signed out (the PUT would just 401).
+function persistPlaybackPrefsRemote(prefs) {
+  if (!localStorage.getItem(SESSION_KEY)) return;
+  apiFetch('/account/preferences', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(prefs),
+  }).catch(() => {});
+}
+
+// Reconcile the account's server-side preference (from /account/me) with the local
+// cache the stream ranker reads. The server is authoritative when it has a value
+// (mirror it down so the choice follows the user to a fresh device); when it has
+// none yet, push any existing local choice up so it becomes the account default —
+// a one-time, silent migration for users who set a preference before this synced.
+function syncPlaybackPrefsFromAccount(remote) {
+  const r = remote && typeof remote === 'object' ? remote : {};
+  if (r.language || r.type) {
+    const next = { language: r.language || '', type: r.type || '' };
+    const local = getPlaybackPrefs();
+    if (local.language !== next.language || local.type !== next.type) {
+      setPlaybackPrefs(next);
+    }
+  } else {
+    const local = getPlaybackPrefs();
+    if (local.language || local.type) persistPlaybackPrefsRemote(local);
+  }
+}
+
+// Reactive accessor for the settings page. Returns [prefs, update] where update
+// writes the local cache (read synchronously by the ranker), broadcasts to other
+// tabs, and persists to the account. Hydration from the account happens in
+// useProfile (always mounted), which broadcasts the same event this listens to.
+export function usePlaybackPrefs() {
+  const [prefs, setPrefs] = useState(getPlaybackPrefs);
+  useEffect(() => {
+    const sync = () => setPrefs(getPlaybackPrefs());
+    window.addEventListener('crimson-playback-prefs', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('crimson-playback-prefs', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  const update = useCallback((next) => {
+    const clean = setPlaybackPrefs(next); // local cache + 'crimson-playback-prefs' event
+    persistPlaybackPrefsRemote(clean);    // durable, cross-device (best-effort)
+    return clean;
+  }, []);
+  return [prefs, update];
+}
+
+// How badly a stream's language tag misses the preference (0 = perfect match,
+// higher = worse). An unset dimension never constrains; with no preference at all
+// every stream scores 0, so source priority alone decides.
+function languageMismatch(stream, prefs) {
+  if (!prefs || (!prefs.language && !prefs.type)) return 0;
+  const tag = (stream?.language || '').toLowerCase();
+  let miss = 0;
+  if (prefs.language && !tag.includes(prefs.language.toLowerCase())) miss += 1;
+  if (prefs.type && !tag.includes(prefs.type.toLowerCase())) miss += 1;
+  return miss;
+}
+
+// Combined auto-select rank used to pick the default source. Language preference
+// is the PRIMARY key (×1000 dwarfs any source rank, which tops out at 100); the
+// global source priority is the tiebreaker within a language tier. Lower wins.
+function streamRank(stream, prefs) {
+  return languageMismatch(stream, prefs) * 1000 + streamPriority(stream);
 }
 
 
@@ -1045,14 +1164,16 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         streamsRef.current = next;
         setStreamData((prev) => ({ ...(prev || {}), streams: next }));
 
-        // Auto-select the most preferred source available (Voe first) unless the
-        // user has already picked one manually. The list keeps its arrival order;
-        // only the active/playing source is upgraded.
+        // Auto-select the most preferred source available unless the user has
+        // already picked one manually. Ranking honours the viewer's language/
+        // dub-sub preference first, then the global source order (see streamRank).
+        // The list keeps its arrival order; only the active/playing source moves.
         if (!userPickedRef.current) {
+          const prefs = getPlaybackPrefs();
           let bestIdx = 0;
           let bestRank = Infinity;
           next.forEach((s, i) => {
-            const r = streamPriority(s);
+            const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
@@ -1614,9 +1735,10 @@ export function useShowStreamer(tmdbId, season, episode) {
         streamsRef.current = next;
         setStreamData((prev) => ({ ...(prev || {}), streams: next }));
         if (!userPickedRef.current) {
+          const prefs = getPlaybackPrefs();
           let bestIdx = 0, bestRank = Infinity;
           next.forEach((s, i) => {
-            const r = streamPriority(s);
+            const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
@@ -1784,9 +1906,10 @@ export function useMovieStreamer(tmdbId) {
         streamsRef.current = next;
         setStreamData((prev) => ({ ...(prev || {}), streams: next }));
         if (!userPickedRef.current) {
+          const prefs = getPlaybackPrefs();
           let bestIdx = 0, bestRank = Infinity;
           next.forEach((s, i) => {
-            const r = streamPriority(s);
+            const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
@@ -1921,7 +2044,14 @@ export function useProfile() {
     let cancelled = false;
     apiFetch('/account/me')
       .then(res => (res.ok ? res.json() : null))
-      .then(data => { if (!cancelled) setProfile(data); })
+      .then(data => {
+        if (cancelled || !data) return;
+        setProfile(data);
+        // Mirror the account's saved playback preference into the local cache the
+        // stream ranker reads, so it follows the user across devices even before
+        // they open the settings page. Best-effort and additive (see helper).
+        syncPlaybackPrefsFromAccount(data.preferences);
+      })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [sessionToken]);
