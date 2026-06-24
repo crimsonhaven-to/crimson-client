@@ -63,9 +63,18 @@ GOOS=darwin  GOARCH=arm64 go build -o crimson-presence-helper .
 GOOS=linux   GOARCH=amd64 go build -o crimson-presence-helper .
 ```
 
-Prebuilt binaries for every platform are attached to each
-[GitHub Release](https://github.com/crimsonhaven-to/crimson-client/releases/latest)
-(built by [`.github/workflows/build-helper.yml`](../.github/workflows/build-helper.yml)).
+## Distribution
+
+The repo is **private**, so GitHub Release assets aren't publicly downloadable.
+Instead, the binaries are cross-compiled for all platforms **inside the site's
+Docker image** (the `helper` stage in [`../Dockerfile`](../Dockerfile)) and
+served as static downloads from the site itself under `/helper/` (see the
+matching `location` block in [`../nginx.conf`](../nginx.conf)). The Preferences
+page links straight to them, so viewers download the bridge same-origin from
+`https://crimsonhaven.to/helper/…` — no auth, no GitHub account needed.
+
+> The downloads only exist in the built image, so `/helper/*` is empty under
+> `vite dev`; test the links against a real image build or the deployed site.
 
 ## Layout
 

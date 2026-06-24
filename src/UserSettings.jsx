@@ -2,11 +2,36 @@ import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Do
 import { usePlaybackPrefs, useTitle, PREF_LANGUAGES, PREF_TYPES } from './hooks';
 
 // The little local bridge that carries presence from the haven to your Discord
-// client (see rpc-helper/). The direct link is the Windows x64 build — the bulk
-// of viewers — and always resolves to the newest release; other realms pick
-// their binary from the releases page.
-const HELPER_DOWNLOAD = 'https://github.com/crimsonhaven-to/crimson-client/releases/latest/download/crimson-presence-helper-windows-amd64.exe';
-const HELPER_RELEASES = 'https://github.com/crimsonhaven-to/crimson-client/releases/latest';
+// client (see rpc-helper/). The binaries are cross-compiled into the site image
+// and served from /helper — same origin — so they download straight from
+// Crimson Haven (the repo is private, so GitHub Releases wouldn't be reachable).
+const HELPER_DIR = '/helper';
+const HELPER_BUILDS = [
+  { key: 'windows-amd64', label: 'Windows x64',         file: 'crimson-presence-helper-windows-amd64.exe' },
+  { key: 'windows-arm64', label: 'Windows ARM',         file: 'crimson-presence-helper-windows-arm64.exe' },
+  { key: 'macos-amd64',   label: 'macOS Intel',         file: 'crimson-presence-helper-macos-amd64' },
+  { key: 'macos-arm64',   label: 'macOS Apple Silicon', file: 'crimson-presence-helper-macos-arm64' },
+  { key: 'linux-amd64',   label: 'Linux x64',           file: 'crimson-presence-helper-linux-amd64' },
+  { key: 'linux-arm64',   label: 'Linux ARM',           file: 'crimson-presence-helper-linux-arm64' },
+];
+const helperHref = (file) => `${HELPER_DIR}/${file}`;
+
+// Best one-click guess for the visitor's machine. We pick the amd64 build per OS
+// because it runs everywhere — natively on x64, and via Rosetta / Windows-on-ARM
+// emulation otherwise — so a single tap "just works" for nearly everyone; the
+// keen can still grab a native ARM build from the full list.
+function guessHelper() {
+  const probe =
+    typeof navigator !== 'undefined'
+      ? `${navigator.userAgent} ${navigator.platform || ''}`.toLowerCase()
+      : '';
+  const want = probe.includes('mac')
+    ? 'macos-amd64'
+    : probe.includes('linux') || probe.includes('x11')
+      ? 'linux-amd64'
+      : 'windows-amd64';
+  return HELPER_BUILDS.find((b) => b.key === want);
+}
 
 // A simple on/off switch styled to match the crimson pills.
 const PrefToggle = ({ active, onClick, label }) => (
@@ -53,6 +78,9 @@ const UserSettings = () => {
   const setLanguage = (value) => setPrefs({ ...prefs, language: prefs.language === value ? '' : value });
   const setType = (value) => setPrefs({ ...prefs, type: prefs.type === value ? '' : value });
   const toggleDiscord = () => setPrefs({ ...prefs, discordPresence: !prefs.discordPresence });
+
+  // One-click helper download tailored to the visitor's OS.
+  const helper = guessHelper();
 
   // Human description of the resulting auto-select behaviour.
   const summary = !prefs.language && !prefs.type
@@ -158,21 +186,29 @@ const UserSettings = () => {
               For Luminas' whispers to reach Discord, a small familiar must keep watch on your
               machine. Call the little bridge down{' '}
               <a
-                href={HELPER_DOWNLOAD}
+                href={helperHref(helper.file)}
+                download
                 className="text-crimson-300 font-bold underline decoration-dotted underline-offset-2 hover:text-white"
               >
                 here
               </a>{' '}
-              and let it dwell in your taskbar beside Discord — without it, the toggle stirs but
-              your profile stays silent.{' '}
-              <a
-                href={HELPER_RELEASES}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-crimson-400/80 underline decoration-dotted underline-offset-2 hover:text-crimson-300"
-              >
-                Other realms (macOS · Linux)
-              </a>.
+              ({helper.label}) and let it dwell in your taskbar beside Discord — without it, the
+              toggle stirs but your profile stays silent.
+            </p>
+            <p className="text-[11px] text-crimson-400/70 leading-relaxed font-medium">
+              Another machine?{' '}
+              {HELPER_BUILDS.map((b, i) => (
+                <span key={b.key}>
+                  {i > 0 && <span className="text-crimson-700"> · </span>}
+                  <a
+                    href={helperHref(b.file)}
+                    download
+                    className="underline decoration-dotted underline-offset-2 hover:text-crimson-200"
+                  >
+                    {b.label}
+                  </a>
+                </span>
+              ))}
             </p>
           </div>
         </div>
