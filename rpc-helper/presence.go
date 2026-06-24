@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -39,7 +40,9 @@ type presence struct {
 }
 
 func newPresence() *presence {
-	p := &presence{}
+	p := &presence{
+		pid: os.Getpid(),
+	}
 	go p.loop()
 	return p
 }
@@ -70,14 +73,13 @@ func (p *presence) browserDisconnected() {
 // update records what the site wants shown and pushes it to Discord. A null
 // activity (which the page only sends just before it disconnects) is ignored —
 // the grace timer handles retirement, so a reconnect a moment later doesn't blink.
-func (p *presence) update(clientID string, pid int, activity json.RawMessage) {
+func (p *presence) update(clientID string, activity json.RawMessage) {
 	if isNullActivity(activity) {
 		return
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	p.clientID = clientID
-	p.pid = pid
 	p.current = transformActivity(activity)
 	p.pushLocked()
 	p.status("watching")
