@@ -30,15 +30,36 @@ same machine. Nothing leaves your computer.
 ## Using it
 
 1. Make sure the Discord **desktop** client is running (not just the web app).
-2. Run the helper — just double-click the binary, or from a terminal:
-   ```
-   ./crimson-presence-helper
-   ```
-   Leave it running (it's happiest minimized in the background / taskbar).
+2. Run the helper:
+   - **Windows** — double-click the `.exe`. There's **no console window**; it
+     just appears as a crimson icon in your system tray. Right-click it for a
+     menu: open the site, toggle **Start with Windows**, or quit.
+   - **macOS / Linux** — run `./crimson-presence-helper` from a terminal and
+     leave it running in the background.
 3. Open [crimsonhaven.to](https://crimsonhaven.to), go to **Preferences**, and
    flip on **Discord Presence**. Your profile should light up.
 
 No bridge running? Nothing breaks — the toggle just stays quiet.
+
+### Staying reliable
+
+The helper keeps **one** long-lived link to Discord and re-asserts your presence
+on a ~15s cadence, so it transparently survives Discord being quit and reopened.
+It also holds your presence across the website's normal reconnects (tab reloads,
+navigations, the page's own retry loop) and only retires it after **60s** with no
+viewers — so presence stays steady instead of flickering.
+
+### Start with Windows
+
+The tray's **Start with Windows** toggle writes a per-user entry under
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. It's **per-user**, so it
+never needs administrator rights — no UAC prompt to scare anyone off.
+
+### Logs
+
+On Windows (no console) the helper logs to
+`%LOCALAPPDATA%\CrimsonPresenceHelper\helper.log` (truncated each launch). On
+macOS/Linux it logs to the terminal.
 
 ### Flags
 
@@ -58,7 +79,8 @@ go build -o crimson-presence-helper .
 Cross-compile for another OS:
 
 ```sh
-GOOS=windows GOARCH=amd64 go build -o crimson-presence-helper.exe .
+# -H=windowsgui drops the console window so it's tray-only on Windows.
+GOOS=windows GOARCH=amd64 go build -ldflags "-H=windowsgui" -o crimson-presence-helper.exe .
 GOOS=darwin  GOARCH=arm64 go build -o crimson-presence-helper .
 GOOS=linux   GOARCH=amd64 go build -o crimson-presence-helper .
 ```
@@ -80,8 +102,12 @@ page links straight to them, so viewers download the bridge same-origin from
 
 | File                  | Role                                                                 |
 | --------------------- | ------------------------------------------------------------------- |
-| `main.go`             | Entry point: flags, origin allowlist, start the server.             |
-| `server.go`           | Loopback WebSocket server; greets the page and forwards activities. |
-| `discord.go`          | Discord IPC client: framing, handshake, button transform, keepalive.|
+| `main.go`             | Entry point: flags, origin allowlist, start logging + the app.      |
+| `server.go`           | Loopback WebSocket server; greets the page, feeds the manager.      |
+| `presence.go`         | The single long-lived Discord link: re-assert, reconnect, grace.    |
+| `discord.go`          | Discord IPC wire format: framing, button transform, nonce.          |
 | `discord_windows.go`  | Named-pipe dial (`\\.\pipe\discord-ipc-N`).                          |
 | `discord_unix.go`     | Unix-socket dial (macOS/Linux, incl. Flatpak/Snap paths).           |
+| `app_windows.go`      | Windows tray app: menu, status, start-with-Windows, file logging.   |
+| `app_other.go`        | macOS/Linux: run headless in the foreground.                        |
+| `icon_windows.go`     | Generates the crimson tray icon (`.ico`) at startup.                |

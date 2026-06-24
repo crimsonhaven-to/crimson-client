@@ -20,6 +20,7 @@ var rpcPorts = []int{6463, 6464, 6465, 6466, 6467, 6468, 6469, 6470, 6471, 6472}
 
 type server struct {
 	allowedOrigins map[string]bool
+	presence       *presence
 }
 
 func defaultOrigins() map[string]bool {
@@ -62,6 +63,9 @@ func (s *server) run() error {
 	if err != nil {
 		return err
 	}
+	if s.presence == nil {
+		s.presence = newPresence()
+	}
 	log.Printf("👂 listening on ws://127.0.0.1:%d — open Crimson Haven and flip on Discord Presence", port)
 
 	upgrader := websocket.Upgrader{
@@ -102,29 +106,29 @@ func listenLoopback() (net.Listener, int, error) {
 	return nil, 0, lastErr
 }
 
-// handle serves one browser connection: greet it as Discord would, then forward
-// every SET_ACTIVITY it sends on to the real Discord client over its IPC pipe.
+// handle serves one browser connection: greet it as Discord would, then hand
+// every SET_ACTIVITY it sends to the shared presence manager. The manager owns
+// the actual Discord link, so reconnecting tabs don't each churn their own.
 func (s *server) handle(conn *websocket.Conn, clientID string) {
 	defer conn.Close()
 	peer := conn.RemoteAddr().String()
 	log.Printf("🌹 a viewer connected (%s)", peer)
 
-	// The page's state machine only advances once it sees a DISPATCH/READY frame.
-	// Discord isn't dialed yet — we connect to it lazily on the first activity —
-	// so send READY straight away rather than flapping the socket while Discord
-	// boots, which would just spam the page's console.
+	// The page's state machine only advances once it sees a DISPATCH/READY frame,
+	// so greet it immediately.
 	if err := conn.WriteJSON(readyFrame()); err != nil {
 		return
 	}
 
-	dc := &discordClient{clientID: clientID}
-	defer dc.Close()
+	// Count this tab so the presence is held across its reconnects, and retired
+	// only once it (and any siblings) have been gone for the grace period.
+	s.presence.browserConnected()
+	defer s.presence.browserDisconnected()
 
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
 			log.Printf("👋 viewer left (%s)", peer)
-			dc.clearActivity() // don't leave a ghost presence lingering on their profile
 			return
 		}
 
@@ -139,14 +143,9 @@ func (s *server) handle(conn *websocket.Conn, clientID string) {
 			continue
 		}
 
-		if err := dc.setActivity(frame.Args.Pid, frame.Args.Activity); err != nil {
-			log.Printf("⚠️  couldn't reach Discord (%v) — is the desktop client running?", err)
-			continue
-		}
-		if isNullActivity(frame.Args.Activity) {
-			log.Print("   → presence cleared")
-		} else {
-			log.Print("   → presence whispered to Discord")
+		s.presence.update(clientID, frame.Args.Pid, frame.Args.Activity)
+		if !isNullActivity(frame.Args.Activity) {
+			log.Print("   → presence updated")
 		}
 	}
 }
