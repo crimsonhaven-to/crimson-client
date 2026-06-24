@@ -1,7 +1,8 @@
-import { lazy, Suspense, useCallback, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, AlertTriangle, ChevronRight, ArrowLeft, CalendarClock } from 'lucide-react';
 import { API_BASE_URL, apiFetch } from './hooks';
+import { setWatchActivity, clearWatchActivity } from './discordPresence';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
 
@@ -54,6 +55,23 @@ const WatchView = ({
     || 'No summary asset provided.';
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
+
+  // Broadcast a Discord Rich Presence for whatever's on screen (opt-in; see
+  // discordPresence.js). Covers anime, shows and movies since all three render
+  // through this view. Re-runs per episode/season so the "elapsed" timer resets,
+  // and clears on unmount so leaving the page drops back to the browsing presence.
+  useEffect(() => {
+    if (!displayTitle) return undefined;
+    setWatchActivity({
+      title: displayTitle,
+      isMovie,
+      season: currentSeason,
+      episode: currentEpisode,
+      totalSeasons,
+      startedAt: Date.now(),
+    });
+    return () => clearWatchActivity();
+  }, [displayTitle, isMovie, currentSeason, currentEpisode, totalSeasons]);
 
   // Server-side cache trigger: once the viewer has watched the *active* source for
   // CACHE_CONFIRM_SECONDS, redeem its signed cacheTicket exactly once so the
