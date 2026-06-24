@@ -1,5 +1,12 @@
-import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2 } from 'lucide-react';
+import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download } from 'lucide-react';
 import { usePlaybackPrefs, useTitle, PREF_LANGUAGES, PREF_TYPES } from './hooks';
+
+// The little local bridge that carries presence from the haven to your Discord
+// client (see rpc-helper/). The direct link is the Windows x64 build — the bulk
+// of viewers — and always resolves to the newest release; other realms pick
+// their binary from the releases page.
+const HELPER_DOWNLOAD = 'https://github.com/crimsonhaven-to/crimson-client/releases/latest/download/crimson-presence-helper-windows-amd64.exe';
+const HELPER_RELEASES = 'https://github.com/crimsonhaven-to/crimson-client/releases/latest';
 
 // A simple on/off switch styled to match the crimson pills.
 const PrefToggle = ({ active, onClick, label }) => (
@@ -131,19 +138,43 @@ const UserSettings = () => {
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
               Let Luminas whisper to Discord what you're watching — a little rich-presence
               card on your profile. Nothing leaves your machine, and you can banish it anytime.
-              Because Discord only trusts its own site, this needs a tiny local bridge like{' '}
-              <a
-                href="https://github.com/OpenAsar/arrpc"
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-crimson-400 underline decoration-dotted underline-offset-2 hover:text-crimson-300"
-              >
-                arRPC
-              </a>{' '}
-              running alongside your desktop client. No bridge, no presence — nothing breaks.
+              Because Discord only trusts its own site, this needs a tiny local bridge of
+              Luminas' own making, summoned just below. No bridge, no presence — nothing breaks.
             </p>
           </div>
           <PrefToggle active={prefs.discordPresence} onClick={toggleDiscord} label="Toggle Discord Rich Presence" />
+        </div>
+
+        {/* The helper bridge is required for presence to actually reach Discord. */}
+        <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-900/20 border border-crimson-700/30 rounded-3xl">
+          <div className="p-2.5 rounded-2xl bg-crimson-900/30 shrink-0">
+            <Download className="w-5 h-5 text-crimson-400" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
+              Summon the Crimson Bridge
+            </p>
+            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+              For Luminas' whispers to reach Discord, a small familiar must keep watch on your
+              machine. Call the little bridge down{' '}
+              <a
+                href={HELPER_DOWNLOAD}
+                className="text-crimson-300 font-bold underline decoration-dotted underline-offset-2 hover:text-white"
+              >
+                here
+              </a>{' '}
+              and let it dwell in your taskbar beside Discord — without it, the toggle stirs but
+              your profile stays silent.{' '}
+              <a
+                href={HELPER_RELEASES}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-crimson-400/80 underline decoration-dotted underline-offset-2 hover:text-crimson-300"
+              >
+                Other realms (macOS · Linux)
+              </a>.
+            </p>
+          </div>
         </div>
 
         <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-500/5 border border-crimson-500/20 rounded-3xl">
