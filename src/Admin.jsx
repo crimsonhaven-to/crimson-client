@@ -945,7 +945,7 @@ function CacheTab({ notify }) {
               <div key={ep.id} className="border border-crimson-900/40 rounded-2xl p-3.5 flex items-center gap-3 bg-crimson-950/30">
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-crimson-50">TMDB {ep.tmdb_id} · S{ep.season_number}E{ep.episode_number}</span>
+                    <span className="text-xs font-bold text-crimson-50">TMDB {ep.tmdb_id} · {ep.media_type === 'movie' ? 'Movie' : `S${ep.season_number}E${ep.episode_number}`}</span>
                     {ep.language && (
                       <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-400 flex items-center gap-1">
                         <Languages className="w-3 h-3" /> {ep.language}
