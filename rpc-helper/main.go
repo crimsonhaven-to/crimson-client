@@ -35,11 +35,14 @@ func main() {
 		}
 	}
 
+	setupLogging() // console on macOS/Linux; a log file on Windows (GUI app, no console)
 	log.SetFlags(log.Ltime)
 	log.Print("🩸 Luminas' bridge stirs awake…")
 	log.Printf("   trusting origins: %s (+ any localhost)", originList(origins))
 
-	if err := (&server{allowedOrigins: origins}).run(); err != nil {
+	// runApp blocks: it serves the bridge directly on macOS/Linux, or runs it in
+	// the background behind a system-tray icon on Windows.
+	if err := runApp(&server{allowedOrigins: origins}); err != nil {
 		fmt.Fprintln(os.Stderr, "the bridge collapsed:", err)
 		os.Exit(1)
 	}

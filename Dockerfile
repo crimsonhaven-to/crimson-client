@@ -33,12 +33,15 @@ RUN go mod download
 
 COPY rpc-helper/ ./
 
+# CGO stays off so these stay statically linked and cross-compile cleanly. The
+# Windows builds get -H=windowsgui so they run as a tray app with no console
+# window; the 4th build() arg carries those per-OS extra linker flags.
 ENV CGO_ENABLED=0
 RUN set -eu; \
     mkdir -p /out; \
-    build() { GOOS="$1" GOARCH="$2" go build -trimpath -ldflags "-s -w" -o "/out/$3" .; }; \
-    build windows amd64 crimson-presence-helper-windows-amd64.exe; \
-    build windows arm64 crimson-presence-helper-windows-arm64.exe; \
+    build() { GOOS="$1" GOARCH="$2" go build -trimpath -ldflags "-s -w ${4:-}" -o "/out/$3" .; }; \
+    build windows amd64 crimson-presence-helper-windows-amd64.exe "-H=windowsgui"; \
+    build windows arm64 crimson-presence-helper-windows-arm64.exe "-H=windowsgui"; \
     build darwin  amd64 crimson-presence-helper-macos-amd64; \
     build darwin  arm64 crimson-presence-helper-macos-arm64; \
     build linux   amd64 crimson-presence-helper-linux-amd64; \
