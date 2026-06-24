@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '5.3.0';
+export const CLIENT_VERSION = '5.4.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -71,7 +71,11 @@ function streamPriority(stream) {
 // so it follows the user across devices. The sync is best-effort — if the backend
 // is unreachable the local cache stays authoritative, so ranking never breaks.
 const PLAYBACK_PREFS_KEY = 'crimson:playback-prefs';
-const EMPTY_PLAYBACK_PREFS = { language: '', type: '' };
+// `discordPresence` opts the viewer into broadcasting a Discord Rich Presence
+// (see discordPresence.js). It rides in the same client-preferences blob as the
+// language/dub-sub choice so it persists locally AND syncs to the account exactly
+// like them — one PUT carries all three.
+const EMPTY_PLAYBACK_PREFS = { language: '', type: '', discordPresence: false };
 
 // The languages/types offered in the settings UI. `value` is matched as a
 // case-insensitive substring against the scraper's language tag ("German Dub",
@@ -85,6 +89,7 @@ export function getPlaybackPrefs() {
     return {
       language: typeof raw.language === 'string' ? raw.language : '',
       type: typeof raw.type === 'string' ? raw.type : '',
+      discordPresence: typeof raw.discordPresence === 'boolean' ? raw.discordPresence : false,
     };
   } catch {
     return { ...EMPTY_PLAYBACK_PREFS };
@@ -95,6 +100,7 @@ export function setPlaybackPrefs(prefs) {
   const clean = {
     language: typeof prefs?.language === 'string' ? prefs.language : '',
     type: typeof prefs?.type === 'string' ? prefs.type : '',
+    discordPresence: typeof prefs?.discordPresence === 'boolean' ? prefs.discordPresence : false,
   };
   localStorage.setItem(PLAYBACK_PREFS_KEY, JSON.stringify(clean));
   // Broadcast so any open watch page / other tab can pick up the change live.
@@ -122,15 +128,23 @@ function persistPlaybackPrefsRemote(prefs) {
 // a one-time, silent migration for users who set a preference before this synced.
 function syncPlaybackPrefsFromAccount(remote) {
   const r = remote && typeof remote === 'object' ? remote : {};
-  if (r.language || r.type) {
-    const next = { language: r.language || '', type: r.type || '' };
+  // The account holds a value once any preference has ever been saved — note a
+  // stored `discordPresence: false` still counts, so we don't clobber a deliberate
+  // opt-out by pushing a stale local default back up.
+  const hasRemote = r.language || r.type || typeof r.discordPresence === 'boolean';
+  if (hasRemote) {
+    const next = {
+      language: r.language || '',
+      type: r.type || '',
+      discordPresence: !!r.discordPresence,
+    };
     const local = getPlaybackPrefs();
-    if (local.language !== next.language || local.type !== next.type) {
+    if (local.language !== next.language || local.type !== next.type || local.discordPresence !== next.discordPresence) {
       setPlaybackPrefs(next);
     }
   } else {
     const local = getPlaybackPrefs();
-    if (local.language || local.type) persistPlaybackPrefsRemote(local);
+    if (local.language || local.type || local.discordPresence) persistPlaybackPrefsRemote(local);
   }
 }
 

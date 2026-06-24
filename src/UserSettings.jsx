@@ -1,5 +1,26 @@
-import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal } from 'lucide-react';
+import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2 } from 'lucide-react';
 import { usePlaybackPrefs, useTitle, PREF_LANGUAGES, PREF_TYPES } from './hooks';
+
+// A simple on/off switch styled to match the crimson pills.
+const PrefToggle = ({ active, onClick, label }) => (
+  <button
+    onClick={onClick}
+    role="switch"
+    aria-checked={active}
+    aria-label={label}
+    className={`relative w-16 h-9 rounded-full border transition-all duration-300 active:scale-95 shrink-0 ${
+      active
+        ? 'bg-crimson-600 border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
+        : 'bg-crimson-950/60 border-crimson-900/60'
+    }`}
+  >
+    <span
+      className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow-md transition-all duration-300 ${
+        active ? 'left-8' : 'left-1'
+      }`}
+    />
+  </button>
+);
 
 // A reusable pill: the "Any" choice is the empty string, every other choice is a
 // language ("German") or a type ("Dub"). Selecting the active pill again clears it
@@ -24,6 +45,7 @@ const UserSettings = () => {
   // Toggle semantics: tapping the active value clears it back to "Any".
   const setLanguage = (value) => setPrefs({ ...prefs, language: prefs.language === value ? '' : value });
   const setType = (value) => setPrefs({ ...prefs, type: prefs.type === value ? '' : value });
+  const toggleDiscord = () => setPrefs({ ...prefs, discordPresence: !prefs.discordPresence });
 
   // Human description of the resulting auto-select behaviour.
   const summary = !prefs.language && !prefs.type
@@ -92,6 +114,42 @@ const UserSettings = () => {
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved automatically
             </p>
             <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">{summary}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Discord Rich Presence */}
+      <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
+        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
+
+        <div className="flex items-start justify-between gap-6 relative z-10">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-crimson-500">
+              <Gamepad2 className="w-6 h-6" />
+              <h3 className="text-lg font-black text-white uppercase tracking-tighter">Discord Presence</h3>
+            </div>
+            <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+              Let Luminas whisper to Discord what you're watching — a little rich-presence
+              card on your profile. Needs the Discord <span className="text-crimson-400">desktop app</span> open;
+              nothing leaves your machine, and you can banish it anytime.
+            </p>
+          </div>
+          <PrefToggle active={prefs.discordPresence} onClick={toggleDiscord} label="Toggle Discord Rich Presence" />
+        </div>
+
+        <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-500/5 border border-crimson-500/20 rounded-3xl">
+          <div className="p-2.5 rounded-2xl bg-crimson-900/20 shrink-0">
+            <Gamepad2 className="w-5 h-5 text-crimson-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-green-500" /> Saved automatically
+            </p>
+            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+              {prefs.discordPresence
+                ? 'Your Discord now flaunts "Watching …" while you stream, and "Browsing the archives…" while you wander.'
+                : 'Your viewing stays unseen — no presence is broadcast to Discord.'}
+            </p>
           </div>
         </div>
       </div>

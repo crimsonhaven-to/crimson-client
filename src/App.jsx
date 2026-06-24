@@ -3,6 +3,7 @@ import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-
 import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal } from 'lucide-react';
 import MeshBackground from './MeshBackground';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
+import { useDiscordPresence } from './discordPresence';
 import { changelogExcerpt, formatReleaseDate } from './utils';
 import WatchView from './WatchView';
 import NotFound from './NotFound';
@@ -701,6 +702,10 @@ function App() {
   const isAdmin = !!profile?.is_admin;
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Drives the opt-in Discord Rich Presence (see discordPresence.js). Mounted once
+  // here at the root so it spans every page; no-ops unless the viewer enabled it.
+  useDiscordPresence();
 
   // Luminas' welcome ritual — fires on a fresh login, i.e. an authentication
   // transition from signed-out to signed-in *during this page's lifetime*. A
