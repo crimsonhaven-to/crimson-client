@@ -130,8 +130,17 @@ const UserSettings = () => {
             </div>
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
               Let Luminas whisper to Discord what you're watching — a little rich-presence
-              card on your profile. Needs the Discord <span className="text-crimson-400">desktop app</span> open;
-              nothing leaves your machine, and you can banish it anytime.
+              card on your profile. Nothing leaves your machine, and you can banish it anytime.
+              Because Discord only trusts its own site, this needs a tiny local bridge like{' '}
+              <a
+                href="https://github.com/OpenAsar/arrpc"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-crimson-400 underline decoration-dotted underline-offset-2 hover:text-crimson-300"
+              >
+                arRPC
+              </a>{' '}
+              running alongside your desktop client. No bridge, no presence — nothing breaks.
             </p>
           </div>
           <PrefToggle active={prefs.discordPresence} onClick={toggleDiscord} label="Toggle Discord Rich Presence" />

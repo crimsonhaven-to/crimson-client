@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
 import { getPlaybackPrefs } from './hooks';
 
-// --- Discord Rich Presence (no desktop helper, no backend) ------------------
-// PreMiD-style presence, minus PreMiD: the Discord *desktop* client runs a local
-// RPC server on a loopback WebSocket, and a browser tab is allowed to connect
-// straight to it (loopback is a "potentially trustworthy" origin, so https→ws is
-// not blocked as mixed content). So this page *is* the presence app — it tells
-// the user's own Discord client what to show. Nothing is sent to our backend, and
-// it only works while the viewer has the Discord desktop app open (browser/mobile
-// Discord have no local RPC server — the feature simply no-ops there).
+// --- Discord Rich Presence (browser → loopback RPC, no backend) -------------
+// We connect a browser WebSocket to a Discord RPC server on the loopback port
+// range and push SET_ACTIVITY frames. Loopback is "potentially trustworthy", so
+// https→ws is allowed (not mixed content) once connect-src permits it.
 //
-// The whole thing is opt-in via the Preferences page (the `discordPresence`
-// playback pref) and degrades silently: if Discord isn't running, a port is
-// refused, or the browser blocks the loopback socket, we just never show anything.
+// IMPORTANT: the *real* Discord desktop client refuses RPC WebSockets whose Origin
+// isn't on its hardcoded allowlist (discord.com et al.), so a site like ours can't
+// talk to it directly — by design. The supported way to light this up is a small
+// local bridge such as arRPC (https://github.com/OpenAsar/arrpc), which speaks the
+// same RPC protocol WITHOUT the origin check and relays to Discord. So our client
+// code is unchanged; presence simply appears for viewers who run such a bridge.
+//
+// Fully opt-in via the Preferences page (`discordPresence` pref) and degrades
+// silently: with no bridge present we probe the ports once, find nothing, and stop
+// — no reconnect loop, so users without a bridge don't get recurring console noise.
 
 // The "CRIMSONHAVEN" application in the Discord Developer Portal. This id is
 // public by design — it only selects whose name + uploaded art the card shows.
@@ -225,12 +228,19 @@ export function useDiscordPresence() {
 
     const connect = () => {
       if (cancelled) return;
+      // Per-cycle flag: did THIS attempt ever reach a live bridge?
+      let cycleReady = false;
       conn = createRpcConnection({
-        onReady: () => { ready = true; push(); },
+        onReady: () => { cycleReady = true; ready = true; push(); },
         onClose: () => {
           ready = false;
           conn = null;
-          if (!cancelled) retryTimer = setTimeout(connect, 30_000);
+          if (cancelled) return;
+          // Only retry when a working connection dropped (the bridge/Discord was
+          // quit and may come back). A cycle that never connected means no bridge
+          // is listening, so we stop — re-probing on a loop would just spam the
+          // console with failed-WebSocket logs for everyone without a bridge.
+          if (cycleReady) retryTimer = setTimeout(connect, 15_000);
         },
       });
     };
