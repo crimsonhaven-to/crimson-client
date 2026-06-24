@@ -31,8 +31,118 @@ body {
   background-color: var(--color-crimson-950);
 }
 
-/* Wallpaper tweak: boost brightness/saturation for the background image only */
+/* Brightness/saturation boost for foreground art (e.g. the 404 Lumi). */
 .wallpaper-img {
   filter: brightness(1.25) saturate(1.08);
-  /* keep the opacity control in JSX (opacity-70) so we can adjust there if needed */
+}
+
+/* ============================================================================
+   Animated crimson mesh gradient (see MeshBackground.jsx)
+   ----------------------------------------------------------------------------
+   A dark crimson canvas with a handful of soft, blurred radial "blobs" that
+   slowly drift and breathe. They blend additively (screen) so where the glows
+   overlap they bloom into brighter crimson — luminous but restrained, the
+   regal vampire mood. Motion is transform-only (GPU compositor), so it's far
+   cheaper than a WebGL shader and won't fight video playback for resources.
+   ============================================================================ */
+.mesh-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background-color: var(--color-crimson-950);
+  /* slight overall lift so the dark base isn't flat black-red */
+  background-image: radial-gradient(
+    140% 100% at 50% -10%,
+    var(--color-crimson-900) 0%,
+    var(--color-crimson-950) 60%
+  );
+}
+
+.mesh-blob {
+  position: absolute;
+  width: 75vmax;
+  height: 75vmax;
+  border-radius: 50%;
+  /* heavy blur turns the hard circle into a soft, gradient-like cloud */
+  filter: blur(80px);
+  /* additive glow over the dark base — overlaps bloom brighter */
+  mix-blend-mode: screen;
+  will-change: transform;
+}
+
+/* Deep primary crimson — the dominant, slow-moving glow (top-left). */
+.mesh-blob-1 {
+  top: -22vmax;
+  left: -15vmax;
+  background: radial-gradient(circle at center, var(--color-crimson-600), transparent 68%);
+  opacity: 0.6;
+  animation: mesh-drift-1 26s ease-in-out infinite;
+}
+
+/* Dark wine — anchors the bottom-right with depth rather than brightness. */
+.mesh-blob-2 {
+  bottom: -25vmax;
+  right: -18vmax;
+  background: radial-gradient(circle at center, var(--color-crimson-800), transparent 70%);
+  opacity: 0.7;
+  animation: mesh-drift-2 32s ease-in-out infinite;
+}
+
+/* Piercing neon accent — small, low opacity, just a regal spark of brightness. */
+.mesh-blob-3 {
+  top: 25%;
+  right: 5%;
+  width: 50vmax;
+  height: 50vmax;
+  background: radial-gradient(circle at center, var(--color-crimson-500), transparent 65%);
+  opacity: 0.35;
+  animation: mesh-drift-3 21s ease-in-out infinite;
+}
+
+/* Muted rose mid-tone — softens the lower-left so it isn't all hard reds. */
+.mesh-blob-4 {
+  bottom: 5%;
+  left: -10vmax;
+  width: 55vmax;
+  height: 55vmax;
+  background: radial-gradient(circle at center, var(--color-crimson-700), transparent 70%);
+  opacity: 0.45;
+  animation: mesh-drift-4 29s ease-in-out infinite;
+}
+
+/* Vignette: darkens the edges and feathers a dark floor at the bottom so content
+   (login form, cards, text) keeps its contrast no matter where a blob drifts. */
+.mesh-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(130% 95% at 50% 35%, transparent 45%, var(--color-crimson-950) 100%),
+    linear-gradient(to bottom, transparent 55%, var(--color-crimson-950) 100%);
+}
+
+@keyframes mesh-drift-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(10vmax, 7vmax) scale(1.12); }
+  66%      { transform: translate(5vmax, 12vmax) scale(0.96); }
+}
+@keyframes mesh-drift-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%      { transform: translate(-12vmax, -6vmax) scale(1.1); }
+  70%      { transform: translate(-4vmax, -11vmax) scale(0.95); }
+}
+@keyframes mesh-drift-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-9vmax, 9vmax) scale(1.18); }
+}
+@keyframes mesh-drift-4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  35%      { transform: translate(9vmax, -8vmax) scale(1.1); }
+  68%      { transform: translate(13vmax, -3vmax) scale(0.97); }
+}
+
+/* Accessibility: stop the drift for motion-sensitive users — the gradient stays. */
+@media (prefers-reduced-motion: reduce) {
+  .mesh-blob {
+    animation: none !important;
+  }
 }

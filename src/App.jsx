@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal } from 'lucide-react';
-import Background from './assets/background.jpg';
+import MeshBackground from './MeshBackground';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { changelogExcerpt, formatReleaseDate } from './utils';
 import WatchView from './WatchView';
@@ -672,8 +672,7 @@ function AuthGate() {
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col relative overflow-x-hidden">
       <div className="absolute inset-0 pointer-events-none z-0">
-        <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-40 wallpaper-img" />
-        <div className="absolute inset-0 bg-gradient-to-b from-crimson-950/40 via-crimson-950/70 to-crimson-950" />
+        <MeshBackground />
       </div>
       <div className="flex-grow z-10 flex flex-col justify-center">
         <Routes>
@@ -755,9 +754,9 @@ function App() {
         </Suspense>
       )}
 
-      {/* Background Image */}
+      {/* Background — animated crimson mesh gradient (see MeshBackground.jsx) */}
       <div className="absolute inset-0 pointer-events-none z-0">
-        <img src={Background} alt="background wallpaper" className="w-full h-full object-cover opacity-50 wallpaper-img" />
+        <MeshBackground />
       </div>
 
       {/* Navigation Bar — transparent over the wallpaper at the top, solid once scrolled */}
