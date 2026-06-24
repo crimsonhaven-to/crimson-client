@@ -57,8 +57,8 @@ func readFrame(c net.Conn) (int32, []byte, error) {
 }
 
 // transformActivity adapts the browser's activity to what Discord's IPC expects.
-// The page sends rich `buttons: [{label,url}]`, but over IPC Discord wants the
-// labels as a string array with the URLs split out into metadata.button_urls.
+// The page sends rich `buttons: [{label,url}]`, which is exactly what Discord's
+// local IPC schema validator expects.
 // A null/empty activity stays nil (that's how presence is cleared).
 func transformActivity(raw json.RawMessage) any {
 	if isNullActivity(raw) {
@@ -67,30 +67,6 @@ func transformActivity(raw json.RawMessage) any {
 	var act map[string]any
 	if err := json.Unmarshal(raw, &act); err != nil {
 		return nil
-	}
-
-	if btns, ok := act["buttons"].([]any); ok && len(btns) > 0 {
-		labels := make([]string, 0, len(btns))
-		urls := make([]string, 0, len(btns))
-		for _, b := range btns {
-			bm, ok := b.(map[string]any)
-			if !ok {
-				continue
-			}
-			if l, ok := bm["label"].(string); ok {
-				labels = append(labels, l)
-			}
-			if u, ok := bm["url"].(string); ok {
-				urls = append(urls, u)
-			}
-		}
-		act["buttons"] = labels
-		meta, _ := act["metadata"].(map[string]any)
-		if meta == nil {
-			meta = map[string]any{}
-		}
-		meta["button_urls"] = urls
-		act["metadata"] = meta
 	}
 	return act
 }
