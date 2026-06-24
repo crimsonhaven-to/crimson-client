@@ -143,7 +143,7 @@ func (s *server) handle(conn *websocket.Conn, clientID string) {
 			continue
 		}
 
-		s.presence.update(clientID, frame.Args.Pid, frame.Args.Activity)
+		s.presence.update(clientID, frame.Args.Activity)
 		if !isNullActivity(frame.Args.Activity) {
 			log.Print("   → presence updated")
 		}
