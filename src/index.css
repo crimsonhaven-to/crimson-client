@@ -63,11 +63,18 @@ body {
   width: 75vmax;
   height: 75vmax;
   border-radius: 50%;
-  /* heavy blur turns the hard circle into a soft, gradient-like cloud */
-  filter: blur(80px);
+  /* The radial gradients below already fade to transparent at ~65–70%, so each
+     blob is *already* a soft cloud. A light blur just smooths the last banding;
+     a heavy one is wasted fill-rate (blur cost scales with area × radius, and
+     these layers are huge). Keep it modest. */
+  filter: blur(44px);
   /* additive glow over the dark base — overlaps bloom brighter */
   mix-blend-mode: screen;
-  will-change: transform;
+  /* Only transform + opacity animate, and both are compositor properties — the
+     blurred texture is rasterized once and just moved/faded, never re-blurred.
+     (Crucially, we no longer animate scale(): scaling a blurred layer forces a
+     full re-rasterization of the blur every frame, which is what pegged the GPU.) */
+  will-change: transform, opacity;
 }
 
 /* Deep primary crimson — the dominant, slow-moving glow (top-left). */
@@ -120,24 +127,29 @@ body {
     linear-gradient(to bottom, transparent 55%, var(--color-crimson-950) 100%);
 }
 
+/* The drift paths are unchanged; the old per-keyframe scale() (the "breathe")
+   is gone because scaling a blurred layer re-rasterizes it every frame. The
+   breathing now lives in opacity — a compositor-cheap fade that reads as the
+   same swelling/receding glow against the dark base. Each blob's opacity here
+   brackets its static base opacity (.mesh-blob-N) above and below. */
 @keyframes mesh-drift-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33%      { transform: translate(10vmax, 7vmax) scale(1.12); }
-  66%      { transform: translate(5vmax, 12vmax) scale(0.96); }
+  0%, 100% { transform: translate(0, 0);          opacity: 0.50; }
+  33%      { transform: translate(10vmax, 7vmax);  opacity: 0.68; }
+  66%      { transform: translate(5vmax, 12vmax);  opacity: 0.55; }
 }
 @keyframes mesh-drift-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  40%      { transform: translate(-12vmax, -6vmax) scale(1.1); }
-  70%      { transform: translate(-4vmax, -11vmax) scale(0.95); }
+  0%, 100% { transform: translate(0, 0);            opacity: 0.62; }
+  40%      { transform: translate(-12vmax, -6vmax);  opacity: 0.75; }
+  70%      { transform: translate(-4vmax, -11vmax);  opacity: 0.66; }
 }
 @keyframes mesh-drift-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50%      { transform: translate(-9vmax, 9vmax) scale(1.18); }
+  0%, 100% { transform: translate(0, 0);         opacity: 0.28; }
+  50%      { transform: translate(-9vmax, 9vmax); opacity: 0.42; }
 }
 @keyframes mesh-drift-4 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  35%      { transform: translate(9vmax, -8vmax) scale(1.1); }
-  68%      { transform: translate(13vmax, -3vmax) scale(0.97); }
+  0%, 100% { transform: translate(0, 0);          opacity: 0.38; }
+  35%      { transform: translate(9vmax, -8vmax);  opacity: 0.52; }
+  68%      { transform: translate(13vmax, -3vmax); opacity: 0.48; }
 }
 
 /* Accessibility: stop the drift for motion-sensitive users — the gradient stays. */
