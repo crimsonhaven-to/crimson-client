@@ -3,12 +3,19 @@ import Hls from 'hls.js';
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
   Settings2, RotateCcw, RotateCw, AlertTriangle, PictureInPicture2, Sparkles,
-  Captions, Download, Loader2,
+  Captions, Download, Loader2, SkipForward,
 } from 'lucide-react';
 import { downloadStream } from './streamDownload';
 
 // How far the skip-back / skip-forward buttons (and ←/→ keys) jump, in seconds.
 const SKIP_SECONDS = 10;
+
+// Grace period shown as a countdown before Auto-Next advances to the next
+// episode, giving the viewer a beat to cancel or jump in immediately.
+const AUTO_NEXT_SECONDS = 8;
+// localStorage key for the (opt-in, off by default) Auto-Next preference, so the
+// choice persists across episodes, source switches and sessions.
+const AUTO_NEXT_KEY = 'crimson:autoNext';
 
 /**
  * CrimsonPlayer — the Haven's own HLS / MP4 player.
@@ -23,7 +30,7 @@ const SKIP_SECONDS = 10;
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '' }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -39,6 +46,11 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   // calls the current callback without needing to re-subscribe the listeners.
   const onProgressRef = useRef(onProgress);
   useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
+  // Same pattern for the "advance to next episode" callback: read the latest one
+  // from inside the [] -dep `ended` listener and the countdown timer without
+  // re-subscribing on every render.
+  const onNextRef = useRef(onNext);
+  useEffect(() => { onNextRef.current = onNext; }, [onNext]);
   // Remembers whether the last interaction with the <video> was a touch or a
   // mouse press, so the tap handler can treat the two differently (mobile taps
   // reveal controls; desktop clicks play/pause). Set on pointerdown, read on click.
@@ -68,6 +80,15 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   const [downloading, setDownloading] = useState(false);
   const [dlProgress, setDlProgress] = useState(0);
   const dlAbortRef = useRef(null);
+
+  // Auto-Next: opt-in (off by default), persisted so the choice survives episode
+  // changes and sessions. `countdown` is the seconds remaining before we advance
+  // (null = no countdown running); `countdownTimer` holds its interval.
+  const [autoNext, setAutoNext] = useState(() => {
+    try { return localStorage.getItem(AUTO_NEXT_KEY) === '1'; } catch { return false; }
+  });
+  const [countdown, setCountdown] = useState(null);
+  const countdownTimer = useRef(null);
 
   // Defensive: only keep well-formed subtitle entries (need a url to load).
   const tracks = Array.isArray(subtitles) ? subtitles.filter((s) => s && s.url) : [];
@@ -242,23 +263,83 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
   useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current); }, []);
 
+  // ---- Auto-Next ---------------------------------------------------------
+  // Toggle persists the preference; cancel tears down any running countdown.
+  const toggleAutoNext = useCallback(() => {
+    setAutoNext((on) => {
+      const next = !on;
+      try { localStorage.setItem(AUTO_NEXT_KEY, next ? '1' : '0'); } catch { /* private mode */ }
+      return next;
+    });
+  }, []);
+
+  const cancelAutoNext = useCallback(() => {
+    if (countdownTimer.current) { clearInterval(countdownTimer.current); countdownTimer.current = null; }
+    setCountdown(null);
+  }, []);
+
+  // Start the grace-period countdown, then hand off to the next episode. Reveals
+  // the controls so the countdown card is visible even if they'd auto-hidden.
+  const beginAutoNext = useCallback(() => {
+    cancelAutoNext();
+    revealControls();
+    setCountdown(AUTO_NEXT_SECONDS);
+    countdownTimer.current = setInterval(() => {
+      setCountdown((c) => {
+        if (c === null) return null;
+        if (c <= 1) {
+          clearInterval(countdownTimer.current);
+          countdownTimer.current = null;
+          onNextRef.current?.();
+          return null;
+        }
+        return c - 1;
+      });
+    }, 1000);
+  }, [cancelAutoNext, revealControls]);
+
+  const playNextNow = useCallback(() => {
+    cancelAutoNext();
+    onNextRef.current?.();
+  }, [cancelAutoNext]);
+
+  // Clear any pending countdown on unmount so the timer can't fire into a gone
+  // component (e.g. the viewer navigates away mid-countdown).
+  useEffect(() => () => cancelAutoNext(), [cancelAutoNext]);
+
+  // When playback reaches the end and Auto-Next is armed (and a next episode
+  // exists), kick off the countdown. Declared after `beginAutoNext` so it can
+  // depend on it; sees the current `autoNext`/`hasNext` without re-binding the
+  // [] -dep events listeners. `onNext` is read through its ref.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return undefined;
+    const onEnded = () => {
+      if (autoNext && hasNext && onNextRef.current) beginAutoNext();
+    };
+    v.addEventListener('ended', onEnded);
+    return () => v.removeEventListener('ended', onEnded);
+  }, [autoNext, hasNext, beginAutoNext]);
+
   // ---- Actions -----------------------------------------------------------
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
+    cancelAutoNext(); // the viewer took over — don't yank them to the next episode
     if (v.paused) v.play().catch(() => {}); else v.pause();
     revealControls();
-  }, [revealControls]);
+  }, [revealControls, cancelAutoNext]);
 
   const skip = useCallback((delta) => {
     const v = videoRef.current;
     if (!v) return;
+    cancelAutoNext();
     const dur = v.duration || duration || 0;
     const target = v.currentTime + delta;
     v.currentTime = dur ? Math.min(dur, Math.max(0, target)) : Math.max(0, target);
     setCurrent(v.currentTime);
     revealControls();
-  }, [duration, revealControls]);
+  }, [duration, revealControls, cancelAutoNext]);
 
   // Tapping the video: on touch (mobile) the first tap only summons the controls
   // and a second tap dismisses them — it must NOT pause, which is jarring on a
@@ -275,11 +356,12 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   const seekTo = useCallback((clientX, el) => {
     const v = videoRef.current;
     if (!v || !duration) return;
+    cancelAutoNext();
     const rect = el.getBoundingClientRect();
     const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     v.currentTime = frac * duration;
     setCurrent(v.currentTime);
-  }, [duration]);
+  }, [duration, cancelAutoNext]);
 
   const onScrubStart = useCallback((e) => {
     const bar = e.currentTarget;
@@ -440,8 +522,8 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
         </div>
       )}
 
-      {/* Center play crest (paused, idle) */}
-      {!playing && !loading && !error && (
+      {/* Center play crest (paused, idle) — hidden while the Auto-Next card is up */}
+      {!playing && !loading && !error && countdown === null && (
         <button
           onClick={togglePlay}
           className="absolute inset-0 m-auto w-24 h-24 sm:w-28 sm:h-24 grid place-items-center rounded-full bg-crimson-950/40 border border-crimson-500/30 backdrop-blur-md text-white shadow-[0_0_60px_rgba(255,0,60,0.4)] hover:bg-crimson-500/20 hover:border-crimson-400 hover:scale-110 transition-all duration-300 active:scale-95 group z-10"
@@ -470,6 +552,34 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
           <button onClick={retry} className="flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-[0_10px_20px_rgba(255,0,60,0.3)] active:scale-95">
             <RotateCcw className="w-4 h-4" /> Re-Establish Node
           </button>
+        </div>
+      )}
+
+      {/* Auto-Next countdown crest — Netflix-style "Up Next" with a grace period */}
+      {countdown !== null && !error && (
+        <div className="absolute z-40 bottom-28 right-4 sm:right-6 w-72 max-w-[calc(100%-2rem)] rounded-3xl bg-crimson-950/95 border border-crimson-500/30 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] p-5 animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
+            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">Up Next</p>
+          </div>
+          <p className="text-sm font-black text-white truncate mb-1.5">{nextLabel || 'Next Episode'}</p>
+          <p className="text-[11px] font-bold text-crimson-300/70 mb-4">
+            Manifesting in <span className="text-crimson-400 tabular-nums font-black">{countdown}</span>s
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={playNextNow}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_8px_20px_rgba(255,0,60,0.3)]"
+            >
+              <SkipForward className="w-3.5 h-3.5 fill-current" /> Play Now
+            </button>
+            <button
+              onClick={cancelAutoNext}
+              className="px-4 py-2.5 rounded-xl bg-crimson-950/60 border border-white/5 text-crimson-300 hover:text-white hover:border-crimson-500/50 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -536,6 +646,25 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
             </span>
 
             <div className="flex-1" />
+
+            {/* Auto-Next toggle — only for episodic content (onNext provided). Off
+                by default; persisted. Advances to the next episode when one ends. */}
+            {onNext && (
+              <button
+                onClick={toggleAutoNext}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border transition-all active:scale-95 hover:text-white ${
+                  autoNext ? 'border-crimson-500/60 text-white' : 'border-white/5 hover:border-crimson-500/50'
+                }`}
+                aria-label="Auto-play next episode"
+                aria-pressed={autoNext}
+                title={autoNext ? 'Auto-Next: on' : 'Auto-Next: off'}
+              >
+                <SkipForward className={`w-4 h-4 ${autoNext ? 'text-crimson-400' : 'text-crimson-500'}`} />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+                  Auto {autoNext ? 'On' : 'Off'}
+                </span>
+              </button>
+            )}
 
             {/* Subtitles / captions */}
             {tracks.length > 0 && (
