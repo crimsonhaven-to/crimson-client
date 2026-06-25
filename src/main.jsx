@@ -2,7 +2,13 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import ErrorBoundary from './ErrorBoundary';
+import { summonLumiConsole } from './lumiConsole';
 import "./index.css";
+
+// Lumi's little flex in the devtools console — a styled banner + a chatty
+// `window.lumi` object for the curious. Purely cosmetic; wrapped so a console
+// quirk in some exotic browser can never block the app from rendering.
+try { summonLumiConsole(); } catch { /* the empress forgives */ }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>

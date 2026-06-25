@@ -5,8 +5,37 @@ import {
   ShieldCheck, ShieldOff, Mail, Zap, X,
   HardDrive, FolderOpen, FolderSearch, Power, PowerOff,
   Film, Languages, DownloadCloud, Pencil,
+  HeartPulse, Cpu, Clock, Gauge, Boxes, Radio, Wifi, WifiOff, ExternalLink,
 } from 'lucide-react';
 import { useTitle, useProfile, adminApi } from './hooks';
+
+// ---------- status vocabulary (shared by the health views) ----------
+// One palette + label per status string the backend emits, so colours stay
+// consistent across the summary strip, the source rows and the overview teaser.
+const STATUS_META = {
+  ok:        { label: 'Healthy',  dot: 'bg-green-400',  text: 'text-green-300',  ring: 'border-green-700/40',  glow: 'shadow-[0_0_10px_rgba(74,222,128,0.5)]' },
+  active:    { label: 'Active',   dot: 'bg-green-400',  text: 'text-green-300',  ring: 'border-green-700/40',  glow: 'shadow-[0_0_10px_rgba(74,222,128,0.5)]' },
+  empty:     { label: 'Empty',    dot: 'bg-amber-400',  text: 'text-amber-300',  ring: 'border-amber-700/40',  glow: 'shadow-[0_0_10px_rgba(251,191,36,0.5)]' },
+  idle:      { label: 'Idle',     dot: 'bg-amber-400',  text: 'text-amber-300',  ring: 'border-amber-700/40',  glow: 'shadow-[0_0_10px_rgba(251,191,36,0.5)]' },
+  error:     { label: 'Down',     dot: 'bg-crimson-500', text: 'text-crimson-400', ring: 'border-crimson-600/50', glow: 'shadow-[0_0_10px_rgba(255,0,60,0.5)]' },
+  disabled:  { label: 'Dormant',  dot: 'bg-crimson-900', text: 'text-crimson-600', ring: 'border-crimson-900/50', glow: '' },
+};
+const statusMeta = (s) => STATUS_META[s] || { label: s || '—', dot: 'bg-crimson-700', text: 'text-crimson-500', ring: 'border-crimson-900/50', glow: '' };
+
+const StatusDot = ({ status }) => {
+  const m = statusMeta(status);
+  return <span className={`inline-block w-2.5 h-2.5 rounded-full ${m.dot} ${m.glow} ${status === 'active' || status === 'ok' ? 'animate-pulse' : ''}`} />;
+};
+
+// A small on/off capability badge (used in the System flags grid).
+const FlagBadge = ({ on, label, onIcon: OnIcon = Wifi, offIcon: OffIcon = WifiOff }) => (
+  <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest ${
+    on ? 'bg-green-950/30 border-green-800/40 text-green-300' : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-700'
+  }`}>
+    {on ? <OnIcon className="w-3.5 h-3.5" /> : <OffIcon className="w-3.5 h-3.5" />}
+    <span className="truncate">{label}</span>
+  </div>
+);
 
 // ---------- small presentational helpers ----------
 const StatCard = ({ label, value, sub, icon: Icon, accent }) => (
@@ -54,11 +83,26 @@ const fmtDate = (iso) => {
 };
 
 // ---------- tabs ----------
-function OverviewTab({ stats, health }) {
+function OverviewTab({ stats, health, system }) {
   const a = stats?.accounts || {};
   const c = stats?.content || {};
+  const p = system?.db_pool || {};
   return (
     <div className="space-y-10">
+      {system && (
+        <section className="space-y-4">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+            <Activity className="w-4 h-4" /> At a Glance <div className="h-px bg-crimson-900/30 flex-grow" />
+          </h3>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Version" value={`v${system.version}`} sub={`up ${system.uptime_human}`} icon={Shield} accent="text-crimson-500" />
+            <StatCard label="Sources" value={system.registry?.scrapers} sub={`${system.registry?.resolvers ?? 0} resolvers`} icon={Boxes} accent="text-green-400" />
+            <StatCard label="DB Pool" value={p.available ? `${p.in_use}/${p.max_size}` : '—'} sub={p.available ? `${p.idle ?? 0} idle · ${p.waiting ?? 0} waiting` : 'pool closed'} icon={Gauge} accent={p.waiting > 0 ? 'text-amber-400' : undefined} />
+            <StatCard label="Video Cache" value={system.cache?.enabled ? (system.cache?.ready ?? 0) : 'Off'} sub={system.cache?.enabled ? `${system.cache?.pending ?? 0} pending · ${system.cache?.targets_enabled ?? 0} targets` : 'caching disabled'} icon={DownloadCloud} accent={system.cache?.enabled ? 'text-green-400' : 'text-crimson-700'} />
+          </div>
+        </section>
+      )}
+
       <section className="space-y-4">
         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
           <Users className="w-4 h-4" /> Members <div className="h-px bg-crimson-900/30 flex-grow" />
@@ -72,6 +116,7 @@ function OverviewTab({ stats, health }) {
           <StatCard label="New (7d)" value={a.users_new_7d} icon={Zap} />
           <StatCard label="Invites Unused" value={a.invites_unused} sub={`${a.invites_used ?? 0} used · ${a.invites_total ?? 0} total`} icon={Ticket} />
           <StatCard label="Favorites" value={a.favorites_total} sub={`${a.progress_total ?? 0} progress rows`} icon={CheckCircle2} />
+          <StatCard label="Watching" value={a.progress_in_progress} sub={`${a.progress_completed ?? 0} completed`} icon={Film} accent="text-green-400" />
         </div>
       </section>
 
@@ -341,7 +386,7 @@ function InvitesTab({ notify }) {
   );
 }
 
-function SystemTab({ stats, notify, refreshStats }) {
+function SystemTab({ stats, system, notify, refreshStats }) {
   const [resync, setResync] = useState(stats?.resync || null);
   const [triggering, setTriggering] = useState(false);
   const pollRef = useRef(null);
@@ -382,7 +427,9 @@ function SystemTab({ stats, notify, refreshStats }) {
   const c = stats?.content || {};
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
+      <RuntimeSection system={system} />
+
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-8 space-y-6 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-crimson-500/5 blur-3xl rounded-full" />
         <div className="flex items-center gap-3 relative z-10">
@@ -972,6 +1019,189 @@ function CacheTab({ notify }) {
   );
 }
 
+// ---------- runtime section (reused by Overview + System) ----------
+const fmtPct = (n, d) => (d ? `${Math.round((n / d) * 100)}%` : '—');
+
+function RuntimeSection({ system }) {
+  if (!system) {
+    return <div className="py-10 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Reading the runes…</div>;
+  }
+  const f = system.flags || {};
+  const p = system.db_pool || {};
+  const reg = system.registry || {};
+  return (
+    <div className="space-y-10">
+      <section className="space-y-4">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+          <Cpu className="w-4 h-4" /> Runtime <div className="h-px bg-crimson-900/30 flex-grow" />
+        </h3>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard label="Version" value={`v${system.version}`} icon={Shield} accent="text-crimson-500" />
+          <StatCard label="Uptime" value={system.uptime_human} sub={fmtDate(system.started_at)} icon={Clock} accent="text-green-400" />
+          <StatCard label="Scrapers" value={reg.scrapers} sub={`${reg.resolvers ?? 0} resolvers`} icon={Boxes} />
+          <StatCard label="Python" value={system.python_version} sub={system.hostname} icon={Cpu} />
+        </div>
+        <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
+          Node: <span className="text-crimson-400 normal-case font-mono">{system.platform || '—'}</span>
+        </p>
+      </section>
+
+      <section className="space-y-4">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+          <Power className="w-4 h-4" /> Capabilities <div className="h-px bg-crimson-900/30 flex-grow" />
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          <FlagBadge on={f.cache_enabled} label="Video Cache" onIcon={DownloadCloud} offIcon={DownloadCloud} />
+          <FlagBadge on={f.ffmpeg_available} label="ffmpeg" onIcon={Film} offIcon={Film} />
+          <FlagBadge on={f.jellyfin_configured} label="Jellyfin" />
+          <FlagBadge on={f.local_configured} label="Local Media" onIcon={HardDrive} offIcon={HardDrive} />
+          <FlagBadge on={f.showbox_configured} label="ShowBox" />
+          <FlagBadge on={f.tmdb_key_set} label="TMDB Key" onIcon={Database} offIcon={Database} />
+          <FlagBadge on={f.github_token_set} label="Changelog" onIcon={Activity} offIcon={Activity} />
+          <FlagBadge on={f.require_login} label="Login Wall" onIcon={Shield} offIcon={ShieldOff} />
+        </div>
+        <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
+          Rate-limit store: <span className="text-crimson-400 normal-case font-mono">{f.rate_limit_storage || '—'}</span>
+        </p>
+      </section>
+
+      <section className="space-y-4">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+          <Gauge className="w-4 h-4" /> Database Pool <div className="h-px bg-crimson-900/30 flex-grow" />
+        </h3>
+        {p.available ? (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard label="In Use" value={p.in_use} sub={`of ${p.max_size} max · ${fmtPct(p.in_use, p.max_size)}`} icon={Activity} accent={p.in_use >= (p.max_size || 0) ? 'text-crimson-500' : 'text-green-400'} />
+              <StatCard label="Idle" value={p.idle} sub={`${p.size ?? 0} open`} icon={Database} />
+              <StatCard label="Waiting" value={p.waiting} sub="queued for a conn" icon={Clock} accent={p.waiting > 0 ? 'text-amber-400' : 'text-crimson-700'} />
+              <StatCard label="Requests" value={p.requests_total} sub={`${p.requests_errors ?? 0} errors`} icon={Zap} accent={p.requests_errors > 0 ? 'text-crimson-500' : undefined} />
+            </div>
+            <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
+              Bounds: <span className="text-crimson-400">{p.min_size} … {p.max_size}</span> · Total connections opened: <span className="text-crimson-400">{p.connections_total ?? '—'}</span>
+            </p>
+          </>
+        ) : (
+          <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">Pool not yet open on this node.</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+// ---------- source health tab ----------
+const SourceRow = ({ s }) => {
+  const m = statusMeta(s.status);
+  return (
+    <div className={`bg-crimson-950/40 backdrop-blur-xl border ${m.ring} rounded-2xl p-4 sm:p-5 flex items-center gap-4 hover:border-crimson-500/30 transition-all`}>
+      <StatusDot status={s.status} />
+      <div className="min-w-0 flex-grow">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="text-sm font-black text-white tracking-tight">{s.label}</span>
+          <span className={`text-[9px] font-black uppercase tracking-widest ${m.text}`}>{m.label}</span>
+          {s.supports_movies && <span className="text-[8px] font-black uppercase tracking-widest text-crimson-600 border border-crimson-900/60 rounded-full px-2 py-0.5">Movies</span>}
+        </div>
+        {s.note && <p className="text-[10px] font-bold text-crimson-600 uppercase tracking-wider mt-0.5">{s.note}</p>}
+        <p className="text-[11px] text-crimson-300/70 font-medium mt-1">{s.detail}</p>
+        {s.base_url && (
+          <a href={s.base_url} target="_blank" rel="noreferrer" className="text-[10px] font-mono text-crimson-700 hover:text-crimson-400 transition-colors inline-flex items-center gap-1 mt-1">
+            {s.base_url.replace(/^https?:\/\//, '')} <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
+      </div>
+      <div className="text-right shrink-0 space-y-1">
+        {s.latency_ms != null && (
+          <p className={`text-[11px] font-black tabular-nums ${s.latency_ms > 4000 ? 'text-amber-400' : 'text-crimson-300'}`}>{s.latency_ms} ms</p>
+        )}
+        {s.category === 'scrape' && s.status !== 'disabled' && (
+          <p className="text-[9px] font-black uppercase tracking-widest text-crimson-600">{s.embeds ?? 0} embeds</p>
+        )}
+        {s.metrics && typeof s.metrics.ready === 'number' && (
+          <p className="text-[9px] font-black uppercase tracking-widest text-crimson-600">{s.metrics.ready} ready</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+function HealthTab({ notify }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [probing, setProbing] = useState(false);
+
+  const load = useCallback(async (force = false) => {
+    force ? setProbing(true) : setLoading(true);
+    try {
+      const res = await adminApi.sourceHealth(force);
+      if (res.success) setData(res);
+      else notify('Could not probe sources', false);
+    } catch { notify('Could not probe sources', false); }
+    finally { setLoading(false); setProbing(false); }
+  }, [notify]);
+
+  useEffect(() => { load(false); }, [load]);
+
+  if (loading && !data) {
+    return <div className="py-24 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Listening for the heartbeat of the network…</div>;
+  }
+
+  const sources = data?.sources || [];
+  const summary = data?.summary || {};
+  const library = sources.filter((s) => s.category === 'library');
+  const scrape = sources.filter((s) => s.category === 'scrape');
+
+  return (
+    <div className="space-y-10">
+      {/* Summary + re-probe */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2.5">
+            <HeartPulse className="w-5 h-5 text-crimson-500" /> Source Vitals
+          </h3>
+          <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">
+            Probed against <span className="text-crimson-400 normal-case">{data?.canary?.title}</span> · {data?.cached ? 'cached' : 'fresh'} · {fmtDate(data?.probed_at)}
+          </p>
+        </div>
+        <button
+          onClick={() => load(true)}
+          disabled={probing}
+          className="px-6 py-3.5 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2.5 shadow-[0_10px_25px_rgba(255,0,60,0.2)] self-start"
+        >
+          <Radio className={`w-4 h-4 ${probing ? 'animate-pulse' : ''}`} /> {probing ? 'Probing the dark…' : 'Re-probe Sources'}
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard label="Healthy" value={(summary.ok || 0) + (summary.active || 0)} icon={CheckCircle2} accent="text-green-400" />
+        <StatCard label="Empty / Idle" value={(summary.empty || 0) + (summary.idle || 0)} icon={AlertCircle} accent="text-amber-400" />
+        <StatCard label="Down" value={summary.error || 0} icon={WifiOff} accent="text-crimson-500" />
+        <StatCard label="Dormant" value={summary.disabled || 0} icon={PowerOff} accent="text-crimson-700" />
+        <StatCard label="Avg Latency" value={summary.avg_latency_ms != null ? `${summary.avg_latency_ms} ms` : '—'} sub={summary.slowest_ms != null ? `slowest ${summary.slowest_ms} ms` : null} icon={Gauge} />
+      </div>
+
+      {library.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+            <HardDrive className="w-4 h-4" /> Library Sources <div className="h-px bg-crimson-900/30 flex-grow" />
+          </h3>
+          <div className="grid gap-3">{library.map((s) => <SourceRow key={s.id} s={s} />)}</div>
+        </section>
+      )}
+
+      <section className="space-y-4">
+        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+          <Radio className="w-4 h-4" /> Streaming Sources <div className="h-px bg-crimson-900/30 flex-grow" />
+        </h3>
+        <div className="grid gap-3">{scrape.map((s) => <SourceRow key={s.id} s={s} />)}</div>
+      </section>
+
+      <p className="text-[10px] font-medium text-crimson-700 leading-relaxed max-w-3xl">
+        A <span className="text-green-400 font-bold">Healthy</span> streaming source resolved real embeds for the canary, so it would play right now. <span className="text-amber-300 font-bold">Empty</span> means the site answered but surfaced nothing (markup may have shifted). <span className="text-crimson-400 font-bold">Down</span> means it errored or was blocked. <span className="text-crimson-600 font-bold">Dormant</span> sources await their env keys. Library sources report what the haven itself holds.
+      </p>
+    </div>
+  );
+}
+
 // ---------- page ----------
 const AdminPage = () => {
   useTitle('Admin Sanctum');
@@ -979,6 +1209,7 @@ const AdminPage = () => {
   const [tab, setTab] = useState('overview');
   const [stats, setStats] = useState(null);
   const [health, setHealth] = useState(null);
+  const [system, setSystem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
@@ -991,9 +1222,12 @@ const AdminPage = () => {
 
   const loadStats = useCallback(async () => {
     try {
-      const [s, h] = await Promise.all([adminApi.stats(), adminApi.health()]);
+      // Source health is deliberately left out — it probes 11 upstreams, so it
+      // loads lazily inside its own tab rather than on every dashboard refresh.
+      const [s, h, sys] = await Promise.all([adminApi.stats(), adminApi.health(), adminApi.system()]);
       if (s.success) setStats(s);
       setHealth(h);
+      if (sys.success) setSystem(sys.system);
     } catch { /* surfaced as empty dashboard */ }
     finally { setLoading(false); }
   }, []);
@@ -1029,6 +1263,7 @@ const AdminPage = () => {
 
       <div className="flex flex-wrap gap-3">
         <TabButton active={tab === 'overview'} onClick={() => setTab('overview')} icon={Activity} label="Overview" />
+        <TabButton active={tab === 'health'} onClick={() => setTab('health')} icon={HeartPulse} label="Health" />
         <TabButton active={tab === 'users'} onClick={() => setTab('users')} icon={Users} label="Users" />
         <TabButton active={tab === 'invites'} onClick={() => setTab('invites')} icon={Ticket} label="Invites" />
         <TabButton active={tab === 'sources'} onClick={() => setTab('sources')} icon={HardDrive} label="Sources" />
@@ -1039,12 +1274,13 @@ const AdminPage = () => {
       <div>
         {tab === 'overview' && (loading && !stats
           ? <div className="py-24 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Gathering diagnostics…</div>
-          : <OverviewTab stats={stats} health={health} />)}
+          : <OverviewTab stats={stats} health={health} system={system} />)}
+        {tab === 'health' && <HealthTab notify={notify} />}
         {tab === 'users' && <UsersTab notify={notify} />}
         {tab === 'invites' && <InvitesTab notify={notify} />}
         {tab === 'sources' && <SourcesTab notify={notify} />}
         {tab === 'cache' && <CacheTab notify={notify} />}
-        {tab === 'system' && <SystemTab stats={stats} notify={notify} refreshStats={loadStats} />}
+        {tab === 'system' && <SystemTab stats={stats} system={system} notify={notify} refreshStats={loadStats} />}
       </div>
 
       <Toast toast={toast} onClose={() => setToast(null)} />
