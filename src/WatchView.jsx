@@ -45,10 +45,25 @@ const WatchView = ({
   // drop the SxEx from the download name. TV/anime render unchanged (default false).
   isMovie = false,
 }) => {
-  const currentEpisodeData = metadata?.episodes_list?.find(e => e.episode_number === currentEpisode);
+  const episodesList = metadata?.episodes_list || [];
+  const currentEpisodeData = episodesList.find(e => e.episode_number === currentEpisode);
   const episodeTitle = currentEpisodeData?.title && currentEpisodeData.title !== `Episode ${currentEpisode}`
     ? currentEpisodeData.title
     : null;
+
+  // Auto-Next wiring: the episode that follows the current one (same season), used
+  // to drive the player's opt-in "play next when this ends" feature. Movies and a
+  // missing/last episode leave this null, so the player simply won't offer it.
+  const currentEpisodeIdx = episodesList.findIndex(e => e.episode_number === currentEpisode);
+  const nextEpisodeData = !isMovie && currentEpisodeIdx >= 0 ? episodesList[currentEpisodeIdx + 1] : null;
+  const goToNextEpisode = useCallback(() => {
+    if (nextEpisodeData) onEpisodeChange(nextEpisodeData.episode_number);
+  }, [nextEpisodeData, onEpisodeChange]);
+  const nextEpisodeLabel = nextEpisodeData
+    ? (nextEpisodeData.title && nextEpisodeData.title !== `Episode ${nextEpisodeData.episode_number}`
+        ? `E${nextEpisodeData.episode_number} · ${nextEpisodeData.title}`
+        : `Episode ${nextEpisodeData.episode_number}`)
+    : '';
   const episodeDescription = currentEpisodeData?.overview
     || metadata?.summary
     || stripHtml(metadata?.description)
@@ -171,6 +186,9 @@ const WatchView = ({
                   downloadName={downloadName}
                   startAt={playerStartAt}
                   onProgress={handlePlayerProgress}
+                  onNext={isMovie ? undefined : goToNextEpisode}
+                  hasNext={!!nextEpisodeData}
+                  nextLabel={nextEpisodeLabel}
                 />
               </Suspense>
             )
