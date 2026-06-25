@@ -4,6 +4,7 @@ import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRigh
 import MeshBackground from './MeshBackground';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { useDiscordPresence } from './discordPresence';
+import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
 import WatchView from './WatchView';
 import NotFound from './NotFound';
@@ -35,6 +36,7 @@ const ShowOverview = lazy(() => import('./ShowOverview'));
 const ShowWatch = lazy(() => import('./ShowWatch'));
 const MovieOverview = lazy(() => import('./MovieOverview'));
 const MovieWatch = lazy(() => import('./MovieWatch'));
+const LumiSecret = lazy(() => import('./LumiSecret'));
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -707,6 +709,9 @@ function App() {
   // here at the root so it spans every page; no-ops unless the viewer enabled it.
   useDiscordPresence();
 
+  // ↑↑↓↓←→←→BA reveals Lumi's secret shrine (see useKonami.js / LumiSecret.jsx).
+  useKonamiCode(useCallback(() => navigate('/lumi'), [navigate]));
+
   // Luminas' welcome ritual — fires on a fresh login, i.e. an authentication
   // transition from signed-out to signed-in *during this page's lifetime*. A
   // reload while already signed in starts authed (wasAuthedRef begins true), so
@@ -913,6 +918,8 @@ function App() {
           <Route path="/watch-show/:tmdbId/:season?/:episode?" element={<ShowWatch />} />
           <Route path="/movie/:tmdbId" element={<MovieOverview />} />
           <Route path="/watch-movie/:tmdbId" element={<MovieWatch />} />
+          {/* Lumi's secret shrine — reached via the Konami code (see useKonami.js). */}
+          <Route path="/lumi" element={<LumiSecret />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>

@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '5.7.2';
+export const CLIENT_VERSION = '5.9.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -2085,6 +2085,10 @@ const _qs = (params) =>
 export const adminApi = {
   stats: () => apiFetch('/admin/stats').then(_json),
   health: () => apiFetch('/health').then(_json),
+  // Rich runtime snapshot (version/uptime, registry sizes, flags, DB pool, cache).
+  system: () => apiFetch('/admin/system').then(_json),
+  // Per-source health probe. force=true bypasses the backend's short result cache.
+  sourceHealth: (force = false) => apiFetch(`/admin/source-health${force ? '?force=true' : ''}`).then(_json),
   listUsers: (params) => apiFetch(`/admin/users?${_qs(params)}`).then(_json),
   updateUser: (id, body) =>
     apiFetch(`/admin/users/${id}`, {
