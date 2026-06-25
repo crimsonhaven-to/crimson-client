@@ -46,7 +46,12 @@ export default function LumiSecret() {
   const nextArt = useCallback(() => setArt((i) => (i + 1) % LUMI_ART.length), []);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-black via-crimson-950 to-black px-6 text-center">
+    // In-flow (not fixed) full-bleed shrine: `min-h-screen` keeps the immersive
+    // viewport-filling feel, but because it lives in the normal document flow the
+    // footer sits BELOW it rather than overlapping, and any overflow scrolls the
+    // page instead of being clipped. (A `fixed` overlay gets trapped by the
+    // transformed/blurred app shell, which previously cut off the bottom lines.)
+    <div className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-black via-crimson-950 to-black px-6 py-24 text-center">
       {/* Soft crimson glow behind the empress */}
       <div className="pointer-events-none absolute h-[60vmin] w-[60vmin] rounded-full bg-crimson-600/20 blur-3xl" />
 
