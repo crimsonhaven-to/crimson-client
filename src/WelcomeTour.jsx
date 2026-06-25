@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Crown, Search, Heart, History, SlidersHorizontal, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import lumiAvatar from './assets/lumi_cuty.png';
 
 // Luminas Crimsonveil's welcome ritual — a stepped, themed introduction to the
 // haven's features, shown once per login (see the trigger in App.jsx). Self-
@@ -137,44 +138,58 @@ const WelcomeTour = ({ onClose }) => {
         </button>
 
         <div className="relative z-[1] p-8 sm:p-10 space-y-7">
-          {/* Icon medallion */}
+          {/* Chat header — Lumi's avatar carries her identity */}
           <div className="flex items-center gap-4">
-            <div className="relative w-16 h-16 rounded-3xl bg-crimson-600/10 border border-crimson-500/30 flex items-center justify-center shadow-[0_0_30px_rgba(255,0,60,0.15)]">
-              <Icon className="w-8 h-8 text-crimson-500 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
+            <div className="relative shrink-0">
+              <img
+                src={lumiAvatar}
+                alt="Luminas Crimsonveil"
+                className="w-16 h-16 rounded-full object-cover border-2 border-crimson-500/40 shadow-[0_0_30px_rgba(255,0,60,0.25)]"
+              />
+              {/* online pulse — she's always watching, darling~ */}
+              <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-crimson-500 border-2 border-crimson-950 shadow-[0_0_10px_rgba(255,0,60,0.7)]" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-white tracking-tight truncate">Luminas Crimsonveil</h3>
+                <Crown className="w-3.5 h-3.5 text-crimson-500 shrink-0" />
+              </div>
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-600 mt-0.5">
+                {isFirst ? "The Queen's Welcome" : `Rite ${step} of ${STEPS.length - 1}`}
+              </p>
             </div>
             {current.isNew && (
-              <span className="px-3 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white animate-pulse">
+              <span className="ml-auto px-3 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white animate-pulse">
                 New
               </span>
             )}
           </div>
 
-          {/* Heading + body */}
-          <div className="space-y-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-600">
-              {isFirst ? "The Queen's Welcome" : `Rite ${step} of ${STEPS.length - 1}`}
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter leading-[1.05]">
-              {current.title}
-            </h2>
-            <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed font-medium">
-              {current.body}
-            </p>
-            {current.cta && (
-              <button
-                onClick={goToCta}
-                className="inline-flex items-center gap-2 mt-1 px-5 py-2.5 rounded-2xl bg-crimson-600/10 border border-crimson-500/30 text-crimson-300 hover:text-white hover:bg-crimson-600/20 transition-all text-[10px] font-black uppercase tracking-widest"
-              >
-                {current.cta.label} <ChevronRight className="w-4 h-4" />
-              </button>
-            )}
+          {/* Chat bubble — her message, with a little tail toward the avatar */}
+          <div className="relative pl-1">
+            <div className="absolute -top-1.5 left-6 w-3.5 h-3.5 rotate-45 bg-crimson-900/40 border-l border-t border-crimson-800/70" />
+            <div className="relative rounded-[1.75rem] rounded-tl-lg bg-crimson-900/30 border border-crimson-800/70 p-5 sm:p-6 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-9 h-9 rounded-2xl bg-crimson-600/15 border border-crimson-500/25 shrink-0">
+                  <Icon className="w-[18px] h-[18px] text-crimson-400 drop-shadow-[0_0_8px_rgba(255,0,60,0.5)]" />
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-[1.1]">
+                  {current.title}
+                </h2>
+              </div>
+              <p className="text-sm sm:text-[15px] text-crimson-100/75 leading-relaxed font-medium">
+                {current.body}
+              </p>
+              {current.cta && (
+                <button
+                  onClick={goToCta}
+                  className="inline-flex items-center gap-2 mt-1 px-5 py-2.5 rounded-2xl bg-crimson-600/10 border border-crimson-500/30 text-crimson-300 hover:text-white hover:bg-crimson-600/20 transition-all text-[10px] font-black uppercase tracking-widest"
+                >
+                  {current.cta.label} <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
-
-          {/* Luminas signature */}
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-crimson-700 flex items-center gap-3">
-            <span className="block w-6 h-px bg-crimson-700/60" />
-            Luminas Crimsonveil · Vampire Queen
-          </p>
 
           {/* Progress dots */}
           <div className="flex items-center justify-center gap-2 pt-1">
