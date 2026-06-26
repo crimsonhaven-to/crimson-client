@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star } from 'lucide-react';
 import MeshBackground from './MeshBackground';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -98,6 +98,111 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
   </div>
 );
 
+// ---------- Reusable poster card + content row ----------
+// A single poster tile shared by every home row (recommendations + trending).
+// The kind badge, rating and year ride the artwork like the movie-web / P-Stream
+// cards — recoloured in crimson and lit by Luminas' glow on hover.
+const KIND_LABEL = { anime: 'Anime', show: 'Show', movie: 'Movie' };
+
+function PosterCard({ item, onSelect }) {
+  const rating = typeof item.vote_average === 'number' && item.vote_average > 0
+    ? item.vote_average.toFixed(1) : null;
+  return (
+    <button onClick={() => onSelect(item)} className="group text-left flex flex-col gap-2.5 focus:outline-none">
+      <div className="relative aspect-[2/3] rounded-2xl overflow-hidden bg-crimson-900/10 border border-crimson-900/40 transition-[border-color,box-shadow,transform] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_18px_40px_rgba(255,0,60,0.28)] group-hover:-translate-y-1">
+        {item.poster ? (
+          <img
+            src={item.poster}
+            alt={`${item.title} poster`}
+            loading="lazy"
+            className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 px-2 text-center">
+            No Sigil
+          </div>
+        )}
+
+        {/* Readability gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/10 to-transparent opacity-80"></div>
+
+        {/* Kind badge */}
+        {item.kind && (
+          <span className="absolute top-2 left-2 text-[8px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded-md border bg-crimson-950/70 backdrop-blur-sm border-crimson-800/60 text-crimson-300">
+            {KIND_LABEL[item.kind] || item.kind}
+          </span>
+        )}
+
+        {/* Rating badge */}
+        {rating && (
+          <span className="absolute top-2 right-2 flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-crimson-950/70 backdrop-blur-sm border border-crimson-800/60 text-crimson-200">
+            <Star className="w-2.5 h-2.5 fill-crimson-400 text-crimson-400" /> {rating}
+          </span>
+        )}
+
+        {/* Hover play */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
+          <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+            <Play className="w-5 h-5 fill-white text-white" />
+          </div>
+        </div>
+
+        {/* Year over the gradient */}
+        {item.year && (
+          <span className="absolute bottom-2 left-2.5 text-[10px] font-black text-crimson-100/80 tracking-wide">
+            {item.year}
+          </span>
+        )}
+      </div>
+      <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug px-0.5">
+        {item.title}
+      </h4>
+    </button>
+  );
+}
+
+// Skeleton tiles shown while a row's data loads.
+function RowSkeleton() {
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 animate-pulse">
+      {[1, 2, 3, 4, 5, 6].map(n => (
+        <div key={n} className="aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50"></div>
+      ))}
+    </div>
+  );
+}
+
+// One titled home row (header + responsive poster grid). Renders nothing once it
+// has finished loading with no items, so empty surfaces vanish cleanly.
+function ContentRow({ icon, title, accent, subtitle, items, loading, onSelect, cta }) {
+  if (!loading && (!items || items.length === 0)) return null;
+  return (
+    <section className="space-y-6">
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-1.5 min-w-0">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase flex items-center gap-3">
+            <span className="text-crimson-500 shrink-0">{icon}</span>
+            <span className="truncate">{title} {accent && <span className="text-crimson-500">{accent}</span>}</span>
+          </h2>
+          {subtitle && (
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-crimson-600 truncate">{subtitle}</p>
+          )}
+        </div>
+        {cta}
+      </div>
+      {loading ? (
+        <RowSkeleton />
+      ) : (
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+          {items.map((item, i) => (
+            <PosterCard key={`${item.kind}-${item.tmdb_id ?? item.anilist_id}-${i}`} item={item} onSelect={onSelect} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ---------- Landing Page Component ----------
 function LandingPage() {
   const navigate = useNavigate();
@@ -114,6 +219,10 @@ function LandingPage() {
   const { trendingAnimes, trendLoading } = useTrendingAnime();
   const { trendingShows, trendLoading: showsLoading } = useTrendingShows();
   const { trendingMovies, trendLoading: moviesLoading } = useTrendingMovies();
+  // Personalized "watch next" feed + the viewer's display name for the greeting.
+  const { recommendations, basedOn, loading: recsLoading } = useRecommendations(18);
+  const profile = useProfile();
+  const displayName = profile?.username;
 
   // Anime -> /anime/{anilist_id}; non-anime show -> /show/{tmdb_id};
   // movie -> /movie/{tmdb_id}.
@@ -141,9 +250,17 @@ function LandingPage() {
     }
   };
 
+  // Greeting for the personalized row: "Recommended for You, {name}".
+  const recsTitle = displayName ? 'Recommended for You,' : 'Recommended for';
+  const recsAccent = displayName || 'You';
+  const recsSubtitle = basedOn?.top_genres?.length
+    ? `Woven from your love of ${basedOn.top_genres.slice(0, 3).map(g => g.genre).join(' · ')}`
+    : 'Curated by Luminas from what you adore';
+
   return (
-    <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 py-20 sm:py-32 text-center space-y-12 my-auto animate-in fade-in zoom-in-95 duration-1000">
-      <div className="space-y-4">
+    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-16 sm:space-y-20 animate-in fade-in duration-1000">
+      {/* Hero — the haven's sigil and the one search that opens every door. */}
+      <div className="space-y-4 text-center max-w-3xl mx-auto pt-6 sm:pt-12">
         <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
           crimson<span className="text-crimson-500 font-light opacity-90">haven</span>
         </h1>
@@ -212,143 +329,51 @@ function LandingPage() {
         </div>
       )}
 
-      <div className="mt-20 sm:mt-32 pt-12 border-t border-crimson-900/30">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10">
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-white uppercase flex items-center gap-3">
-            <div className="w-2 h-8 bg-crimson-500 rounded-full"></div>
-            Trending <span className="text-crimson-500">Streams</span> 
-          </h2>
-          <div className="h-px bg-crimson-900/30 flex-grow hidden sm:block mx-8"></div>
-          <Link to="/catalogue" className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 hover:text-crimson-400 transition-colors">
+      {/* Personalized recommendations — only when Luminas actually has picks for
+          you. A brand-new account (no history) falls straight through to trending. */}
+      {(recsLoading || recommendations.length > 0) && (
+        <ContentRow
+          icon={<Sparkles className="w-6 h-6" />}
+          title={recsTitle}
+          accent={recsAccent}
+          subtitle={recsSubtitle}
+          items={recommendations}
+          loading={recsLoading}
+          onSelect={openOverview}
+        />
+      )}
+
+      <ContentRow
+        icon={<Flame className="w-6 h-6" />}
+        title="Trending"
+        accent="Anime"
+        items={trendingAnimes}
+        loading={trendLoading}
+        onSelect={openOverview}
+        cta={
+          <Link to="/catalogue" className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 hover:text-crimson-400 transition-colors shrink-0">
             View All Archives
           </Link>
-        </div>
+        }
+      />
 
-        {trendLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 animate-pulse">
-            {[1, 2, 3, 4, 5].map(n => (
-              <div key={n} className="aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50"></div>
-            ))}
-          </div>
-        )}
+      <ContentRow
+        icon={<Tv className="w-6 h-6" />}
+        title="Trending"
+        accent="Shows"
+        items={trendingShows}
+        loading={showsLoading}
+        onSelect={openOverview}
+      />
 
-        {!trendLoading && trendingAnimes.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8">
-            {trendingAnimes.map((anime, index) => (
-              <div
-                key={index}
-                onClick={() => openOverview(anime)}
-                className="group flex flex-col gap-3 cursor-pointer"
-              >
-                <div className="relative aspect-[2/3] bg-crimson-900/10 border border-crimson-900/40 rounded-2xl overflow-hidden transition-[border-color,box-shadow] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_15px_30px_rgba(255,0,60,0.2)]">
-                  <img src={anime.poster} alt={`${anime.title} poster`} className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
-                     <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                        <Play className="w-6 h-6 fill-white text-white" />
-                     </div>
-                  </div>
-                </div>
-                <div className="text-left px-1">
-                  <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug">
-                    {anime.title}
-                  </h4>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Trending non-anime shows — a secondary row beneath anime, so anime
-            always stays the primary surface of the haven. */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 mt-20 sm:mt-28">
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-white uppercase flex items-center gap-3">
-            <div className="w-2 h-8 bg-crimson-500 rounded-full"></div>
-            Trending <span className="text-crimson-500">Shows</span>
-          </h2>
-          <div className="h-px bg-crimson-900/30 flex-grow hidden sm:block mx-8"></div>
-        </div>
-
-        {showsLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 animate-pulse">
-            {[1, 2, 3, 4, 5].map(n => (
-              <div key={n} className="aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50"></div>
-            ))}
-          </div>
-        )}
-
-        {!showsLoading && trendingShows.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8">
-            {trendingShows.map((show, index) => (
-              <div
-                key={index}
-                onClick={() => openOverview(show)}
-                className="group flex flex-col gap-3 cursor-pointer"
-              >
-                <div className="relative aspect-[2/3] bg-crimson-900/10 border border-crimson-900/40 rounded-2xl overflow-hidden transition-[border-color,box-shadow] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_15px_30px_rgba(255,0,60,0.2)]">
-                  <img src={show.poster} alt={`${show.title} poster`} className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
-                     <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                        <Play className="w-6 h-6 fill-white text-white" />
-                     </div>
-                  </div>
-                </div>
-                <div className="text-left px-1">
-                  <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug">
-                    {show.title}
-                  </h4>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Trending movies — a third row beneath anime + shows. Anime stays the
-            primary surface; movies are an additive, secondary catalogue. */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 mt-20 sm:mt-28">
-          <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-white uppercase flex items-center gap-3">
-            <div className="w-2 h-8 bg-crimson-500 rounded-full"></div>
-            Trending <span className="text-crimson-500">Movies</span>
-          </h2>
-          <div className="h-px bg-crimson-900/30 flex-grow hidden sm:block mx-8"></div>
-        </div>
-
-        {moviesLoading && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8 animate-pulse">
-            {[1, 2, 3, 4, 5].map(n => (
-              <div key={n} className="aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50"></div>
-            ))}
-          </div>
-        )}
-
-        {!moviesLoading && trendingMovies.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 sm:gap-8">
-            {trendingMovies.map((movie, index) => (
-              <div
-                key={index}
-                onClick={() => openOverview(movie)}
-                className="group flex flex-col gap-3 cursor-pointer"
-              >
-                <div className="relative aspect-[2/3] bg-crimson-900/10 border border-crimson-900/40 rounded-2xl overflow-hidden transition-[border-color,box-shadow] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_15px_30px_rgba(255,0,60,0.2)]">
-                  <img src={movie.poster} alt={`${movie.title} poster`} className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
-                     <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                        <Play className="w-6 h-6 fill-white text-white" />
-                     </div>
-                  </div>
-                </div>
-                <div className="text-left px-1">
-                  <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug">
-                    {movie.title}
-                  </h4>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      <ContentRow
+        icon={<Film className="w-6 h-6" />}
+        title="Trending"
+        accent="Movies"
+        items={trendingMovies}
+        loading={moviesLoading}
+        onSelect={openOverview}
+      />
     </div>
   );
 }
