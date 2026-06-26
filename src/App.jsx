@@ -161,19 +161,27 @@ function PosterCard({ item, onSelect }) {
   );
 }
 
+// Fixed tile width shared by the cards and the loading skeletons, so a row is
+// always exactly one horizontal track (no wrapping into a grid).
+const ROW_TILE = 'shrink-0 snap-start w-32 sm:w-40 lg:w-44';
+// Horizontal scroll track. Negative margins let the row bleed to the screen edge
+// on mobile while staying flush with the page padding on desktop.
+const ROW_TRACK = 'flex gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
+
 // Skeleton tiles shown while a row's data loads.
 function RowSkeleton() {
   return (
-    <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6 animate-pulse">
-      {[1, 2, 3, 4, 5, 6].map(n => (
-        <div key={n} className="aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50"></div>
+    <div className={`${ROW_TRACK} animate-pulse`}>
+      {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
+        <div key={n} className={`${ROW_TILE} aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50`}></div>
       ))}
     </div>
   );
 }
 
-// One titled home row (header + responsive poster grid). Renders nothing once it
-// has finished loading with no items, so empty surfaces vanish cleanly.
+// One titled home row: a header plus a single horizontally-scrolling poster track
+// (P-Stream / movie-web style). Renders nothing once it has finished loading with
+// no items, so empty surfaces vanish cleanly.
 function ContentRow({ icon, title, accent, subtitle, items, loading, onSelect, cta }) {
   if (!loading && (!items || items.length === 0)) return null;
   return (
@@ -193,9 +201,11 @@ function ContentRow({ icon, title, accent, subtitle, items, loading, onSelect, c
       {loading ? (
         <RowSkeleton />
       ) : (
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4 sm:gap-6">
+        <div className={ROW_TRACK}>
           {items.map((item, i) => (
-            <PosterCard key={`${item.kind}-${item.tmdb_id ?? item.anilist_id}-${i}`} item={item} onSelect={onSelect} />
+            <div key={`${item.kind}-${item.tmdb_id ?? item.anilist_id}-${i}`} className={ROW_TILE}>
+              <PosterCard item={item} onSelect={onSelect} />
+            </div>
           ))}
         </div>
       )}
