@@ -1,5 +1,6 @@
-import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download } from 'lucide-react';
-import { usePlaybackPrefs, useTitle, PREF_LANGUAGES, PREF_TYPES } from './hooks';
+import { useState, useEffect } from 'react';
+import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle } from 'lucide-react';
+import { usePlaybackPrefs, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES } from './hooks';
 
 // The little local bridge that carries presence from the haven to your Discord
 // client (see rpc-helper/). The binaries are cross-compiled into the site image
@@ -70,6 +71,86 @@ const PrefPill = ({ label, active, onClick }) => (
   </button>
 );
 
+// Display-name card: the cosmetic name Luminas greets you by ("Recommended for
+// you, {name}"). Saved server-side (PUT /account/username) so it follows the user
+// across devices; clearing it falls back to a generic greeting.
+const DisplayNameCard = () => {
+  const profile = useProfile();
+  const MAX = 32;
+  const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Seed the field once the profile loads (and whenever the stored name changes,
+  // e.g. after a successful save the profile refetches with the same value).
+  useEffect(() => { setName(profile?.username || ''); }, [profile?.username]);
+
+  const dirty = (profile?.username || '') !== name.trim();
+
+  const save = async () => {
+    setError(null);
+    setSaving(true);
+    try {
+      await updateUsername(name.trim());
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (e) {
+      setError(e.message || 'Could not save your name');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
+      <div className="space-y-3 relative z-10">
+        <div className="flex items-center gap-3 text-crimson-500">
+          <UserRound className="w-6 h-6" />
+          <h3 className="text-lg font-black text-white uppercase tracking-tighter">Your Name</h3>
+        </div>
+        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+          What shall Luminas call you, darling? She'll whisper it when she lays your
+          curated cravings before you — <span className="text-crimson-300">"Recommended for you, {name.trim() || 'mortal'}"</span>.
+          Leave it empty to stay a nameless wanderer of the haven.
+        </p>
+      </div>
+
+      <div className="relative z-10 flex flex-col sm:flex-row gap-3">
+        <input
+          type="text"
+          value={name}
+          maxLength={MAX}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && dirty && !saving) save(); }}
+          placeholder="A name for the Queen to know you by…"
+          className="flex-grow px-5 py-4 rounded-2xl bg-crimson-950/50 border border-crimson-900/60 text-crimson-50 placeholder-crimson-700 font-bold tracking-wide focus:outline-none focus:border-crimson-500/60 transition-colors"
+        />
+        <button
+          onClick={save}
+          disabled={!dirty || saving}
+          className="px-7 py-4 rounded-2xl bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 disabled:text-crimson-700 text-white font-black uppercase tracking-widest text-[11px] transition-all active:scale-95 flex items-center justify-center gap-2 shadow-lg"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          {saving ? 'Etching' : 'Save Name'}
+        </button>
+      </div>
+
+      {error && (
+        <p className="relative z-10 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-400">
+          <AlertTriangle className="w-3.5 h-3.5 text-crimson-500" /> {error}
+        </p>
+      )}
+      {saved && !error && (
+        <p className="relative z-10 flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-400">
+          <Check className="w-3.5 h-3.5 text-green-500" /> Luminas will remember you as {name.trim() || 'a nameless wanderer'}.
+        </p>
+      )}
+    </div>
+  );
+};
+
 const UserSettings = () => {
   useTitle('Preferences');
   const [prefs, setPrefs] = usePlaybackPrefs();
@@ -96,6 +177,9 @@ const UserSettings = () => {
         </h2>
         <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Tune how the haven picks your stream</p>
       </div>
+
+      {/* Display name — how Luminas greets you across the haven. */}
+      <DisplayNameCard />
 
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>

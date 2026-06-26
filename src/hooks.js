@@ -6,7 +6,7 @@ import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '6.0.0';
+export const CLIENT_VERSION = '6.5.0';
 
 // Utility for hex conversion
 const toHex = (arr) => Buffer.from(arr).toString('hex');
@@ -2056,21 +2056,81 @@ export function useProfile() {
   useEffect(() => {
     if (!sessionToken) { setProfile(null); return; }
     let cancelled = false;
-    apiFetch('/account/me')
-      .then(res => (res.ok ? res.json() : null))
-      .then(data => {
-        if (cancelled || !data) return;
-        setProfile(data);
-        // Mirror the account's saved playback preference into the local cache the
-        // stream ranker reads, so it follows the user across devices even before
-        // they open the settings page. Best-effort and additive (see helper).
-        syncPlaybackPrefsFromAccount(data.preferences);
-      })
-      .catch(() => {});
-    return () => { cancelled = true; };
+    const load = () => {
+      apiFetch('/account/me')
+        .then(res => (res.ok ? res.json() : null))
+        .then(data => {
+          if (cancelled || !data) return;
+          setProfile(data);
+          // Mirror the account's saved playback preference into the local cache the
+          // stream ranker reads, so it follows the user across devices even before
+          // they open the settings page. Best-effort and additive (see helper).
+          syncPlaybackPrefsFromAccount(data.preferences);
+        })
+        .catch(() => {});
+    };
+    load();
+    // Refetch when the profile changes elsewhere (e.g. display name saved on the
+    // preferences page) so greetings like "Recommended for you, {username}" update
+    // live without a reload.
+    window.addEventListener('crimson-profile', load);
+    return () => { cancelled = true; window.removeEventListener('crimson-profile', load); };
   }, [sessionToken]);
 
   return profile;
+}
+
+// Save (or clear, with '') the account's cosmetic display name, then broadcast so
+// every useProfile instance refetches. Returns the stored value (or null).
+export async function updateUsername(username) {
+  const res = await apiFetch('/account/username', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(extractError(data, 'Could not save your display name'));
+  }
+  const data = await res.json();
+  window.dispatchEvent(new Event('crimson-profile'));
+  return data.username ?? null;
+}
+
+// Personalized "watch next" feed (anime + shows + movies), ranked by the genres of
+// what you've saved and watched (see the backend recommend_engine). Cached briefly
+// in-memory so navigating back to the home page paints instantly.
+export function useRecommendations(limit = 24) {
+  const sessionToken = useSessionToken();
+  // Cache key is per-session so switching accounts in one tab never shows the
+  // previous user's picks (recommendations are personal, unlike trending).
+  const key = sessionToken ? `recommendations:${sessionToken}` : null;
+  const [recommendations, setRecommendations] = useState(() => (key && memGet(key)?.recs) || []);
+  const [basedOn, setBasedOn] = useState(() => (key && memGet(key)?.basedOn) || null);
+  const [loading, setLoading] = useState(() => !(key && memGet(key)));
+
+  useEffect(() => {
+    if (!key) { setRecommendations([]); setBasedOn(null); setLoading(false); return; }
+    const cached = memGet(key);
+    if (cached) { setRecommendations(cached.recs); setBasedOn(cached.basedOn); setLoading(false); return; }
+    let cancelled = false;
+    setLoading(true);
+    apiFetch(`/recommendations?limit=${limit}`)
+      .then(res => (res.ok ? res.json() : null))
+      .then(data => {
+        if (cancelled || !data) return;
+        const recs = data.recommendations || [];
+        const based = data.based_on || null;
+        setRecommendations(recs);
+        setBasedOn(based);
+        memSet(key, { recs, basedOn: based });
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [key, limit]);
+
+  return { recommendations, basedOn, loading };
 }
 
 // --- Admin dashboard API ----------------------------------------------------
