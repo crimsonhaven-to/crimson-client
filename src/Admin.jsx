@@ -128,7 +128,7 @@ function OverviewTab({ stats, health, system }) {
           <StatCard label="Anime Entries" value={c.anime_entries} icon={Database} accent="text-crimson-500" />
           <StatCard label="TMDB Seasons" value={c.tmdb_seasons} icon={Database} />
           <StatCard label="TMDB Extras" value={c.tmdb_extras} icon={Database} />
-          <StatCard label="Cached Shows" value={c.tmdb_shows} sub={`${c.api_cache ?? 0} cache rows`} icon={Database} />
+          <StatCard label="Cached Shows" value={c.tmdb_shows} sub={`${c.tmdb_movies ?? 0} movies · ${c.api_cache ?? 0} cache rows`} icon={Database} />
         </div>
         <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
           Last mapping sync: <span className="text-crimson-400">{fmtDate(c.last_synced)}</span>
@@ -391,7 +391,26 @@ function SystemTab({ stats, system, notify, refreshStats }) {
   const [triggering, setTriggering] = useState(false);
   const pollRef = useRef(null);
 
+  // Backfill (non-anime catalogue seed) — its own state + poller, same shape.
+  const [backfill, setBackfill] = useState(null);
+  const [backfillPages, setBackfillPages] = useState('');
+  const [backfilling, setBackfilling] = useState(false);
+  const backfillPollRef = useRef(null);
+
   useEffect(() => { setResync(stats?.resync || null); }, [stats]);
+
+  // Pick up an in-progress backfill on mount (survives a tab switch / reload).
+  useEffect(() => {
+    let cancelled = false;
+    adminApi.backfillStatus().then((res) => {
+      if (!cancelled && res.success) {
+        setBackfill(res.backfill);
+        if ((res.backfill?.running || res.backfill?.queued) && !backfillPollRef.current) pollBackfill();
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const poll = useCallback(() => {
     pollRef.current = setInterval(async () => {
@@ -410,7 +429,34 @@ function SystemTab({ stats, system, notify, refreshStats }) {
     }, 3000);
   }, [notify, refreshStats]);
 
-  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current); }, []);
+  const pollBackfill = useCallback(() => {
+    backfillPollRef.current = setInterval(async () => {
+      try {
+        const res = await adminApi.backfillStatus();
+        if (res.success) {
+          setBackfill(res.backfill);
+          // Keep polling while queued (waiting for api-sync) or running; stop only
+          // once the job reaches a terminal state.
+          if (res.backfill && !res.backfill.running && !res.backfill.queued) {
+            clearInterval(backfillPollRef.current);
+            backfillPollRef.current = null;
+            notify(
+              res.backfill.ok === false
+                ? `Backfill failed: ${res.backfill.error}`
+                : `Backfill done — ${res.backfill.shows ?? 0} shows, ${res.backfill.movies ?? 0} movies seeded`,
+              res.backfill.ok !== false,
+            );
+            refreshStats();
+          }
+        }
+      } catch { /* keep polling */ }
+    }, 3000);
+  }, [notify, refreshStats]);
+
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    if (backfillPollRef.current) clearInterval(backfillPollRef.current);
+  }, []);
 
   const trigger = async () => {
     setTriggering(true);
@@ -423,7 +469,22 @@ function SystemTab({ stats, system, notify, refreshStats }) {
     finally { setTriggering(false); }
   };
 
+  const triggerBackfill = async () => {
+    setBackfilling(true);
+    try {
+      const body = backfillPages ? { pages: Number(backfillPages) } : {};
+      const res = await adminApi.backfill(body);
+      if (res.backfill) setBackfill(res.backfill);
+      // Poll on success (queued) and also when it reports an already-active job, so
+      // the UI tracks the existing run instead of going stale.
+      if ((res.backfill?.queued || res.backfill?.running) && !backfillPollRef.current) pollBackfill();
+      notify(res.success ? 'Backfill queued' : (res.message || 'Could not queue backfill'), res.success);
+    } catch { notify('Could not queue backfill', false); }
+    finally { setBackfilling(false); }
+  };
+
   const running = resync?.running;
+  const backfillBusy = backfill?.running || backfill?.queued;
   const c = stats?.content || {};
 
   return (
@@ -463,6 +524,61 @@ function SystemTab({ stats, system, notify, refreshStats }) {
                   <p>Last run: {fmtDate(resync.finished_at)}</p>
                   <p className={resync.ok === false ? 'text-crimson-500' : 'text-green-500'}>
                     {resync.ok === false ? `Failed: ${resync.error}` : 'Completed successfully'}
+                  </p>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Non-anime catalogue backfill */}
+      <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-8 space-y-6 relative overflow-hidden">
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-crimson-500/5 blur-3xl rounded-full" />
+        <div className="flex items-center gap-3 relative z-10">
+          <DownloadCloud className="w-7 h-7 text-crimson-500" />
+          <div>
+            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Catalogue Backfill</h3>
+            <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Pre-seed non-anime shows &amp; movies from TMDB</p>
+          </div>
+        </div>
+
+        <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-2xl">
+          The <span className="text-crimson-400 font-bold">{c.tmdb_shows ?? '—'}</span> shows and <span className="text-crimson-400 font-bold">{c.tmdb_movies ?? '—'}</span> movies in the metadata tables are normally filled lazily as titles get opened or surface in search. This pages TMDB's popularity-ranked discover lists (anime excluded) and caches each one ahead of time. The job is handed to the <span className="text-crimson-400 font-bold">sync node</span> (so only it churns the metadata) and paced to stay gentle on TMDB and the database — it can take a minute to start and runs in the background. Each page is ~20 titles.
+        </p>
+
+        <div className="flex flex-col sm:flex-row sm:items-end gap-4 relative z-10">
+          <div className="space-y-2 sm:w-56">
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">Pages per kind (1–500)</label>
+            <input
+              type="number" min="1" max="500" value={backfillPages}
+              onChange={(e) => setBackfillPages(e.target.value)}
+              placeholder="Default (100)"
+              className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-700 focus:outline-none focus:border-crimson-500"
+            />
+          </div>
+          <button
+            onClick={triggerBackfill}
+            disabled={backfilling || backfillBusy}
+            className="px-7 py-4 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-[0_15px_30px_rgba(255,0,60,0.2)] h-[52px]"
+          >
+            <DownloadCloud className={`w-4 h-4 ${(backfilling || backfillBusy) ? 'animate-pulse' : ''}`} />
+            {backfill?.running ? 'Backfill running…' : backfill?.queued ? 'Queued on sync node…' : 'Start Backfill'}
+          </button>
+
+          {backfill && (backfill.requested_at || backfill.finished_at) && (
+            <div className="text-[10px] font-bold text-crimson-600 uppercase tracking-wider space-y-0.5">
+              {backfill.queued ? (
+                <p className="text-amber-400 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" /> Queued {fmtDate(backfill.requested_at)} · waiting for sync node</p>
+              ) : backfill.running ? (
+                <p className="text-crimson-400 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-crimson-500 animate-pulse" /> Started {fmtDate(backfill.started_at)} · {backfill.pages} pages</p>
+              ) : (
+                <>
+                  <p>Last run: {fmtDate(backfill.finished_at)}</p>
+                  <p className={backfill.ok === false ? 'text-crimson-500' : 'text-green-500'}>
+                    {backfill.ok === false
+                      ? `Failed: ${backfill.error}`
+                      : `Seeded ${backfill.shows ?? 0} shows · ${backfill.movies ?? 0} movies`}
                   </p>
                 </>
               )}
