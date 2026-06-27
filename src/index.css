@@ -63,58 +63,59 @@ body {
   width: 75vmax;
   height: 75vmax;
   border-radius: 50%;
-  /* The radial gradients below already fade to transparent at ~65–70%, so each
-     blob is *already* a soft cloud. A light blur just smooths the last banding;
-     a heavy one is wasted fill-rate (blur cost scales with area × radius, and
-     these layers are huge). Keep it modest. */
-  filter: blur(44px);
-  /* additive glow over the dark base — overlaps bloom brighter */
-  mix-blend-mode: screen;
+  /* The glow now lives entirely in the radial gradients below — each fades to
+     transparent at ~80–84%, so the blob is *already* a soft, wide cloud. We
+     dropped the old `mix-blend-mode: screen`: blend modes break the compositor
+     fast-path, forcing the GPU to read back and re-blend the whole backdrop every
+     frame for every layer — the real cost of the old background. With the wider
+     gradient falloff doing the softening, only a light blur is needed to smooth
+     the last banding (blur cost scales with area × radius, and these layers are
+     huge), so it drops from 44px to 14px. */
+  filter: blur(14px);
   /* Only transform + opacity animate, and both are compositor properties — the
-     blurred texture is rasterized once and just moved/faded, never re-blurred.
-     (Crucially, we no longer animate scale(): scaling a blurred layer forces a
-     full re-rasterization of the blur every frame, which is what pegged the GPU.) */
+     rasterized texture is just moved/faded, never re-blurred. (We never animate
+     scale(): scaling a blurred layer forces a full re-rasterization every frame.) */
   will-change: transform, opacity;
 }
 
-/* Deep primary crimson — the dominant, slow-moving glow (top-left). */
+/* Deep primary crimson — the dominant, slow-moving glow (top-left). Animated. */
 .mesh-blob-1 {
   top: -22vmax;
   left: -15vmax;
-  background: radial-gradient(circle at center, var(--color-crimson-600), transparent 68%);
-  opacity: 0.6;
+  background: radial-gradient(circle at center, var(--color-crimson-500), transparent 82%);
+  opacity: 0.7;
   animation: mesh-drift-1 26s ease-in-out infinite;
 }
 
-/* Dark wine — anchors the bottom-right with depth rather than brightness. */
+/* Dark wine — anchors the bottom-right with depth. The second animated layer. */
 .mesh-blob-2 {
   bottom: -25vmax;
   right: -18vmax;
-  background: radial-gradient(circle at center, var(--color-crimson-800), transparent 70%);
-  opacity: 0.7;
+  background: radial-gradient(circle at center, var(--color-crimson-700), transparent 84%);
+  opacity: 0.78;
   animation: mesh-drift-2 32s ease-in-out infinite;
 }
 
-/* Piercing neon accent — small, low opacity, just a regal spark of brightness. */
+/* Piercing neon accent — a regal spark of brightness. STATIC: only the two
+   dominant blobs drift now, halving the per-frame compositing while the eye still
+   reads constant, slow motion across the field. */
 .mesh-blob-3 {
   top: 25%;
   right: 5%;
   width: 50vmax;
   height: 50vmax;
-  background: radial-gradient(circle at center, var(--color-crimson-500), transparent 65%);
-  opacity: 0.35;
-  animation: mesh-drift-3 21s ease-in-out infinite;
+  background: radial-gradient(circle at center, var(--color-crimson-500), transparent 80%);
+  opacity: 0.4;
 }
 
-/* Muted rose mid-tone — softens the lower-left so it isn't all hard reds. */
+/* Muted rose mid-tone — softens the lower-left so it isn't all hard reds. Static. */
 .mesh-blob-4 {
   bottom: 5%;
   left: -10vmax;
   width: 55vmax;
   height: 55vmax;
-  background: radial-gradient(circle at center, var(--color-crimson-700), transparent 70%);
-  opacity: 0.45;
-  animation: mesh-drift-4 29s ease-in-out infinite;
+  background: radial-gradient(circle at center, var(--color-crimson-600), transparent 82%);
+  opacity: 0.5;
 }
 
 /* Vignette: darkens the edges and feathers a dark floor at the bottom so content
@@ -127,29 +128,21 @@ body {
     linear-gradient(to bottom, transparent 55%, var(--color-crimson-950) 100%);
 }
 
-/* The drift paths are unchanged; the old per-keyframe scale() (the "breathe")
+/* The drift paths translate only; the old per-keyframe scale() (the "breathe")
    is gone because scaling a blurred layer re-rasterizes it every frame. The
-   breathing now lives in opacity — a compositor-cheap fade that reads as the
-   same swelling/receding glow against the dark base. Each blob's opacity here
-   brackets its static base opacity (.mesh-blob-N) above and below. */
+   breathing lives in opacity — a compositor-cheap fade that reads as the same
+   swelling/receding glow against the dark base. Each blob's opacity here brackets
+   its static base opacity (.mesh-blob-N) above and below. Only the two animated
+   blobs keep keyframes now (blob-3/4 are static), so drift-3/4 are gone. */
 @keyframes mesh-drift-1 {
-  0%, 100% { transform: translate(0, 0);          opacity: 0.50; }
-  33%      { transform: translate(10vmax, 7vmax);  opacity: 0.68; }
-  66%      { transform: translate(5vmax, 12vmax);  opacity: 0.55; }
+  0%, 100% { transform: translate(0, 0);          opacity: 0.60; }
+  33%      { transform: translate(10vmax, 7vmax);  opacity: 0.80; }
+  66%      { transform: translate(5vmax, 12vmax);  opacity: 0.66; }
 }
 @keyframes mesh-drift-2 {
-  0%, 100% { transform: translate(0, 0);            opacity: 0.62; }
-  40%      { transform: translate(-12vmax, -6vmax);  opacity: 0.75; }
-  70%      { transform: translate(-4vmax, -11vmax);  opacity: 0.66; }
-}
-@keyframes mesh-drift-3 {
-  0%, 100% { transform: translate(0, 0);         opacity: 0.28; }
-  50%      { transform: translate(-9vmax, 9vmax); opacity: 0.42; }
-}
-@keyframes mesh-drift-4 {
-  0%, 100% { transform: translate(0, 0);          opacity: 0.38; }
-  35%      { transform: translate(9vmax, -8vmax);  opacity: 0.52; }
-  68%      { transform: translate(13vmax, -3vmax); opacity: 0.48; }
+  0%, 100% { transform: translate(0, 0);            opacity: 0.70; }
+  40%      { transform: translate(-12vmax, -6vmax);  opacity: 0.88; }
+  70%      { transform: translate(-4vmax, -11vmax);  opacity: 0.78; }
 }
 
 /* Accessibility: stop the drift for motion-sensitive users — the gradient stays. */
@@ -157,4 +150,14 @@ body {
   .mesh-blob {
     animation: none !important;
   }
+}
+
+/* Lite background (opt-in, per device — see useLiteBackground / Preferences).
+   The cheapest possible render: no drift, no blur, and no promoted compositor
+   layers (will-change cleared frees the GPU textures). The wide gradient falloff
+   keeps it smooth and on-mood even without the blur. */
+.mesh-bg.is-lite .mesh-blob {
+  animation: none;
+  filter: none;
+  will-change: auto;
 }

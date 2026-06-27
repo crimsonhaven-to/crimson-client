@@ -52,6 +52,7 @@ const AnimeOverview = () => {
       watchlistItem={watchlistItem}
       resume={resume}
       genres={overview?.genres || []}
+      mediaKind="anime"
       notFoundText="This anime could not be summoned from the archives."
     />
   );

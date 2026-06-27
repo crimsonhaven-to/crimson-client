@@ -105,9 +105,9 @@ const LoginWall = () => {
     if (await login(mnemonic.trim())) navigate('/');
   };
 
-  const handleGenerateIdentity = () => {
+  const handleGenerateIdentity = async () => {
     setError && setError(null);
-    setGenMnemonic(createNewMnemonic());
+    setGenMnemonic(await createNewMnemonic());
     setMnemonicView('create');
   };
 

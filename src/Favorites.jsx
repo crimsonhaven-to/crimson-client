@@ -6,6 +6,7 @@ import {
   Circle, CircleCheck, FolderPlus,
 } from 'lucide-react';
 import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST, ALL_LIST } from './hooks';
+import { setWatchlistActivity, clearActivity } from './discordPresence';
 
 const VIEW_KEY = 'crimson:watchlist-view';
 const SORT_KEY = 'crimson:watchlist-sort';
@@ -250,6 +251,13 @@ const FavoritesPage = () => {
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
   }, [exportOpen, importOpen]);
+
+  // Broadcast a "combing the watchlists" Discord Rich Presence while this page is
+  // open (opt-in; see discordPresence.js), clearing back to browsing on unmount.
+  useEffect(() => {
+    setWatchlistActivity();
+    return () => clearActivity();
+  }, []);
 
   const handleExport = async (format) => {
     setExportOpen(false);

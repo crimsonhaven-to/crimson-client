@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, Tag, History } from 'lucide-react';
 import { stripHtml } from './utils';
+import { setOverviewActivity, clearActivity } from './discordPresence';
 import WatchlistButton from './WatchlistButton';
 
 // Presentational overview UI shared by the anime Overview (/anime/:anilistId) and
@@ -76,9 +77,21 @@ const OverviewView = ({
   isMovie = false,
   onPlay,
   runtime,
+  // Which archive this title belongs to ('anime' | 'show' | 'movie') — only used
+  // to tint the Discord Rich Presence flavour line while the page is open.
+  mediaKind = isMovie ? 'movie' : 'show',
   notFoundText = 'This title could not be summoned from the archives.',
 }) => {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
+
+  // Broadcast a "lingering on <title>" Discord Rich Presence while this overview is
+  // open (opt-in; see discordPresence.js). Mirrors the watch page: set once the
+  // title resolves, and clear on unmount so leaving drops back to browsing.
+  useEffect(() => {
+    if (!overview?.title) return undefined;
+    setOverviewActivity({ title: overview.title, mediaKind });
+    return () => clearActivity();
+  }, [overview?.title, mediaKind]);
 
   if (loading) {
     return (

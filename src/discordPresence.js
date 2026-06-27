@@ -48,10 +48,19 @@ const nonce = () =>
   (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
 
 // --- Activity store ---------------------------------------------------------
-// `null` means "no specific title" → the browsing presence. The watch page sets a
-// descriptor while mounted (see setWatchActivity) and clears it on unmount, which
-// drops the viewer back to browsing. A tiny pub/sub keeps it framework-light and
-// matches the window-event style used elsewhere in the app.
+// `null` means "nowhere in particular" → the idle browsing presence. Otherwise it
+// holds a *scene*: a small tagged descriptor for what page the viewer is on, set
+// while that page is mounted and cleared on unmount (which drops them back to
+// browsing). A tiny pub/sub keeps it framework-light and matches the window-event
+// style used elsewhere in the app. The scene shapes buildActivity understands:
+//   • null                                          → browsing the archives
+//   • { kind:'watchlist' }                          → combing the watchlists
+//   • { kind:'overview', title, mediaKind }         → lingering on a title's page
+//   • { kind:'watch', title, isMovie, season,       → watching something
+//       episode, totalSeasons, startedAt }
+// Every page is last-write-wins: navigating swaps one scene for the next, and the
+// debounced push in the controller collapses the clear+set of a navigation into a
+// single Discord update so the card never flickers between them.
 let _activity = null;
 const _listeners = new Set();
 
@@ -59,62 +68,87 @@ const emit = () => _listeners.forEach((fn) => fn(_activity));
 
 /** Announce what the viewer is watching. `{ title, isMovie, season, episode,
  *  totalSeasons, startedAt }`. */
-export function setWatchActivity(activity) {
-  _activity = activity;
+export function setWatchActivity(watch) {
+  _activity = { kind: 'watch', ...watch };
+  emit();
+}
+
+/** Announce the viewer is tending their saved relics (the Watchlists page). */
+export function setWatchlistActivity() {
+  _activity = { kind: 'watchlist' };
+  emit();
+}
+
+/** Announce the viewer is lingering on a title's overview before the watch.
+ *  `mediaKind` is 'anime' | 'show' | 'movie' and only tints the flavour line. */
+export function setOverviewActivity({ title, mediaKind }) {
+  if (!title) return;            // overview not loaded yet — stay on the prior scene
+  _activity = { kind: 'overview', title, mediaKind };
   emit();
 }
 
 /** Drop back to the idle "browsing the archives" presence. */
-export function clearWatchActivity() {
+export function clearActivity() {
   _activity = null;
   emit();
 }
+// Kept as a named alias so the watch page reads symmetrically (set…/clear…).
+export const clearWatchActivity = clearActivity;
 
 function subscribe(fn) {
   _listeners.add(fn);
   return () => _listeners.delete(fn);
 }
 
-// Turn the current watch descriptor (or null) into a Discord activity payload.
-// Phrased in Luminas' voice. `type: 3` is "Watching" — newer clients honour it so
-// the profile line reads "Watching CRIMSONHAVEN"; older ones ignore it and fall
-// back to "Playing", which is why the verb is repeated in `details` to guarantee
-// the wording the card shows either way.
-function buildActivity(watch) {
+// Turn the current scene (or null) into a Discord activity payload, phrased in
+// Luminas' voice. `type: 3` is "Watching" — newer clients honour it so the profile
+// line reads "Watching CRIMSONHAVEN"; older ones ignore it and fall back to
+// "Playing", which is why the verb is repeated in `details` to guarantee the
+// wording the card shows either way.
+function buildActivity(scene) {
   const assets = {
     large_image: LARGE_IMAGE,
     large_text: LARGE_TEXT,
     small_image: SMALL_IMAGE,
     small_text: SMALL_TEXT,
   };
+  const base = { type: 3, assets, buttons: BUTTONS };
 
-  if (!watch || !watch.title) {
-    return {
-      type: 3,
-      details: 'Browsing the archives…',
-      state: "Beneath Luminas' crimson gaze",
-      assets,
-      buttons: BUTTONS,
-    };
+  // Idle — drifting the Haven with nothing in particular open.
+  if (!scene || (scene.kind === 'watch' && !scene.title)) {
+    return { ...base, details: 'Browsing the archives…', state: "Beneath Luminas' crimson gaze" };
   }
 
+  // Tending saved relics on the Watchlists page.
+  if (scene.kind === 'watchlist') {
+    return { ...base, details: 'Combing the watchlists', state: 'Tending her crimson reliquary' };
+  }
+
+  // Lingering on a title's overview, weighing whether to descend into it.
+  if (scene.kind === 'overview') {
+    const state =
+      scene.mediaKind === 'movie' ? 'Weighing a crimson feature'
+      : scene.mediaKind === 'anime' ? 'Tracing an inked saga'
+      : 'Surveying a serial saga';
+    return { ...base, details: clamp(`Beholding ${scene.title}`), state: clamp(state) };
+  }
+
+  // Watching something — the richest scene, with an elapsed timer.
   let state;
-  if (watch.isMovie) {
+  if (scene.isMovie) {
     state = 'A crimson feature in the moonlight';
-  } else if (watch.totalSeasons > 1) {
-    state = `Season ${watch.season} · Episode ${watch.episode}`;
+  } else if (scene.totalSeasons > 1) {
+    state = `Season ${scene.season} · Episode ${scene.episode}`;
   } else {
-    state = `Episode ${watch.episode}`;
+    state = `Episode ${scene.episode}`;
   }
 
   return {
-    type: 3,
-    details: clamp(`Watching ${watch.title}`),
+    ...base,
+    details: clamp(`Watching ${scene.title}`),
     state: clamp(state),
-    assets,
-    buttons: BUTTONS,
     // Elapsed-since counter Discord renders as "xx:xx elapsed".
-    timestamps: watch.startedAt ? { start: watch.startedAt } : undefined,
+    timestamps: scene.startedAt ? { start: scene.startedAt } : undefined,
   };
 }
 
