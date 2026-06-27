@@ -1,15 +1,31 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { generateMnemonic, mnemonicToSeedSync } from '@scure/bip39';
-import { wordlist } from '@scure/bip39/wordlists/english.js';
-import * as ed from '@noble/ed25519';
-import { Buffer } from 'buffer';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '6.5.1';
+export const CLIENT_VERSION = '7.0.0';
 
-// Utility for hex conversion
-const toHex = (arr) => Buffer.from(arr).toString('hex');
+// Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
+// just for this one call — the crypto libs already hand back plain Uint8Arrays.
+const toHex = (arr) => Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+
+// --- Lazy crypto -----------------------------------------------------------
+// ed25519 + the bip39 wordlist are only ever needed when the viewer actually
+// signs in or mints a mnemonic identity — never for logged-out first paint or
+// for the rest of the app. Importing them on demand (memoized) keeps ~tens of KB
+// of key-derivation code out of the eager main bundle. Every consumer below is
+// already async, so awaiting the load adds no UX cost.
+let _cryptoPromise;
+const loadCrypto = () =>
+  (_cryptoPromise ||= Promise.all([
+    import('@scure/bip39'),
+    import('@scure/bip39/wordlists/english.js'),
+    import('@noble/ed25519'),
+  ]).then(([bip39, { wordlist }, ed]) => ({
+    generateMnemonic: bip39.generateMnemonic,
+    mnemonicToSeedSync: bip39.mnemonicToSeedSync,
+    wordlist,
+    ed,
+  })));
 
 // --- Lightweight in-memory cache (per page session) -------------------------
 // Trending and the catalogue are global, slow-changing payloads. Without this,
@@ -171,6 +187,39 @@ export function usePlaybackPrefs() {
   return [prefs, update];
 }
 
+// --- Lite background (client-only performance preference) -------------------
+// Disables the animated mesh background's motion/blur/layer-promotion in favour
+// of a static gradient (see MeshBackground.jsx + .mesh-bg.is-lite in index.css).
+// Deliberately a per-DEVICE choice kept in its own localStorage key — NOT folded
+// into the account-synced playback-prefs blob: a weak phone and a desktop want
+// different answers, and keeping it local means it never touches the
+// /account/preferences contract. Mirrors the playback-prefs event pattern so the
+// background (mounted high in the tree) reacts the instant the toggle flips.
+const LITE_BG_KEY = 'crimson:lite-background';
+
+export function getLiteBackground() {
+  return localStorage.getItem(LITE_BG_KEY) === '1';
+}
+
+export function setLiteBackground(on) {
+  localStorage.setItem(LITE_BG_KEY, on ? '1' : '0');
+  window.dispatchEvent(new Event('crimson-lite-background'));
+}
+
+export function useLiteBackground() {
+  const [lite, setLite] = useState(getLiteBackground);
+  useEffect(() => {
+    const sync = () => setLite(getLiteBackground());
+    window.addEventListener('crimson-lite-background', sync);
+    window.addEventListener('storage', sync);
+    return () => {
+      window.removeEventListener('crimson-lite-background', sync);
+      window.removeEventListener('storage', sync);
+    };
+  }, []);
+  return lite;
+}
+
 // How badly a stream's language tag misses the preference (0 = perfect match,
 // higher = worse). An unset dimension never constrains; with no preference at all
 // every stream scores 0, so source priority alone decides.
@@ -271,6 +320,7 @@ export function useAuth() {
   const isAuthenticated = !!sessionToken;
 
   const deriveKeypair = async (mnemonic) => {
+    const { mnemonicToSeedSync, ed } = await loadCrypto();
     const seed = mnemonicToSeedSync(mnemonic).slice(0, 32);
     const pubKeyArr = await ed.getPublicKeyAsync(seed);
     const pubKeyHex = toHex(pubKeyArr);
@@ -280,6 +330,7 @@ export function useAuth() {
   // Get a one-time challenge for this key and sign it with the private seed —
   // the shared first half of both mnemonic login and registration.
   const challengeAndSign = async (pubKey, seed) => {
+    const { ed } = await loadCrypto();
     const challRes = await fetch(`${API_BASE_URL}/auth/challenge`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -374,7 +425,8 @@ export function useAuth() {
     setAuthStorage(null, null);
   };
 
-  const createNewMnemonic = () => {
+  const createNewMnemonic = async () => {
+    const { generateMnemonic, wordlist } = await loadCrypto();
     return generateMnemonic(wordlist);
   };
 

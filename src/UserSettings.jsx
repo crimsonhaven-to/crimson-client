@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle } from 'lucide-react';
-import { usePlaybackPrefs, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES } from './hooks';
+import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle, Gauge } from 'lucide-react';
+import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES } from './hooks';
 
 // The little local bridge that carries presence from the haven to your Discord
 // client (see rpc-helper/). The binaries are cross-compiled into the site image
@@ -154,11 +154,14 @@ const DisplayNameCard = () => {
 const UserSettings = () => {
   useTitle('Preferences');
   const [prefs, setPrefs] = usePlaybackPrefs();
+  // Client-only, per-device perf preference (not part of the synced prefs blob).
+  const lite = useLiteBackground();
 
   // Toggle semantics: tapping the active value clears it back to "Any".
   const setLanguage = (value) => setPrefs({ ...prefs, language: prefs.language === value ? '' : value });
   const setType = (value) => setPrefs({ ...prefs, type: prefs.type === value ? '' : value });
   const toggleDiscord = () => setPrefs({ ...prefs, discordPresence: !prefs.discordPresence });
+  const toggleLite = () => setLiteBackground(!lite);
 
   // One-click helper download tailored to the visitor's OS.
   const helper = guessHelper();
@@ -309,6 +312,42 @@ const UserSettings = () => {
               {prefs.discordPresence
                 ? 'Your Discord now flaunts "Watching …" while you stream, and "Browsing the archives…" while you wander.'
                 : 'Your viewing stays unseen — no presence is broadcast to Discord.'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Lite background — a per-device performance toggle (not account-synced). */}
+      <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
+
+        <div className="flex items-start justify-between gap-6 relative z-10">
+          <div className="space-y-3">
+            <div className="flex items-center gap-3 text-crimson-500">
+              <Gauge className="w-6 h-6" />
+              <h3 className="text-lg font-black text-white uppercase tracking-tighter">Lite Background</h3>
+            </div>
+            <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+              The living crimson mist is beautiful but hungry on weaker machines. Still it,
+              and Luminas lets the glow rest as a calm, static gradient — gentler on the GPU
+              and your battery. This choice stays on this device alone.
+            </p>
+          </div>
+          <PrefToggle active={lite} onClick={toggleLite} label="Toggle Lite Background" />
+        </div>
+
+        <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-500/5 border border-crimson-500/20 rounded-3xl">
+          <div className="p-2.5 rounded-2xl bg-crimson-900/20 shrink-0">
+            <Gauge className="w-5 h-5 text-crimson-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
+            </p>
+            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+              {lite
+                ? 'The mist lies still — a calm crimson gradient, lightest on your hardware.'
+                : "The crimson mist drifts as Luminas intended — full, living, and aglow."}
             </p>
           </div>
         </div>

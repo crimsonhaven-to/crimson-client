@@ -21,8 +21,8 @@ const AccountPage = () => {
     }
   };
 
-  const handleGenerateMnemonic = () => {
-    const m = createNewMnemonic();
+  const handleGenerateMnemonic = async () => {
+    const m = await createNewMnemonic();
     setNewMnemonic(m);
     setShowNewMnemonic(true);
   };
