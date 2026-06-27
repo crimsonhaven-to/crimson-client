@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '8.0.0';
+export const CLIENT_VERSION = '8.1.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -2272,4 +2272,16 @@ export const adminApi = {
   deleteCacheTarget: (id) => apiFetch(`/admin/cache-targets/${id}`, { method: 'DELETE' }).then(_json),
   listCachedEpisodes: (params) => apiFetch(`/admin/cached-episodes?${_qs(params)}`).then(_json),
   deleteCachedEpisode: (id) => apiFetch(`/admin/cached-episodes/${id}`, { method: 'DELETE' }).then(_json),
+  // movie-web bridge API keys (machine credentials for the /mw endpoints, baked
+  // into the movie-web fork's proxy). The raw key is only ever in the create
+  // response — list/revoke deal in the non-secret key id (its hash).
+  listApiKeys: (params) => apiFetch(`/admin/api-keys?${_qs(params)}`).then(_json),
+  createApiKey: (body) =>
+    apiFetch('/admin/api-keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body || {}),
+    }).then(_json),
+  revokeApiKey: (id) =>
+    apiFetch(`/admin/api-keys/${encodeURIComponent(id)}`, { method: 'DELETE' }).then(_json),
 };
