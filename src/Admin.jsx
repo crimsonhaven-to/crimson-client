@@ -195,7 +195,7 @@ function UsersTab({ notify }) {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search email, label, or id…"
+            placeholder="Search email, name, label, or id…"
             className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all"
           />
         </div>
@@ -215,6 +215,9 @@ function UsersTab({ notify }) {
                 <div className="flex-grow min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-crimson-50 truncate">{u.email || u.label || `User #${u.user_id}`}</span>
+                    {(u.username || u.display_name) && (
+                      <span className="text-xs font-bold text-crimson-400 italic truncate max-w-[12rem]">“{u.username || u.display_name}”</span>
+                    )}
                     {u.is_admin && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400">Admin</span>}
                     {u.email_verified
                       ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Verified</span>

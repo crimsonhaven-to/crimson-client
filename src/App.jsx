@@ -860,7 +860,7 @@ function App() {
                 <div className="absolute top-full right-0 mt-4 w-64 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 rounded-2xl z-50">
                   <div className="p-4 border-b border-crimson-900/20 bg-crimson-600/5">
                     <p className="text-xs font-black text-crimson-600 uppercase tracking-widest mb-1">Session</p>
-                    <p className="text-white font-bold truncate">Sanctuary Dweller</p>
+                    <p className="text-white font-bold truncate">{profile?.username || 'Sanctuary Dweller'}</p>
                   </div>
                   <div className="p-2">
                     <Link
