@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '8.2.0';
+export const CLIENT_VERSION = '8.3.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -254,6 +254,27 @@ export async function fetchSubtitles({ tmdbId, season = null, episode = null, is
       }));
   } catch {
     return [];
+  }
+}
+
+// Fetch AniSkip intro/outro (OP/ED) skip timestamps for an anime episode from the
+// backend (GET /skiptimes), as `{ op:{start,end}, ed:{start,end} }` (either may be
+// null). AniList-keyed, so this is anime-only — non-anime titles have no
+// `anilist_id` and the caller simply won't invoke it. Best-effort: any error, or a
+// title/episode AniSkip has no submissions for, resolves to null so the player just
+// shows no skip affordances.
+export async function fetchSkipTimes({ anilistId, episode, episodeLength = 0 } = {}) {
+  if (!anilistId || !episode) return null;
+  const p = new URLSearchParams({ anilist_id: String(anilistId), episode: String(episode) });
+  if (episodeLength) p.set('episode_length', String(Math.round(episodeLength)));
+  try {
+    const res = await apiFetch(`/skiptimes?${p.toString()}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data?.found) return null;
+    return { op: data.op || null, ed: data.ed || null };
+  } catch {
+    return null;
   }
 }
 

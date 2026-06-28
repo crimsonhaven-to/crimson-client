@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, AlertTriangle, ChevronRight, ArrowLeft, CalendarClock } from 'lucide-react';
-import { API_BASE_URL, apiFetch, fetchSubtitles, usePlaybackPrefs } from './hooks';
+import { API_BASE_URL, apiFetch, fetchSubtitles, fetchSkipTimes, usePlaybackPrefs } from './hooks';
 import { setWatchActivity, clearWatchActivity } from './discordPresence';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
@@ -99,6 +99,20 @@ const WatchView = ({
     // subLangKey stands in for the array identity so we don't refetch each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tmdbId, tmdbSeason, currentEpisode, isMovie, subLangKey]);
+
+  // AniSkip intro/outro timestamps (additive, anime-only). Keyed off the AniList id
+  // /info resolved, so non-anime shows (no `anilist_id`) and movies simply skip the
+  // fetch and the player shows no skip affordances. Re-fetched per episode.
+  const anilistId = metadata?.anilist_id;
+  const [skipTimes, setSkipTimes] = useState(null);
+  useEffect(() => {
+    setSkipTimes(null);
+    if (isMovie || !anilistId || !currentEpisode) return undefined;
+    let cancelled = false;
+    fetchSkipTimes({ anilistId, episode: currentEpisode })
+      .then((st) => { if (!cancelled) setSkipTimes(st); });
+    return () => { cancelled = true; };
+  }, [anilistId, currentEpisode, isMovie]);
 
   // Merge source-supplied tracks with the OpenSubtitles ones, de-duping by URL so a
   // source that already provides a language doesn't double up.
@@ -226,6 +240,7 @@ const WatchView = ({
                   onNext={isMovie ? undefined : goToNextEpisode}
                   hasNext={!!nextEpisodeData}
                   nextLabel={nextEpisodeLabel}
+                  skipTimes={skipTimes}
                 />
               </Suspense>
             )

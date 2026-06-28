@@ -30,7 +30,7 @@ const AUTO_NEXT_KEY = 'crimson:autoNext';
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '' }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -321,6 +321,49 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
     return () => v.removeEventListener('ended', onEnded);
   }, [autoNext, hasNext, beginAutoNext]);
 
+  // ---- Skip Intro / Outro (AniSkip, anime-only) --------------------------
+  // `skipTimes` is { op:{start,end}, ed:{start,end} } (either may be null). We show
+  // a "Skip Intro" button while inside the OP window and a "Skip Outro" button
+  // inside the ED window; and when Auto-Next is armed, entering the ED window kicks
+  // off the existing "Up Next" card early so it doubles as a Continue-Watching prompt.
+  const op = skipTimes?.op;
+  const ed = skipTimes?.ed;
+  // 0.3s guard so a button doesn't flash for a frame at the very edge of a window.
+  const inOpRange = !!op && current >= op.start && current < op.end - 0.3;
+  const inEdRange = !!ed && current >= ed.start && current < ed.end - 0.3;
+
+  const skipIntro = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !skipTimes?.op) return;
+    cancelAutoNext();
+    try { v.currentTime = skipTimes.op.end; } catch { /* not seekable yet */ }
+    setCurrent(v.currentTime);
+    revealControls();
+  }, [skipTimes, cancelAutoNext, revealControls]);
+
+  const skipOutro = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !skipTimes?.ed) return;
+    cancelAutoNext();
+    const dur = v.duration || duration || 0;
+    const target = dur ? Math.min(dur - 0.1, skipTimes.ed.end) : skipTimes.ed.end;
+    try { v.currentTime = target; } catch { /* not seekable yet */ }
+    setCurrent(v.currentTime);
+    revealControls();
+  }, [skipTimes, duration, cancelAutoNext, revealControls]);
+
+  // Auto-arm the Up Next card when playback reaches the outro (not just on `ended`),
+  // so Auto-Next viewers roll into the next episode over the credits. Once per source.
+  const edAutoArmed = useRef(false);
+  useEffect(() => { edAutoArmed.current = false; }, [src]);
+  useEffect(() => {
+    if (!inEdRange || edAutoArmed.current || countdown !== null) return;
+    if (autoNext && hasNext && onNextRef.current) {
+      edAutoArmed.current = true;
+      beginAutoNext();
+    }
+  }, [inEdRange, autoNext, hasNext, countdown, beginAutoNext]);
+
   // ---- Actions -----------------------------------------------------------
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
@@ -553,6 +596,20 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
             <RotateCcw className="w-4 h-4" /> Re-Establish Node
           </button>
         </div>
+      )}
+
+      {/* Skip Intro / Skip Outro crests (AniSkip). Hidden while the Up Next card is
+          up (the card supersedes the outro button when Auto-Next is armed). */}
+      {!error && countdown === null && (inOpRange || inEdRange) && (
+        <button
+          onClick={inOpRange ? skipIntro : skipOutro}
+          className="absolute z-40 bottom-28 right-4 sm:right-6 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-crimson-950/90 border border-crimson-500/40 backdrop-blur-2xl text-white shadow-[0_15px_50px_rgba(0,0,0,0.7)] hover:bg-crimson-600 hover:border-crimson-400 hover:scale-[1.03] transition-all active:scale-95 animate-in slide-in-from-bottom-4 fade-in duration-300"
+        >
+          <SkipForward className="w-4 h-4 fill-current text-crimson-400" />
+          <span className="text-[11px] font-black uppercase tracking-[0.2em]">
+            {inOpRange ? 'Skip Intro' : 'Skip Outro'}
+          </span>
+        </button>
       )}
 
       {/* Auto-Next countdown crest — Netflix-style "Up Next" with a grace period */}
