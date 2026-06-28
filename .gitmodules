@@ -1,3 +1,4 @@
 [submodule "vendor/crimson-sources"]
 	path = vendor/crimson-sources
-	url = C:/Users/ramon/Desktop/GitHub/crimson-sources
+	url = ../crimson-sources
+	branch = main

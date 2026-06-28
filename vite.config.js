@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -7,6 +8,17 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  resolve: {
+    alias: {
+      // crimson-sources is vendored as a git submodule (vendor/crimson-sources)
+      // and consumed as raw TypeScript — Vite/esbuild transpiles it inline, so
+      // there's no separate build step. Keeping it a submodule means it stays its
+      // own repo while `COPY . .` still bakes it into the Docker build context.
+      'crimson-sources': fileURLToPath(
+        new URL('./vendor/crimson-sources/src/index.ts', import.meta.url),
+      ),
+    },
+  },
   build: {
     rollupOptions: {
       output: {

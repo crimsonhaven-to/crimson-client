@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { streamLocalSources, clientSourcesEnabled } from './clientSources';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '9.3.0';
+export const CLIENT_VERSION = '9.4.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -1932,6 +1933,11 @@ export function useShowStreamer(tmdbId, season, episode) {
     streamsRef.current = [];
     userPickedRef.current = false;
 
+    // When the client engine is on, a source may resolve both locally and on the
+    // backend; dedup by label so it surfaces once (whichever arrives first wins).
+    // Guarded so default behavior is untouched when the engine is off.
+    const seenSources = new Set();
+
     const handleLine = (line) => {
       const trimmed = line.trim();
       if (!trimmed) return;
@@ -1944,6 +1950,10 @@ export function useShowStreamer(tmdbId, season, episode) {
       } else if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
+        if (clientSourcesEnabled()) {
+          if (seenSources.has(msg.source)) return;
+          seenSources.add(msg.source);
+        }
         const next = [
           ...streamsRef.current,
           { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket },
@@ -1967,10 +1977,17 @@ export function useShowStreamer(tmdbId, season, episode) {
 
     (async () => {
       try {
+        // E3/E2 client-side resolution (no-op unless opted in). Runs alongside the
+        // backend stream and feeds the same handleLine; the backend stays the floor.
+        const local = streamLocalSources(
+          { tmdbId, mediaType: 'tv', season, episode },
+          { signal: controller.signal, onLine: handleLine },
+        );
         await streamWatchNdjson(`/watch/${tmdbId}/${season}/${episode}`, {
           signal: controller.signal,
           onLine: handleLine,
         });
+        await local;
         setStreamLoading(false);
       } catch (err) {
         if (err.name === 'AbortError') return;
@@ -2106,6 +2123,8 @@ export function useMovieStreamer(tmdbId) {
     streamsRef.current = [];
     userPickedRef.current = false;
 
+    const seenSources = new Set();
+
     const handleLine = (line) => {
       const trimmed = line.trim();
       if (!trimmed) return;
@@ -2115,6 +2134,10 @@ export function useMovieStreamer(tmdbId) {
       if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
+        if (clientSourcesEnabled()) {
+          if (seenSources.has(msg.source)) return;
+          seenSources.add(msg.source);
+        }
         const next = [
           ...streamsRef.current,
           { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles },
@@ -2138,10 +2161,16 @@ export function useMovieStreamer(tmdbId) {
 
     (async () => {
       try {
+        // Client-side resolution (no-op unless opted in); backend stays the floor.
+        const local = streamLocalSources(
+          { tmdbId, mediaType: 'movie' },
+          { signal: controller.signal, onLine: handleLine },
+        );
         await streamWatchNdjson(`/watch/movie/${tmdbId}`, {
           signal: controller.signal,
           onLine: handleLine,
         });
+        await local;
         setStreamLoading(false);
       } catch (err) {
         if (err.name === 'AbortError') return;

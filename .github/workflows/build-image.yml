@@ -46,6 +46,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # crimson-sources is a submodule (vendor/crimson-sources) baked into the
+          # Vite build. It's a private sibling repo, so the default job token can't
+          # reach it — supply a PAT (or a deploy key) with read access to it.
+          submodules: recursive
+          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
 
       - name: Compute image tags + API URL
         id: meta
