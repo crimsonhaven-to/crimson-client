@@ -1,0 +1,4 @@
+[submodule "vendor/crimson-sources"]
+	path = vendor/crimson-sources
+	url = ../crimson-sources
+	branch = main
