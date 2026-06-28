@@ -76,7 +76,7 @@ const PrefPill = ({ label, active, onClick }) => (
 // across devices; clearing it falls back to a generic greeting.
 const DisplayNameCard = () => {
   const profile = useProfile();
-  const MAX = 32;
+  const MAX = 20;
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
