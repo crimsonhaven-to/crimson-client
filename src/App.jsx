@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet } from 'lucide-react';
 import MeshBackground from './MeshBackground';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { useDiscordPresence } from './discordPresence';
@@ -24,7 +24,7 @@ const SettingsPage = lazy(() => import('./UserSettings'));
 const WelcomeTour = lazy(() => import('./WelcomeTour'));
 const FavoritesPage = lazy(() => import('./Favorites'));
 const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
-// import SupportUsPage from './SupportUs'; // Temporarily hidden for legal reasons
+const SupportUsPage = lazy(() => import('./SupportUs'));
 const SupportersPage = lazy(() => import('./Supporters'));
 const DisclaimerPage = lazy(() => import('./Disclaimer'));
 const ChangelogPage = lazy(() => import('./Changelog'));
@@ -108,8 +108,8 @@ function PosterCard({ item, onSelect }) {
   const rating = typeof item.vote_average === 'number' && item.vote_average > 0
     ? item.vote_average.toFixed(1) : null;
   return (
-    <button onClick={() => onSelect(item)} className="group text-left flex flex-col gap-2.5 focus:outline-none">
-      <div className="relative aspect-[2/3] rounded-2xl overflow-hidden bg-crimson-900/10 border border-crimson-900/40 transition-[border-color,box-shadow,transform] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_18px_40px_rgba(255,0,60,0.28)] group-hover:-translate-y-1">
+    <button onClick={() => onSelect(item)} className="group text-left flex flex-col gap-2.5 w-full focus:outline-none">
+      <div className="relative w-full h-48 sm:h-60 lg:h-[16.5rem] rounded-2xl overflow-hidden bg-crimson-900/10 border border-crimson-900/40 transition-[border-color,box-shadow,transform] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_18px_40px_rgba(255,0,60,0.28)] group-hover:-translate-y-1">
         {item.poster ? (
           <img
             src={item.poster}
@@ -166,14 +166,14 @@ function PosterCard({ item, onSelect }) {
 const ROW_TILE = 'shrink-0 snap-start w-32 sm:w-40 lg:w-44';
 // Horizontal scroll track. Negative margins let the row bleed to the screen edge
 // on mobile while staying flush with the page padding on desktop.
-const ROW_TRACK = 'flex gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
+const ROW_TRACK = 'flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
 
 // Skeleton tiles shown while a row's data loads.
 function RowSkeleton() {
   return (
     <div className={`${ROW_TRACK} animate-pulse`}>
       {[1, 2, 3, 4, 5, 6, 7, 8].map(n => (
-        <div key={n} className={`${ROW_TILE} aspect-[2/3] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50`}></div>
+        <div key={n} className={`${ROW_TILE} h-48 sm:h-60 lg:h-[16.5rem] bg-crimson-950/40 rounded-2xl border border-dashed border-crimson-900/50`}></div>
       ))}
     </div>
   );
@@ -782,7 +782,7 @@ function App() {
     { to: "/catalogue", label: "Catalogue", icon: <Hash className="w-4 h-4" /> },
     { to: "/watchlists", label: "Watchlists", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
-    // { to: "/support", label: "Support Us", icon: <Coffee className="w-4 h-4" /> }, // Temporarily hidden for legal reasons
+    { to: "/support", label: "Support Us", icon: <Wallet className="w-4 h-4" /> },
     { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
     { to: "/about", label: "About Us", icon: <HelpCircle className="w-4 h-4" /> },
     // Profile/account lives in the top-right account dropdown rather than the main nav.
@@ -934,7 +934,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutPage />} />
-          {/* <Route path="/support" element={<SupportUsPage />} /> */} {/* Temporarily hidden for legal reasons */}
+          <Route path="/support" element={<SupportUsPage />} />
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/changelog" element={<ChangelogPage />} />
