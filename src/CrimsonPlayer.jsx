@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Hls from 'hls.js';
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
-  Settings2, RotateCcw, RotateCw, AlertTriangle, PictureInPicture2, Sparkles,
-  Captions, Download, Loader2, SkipForward,
+  Settings, RotateCcw, RotateCw, AlertTriangle, PictureInPicture2, Sparkles,
+  Captions, Download, Loader2, SkipForward, Layers, ChevronDown, MonitorPlay, Check,
 } from 'lucide-react';
 import { downloadStream } from './streamDownload';
+import { groupStreams, streamVariantLabel } from './hooks';
 
 // How far the skip-back / skip-forward buttons (and ←/→ keys) jump, in seconds.
 const SKIP_SECONDS = 10;
@@ -30,7 +31,7 @@ const AUTO_NEXT_KEY = 'crimson:autoNext';
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -68,13 +69,16 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   const [pipActive, setPipActive] = useState(false);
   const [levels, setLevels] = useState([]);
   const [currentLevel, setCurrentLevel] = useState(-1);
-  const [showQuality, setShowQuality] = useState(false);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
-  // External subtitle tracks (ShowBox/Febbox). -1 = off. Index maps to both the
-  // `tracks` array below and the <track> elements rendered in DOM order.
+  // The in-player settings cog (movie-web-style): Sources / Quality / Subtitles in
+  // one panel so none of them need leaving fullscreen. `settingsOpenGroup` tracks
+  // which provider deck is expanded inside the Sources section (one at a time).
+  const [showSettings, setShowSettings] = useState(false);
+  const [settingsOpenGroup, setSettingsOpenGroup] = useState(null);
+  // External subtitle tracks (ShowBox/Febbox + OpenSubtitles). -1 = off. Index maps
+  // to both the `tracks` array below and the <track> elements in DOM order.
   const [subtitleIdx, setSubtitleIdx] = useState(-1);
-  const [showSubs, setShowSubs] = useState(false);
   // Download state. `downloading` gates the button; `dlProgress` is 0..1, or null
   // for an indeterminate (size-unknown) download.
   const [downloading, setDownloading] = useState(false);
@@ -449,11 +453,19 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
     } catch { /* unsupported */ }
   }, []);
 
+  // HLS level switch (the settings panel stays open so the viewer can keep tuning).
   const pickLevel = useCallback((lvl) => {
-    setShowQuality(false);
     const hls = hlsRef.current;
     if (hls) { hls.currentLevel = lvl; setCurrentLevel(lvl); }
   }, []);
+
+  // Provider-grouped sources for the cog's Sources section (shared grouping with
+  // the sidebar). Picking a source closes the panel — it remounts the player.
+  const sourceGroups = useMemo(() => groupStreams(sources), [sources]);
+  const pickSource = useCallback((idx) => {
+    setShowSettings(false);
+    if (idx !== activeSourceIdx) onSelectSource?.(idx);
+  }, [activeSourceIdx, onSelectSource]);
 
   const retry = useCallback(() => { setError(null); setReloadKey((k) => k + 1); }, []);
 
@@ -523,6 +535,9 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
   const pct = duration ? (current / duration) * 100 : 0;
   const bufPct = duration ? Math.min(100, (buffered / duration) * 100) : 0;
+  // Provider deck that holds the currently-playing source, so opening the cog
+  // auto-expands it in the Sources section.
+  const activeGroupKey = sourceGroups.find((g) => g.items.some((it) => it.idx === activeSourceIdx))?.key ?? null;
 
   return (
     <div
@@ -723,57 +738,132 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               </button>
             )}
 
-            {/* Subtitles / captions */}
-            {tracks.length > 0 && (
+            {/* Settings cog — Sources / Quality / Subtitles in one altar so none of
+                them need leaving fullscreen (movie-web-style, dressed in crimson). */}
+            {(sources.length > 1 || levels.length > 1 || tracks.length > 0) && (
               <div className="relative">
                 <button
-                  onClick={() => { setShowSubs((s) => !s); setShowQuality(false); }}
+                  onClick={() => { setSettingsOpenGroup(activeGroupKey); setShowSettings((s) => !s); }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border transition-all active:scale-95 hover:text-white ${
-                    subtitleIdx >= 0 ? 'border-crimson-500/60 text-white' : 'border-white/5 hover:border-crimson-500/50'
+                    showSettings ? 'border-crimson-500/60 text-white' : 'border-white/5 hover:border-crimson-500/50'
                   }`}
-                  aria-label="Subtitles"
+                  aria-label="Settings"
+                  aria-pressed={showSettings}
+                  title="Sources · Quality · Subtitles"
                 >
-                  <Captions className={`w-4 h-4 ${subtitleIdx >= 0 ? 'text-crimson-400' : 'text-crimson-500'}`} />
-                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
-                    {subtitleIdx >= 0 ? (tracks[subtitleIdx]?.label || 'On') : 'Off'}
-                  </span>
+                  <Settings className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90 text-crimson-400' : 'text-crimson-500'}`} />
                 </button>
-                {showSubs && (
-                  <div className="absolute bottom-full right-0 mb-4 w-44 max-h-72 overflow-y-auto no-scrollbar rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl shadow-2xl animate-in slide-in-from-bottom-2 duration-300 z-50">
-                    <button
-                      onClick={() => { setSubtitleIdx(-1); setShowSubs(false); }}
-                      className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b border-white/5 ${subtitleIdx === -1 ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:bg-crimson-500/20 hover:text-white'}`}
-                    >
-                      Off
-                    </button>
-                    {tracks.map((s, i) => (
-                      <button
-                        key={`${s.url}-${i}`}
-                        onClick={() => { setSubtitleIdx(i); setShowSubs(false); }}
-                        className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b border-white/5 last:border-0 ${subtitleIdx === i ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:bg-crimson-500/20 hover:text-white'}`}
-                      >
-                        {s.label || s.lang || `Track ${i + 1}`}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+                {showSettings && (
+                  <div className="absolute bottom-full right-0 mb-4 w-72 max-h-[60vh] overflow-y-auto no-scrollbar rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] animate-in slide-in-from-bottom-2 fade-in duration-300 z-50 divide-y divide-white/5">
 
-            {/* Quality */}
-            {levels.length > 1 && (
-              <div className="relative">
-                <button onClick={() => { setShowQuality((s) => !s); setShowSubs(false); }} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border border-white/5 hover:border-crimson-500/50 hover:text-white transition-all active:scale-95" aria-label="Quality">
-                  <Settings2 className="w-4 h-4 text-crimson-500" />
-                  <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">{qLabel(currentLevel)}</span>
-                </button>
-                {showQuality && (
-                  <div className="absolute bottom-full right-0 mb-4 w-32 rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl overflow-hidden shadow-2xl animate-in slide-in-from-bottom-2 duration-300 z-50">
-                    {[-1, ...levels.map((_, i) => i)].reverse().map((lvl) => (
-                      <button key={lvl} onClick={() => pickLevel(lvl)} className={`w-full text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest transition-all border-b border-white/5 last:border-0 ${currentLevel === lvl ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:bg-crimson-500/20 hover:text-white'}`}>
-                        {qLabel(lvl)}
-                      </button>
-                    ))}
+                    {/* Sources */}
+                    {sources.length > 1 && (
+                      <div className="p-2">
+                        <p className="flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">
+                          <MonitorPlay className="w-3.5 h-3.5" /> Sources
+                        </p>
+                        <div className="space-y-1">
+                          {sourceGroups.map((group) => {
+                            if (!group.stacked) {
+                              const { stream, idx } = group.items[0];
+                              return (
+                                <button
+                                  key={group.key}
+                                  onClick={() => pickSource(idx)}
+                                  className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSourceIdx === idx ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                                >
+                                  <span className="truncate">{stream.source}</span>
+                                  {activeSourceIdx === idx && <Check className="w-3.5 h-3.5 shrink-0" />}
+                                </button>
+                              );
+                            }
+                            const containsActive = group.items.some((it) => it.idx === activeSourceIdx);
+                            const open = settingsOpenGroup === group.key;
+                            return (
+                              <div key={group.key}>
+                                <button
+                                  onClick={() => setSettingsOpenGroup(open ? null : group.key)}
+                                  className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${containsActive && !open ? 'bg-crimson-600/80 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                                >
+                                  <span className="flex items-center gap-2 truncate">
+                                    <Layers className="w-3 h-3 shrink-0 text-crimson-500" />
+                                    <span className="truncate">{group.label}</span>
+                                    <span className="text-crimson-500/80">· {group.items.length}</span>
+                                  </span>
+                                  <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
+                                </button>
+                                {open && (
+                                  <div className="mt-1 ml-3 pl-2 border-l border-crimson-900/60 space-y-1 animate-in slide-in-from-top-1 fade-in duration-200">
+                                    {group.items.map(({ stream, idx }) => (
+                                      <button
+                                        key={idx}
+                                        onClick={() => pickSource(idx)}
+                                        className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all ${activeSourceIdx === idx ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                                      >
+                                        <span className="flex items-center gap-1.5 truncate">
+                                          <span className="text-[8px] uppercase font-black px-1.5 py-0.5 rounded bg-crimson-500/10 border border-crimson-500/20 text-crimson-500">{stream.type}</span>
+                                          {stream.language && <span className="text-[8px] uppercase font-black px-1.5 py-0.5 rounded bg-crimson-900 text-crimson-400">{stream.language}</span>}
+                                          <span className="truncate">{streamVariantLabel(stream)}</span>
+                                        </span>
+                                        {activeSourceIdx === idx && <Check className="w-3.5 h-3.5 shrink-0" />}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quality (HLS levels of the active source) */}
+                    {levels.length > 1 && (
+                      <div className="p-2">
+                        <p className="flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">
+                          <Settings className="w-3.5 h-3.5" /> Quality
+                        </p>
+                        <div className="grid grid-cols-3 gap-1">
+                          {[-1, ...levels.map((_, i) => i)].reverse().map((lvl) => (
+                            <button
+                              key={lvl}
+                              onClick={() => pickLevel(lvl)}
+                              className={`px-2 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${currentLevel === lvl ? 'bg-crimson-600 text-white' : 'bg-crimson-950/60 text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                            >
+                              {qLabel(lvl)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Subtitles */}
+                    {tracks.length > 0 && (
+                      <div className="p-2">
+                        <p className="flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">
+                          <Captions className="w-3.5 h-3.5" /> Subtitles
+                        </p>
+                        <div className="space-y-1">
+                          <button
+                            onClick={() => setSubtitleIdx(-1)}
+                            className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${subtitleIdx === -1 ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                          >
+                            <span>Off</span>
+                            {subtitleIdx === -1 && <Check className="w-3.5 h-3.5 shrink-0" />}
+                          </button>
+                          {tracks.map((s, i) => (
+                            <button
+                              key={`${s.url}-${i}`}
+                              onClick={() => setSubtitleIdx(i)}
+                              className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${subtitleIdx === i ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                            >
+                              <span className="truncate">{s.label || s.lang || `Track ${i + 1}`}</span>
+                              {subtitleIdx === i && <Check className="w-3.5 h-3.5 shrink-0" />}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

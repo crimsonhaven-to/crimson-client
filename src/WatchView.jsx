@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, AlertTriangle, ChevronRight, ArrowLeft, CalendarClock } from 'lucide-react';
-import { API_BASE_URL, apiFetch, fetchSubtitles, fetchSkipTimes, usePlaybackPrefs } from './hooks';
+import { Info, AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers } from 'lucide-react';
+import { API_BASE_URL, apiFetch, fetchSubtitles, fetchSkipTimes, usePlaybackPrefs, groupStreams, streamVariantLabel } from './hooks';
 import { setWatchActivity, clearWatchActivity } from './discordPresence';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
@@ -20,6 +20,98 @@ const formatAirDate = (iso) => {
   const t = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(t.getTime())) return iso;
   return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+// A single selectable source button (one resolved stream). `label` is what shows
+// as the name — the full source for a standalone tile, or the in-group variant
+// ("MovieBox (1080p)") when rendered inside an expanded group (`nested`).
+const StreamTile = ({ stream, label, active, nested = false, onClick }) => (
+  <button
+    onClick={onClick}
+    className={`w-full text-left rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
+      nested ? 'p-3' : 'p-4'
+    } ${
+      active
+        ? 'bg-crimson-600 text-white font-black border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
+        : 'bg-crimson-950/60 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-600'
+    }`}
+  >
+    <div className="flex flex-col min-w-0 pr-4">
+      <div className="flex items-center gap-2 mb-1.5 leading-none">
+        <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
+          active ? 'bg-white/20 border-white/20 text-white' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
+        }`}>
+          {stream.type}
+        </span>
+        {stream.language && (
+          <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md ${
+            active ? 'bg-crimson-950/40 text-white' : 'bg-crimson-900 text-crimson-400'
+          }`}>
+            {stream.language}
+          </span>
+        )}
+      </div>
+      <span className={`font-black tracking-wide text-white truncate ${nested ? 'text-[11px]' : 'text-xs'}`}>
+        {label}
+      </span>
+    </div>
+    <ChevronRight className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 ${active ? 'text-white' : 'text-crimson-800'}`} />
+  </button>
+);
+
+// A grouped provider (ScreenScape, Cinema.bz, …) rendered as a literally-stacked
+// card: two offset "ghost" cards peek out behind the header so it reads as a deck
+// of sources collapsed into one. Click expands the deck into its member tiles.
+// `containsActive` keeps the deck looking selected when the playing source is one
+// of its members; `open` reveals the members.
+const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle }) => {
+  const containsActive = group.items.some((it) => it.idx === activeStreamIdx);
+  const count = group.items.length;
+  return (
+    <div className={`relative ${!open ? 'mb-2' : ''}`}>
+      {/* Stacked "deck" ghosts behind the header — only while collapsed. */}
+      {!open && (
+        <>
+          <div className="absolute -bottom-1.5 inset-x-3 h-full rounded-2xl bg-crimson-950/40 border border-crimson-900/40" />
+          <div className="absolute -bottom-3 inset-x-6 h-full rounded-2xl bg-crimson-950/25 border border-crimson-900/30" />
+        </>
+      )}
+      <button
+        onClick={onToggle}
+        className={`relative w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
+          containsActive
+            ? 'bg-crimson-600/90 text-white border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
+            : 'bg-crimson-950/70 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-600'
+        }`}
+      >
+        <div className="flex flex-col min-w-0 pr-4">
+          <div className="flex items-center gap-2 mb-1.5 leading-none">
+            <span className={`flex items-center gap-1 text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
+              containsActive ? 'bg-white/20 border-white/20 text-white' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
+            }`}>
+              <Layers className="w-2.5 h-2.5" /> {count} sources
+            </span>
+          </div>
+          <span className="text-xs font-black tracking-wide text-white truncate">{group.label}</span>
+        </div>
+        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${containsActive ? 'text-white' : 'text-crimson-700'}`} />
+      </button>
+      {open && (
+        <div className="mt-2 pl-3 ml-1.5 border-l border-crimson-900/50 space-y-2 animate-in slide-in-from-top-1 fade-in duration-300">
+          {group.items.map(({ stream, idx }) => (
+            <StreamTile
+              key={idx}
+              stream={stream}
+              label={streamVariantLabel(stream)}
+              active={activeStreamIdx === idx}
+              nested
+              onClick={() => onSelectStream(idx)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Presentational watch UI shared by the anime watch page (/watch/:anilistId/...)
@@ -70,6 +162,12 @@ const WatchView = ({
     || 'No summary asset provided.';
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
+
+  // Provider-grouped view of the sources for the "Scraped Targets" sidebar (and
+  // the in-player cog). `openGroups` holds explicit expand/collapse choices; a
+  // group with no explicit choice defaults to open iff it holds the active source.
+  const sourceGroups = useMemo(() => groupStreams(streams), [streams]);
+  const [openGroups, setOpenGroups] = useState({});
 
   // External OpenSubtitles tracks (additive). These are title-level — keyed off the
   // TMDB id + season/episode, independent of which source plays — so they're
@@ -241,6 +339,9 @@ const WatchView = ({
                   hasNext={!!nextEpisodeData}
                   nextLabel={nextEpisodeLabel}
                   skipTimes={skipTimes}
+                  sources={streams}
+                  activeSourceIdx={activeStreamIdx}
+                  onSelectSource={onSelectStream}
                 />
               </Suspense>
             )
@@ -384,42 +485,33 @@ const WatchView = ({
                 <div key={n} className="h-16 bg-crimson-950/40 animate-pulse rounded-2xl border border-crimson-900/30"></div>
               ))
             ) : streams.length > 0 ? (
-              streams.map((stream, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => onSelectStream(idx)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
-                    activeStreamIdx === idx
-                      ? 'bg-crimson-600 text-white font-black border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
-                      : 'bg-crimson-950/60 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-600'
-                  }`}
-                >
-                  <div className="flex flex-col min-w-0 pr-4">
-                    <div className="flex items-center gap-2 mb-1.5 leading-none">
-                      <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
-                        activeStreamIdx === idx
-                          ? 'bg-white/20 border-white/20 text-white'
-                          : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
-                      }`}>
-                        {stream.type}
-                      </span>
-                      {stream.language && (
-                        <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md ${
-                          activeStreamIdx === idx
-                            ? 'bg-crimson-950/40 text-white'
-                            : 'bg-crimson-900 text-crimson-400'
-                        }`}>
-                          {stream.language}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-xs font-black tracking-wide text-white truncate">
-                      {stream.source}
-                    </span>
-                  </div>
-                  <ChevronRight className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 ${activeStreamIdx === idx ? 'text-white' : 'text-crimson-800'}`} />
-                </button>
-              ))
+              sourceGroups.map((group) => {
+                // Non-stacked groups (cache targets, lone providers) stay flat.
+                if (!group.stacked) {
+                  const { stream, idx } = group.items[0];
+                  return (
+                    <StreamTile
+                      key={group.key}
+                      stream={stream}
+                      label={stream.source}
+                      active={activeStreamIdx === idx}
+                      onClick={() => onSelectStream(idx)}
+                    />
+                  );
+                }
+                const containsActive = group.items.some((it) => it.idx === activeStreamIdx);
+                const open = group.key in openGroups ? openGroups[group.key] : containsActive;
+                return (
+                  <SourceGroup
+                    key={group.key}
+                    group={group}
+                    activeStreamIdx={activeStreamIdx}
+                    onSelectStream={onSelectStream}
+                    open={open}
+                    onToggle={() => setOpenGroups((m) => ({ ...m, [group.key]: !open }))}
+                  />
+                );
+              })
             ) : (
               <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-800 italic">Zero transport nodes active</p>
