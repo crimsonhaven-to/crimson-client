@@ -1343,6 +1343,7 @@ function RuntimeSection({ system }) {
           <FlagBadge on={f.tmdb_key_set} label="TMDB Key" onIcon={Database} offIcon={Database} />
           <FlagBadge on={f.github_token_set} label="Changelog" onIcon={Activity} offIcon={Activity} />
           <FlagBadge on={f.require_login} label="Login Wall" onIcon={Shield} offIcon={ShieldOff} />
+          <FlagBadge on={f.crimson_proxy_enabled} label="CORS Proxy" onIcon={Radio} offIcon={Radio} />
         </div>
         <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
           Rate-limit store: <span className="text-crimson-400 normal-case font-mono">{f.rate_limit_storage || '—'}</span>
@@ -1369,7 +1370,54 @@ function RuntimeSection({ system }) {
           <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">Pool not yet open on this node.</p>
         )}
       </section>
+
+      <ProxiesSection proxies={system.proxies} />
     </div>
+  );
+}
+
+// The external CORS proxies (crimson-proxy on Netlify / Cloudflare) that Phase-1
+// sources route their HLS segments through. Lists each configured host with a
+// live up/down ping and which sources prefer them; falls back to a dormant note
+// when CRIMSON_PROXY_BASE / PROXY_SECRET aren't set (sources self-proxy then).
+function ProxiesSection({ proxies }) {
+  const hosts = proxies?.hosts || [];
+  const routed = proxies?.routed_sources || [];
+  return (
+    <section className="space-y-4">
+      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <Radio className="w-4 h-4" /> CORS Proxies <div className="h-px bg-crimson-900/30 flex-grow" />
+      </h3>
+      {!proxies?.enabled ? (
+        <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
+          {proxies && !proxies.secret_set
+            ? 'Disabled — PROXY_SECRET not set. Sources proxy their own segments.'
+            : 'Not configured — set CRIMSON_PROXY_BASE to offload segments. Sources proxy their own.'}
+        </p>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {hosts.map((h) => {
+              const m = statusMeta(h.status);
+              return (
+                <div key={h.base} className={`flex items-center gap-3 rounded-lg border ${m.ring} bg-crimson-950/30 px-4 py-2.5`}>
+                  {h.status === 'active'
+                    ? <Wifi className={`w-4 h-4 ${m.text}`} />
+                    : <WifiOff className={`w-4 h-4 ${m.text}`} />}
+                  <span className="font-mono text-[11px] text-crimson-300 truncate flex-grow normal-case">{h.base}</span>
+                  <span className={`text-[10px] font-black uppercase tracking-widest ${m.text}`}>{m.label}</span>
+                  <span className="text-[10px] font-bold text-crimson-700 normal-case font-mono">{h.detail || (h.code ? `HTTP ${h.code}` : '')}</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
+            Routing: <span className="text-crimson-400 normal-case">{routed.length ? routed.join(', ') : '—'}</span>
+            {hosts.length > 1 && <span className="text-crimson-600"> · round-robin across {hosts.length} hosts</span>}
+          </p>
+        </>
+      )}
+    </section>
   );
 }
 
