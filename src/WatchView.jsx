@@ -1,7 +1,7 @@
-import { lazy, Suspense, useCallback, useEffect, useRef } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, AlertTriangle, ChevronRight, ArrowLeft, CalendarClock } from 'lucide-react';
-import { API_BASE_URL, apiFetch } from './hooks';
+import { API_BASE_URL, apiFetch, fetchSubtitles, usePlaybackPrefs } from './hooks';
 import { setWatchActivity, clearWatchActivity } from './discordPresence';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
@@ -70,6 +70,43 @@ const WatchView = ({
     || 'No summary asset provided.';
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
+
+  // External OpenSubtitles tracks (additive). These are title-level — keyed off the
+  // TMDB id + season/episode, independent of which source plays — so they're
+  // fetched here and merged into whatever subtitles the active source already
+  // ships (ShowBox/Febbox). Off entirely unless the viewer has picked subtitle
+  // languages in their preferences. `metadata.current_season` is the real TMDB
+  // season /info resolved (anime season groups aren't 1:1 with TMDB seasons).
+  const [prefs] = usePlaybackPrefs();
+  const subLangs = prefs.subtitleLanguages || [];
+  const subLangKey = subLangs.join(',');
+  const tmdbId = metadata?.tmdb_id;
+  const tmdbSeason = metadata?.current_season ?? currentSeason;
+  const [openSubs, setOpenSubs] = useState([]);
+
+  useEffect(() => {
+    setOpenSubs([]);
+    if (!tmdbId || !subLangs.length) return undefined;
+    let cancelled = false;
+    fetchSubtitles({
+      tmdbId,
+      season: isMovie ? null : tmdbSeason,
+      episode: isMovie ? null : currentEpisode,
+      isMovie,
+      languages: subLangs,
+    }).then((tracks) => { if (!cancelled) setOpenSubs(tracks); });
+    return () => { cancelled = true; };
+    // subLangKey stands in for the array identity so we don't refetch each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tmdbId, tmdbSeason, currentEpisode, isMovie, subLangKey]);
+
+  // Merge source-supplied tracks with the OpenSubtitles ones, de-duping by URL so a
+  // source that already provides a language doesn't double up.
+  const mergedSubtitles = useMemo(() => {
+    const base = Array.isArray(activeStream?.subtitles) ? activeStream.subtitles : [];
+    const seen = new Set(base.map((s) => s?.url));
+    return [...base, ...openSubs.filter((s) => s && !seen.has(s.url))];
+  }, [activeStream, openSubs]);
 
   // Broadcast a Discord Rich Presence for whatever's on screen (opt-in; see
   // discordPresence.js). Covers anime, shows and movies since all three render
@@ -180,7 +217,7 @@ const WatchView = ({
                   key={activeStream.url}
                   src={activeStream.url}
                   type={activeStream.type}
-                  subtitles={activeStream.subtitles}
+                  subtitles={mergedSubtitles}
                   poster={poster}
                   title={displayTitle}
                   downloadName={downloadName}

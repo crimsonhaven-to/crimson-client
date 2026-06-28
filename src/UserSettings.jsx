@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle, Gauge } from 'lucide-react';
-import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES } from './hooks';
+import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './hooks';
 
 // The little local bridge that carries presence from the haven to your Discord
 // client (see rpc-helper/). The binaries are cross-compiled into the site image
@@ -161,6 +161,17 @@ const UserSettings = () => {
   const setLanguage = (value) => setPrefs({ ...prefs, language: prefs.language === value ? '' : value });
   const setType = (value) => setPrefs({ ...prefs, type: prefs.type === value ? '' : value });
   const toggleDiscord = () => setPrefs({ ...prefs, discordPresence: !prefs.discordPresence });
+
+  // Subtitle languages are a multi-select (any number on at once). Tapping a pill
+  // adds/removes its code from the list the watch page fetches from OpenSubtitles.
+  const subLangs = prefs.subtitleLanguages || [];
+  const toggleSubtitleLang = (code) =>
+    setPrefs({
+      ...prefs,
+      subtitleLanguages: subLangs.includes(code)
+        ? subLangs.filter((c) => c !== code)
+        : [...subLangs, code],
+    });
   const toggleLite = () => setLiteBackground(!lite);
 
   // One-click helper download tailored to the visitor's OS.
@@ -221,6 +232,29 @@ const UserSettings = () => {
                 label={type === 'Sub' ? 'Subbed' : 'Dubbed'}
                 active={prefs.type === type}
                 onClick={() => setType(type)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Subtitle languages — external OpenSubtitles tracks shown in the player's
+            CC menu. Multi-select; empty = off (no extra tracks fetched). */}
+        <div className="space-y-5 relative z-10">
+          <div className="flex items-center gap-3 text-crimson-500">
+            <Subtitles className="w-6 h-6" />
+            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Subtitle Languages</h3>
+          </div>
+          <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
+            Pull matching subtitles from OpenSubtitles into the player's caption menu —
+            handy when a source ships none. Pick any number; leave all off to skip them.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {SUBTITLE_LANGUAGES.map(({ code, label }) => (
+              <PrefPill
+                key={code}
+                label={label}
+                active={subLangs.includes(code)}
+                onClick={() => toggleSubtitleLang(code)}
               />
             ))}
           </div>

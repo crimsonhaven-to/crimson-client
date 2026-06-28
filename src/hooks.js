@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '8.1.0';
+export const CLIENT_VERSION = '8.2.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -91,13 +91,47 @@ const PLAYBACK_PREFS_KEY = 'crimson:playback-prefs';
 // (see discordPresence.js). It rides in the same client-preferences blob as the
 // language/dub-sub choice so it persists locally AND syncs to the account exactly
 // like them — one PUT carries all three.
-const EMPTY_PLAYBACK_PREFS = { language: '', type: '', discordPresence: false };
+const EMPTY_PLAYBACK_PREFS = { language: '', type: '', discordPresence: false, subtitleLanguages: [] };
 
 // The languages/types offered in the settings UI. `value` is matched as a
 // case-insensitive substring against the scraper's language tag ("German Dub",
 // "English Sub", …), so it stays robust to minor label variations.
 export const PREF_LANGUAGES = ['German', 'English', 'Japanese', 'Spanish', 'French', 'Italian'];
 export const PREF_TYPES = ['Dub', 'Sub'];
+
+// Languages offered for OpenSubtitles external subtitle tracks (player CC menu).
+// `code` is the 2-letter code the backend passes to OpenSubtitles; `label` is what
+// the settings UI shows. Distinct from PREF_LANGUAGES (which biases SOURCE choice
+// by audio language) — these only pick which downloadable .vtt tracks to fetch.
+export const SUBTITLE_LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'de', label: 'German' },
+  { code: 'es', label: 'Spanish' },
+  { code: 'fr', label: 'French' },
+  { code: 'it', label: 'Italian' },
+  { code: 'pt-br', label: 'Portuguese (BR)' },
+  { code: 'ja', label: 'Japanese' },
+  { code: 'ru', label: 'Russian' },
+  { code: 'ar', label: 'Arabic' },
+  { code: 'nl', label: 'Dutch' },
+  { code: 'pl', label: 'Polish' },
+  { code: 'tr', label: 'Turkish' },
+];
+const SUBTITLE_LANGUAGE_CODES = new Set(SUBTITLE_LANGUAGES.map((l) => l.code));
+
+// Defensive sanitiser for the subtitle-language list: keep only known 2-letter
+// codes, de-duped, capped — the value is round-tripped through the synced prefs
+// blob and the URL, so we never trust it blindly.
+function cleanSubtitleLanguages(value) {
+  if (!Array.isArray(value)) return [];
+  const out = [];
+  for (const v of value) {
+    const code = typeof v === 'string' ? v.trim().toLowerCase() : '';
+    if (SUBTITLE_LANGUAGE_CODES.has(code) && !out.includes(code)) out.push(code);
+    if (out.length >= 8) break;
+  }
+  return out;
+}
 
 export function getPlaybackPrefs() {
   try {
@@ -106,6 +140,7 @@ export function getPlaybackPrefs() {
       language: typeof raw.language === 'string' ? raw.language : '',
       type: typeof raw.type === 'string' ? raw.type : '',
       discordPresence: typeof raw.discordPresence === 'boolean' ? raw.discordPresence : false,
+      subtitleLanguages: cleanSubtitleLanguages(raw.subtitleLanguages),
     };
   } catch {
     return { ...EMPTY_PLAYBACK_PREFS };
@@ -117,6 +152,7 @@ export function setPlaybackPrefs(prefs) {
     language: typeof prefs?.language === 'string' ? prefs.language : '',
     type: typeof prefs?.type === 'string' ? prefs.type : '',
     discordPresence: typeof prefs?.discordPresence === 'boolean' ? prefs.discordPresence : false,
+    subtitleLanguages: cleanSubtitleLanguages(prefs?.subtitleLanguages),
   };
   localStorage.setItem(PLAYBACK_PREFS_KEY, JSON.stringify(clean));
   // Broadcast so any open watch page / other tab can pick up the change live.
@@ -147,20 +183,22 @@ function syncPlaybackPrefsFromAccount(remote) {
   // The account holds a value once any preference has ever been saved — note a
   // stored `discordPresence: false` still counts, so we don't clobber a deliberate
   // opt-out by pushing a stale local default back up.
-  const hasRemote = r.language || r.type || typeof r.discordPresence === 'boolean';
+  const hasRemote = r.language || r.type || typeof r.discordPresence === 'boolean' || Array.isArray(r.subtitleLanguages);
   if (hasRemote) {
     const next = {
       language: r.language || '',
       type: r.type || '',
       discordPresence: !!r.discordPresence,
+      subtitleLanguages: cleanSubtitleLanguages(r.subtitleLanguages),
     };
     const local = getPlaybackPrefs();
-    if (local.language !== next.language || local.type !== next.type || local.discordPresence !== next.discordPresence) {
+    const subsChanged = local.subtitleLanguages.join(',') !== next.subtitleLanguages.join(',');
+    if (local.language !== next.language || local.type !== next.type || local.discordPresence !== next.discordPresence || subsChanged) {
       setPlaybackPrefs(next);
     }
   } else {
     const local = getPlaybackPrefs();
-    if (local.language || local.type || local.discordPresence) persistPlaybackPrefsRemote(local);
+    if (local.language || local.type || local.discordPresence || local.subtitleLanguages.length) persistPlaybackPrefsRemote(local);
   }
 }
 
@@ -185,6 +223,38 @@ export function usePlaybackPrefs() {
     return clean;
   }, []);
   return [prefs, update];
+}
+
+// Fetch OpenSubtitles tracks for a title from the backend (GET /subtitles), as
+// `[{ url, lang, label }]` ready to merge into CrimsonPlayer's `subtitles` prop.
+// `url` is absolutised to API_BASE_URL because the player's <track> loads it
+// cross-origin (the backend is a separate origin). Best-effort: any error (incl.
+// the 503 when OpenSubtitles isn't configured) resolves to [] so playback is never
+// blocked by missing subtitles. Pass the SHOW's tmdb id for episodes.
+export async function fetchSubtitles({ tmdbId, season = null, episode = null, isMovie = false, languages = [] } = {}) {
+  const langs = cleanSubtitleLanguages(languages);
+  if (!tmdbId || !langs.length) return [];
+  const p = new URLSearchParams({ tmdb_id: String(tmdbId), languages: langs.join(',') });
+  if (isMovie) p.set('is_movie', 'true');
+  else {
+    if (season != null) p.set('season', String(season));
+    if (episode != null) p.set('episode', String(episode));
+  }
+  try {
+    const res = await apiFetch(`/subtitles?${p.toString()}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const subs = Array.isArray(data?.subtitles) ? data.subtitles : [];
+    return subs
+      .filter((s) => s && s.url)
+      .map((s) => ({
+        url: s.url.startsWith('http') ? s.url : `${API_BASE_URL}${s.url}`,
+        lang: s.lang,
+        label: s.label || (s.lang || '').toUpperCase(),
+      }));
+  } catch {
+    return [];
+  }
 }
 
 // --- Lite background (client-only performance preference) -------------------
