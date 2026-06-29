@@ -114,14 +114,21 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   const emitted = new Set();
 
   const override = flagOverride();
-  if (override === false) return emitted; // explicitly pinned to the backend
+  if (override === false) {
+    console.info('[clientSources] pinned OFF via flag — using the backend (E0).');
+    return emitted;
+  }
 
   // The handshake: discover the companion, waiting briefly for its `…-ready` event
   // in case we beat its async inject (the cold-load-onto-/watch race). In auto mode
   // (no override) the engine only engages when the companion is actually present.
   const bridge = await waitForExtensionBridge();
   if (override !== true && !bridge) {
-    dbg('no companion detected and no opt-in — staying on the backend (E0).');
+    // Unconditional (not dbg): one verdict line per watch so a "did it engage?"
+    // shakeout is always legible. If you see this with the companion installed and
+    // toggled on, its in-page bridge isn't reaching the page (e.g. a page CSP that
+    // blocks the injected script) — check `window.CrimsonExtension` in the console.
+    console.info('[clientSources] companion absent — staying on the backend (E0).');
     return emitted;
   }
   if (signal?.aborted) return emitted;
