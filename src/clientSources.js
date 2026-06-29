@@ -20,6 +20,7 @@
  *            handles the title as always.
  */
 import { createEngine, getExtensionBridge } from 'crimson-sources';
+import { apiFetch } from './hooks';
 
 // Whether to even attempt client-side resolution. Default false => no behavior
 // change. A build-time opt-in (VITE_CLIENT_SOURCES) or a per-browser localStorage
@@ -38,6 +39,34 @@ export function clientSourcesEnabled() {
 // doesn't exist yet (Phase 2), so we pass no signer: the engine then offers only
 // the extension (E3) path, and falls back to the backend otherwise.
 const signProxyUrl = undefined;
+
+/**
+ * Fetch the title bundle the discovery sources need (AniList variants + German
+ * synonyms) from the backend `/scrape-meta` grant and fold it into `mediaCtx`. The
+ * TMDB key that produces the German titles is server-held (C5), so the client can't
+ * derive these itself — it asks the backend, keeping title matching identical to
+ * the backend scrapers. Best-effort: on any failure the TMDB-keyed sources still
+ * run; only the title-matching ones go quiet.
+ */
+async function enrichMediaCtx(mediaCtx) {
+  if (mediaCtx.mediaType !== 'tv' || mediaCtx.season == null) return mediaCtx;
+  try {
+    const res = await apiFetch(`/scrape-meta/${mediaCtx.tmdbId}/${mediaCtx.season}`);
+    if (!res.ok) return mediaCtx;
+    const m = await res.json();
+    return {
+      ...mediaCtx,
+      title: mediaCtx.title || m.title || undefined,
+      titleEnglish: m.title_english ?? null,
+      titleRomaji: m.title_romaji ?? null,
+      titleNative: m.title_native ?? null,
+      synonyms: m.synonyms ?? null,
+      anilistId: m.anilist_id ?? undefined,
+    };
+  } catch {
+    return mediaCtx;
+  }
+}
 
 /**
  * Run the local engine for `mediaCtx`, invoking `onLine(jsonString)` for each
@@ -64,8 +93,16 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
     return emitted;
   }
 
+  // Only the title-matching discovery sources need the grant; fetch it once the
+  // engine confirms something is runnable, then run with the enriched context.
+  const enriched = await enrichMediaCtx(mediaCtx);
+  if (signal?.aborted) {
+    await engine.dispose();
+    return emitted;
+  }
+
   try {
-    for await (const line of engine.streamEpisode(mediaCtx, { signal })) {
+    for await (const line of engine.streamEpisode(enriched, { signal })) {
       if (signal?.aborted) break;
       emitted.add(line.source);
       onLine?.(JSON.stringify(line));
