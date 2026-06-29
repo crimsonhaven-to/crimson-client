@@ -3,7 +3,7 @@ import { streamLocalSources, clientSourcesEnabled } from './clientSources';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '9.4.0';
+export const CLIENT_VERSION = '9.5.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -1951,8 +1951,12 @@ export function useShowStreamer(tmdbId, season, episode) {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
         if (clientSourcesEnabled()) {
-          if (seenSources.has(msg.source)) return;
-          seenSources.add(msg.source);
+          // Dedup local↔backend duplicates by (source, language) so a source that
+          // resolves both ways surfaces once, WITHOUT collapsing distinct dub/sub
+          // language variants of the same source (e.g. VOE English Sub vs German Dub).
+          const dedupKey = `${msg.source}|${msg.language || ''}`;
+          if (seenSources.has(dedupKey)) return;
+          seenSources.add(dedupKey);
         }
         const next = [
           ...streamsRef.current,
@@ -2135,8 +2139,12 @@ export function useMovieStreamer(tmdbId) {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
         if (clientSourcesEnabled()) {
-          if (seenSources.has(msg.source)) return;
-          seenSources.add(msg.source);
+          // Dedup local↔backend duplicates by (source, language) so a source that
+          // resolves both ways surfaces once, WITHOUT collapsing distinct dub/sub
+          // language variants of the same source (e.g. VOE English Sub vs German Dub).
+          const dedupKey = `${msg.source}|${msg.language || ''}`;
+          if (seenSources.has(dedupKey)) return;
+          seenSources.add(dedupKey);
         }
         const next = [
           ...streamsRef.current,
