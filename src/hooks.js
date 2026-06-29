@@ -3,7 +3,7 @@ import { streamLocalSources, clientSourcesEnabled } from './clientSources';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '9.4.0';
+export const CLIENT_VERSION = '9.5.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
