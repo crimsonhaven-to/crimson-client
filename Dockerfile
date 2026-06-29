@@ -6,8 +6,17 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev, e.g., Vite)
-RUN npm ci && npm cache clean --force
+# Install ALL dependencies (including dev, e.g., Vite).
+# The self-hosted runner occasionally has slow/flaky connectivity to
+# registry.npmjs.org, which kills `npm ci` with EIDLETIMEOUT once it hits the
+# default 5-min fetch-timeout. Give npm more patience and more retries so a
+# transient network hiccup doesn't fail the whole build.
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm config set fetch-timeout 600000 \
+    && npm ci \
+    && npm cache clean --force
 
 # Copy source code
 COPY . .
