@@ -1934,11 +1934,13 @@ export function useShowStreamer(tmdbId, season, episode) {
     userPickedRef.current = false;
 
     // When the client engine is on, a source may resolve both locally and on the
-    // backend; dedup by label so it surfaces once (whichever arrives first wins).
-    // Guarded so default behavior is untouched when the engine is off.
-    const seenSources = new Set();
+    // backend. Dedup by (source, language) and PREFER the local line: it streams
+    // straight from the CDN, so it supersedes a backend duplicate even if the
+    // backend arrived first. Guarded so default behavior is untouched when off.
+    //   key -> { idx, origin: 'local' | 'backend' }
+    const dedup = new Map();
 
-    const handleLine = (line) => {
+    const handleLine = (line, origin = 'backend') => {
       const trimmed = line.trim();
       if (!trimmed) return;
       let msg;
@@ -1950,29 +1952,41 @@ export function useShowStreamer(tmdbId, season, episode) {
       } else if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        if (clientSourcesEnabled()) {
-          // Dedup local↔backend duplicates by (source, language) so a source that
-          // resolves both ways surfaces once, WITHOUT collapsing distinct dub/sub
-          // language variants of the same source (e.g. VOE English Sub vs German Dub).
-          const dedupKey = `${msg.source}|${msg.language || ''}`;
-          if (seenSources.has(dedupKey)) return;
-          seenSources.add(dedupKey);
-        }
-        const next = [
-          ...streamsRef.current,
-          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket },
-        ];
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
-        if (!userPickedRef.current) {
+        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket };
+        const reselect = () => {
+          if (userPickedRef.current) return;
           const prefs = getPlaybackPrefs();
           let bestIdx = 0, bestRank = Infinity;
-          next.forEach((s, i) => {
+          streamsRef.current.forEach((s, i) => {
             const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
+        };
+        if (clientSourcesEnabled()) {
+          // Dedup by (source, language) — distinct dub/sub variants stay separate
+          // (e.g. VOE English Sub vs German Dub). Prefer local: a locally-resolved
+          // line (direct CDN) supersedes a backend duplicate even if the backend
+          // arrived first; a backend line never displaces a local one.
+          const key = `${msg.source}|${msg.language || ''}`;
+          const prior = dedup.get(key);
+          if (prior) {
+            if (origin === 'local' && prior.origin !== 'local') {
+              const swapped = streamsRef.current.slice();
+              swapped[prior.idx] = incoming;
+              streamsRef.current = swapped;
+              dedup.set(key, { idx: prior.idx, origin });
+              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
+              reselect();
+            }
+            return; // local already won, or a same-origin duplicate
+          }
+          dedup.set(key, { idx: streamsRef.current.length, origin });
         }
+        const next = [...streamsRef.current, incoming];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        reselect();
         setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
@@ -1985,7 +1999,7 @@ export function useShowStreamer(tmdbId, season, episode) {
         // backend stream and feeds the same handleLine; the backend stays the floor.
         const local = streamLocalSources(
           { tmdbId, mediaType: 'tv', season, episode },
-          { signal: controller.signal, onLine: handleLine },
+          { signal: controller.signal, onLine: (s) => handleLine(s, 'local') },
         );
         await streamWatchNdjson(`/watch/${tmdbId}/${season}/${episode}`, {
           signal: controller.signal,
@@ -2127,9 +2141,11 @@ export function useMovieStreamer(tmdbId) {
     streamsRef.current = [];
     userPickedRef.current = false;
 
-    const seenSources = new Set();
+    //   key -> { idx, origin: 'local' | 'backend' }; prefer-local dedup, see the
+    //   show hook above for the rationale.
+    const dedup = new Map();
 
-    const handleLine = (line) => {
+    const handleLine = (line, origin = 'backend') => {
       const trimmed = line.trim();
       if (!trimmed) return;
       let msg;
@@ -2138,29 +2154,39 @@ export function useMovieStreamer(tmdbId) {
       if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        if (clientSourcesEnabled()) {
-          // Dedup local↔backend duplicates by (source, language) so a source that
-          // resolves both ways surfaces once, WITHOUT collapsing distinct dub/sub
-          // language variants of the same source (e.g. VOE English Sub vs German Dub).
-          const dedupKey = `${msg.source}|${msg.language || ''}`;
-          if (seenSources.has(dedupKey)) return;
-          seenSources.add(dedupKey);
-        }
-        const next = [
-          ...streamsRef.current,
-          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles },
-        ];
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
-        if (!userPickedRef.current) {
+        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles };
+        const reselect = () => {
+          if (userPickedRef.current) return;
           const prefs = getPlaybackPrefs();
           let bestIdx = 0, bestRank = Infinity;
-          next.forEach((s, i) => {
+          streamsRef.current.forEach((s, i) => {
             const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
+        };
+        if (clientSourcesEnabled()) {
+          // Prefer local over a backend duplicate; distinct dub/sub variants stay
+          // separate. A local line supersedes backend even if backend arrived first.
+          const key = `${msg.source}|${msg.language || ''}`;
+          const prior = dedup.get(key);
+          if (prior) {
+            if (origin === 'local' && prior.origin !== 'local') {
+              const swapped = streamsRef.current.slice();
+              swapped[prior.idx] = incoming;
+              streamsRef.current = swapped;
+              dedup.set(key, { idx: prior.idx, origin });
+              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
+              reselect();
+            }
+            return;
+          }
+          dedup.set(key, { idx: streamsRef.current.length, origin });
         }
+        const next = [...streamsRef.current, incoming];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        reselect();
         setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
@@ -2172,7 +2198,7 @@ export function useMovieStreamer(tmdbId) {
         // Client-side resolution (no-op unless opted in); backend stays the floor.
         const local = streamLocalSources(
           { tmdbId, mediaType: 'movie' },
-          { signal: controller.signal, onLine: handleLine },
+          { signal: controller.signal, onLine: (s) => handleLine(s, 'local') },
         );
         await streamWatchNdjson(`/watch/movie/${tmdbId}`, {
           signal: controller.signal,
