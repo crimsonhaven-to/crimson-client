@@ -12,30 +12,60 @@
  * non-regressing addition — exactly the "shift of who does what" the design calls
  * for. Turning the live swap on per-source is the next step ("go from there").
  *
- *   Enable:  localStorage.setItem('crimson:clientSources', '1')   (per browser)
- *      or:   build with VITE_CLIENT_SOURCES=true
- *   Needs:   the crimson-extension companion installed + toggled on (E3). Without
- *            it there's no client-side fetch path yet (E2 needs a backend /sign
- *            grant, not built), so the engine simply runs nothing and the backend
- *            handles the title as always.
+ *   Auto:    nothing to flip. When the crimson-extension companion is installed
+ *            (it announces itself via a `crimson-extension-ready` handshake), the
+ *            engine engages on its own; whether it actually runs sources is then
+ *            gated by the companion's own on/off switch (E3). No companion => the
+ *            engine stays dark and the backend handles the title as always.
+ *   Override: localStorage 'crimson:clientSources' = '1' forces it on (e.g. to
+ *            test the no-extension E2 proxy path) or '0' pins it off;
+ *            VITE_CLIENT_SOURCES=true forces on at build time.
+ *   Debug:   localStorage 'crimson:clientSources:debug' = '1' for per-source logs.
  */
-import { createEngine, getExtensionBridge } from 'crimson-sources';
+import { createEngine, waitForExtensionBridge } from 'crimson-sources';
+import { apiFetch } from './hooks';
 
-// Kept in sync with hooks.js (we deliberately don't import from there — hooks.js
-// imports *this* module, so importing back would be a circular dependency).
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
-const SESSION_KEY = 'crimson_session';
+const FLAG_KEY = 'crimson:clientSources';
 
-// Whether to even attempt client-side resolution. Default false => no behavior
-// change. A build-time opt-in (VITE_CLIENT_SOURCES) or a per-browser localStorage
-// flag both flip it on.
-export function clientSourcesEnabled() {
+const DEBUG = (() => {
+  try { return localStorage.getItem(`${FLAG_KEY}:debug`) === '1'; } catch { return false; }
+})();
+function dbg(...args) { if (DEBUG) console.info('[clientSources]', ...args); }
+
+/**
+ * Explicit override of the auto-handshake:
+ *   '1' (or VITE_CLIENT_SOURCES=true) => force client sources on,
+ *   '0'                                => force off (pin to the backend),
+ *   unset                              => auto (engage when the companion is present).
+ * @returns {true|false|null} true/false to force, null for auto.
+ */
+function flagOverride() {
   try {
     if (import.meta.env?.VITE_CLIENT_SOURCES === 'true') return true;
-    return localStorage.getItem('crimson:clientSources') === '1';
+    const v = localStorage.getItem(FLAG_KEY);
+    if (v === '1') return true;
+    if (v === '0') return false;
+  } catch { /* no localStorage (SSR/sandbox) => fall through to auto */ }
+  return null;
+}
+
+/** Synchronous best-effort: is the companion's in-page API present right now? */
+function extensionPresent() {
+  try {
+    return Boolean(window.CrimsonExtension?.available);
   } catch {
     return false;
   }
+}
+
+// Whether the client engine is in play, for the dedup decision in handleLine.
+// Sync, so it mirrors the async gate as closely as a sync read allows: an explicit
+// override wins, otherwise it tracks companion presence. By the time stream lines
+// arrive the extension has long since injected, so this read is reliable there.
+export function clientSourcesEnabled() {
+  const o = flagOverride();
+  if (o !== null) return o;
+  return extensionPresent();
 }
 
 // --- E2 proxy signing (New System §8a) -------------------------------------
@@ -59,13 +89,10 @@ function _signKey(f) {
 }
 
 async function _signOnce(fields) {
-  const token = localStorage.getItem(SESSION_KEY);
-  const res = await fetch(`${API_BASE_URL}/sign`, {
+  // apiFetch attaches the session bearer token + the API base; /sign is login-gated.
+  const res = await apiFetch('/sign', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       url: fields.url,
       referer: fields.referer || '',
@@ -104,44 +131,32 @@ function signProxyUrl(fields) {
   return p;
 }
 
-// --- MediaCtx title enrichment (/scrape-meta) ------------------------------
-// The TMDB-keyed sources (cinema.bz, PlayIMDb, ScreenScape) resolve off the id
-// alone, but the title-matching *discovery* sources (aniworld / s.to / stomirror /
-// aniwatch / AnimeSuge) search the target sites by title — and the German
-// broadcast synonyms come from the server-held TMDB key (C5). So for TV we fetch
-// the backend's `/scrape-meta` grant and merge its title bundle into the ctx,
-// keeping client-side title matching byte-identical to the backend scrapers.
-const _metaCache = new Map(); // `${tmdb}/${season}` -> Promise<meta|null>
-
-async function fetchScrapeMeta(tmdbId, season) {
-  const token = localStorage.getItem(SESSION_KEY);
-  const res = await fetch(`${API_BASE_URL}/scrape-meta/${tmdbId}/${season}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!res.ok) return null;
-  return res.json();
-}
-
-async function enrichMediaCtx(ctx) {
-  // Movies are TMDB-keyed only (no discovery sources) → no title bundle needed.
-  if (ctx.mediaType !== 'tv' || ctx.tmdbId == null || ctx.season == null) return ctx;
-  const key = `${ctx.tmdbId}/${ctx.season}`;
-  let p = _metaCache.get(key);
-  if (!p) {
-    p = fetchScrapeMeta(ctx.tmdbId, ctx.season).catch(() => null);
-    _metaCache.set(key, p);
+/**
+ * Fetch the title bundle the discovery sources need (AniList variants + German
+ * synonyms) from the backend `/scrape-meta` grant and fold it into `mediaCtx`. The
+ * TMDB key that produces the German titles is server-held (C5), so the client can't
+ * derive these itself — it asks the backend, keeping title matching identical to
+ * the backend scrapers. Best-effort: on any failure the TMDB-keyed sources still
+ * run; only the title-matching ones go quiet.
+ */
+async function enrichMediaCtx(mediaCtx) {
+  if (mediaCtx.mediaType !== 'tv' || mediaCtx.season == null) return mediaCtx;
+  try {
+    const res = await apiFetch(`/scrape-meta/${mediaCtx.tmdbId}/${mediaCtx.season}`);
+    if (!res.ok) return mediaCtx;
+    const m = await res.json();
+    return {
+      ...mediaCtx,
+      title: mediaCtx.title || m.title || undefined,
+      titleEnglish: m.title_english ?? null,
+      titleRomaji: m.title_romaji ?? null,
+      titleNative: m.title_native ?? null,
+      synonyms: m.synonyms ?? null,
+      anilistId: mediaCtx.anilistId ?? m.anilist_id ?? undefined,
+    };
+  } catch {
+    return mediaCtx;
   }
-  const meta = await p;
-  if (!meta || meta.success === false) return ctx;
-  return {
-    ...ctx,
-    title: ctx.title || meta.title || undefined,
-    titleEnglish: meta.title_english ?? null,
-    titleRomaji: meta.title_romaji ?? null,
-    titleNative: meta.title_native ?? null,
-    synonyms: meta.synonyms ?? null,
-    anilistId: ctx.anilistId ?? meta.anilist_id ?? undefined,
-  };
 }
 
 /**
@@ -154,37 +169,71 @@ async function enrichMediaCtx(ctx) {
  */
 export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   const emitted = new Set();
-  if (!clientSourcesEnabled()) return emitted;
+
+  const override = flagOverride();
+  if (override === false) {
+    console.info('[clientSources] pinned OFF via flag — using the backend (E0).');
+    return emitted;
+  }
+
+  // The handshake: discover the companion, waiting briefly for its `…-ready` event
+  // in case we beat its async inject (the cold-load-onto-/watch race). In auto mode
+  // (no override) the engine only engages when the companion is actually present.
+  const bridge = await waitForExtensionBridge();
+  if (override !== true && !bridge) {
+    // Unconditional (not dbg): one verdict line per watch so a "did it engage?"
+    // shakeout is always legible. If you see this with the companion installed and
+    // toggled on, its in-page bridge isn't reaching the page (e.g. a page CSP that
+    // blocks the injected script) — check `window.CrimsonExtension` in the console.
+    console.info('[clientSources] companion absent — staying on the backend (E0).');
+    return emitted;
+  }
+  if (signal?.aborted) return emitted;
 
   let engine;
   try {
-    engine = await createEngine({ extension: getExtensionBridge(), signProxyUrl });
+    // `debug` turns on the engine's verbose per-source/discovery trace; failures
+    // are surfaced by the engine regardless. The signed-proxy grant (signProxyUrl)
+    // lets the engine use the E2 path when the override forces it on without a
+    // companion present.
+    engine = await createEngine({ extension: bridge, signProxyUrl, debug: DEBUG });
   } catch (err) {
     console.warn('[clientSources] engine init failed:', err);
     return emitted;
   }
 
+  // One concise line so the shakeout is legible: did we see the companion, is it
+  // switched on, and which sources can run client-side for this title.
+  const caps = engine.capabilities({ mediaType: mediaCtx.mediaType });
+  console.info(
+    `[clientSources] companion ${bridge ? 'detected' : 'absent'}, ` +
+    `enabled=${caps.extensionEnabled}, runnable=[${caps.runnableSources.join(', ') || 'none'}]`,
+  );
+
   if (!engine.canRunAny({ mediaType: mediaCtx.mediaType })) {
+    if (bridge && !caps.extensionEnabled) {
+      console.info(
+        '[clientSources] companion is installed but switched OFF — using the backend. ' +
+        'Toggle it on (toolbar button) to resolve sources locally.',
+      );
+    }
     await engine.dispose();
     return emitted;
   }
 
-  // Enrich with the title bundle the discovery sources match on (TV only; cached).
-  let ctx = mediaCtx;
-  try {
-    ctx = await enrichMediaCtx(mediaCtx);
-  } catch {
-    /* fall back to the bare ctx — TMDB-keyed sources still run */
-  }
+  // Only the title-matching discovery sources need the grant; fetch it once the
+  // engine confirms something is runnable, then run with the enriched context.
+  const enriched = await enrichMediaCtx(mediaCtx);
   if (signal?.aborted) {
     await engine.dispose();
     return emitted;
   }
 
   try {
-    for await (const line of engine.streamEpisode(ctx, { signal })) {
+    for await (const line of engine.streamEpisode(enriched, { signal })) {
       if (signal?.aborted) break;
       emitted.add(line.source);
+      dbg(`resolved locally: ${line.source} (${line.streamType}) ${line.url}`);
       onLine?.(JSON.stringify(line));
     }
   } catch (err) {

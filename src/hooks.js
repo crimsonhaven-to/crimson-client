@@ -3,7 +3,7 @@ import { streamLocalSources, clientSourcesEnabled } from './clientSources';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '9.4.0';
+export const CLIENT_VERSION = '9.8.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -1102,47 +1102,6 @@ export function useAccount() {
   };
 }
 
-// Merge one resolved `stream` line into the running source list, with origin-aware
-// dedup so a locally-resolved (client/extension/proxy) source SUPERSEDES the
-// backend's duplicate of the same (source, language). This is what makes the
-// New-System offload actually take effect: the backend /watch races the local
-// engine and usually resolves first (warm caches, datacenter), so without this the
-// backend's own proxy URL would win and keep serving the segment bytes. With it,
-// the local stream replaces the backend one in place — the player switches to the
-// CDN→viewer (E3) / CDN→edge→viewer (E2) path and the backend stops carrying bytes.
-//
-// `origin` is 'local' or 'backend'. `dedup` is only on when client sources are
-// enabled; off, it's a plain append (backend already dedups its own output), so
-// prod behaviour is unchanged for viewers who haven't opted in.
-// Returns the new list, or null when the line should be dropped (a duplicate).
-export function mergeStreamLine(list, msg, origin, dedup) {
-  const entry = {
-    source: msg.source,
-    type: msg.streamType,
-    url: msg.url,
-    language: msg.language,
-    subtitles: msg.subtitles,
-    cacheTicket: msg.cacheTicket,
-    _origin: origin,
-  };
-  if (!dedup) return [...list, entry];
-
-  const key = `${msg.source}|${msg.language || ''}`;
-  const idx = list.findIndex((s) => `${s.source}|${s.language || ''}` === key);
-  if (idx < 0) return [...list, entry];
-
-  const existing = list[idx];
-  // A local stream replaces a backend one for the same (source, language); any
-  // other collision (same origin, or a backend line arriving after a local one
-  // already won) is a duplicate we drop.
-  if (origin === 'local' && existing._origin !== 'local') {
-    const next = list.slice();
-    next[idx] = entry;
-    return next;
-  }
-  return null;
-}
-
 export function useAnimeStreamer(externalProps = {}) {
   // Search & Autocomplete state
   const [queryName, setQueryName] = useState('');
@@ -1387,6 +1346,14 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     streamsRef.current = [];
     userPickedRef.current = false;
 
+    // When the client engine is on, an anime source may resolve both locally and on
+    // the backend. Dedup by (source, language) and PREFER the local line: it streams
+    // straight from the CDN (token minted from the viewer's own ASN), so it
+    // supersedes a backend duplicate even if the backend arrived first. Guarded by
+    // clientSourcesEnabled() so default behavior is untouched when the engine is off.
+    //   key -> { idx, origin: 'local' | 'backend' }
+    const dedup = new Map();
+
     const handleLine = (line, origin = 'backend') => {
       const trimmed = line.trim();
       if (!trimmed) return;
@@ -1407,28 +1374,48 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         // Initialise the container as soon as metadata flushes (before any scraper).
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        // Append each source the instant it resolves, with origin-aware dedup so a
-        // locally-resolved source supersedes the backend's duplicate (see
-        // mergeStreamLine) — that's what moves the segment bytes off the backend.
-        const next = mergeStreamLine(streamsRef.current, msg, origin, clientSourcesEnabled());
-        if (!next) return; // duplicate — already have this (source, language)
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        // Normalise `streamType` -> `type` so the existing player/sidebar rendering
+        // keeps working unchanged. `language`/`subtitles`/`cacheTicket` are optional
+        // (only some scrapers supply them) and stay undefined otherwise.
+        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket };
 
         // Auto-select the most preferred source available unless the user has
         // already picked one manually. Ranking honours the viewer's language/
         // dub-sub preference first, then the global source order (see streamRank).
-        // The list keeps its arrival order; only the active/playing source moves.
-        if (!userPickedRef.current) {
+        const reselect = () => {
+          if (userPickedRef.current) return;
           const prefs = getPlaybackPrefs();
-          let bestIdx = 0;
-          let bestRank = Infinity;
-          next.forEach((s, i) => {
+          let bestIdx = 0, bestRank = Infinity;
+          streamsRef.current.forEach((s, i) => {
             const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
+        };
+
+        if (clientSourcesEnabled()) {
+          const key = `${msg.source}|${msg.language || ''}`;
+          const prior = dedup.get(key);
+          if (prior) {
+            // A local line replaces an earlier backend one (in place); a backend
+            // line never displaces a local one, and same-origin dupes are dropped.
+            if (origin === 'local' && prior.origin !== 'local') {
+              const swapped = streamsRef.current.slice();
+              swapped[prior.idx] = incoming;
+              streamsRef.current = swapped;
+              dedup.set(key, { idx: prior.idx, origin });
+              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
+              reselect();
+            }
+            return;
+          }
+          dedup.set(key, { idx: streamsRef.current.length, origin });
         }
+
+        const next = [...streamsRef.current, incoming];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        reselect();
         // First playable source is in — drop the loading veil so it renders immediately.
         setStreamLoading(false);
       } else if (msg.type === 'done') {
@@ -1457,11 +1444,11 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
           while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
             const line = buffer.slice(0, newlineIdx);
             buffer = buffer.slice(newlineIdx + 1);
-            handleLine(line, 'backend');
+            handleLine(line);
           }
         }
         // Flush any trailing line that wasn't newline-terminated.
-        if (buffer.trim()) handleLine(buffer, 'backend');
+        if (buffer.trim()) handleLine(buffer);
 
         setStreamLoading(false);
       } catch (err) {
@@ -1472,36 +1459,36 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       }
     };
 
-    // E3/E2 client-side resolution (no-op unless opted in + a runnable env). Runs
-    // ALONGSIDE the backend stream and feeds the same handleLine tagged 'local', so
-    // it supersedes the backend's duplicate of the flagship anime hosters (VOE via
-    // aniworld/s.to, Vidmoly, …) and the segment bytes leave the backend. The ctx
-    // mirrors what the backend feeds its scrapers: the season's TMDB id + season
-    // (get_tmdb_season) + episode, enriched with the title bundle by streamLocalSources.
-    const seasonEntry =
+    // E3/E2 client-side resolution for anime (no-op unless opted in via the
+    // companion + flag). Runs alongside the backend stream and feeds the SAME
+    // handleLine, so a locally-resolved anime source (VOE/AniWorld/S.to, minted from
+    // the viewer's own ASN) supersedes the backend duplicate. The backend stays the
+    // floor (E0). The engine's discovery sources match by title + synonyms +
+    // anilistId; tmdbId/season let enrichMediaCtx pull the AniList title set from
+    // the backend /scrape-meta grant exactly as the backend scrapers do.
+    const seasonRec =
       availableSeasons.find((s) => s.anilist_id === anilistIdToUse) ||
-      availableSeasons.find((s) => s.season_number === currentSeason) ||
-      null;
-    const localCtx = (seasonEntry && seasonEntry.tmdb_id != null)
-      ? {
-          tmdbId: seasonEntry.tmdb_id,
-          mediaType: 'tv',
-          season: seasonEntry.tmdb_season ?? seasonEntry.season_number ?? currentSeason,
-          episode: currentEpisode,
-          anilistId: anilistIdToUse,
-          title: animeMetadata?.title,
-        }
-      : null;
-    if (localCtx) {
-      streamLocalSources(localCtx, {
-        signal: controller.signal,
-        onLine: (l) => handleLine(l, 'local'),
-      });
-    }
+      availableSeasons.find((s) => s.season_number === currentSeason);
+    const mediaCtx = {
+      tmdbId: seasonRec?.tmdb_id,
+      mediaType: 'tv',
+      season: seasonRec?.tmdb_season ?? null,
+      episode: currentEpisode,
+      title: animeMetadata?.title || seasonGroups?.title || undefined,
+      anilistId: anilistIdToUse,
+    };
 
-    consumeStream();
+    (async () => {
+      const local = streamLocalSources(mediaCtx, {
+        signal: controller.signal,
+        onLine: (s) => handleLine(s, 'local'),
+      });
+      await consumeStream();
+      await local;
+    })();
 
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode]);
 
   return {
@@ -1995,8 +1982,12 @@ export function useShowStreamer(tmdbId, season, episode) {
     userPickedRef.current = false;
 
     // When the client engine is on, a source may resolve both locally and on the
-    // backend; dedup by label so it surfaces once (whichever arrives first wins).
-    // Guarded so default behavior is untouched when the engine is off.
+    // backend. Dedup by (source, language) and PREFER the local line: it streams
+    // straight from the CDN, so it supersedes a backend duplicate even if the
+    // backend arrived first. Guarded so default behavior is untouched when off.
+    //   key -> { idx, origin: 'local' | 'backend' }
+    const dedup = new Map();
+
     const handleLine = (line, origin = 'backend') => {
       const trimmed = line.trim();
       if (!trimmed) return;
@@ -2009,19 +2000,41 @@ export function useShowStreamer(tmdbId, season, episode) {
       } else if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        const next = mergeStreamLine(streamsRef.current, msg, origin, clientSourcesEnabled());
-        if (!next) return;
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
-        if (!userPickedRef.current) {
+        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket };
+        const reselect = () => {
+          if (userPickedRef.current) return;
           const prefs = getPlaybackPrefs();
           let bestIdx = 0, bestRank = Infinity;
-          next.forEach((s, i) => {
+          streamsRef.current.forEach((s, i) => {
             const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
+        };
+        if (clientSourcesEnabled()) {
+          // Dedup by (source, language) — distinct dub/sub variants stay separate
+          // (e.g. VOE English Sub vs German Dub). Prefer local: a locally-resolved
+          // line (direct CDN) supersedes a backend duplicate even if the backend
+          // arrived first; a backend line never displaces a local one.
+          const key = `${msg.source}|${msg.language || ''}`;
+          const prior = dedup.get(key);
+          if (prior) {
+            if (origin === 'local' && prior.origin !== 'local') {
+              const swapped = streamsRef.current.slice();
+              swapped[prior.idx] = incoming;
+              streamsRef.current = swapped;
+              dedup.set(key, { idx: prior.idx, origin });
+              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
+              reselect();
+            }
+            return; // local already won, or a same-origin duplicate
+          }
+          dedup.set(key, { idx: streamsRef.current.length, origin });
         }
+        const next = [...streamsRef.current, incoming];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        reselect();
         setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
@@ -2031,15 +2044,14 @@ export function useShowStreamer(tmdbId, season, episode) {
     (async () => {
       try {
         // E3/E2 client-side resolution (no-op unless opted in). Runs alongside the
-        // backend stream and feeds the same handleLine tagged 'local' so it
-        // supersedes the backend's duplicate; the backend stays the floor (E0).
+        // backend stream and feeds the same handleLine; the backend stays the floor.
         const local = streamLocalSources(
           { tmdbId, mediaType: 'tv', season, episode },
-          { signal: controller.signal, onLine: (l) => handleLine(l, 'local') },
+          { signal: controller.signal, onLine: (s) => handleLine(s, 'local') },
         );
         await streamWatchNdjson(`/watch/${tmdbId}/${season}/${episode}`, {
           signal: controller.signal,
-          onLine: (l) => handleLine(l, 'backend'),
+          onLine: handleLine,
         });
         await local;
         setStreamLoading(false);
@@ -2177,6 +2189,10 @@ export function useMovieStreamer(tmdbId) {
     streamsRef.current = [];
     userPickedRef.current = false;
 
+    //   key -> { idx, origin: 'local' | 'backend' }; prefer-local dedup, see the
+    //   show hook above for the rationale.
+    const dedup = new Map();
+
     const handleLine = (line, origin = 'backend') => {
       const trimmed = line.trim();
       if (!trimmed) return;
@@ -2186,19 +2202,39 @@ export function useMovieStreamer(tmdbId) {
       if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        const next = mergeStreamLine(streamsRef.current, msg, origin, clientSourcesEnabled());
-        if (!next) return;
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
-        if (!userPickedRef.current) {
+        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles };
+        const reselect = () => {
+          if (userPickedRef.current) return;
           const prefs = getPlaybackPrefs();
           let bestIdx = 0, bestRank = Infinity;
-          next.forEach((s, i) => {
+          streamsRef.current.forEach((s, i) => {
             const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
+        };
+        if (clientSourcesEnabled()) {
+          // Prefer local over a backend duplicate; distinct dub/sub variants stay
+          // separate. A local line supersedes backend even if backend arrived first.
+          const key = `${msg.source}|${msg.language || ''}`;
+          const prior = dedup.get(key);
+          if (prior) {
+            if (origin === 'local' && prior.origin !== 'local') {
+              const swapped = streamsRef.current.slice();
+              swapped[prior.idx] = incoming;
+              streamsRef.current = swapped;
+              dedup.set(key, { idx: prior.idx, origin });
+              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
+              reselect();
+            }
+            return;
+          }
+          dedup.set(key, { idx: streamsRef.current.length, origin });
         }
+        const next = [...streamsRef.current, incoming];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        reselect();
         setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
@@ -2210,11 +2246,11 @@ export function useMovieStreamer(tmdbId) {
         // Client-side resolution (no-op unless opted in); backend stays the floor.
         const local = streamLocalSources(
           { tmdbId, mediaType: 'movie' },
-          { signal: controller.signal, onLine: (l) => handleLine(l, 'local') },
+          { signal: controller.signal, onLine: (s) => handleLine(s, 'local') },
         );
         await streamWatchNdjson(`/watch/movie/${tmdbId}`, {
           signal: controller.signal,
-          onLine: (l) => handleLine(l, 'backend'),
+          onLine: handleLine,
         });
         await local;
         setStreamLoading(false);

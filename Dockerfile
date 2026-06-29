@@ -6,8 +6,17 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev, e.g., Vite)
-RUN npm ci && npm cache clean --force
+# Install ALL dependencies (including dev, e.g., Vite).
+# The self-hosted runner occasionally has slow/flaky connectivity to
+# registry.npmjs.org, which kills `npm ci` with EIDLETIMEOUT once it hits the
+# default 5-min fetch-timeout. Give npm more patience and more retries so a
+# transient network hiccup doesn't fail the whole build.
+RUN npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000 \
+    && npm config set fetch-timeout 600000 \
+    && npm ci \
+    && npm cache clean --force
 
 # Copy source code
 COPY . .
@@ -47,6 +56,28 @@ RUN set -eu; \
     build linux   amd64 crimson-presence-helper-linux-amd64; \
     build linux   arm64 crimson-presence-helper-linux-arm64
 
+# Extension-pack stage – zip the companion extension (vendor/crimson-extension,
+# a private git submodule) so it's downloadable straight from the site. Same
+# rationale as the rpc-helper above: the repo is private, so GitHub Release
+# assets aren't publicly fetchable. The viewer downloads the zip, unpacks it and
+# side-loads it (Load unpacked) — see the /extension Download page in the client.
+FROM alpine:3.20 AS extpack
+
+WORKDIR /work
+
+RUN apk add --no-cache zip
+
+COPY vendor/crimson-extension ./crimson-extension
+
+# Drop any VCS metadata, then zip the folder itself so unpacking yields a single
+# `crimson-extension/` directory with manifest.json at its root (exactly what
+# "Load unpacked" expects). manifest.json is copied out alongside so the Download
+# page can show the live version without hardcoding it.
+RUN mkdir -p /out \
+    && rm -rf crimson-extension/.git \
+    && zip -r -X /out/crimson-extension.zip crimson-extension \
+    && cp crimson-extension/manifest.json /out/manifest.json
+
 # Production stage with Nginx
 FROM nginx:alpine
 
@@ -55,6 +86,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy the cross-compiled presence helpers so they're downloadable at /helper/.
 COPY --from=helper /out /usr/share/nginx/html/helper
+
+# Copy the packed companion extension so it's downloadable at /extension/.
+COPY --from=extpack /out /usr/share/nginx/html/extension
 
 # Copy custom Nginx config for SPA routing (+ shared security-headers snippet)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
