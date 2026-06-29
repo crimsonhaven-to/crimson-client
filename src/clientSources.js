@@ -238,8 +238,16 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
     }
   } catch (err) {
     if (err?.name !== 'AbortError') console.warn('[clientSources] stream error:', err);
-  } finally {
-    await engine.dispose();
   }
+  // NB: intentionally NO engine.dispose() here. dispose() clears the companion's DNR
+  // media rules (the injected voe.sx Referer/UA the gated CDN needs), but the player
+  // keeps fetching segments for the WHOLE episode — long after the last source
+  // resolves. Disposing on completion tore those rules out mid-playback, which is
+  // exactly why VOE segments started 403ing a few seconds in (the first segments were
+  // 200 while the rule was live). The rules are cleared+reinstalled at the start of
+  // the next episode's streamEpisode(); leaving them up between episodes is harmless
+  // (host-scoped, and the player only hits those CDNs while actually playing). Doing
+  // it here would also race the next episode's install. They're torn down on a real
+  // page navigation/reload by the extension's own tab listener.
   return emitted;
 }
