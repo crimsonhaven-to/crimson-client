@@ -284,6 +284,36 @@ function ExtensionBanner() {
   );
 }
 
+// ---------- Adblocker warning (home banner) ----------
+// A permanent call-out at the top of the search home, styled like the companion
+// nudge but in Luminas' cautioning voice. Unlike the companion banner this one is
+// NOT dismissible and never self-hides: scraping & resolving now happens in the
+// viewer's own browser, and an adblocker silently severs those local fetches
+// (it can't tell Crimson's own conjuring from an ad), so the warning must stand
+// at all times on the search home.
+function AdblockerNotice() {
+  return (
+    <div
+      role="alert"
+      className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-700"
+    >
+      <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
+        <AlertTriangle className="w-5 h-5" />
+      </span>
+      <span className="min-w-0 flex-grow">
+        <span className="block text-sm font-black text-white tracking-tight">
+          Lower your wards on the haven, darling. 🩸
+        </span>
+        <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
+          Crimson now conjures &amp; resolves your sources right here in your own browser — and a hungry adblocker
+          mistakes that ritual for prey, severing the threads before the stream can breathe. Whitelist this page
+          so the magic may flow.
+        </span>
+      </span>
+    </div>
+  );
+}
+
 // ---------- Landing Page Component ----------
 function LandingPage() {
   const navigate = useNavigate();
@@ -340,8 +370,14 @@ function LandingPage() {
 
   return (
     <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-16 sm:space-y-20 animate-in fade-in duration-1000">
-      {/* Companion nudge — self-hides once the extension is bound or dismissed. */}
+      {/* Adblocker warning — permanent: local scraping/resolving runs in the
+          viewer's browser, which adblockers silently break. Shown at all times. */}
       <div className="max-w-2xl mx-auto !mt-0">
+        <AdblockerNotice />
+      </div>
+
+      {/* Companion nudge — self-hides once the extension is bound or dismissed. */}
+      <div className="max-w-2xl mx-auto !mt-2">
         <ExtensionBanner />
       </div>
 

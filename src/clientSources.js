@@ -59,13 +59,19 @@ function extensionPresent() {
 }
 
 // Whether the client engine is in play, for the dedup decision in handleLine.
-// Sync, so it mirrors the async gate as closely as a sync read allows: an explicit
-// override wins, otherwise it tracks companion presence. By the time stream lines
-// arrive the extension has long since injected, so this read is reliable there.
+// Sync, so it mirrors the async gate as closely as a sync read allows:
+//   • an explicit override wins;
+//   • the companion (E3) being present means yes;
+//   • otherwise the E2 crimson-proxy path auto-engages for every viewer — it's on
+//     unless we've *learned* the proxy is unconfigured (a /sign 503 latches
+//     `_proxyDisabled`), at which point there's no client path and we stay on E0.
+// Dedup keys on the specific (source, language) tile label, so leaving this on
+// when the engine ends up resolving nothing is harmless (no backend tile collides).
 export function clientSourcesEnabled() {
   const o = flagOverride();
   if (o !== null) return o;
-  return extensionPresent();
+  if (extensionPresent()) return true;
+  return !_proxyDisabled;
 }
 
 // --- E2 proxy signing (New System §8a) -------------------------------------
@@ -177,16 +183,23 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   }
 
   // The handshake: discover the companion, waiting briefly for its `…-ready` event
-  // in case we beat its async inject (the cold-load-onto-/watch race). In auto mode
-  // (no override) the engine only engages when the companion is actually present.
+  // in case we beat its async inject (the cold-load-onto-/watch race).
   const bridge = await waitForExtensionBridge();
-  if (override !== true && !bridge) {
-    // Unconditional (not dbg): one verdict line per watch so a "did it engage?"
-    // shakeout is always legible. If you see this with the companion installed and
-    // toggled on, its in-page bridge isn't reaching the page (e.g. a page CSP that
-    // blocks the injected script) — check `window.CrimsonExtension` in the console.
-    console.info('[clientSources] companion absent — staying on the backend (E0).');
+  // With the companion (E3) we run the full source set. WITHOUT it we still engage
+  // the E2 crimson-proxy path for the header-only sources (cinema.bz / PlayIMDb /
+  // ScreenScape / AnimeSuge) — the engine routes VOE/VidSrc/etc. to the backend on
+  // its own. We only bail when there's genuinely no client path: no companion AND
+  // the proxy is known-unconfigured (a prior /sign 503 latched `_proxyDisabled`).
+  // Unconditional (not dbg): one verdict line per watch so a "did it engage?"
+  // shakeout is always legible. If you see "companion absent" with the companion
+  // installed + toggled on, its in-page bridge isn't reaching the page (e.g. a page
+  // CSP blocking the inject) — check `window.CrimsonExtension` in the console.
+  if (!bridge && _proxyDisabled) {
+    console.info('[clientSources] no companion and crimson-proxy unconfigured — staying on the backend (E0).');
     return emitted;
+  }
+  if (!bridge) {
+    console.info('[clientSources] companion absent — using the crimson-proxy (E2) for header-only sources.');
   }
   if (signal?.aborted) return emitted;
 
