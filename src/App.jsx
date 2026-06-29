@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet, Puzzle } from 'lucide-react';
 import MeshBackground from './MeshBackground';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
 import { useDiscordPresence } from './discordPresence';
@@ -37,6 +37,9 @@ const ShowWatch = lazy(() => import('./ShowWatch'));
 const MovieOverview = lazy(() => import('./MovieOverview'));
 const MovieWatch = lazy(() => import('./MovieWatch'));
 const LumiSecret = lazy(() => import('./LumiSecret'));
+// Companion-extension download page — lazy; only reached from the home banner /
+// footer link, and only meaningful to viewers who don't already have it.
+const DownloadExtensionPage = lazy(() => import('./DownloadExtension'));
 
 const GithubIcon = () => (
   <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor" aria-hidden="true">
@@ -213,6 +216,74 @@ function ContentRow({ icon, title, accent, subtitle, items, loading, onSelect, c
   );
 }
 
+// ---------- Companion-extension nudge (home banner) ----------
+// A gentle "claim the companion" call-out at the top of the search home, linking
+// to /extension. It self-effaces in two cases so it never nags: (1) the companion
+// is already bound to this browser (we read window.CrimsonExtension and also catch
+// the one-shot `crimson-extension-ready` event in case it injects after mount),
+// or (2) the viewer dismissed it (persisted in localStorage).
+const EXT_BANNER_DISMISS_KEY = 'crimson:extBanner:dismissed';
+
+function ExtensionBanner() {
+  const [hidden, setHidden] = useState(() => {
+    try {
+      if (window.CrimsonExtension?.available) return true;
+      return localStorage.getItem(EXT_BANNER_DISMISS_KEY) === '1';
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    if (hidden) return;
+    const onReady = () => setHidden(true);
+    window.addEventListener('crimson-extension-ready', onReady, { once: true });
+    // Re-check shortly after mount: the global may have been set before our listener.
+    const t = setTimeout(() => {
+      try { if (window.CrimsonExtension?.available) setHidden(true); } catch { /* ignore */ }
+    }, 400);
+    return () => { window.removeEventListener('crimson-extension-ready', onReady); clearTimeout(t); };
+  }, [hidden]);
+
+  if (hidden) return null;
+
+  const dismiss = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try { localStorage.setItem(EXT_BANNER_DISMISS_KEY, '1'); } catch { /* ignore */ }
+    setHidden(true);
+  };
+
+  return (
+    <Link
+      to="/extension"
+      className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 hover:border-crimson-500/50 hover:bg-crimson-500/[0.12] transition-all shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-700"
+    >
+      <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
+        <Puzzle className="w-5 h-5" />
+      </span>
+      <span className="min-w-0 flex-grow">
+        <span className="block text-sm font-black text-white tracking-tight">
+          Psst, darling — claim the Crimson Companion. 🦇
+        </span>
+        <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
+          A featherlight browser familiar that resolves &amp; plays your sources locally — straight from your own hands.
+        </span>
+      </span>
+      <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-400 group-hover:text-crimson-300 transition-colors shrink-0">
+        Summon
+        <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      </span>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Dismiss"
+        className="p-1.5 rounded-lg text-crimson-600 hover:text-crimson-300 hover:bg-crimson-900/40 transition-all shrink-0"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </Link>
+  );
+}
+
 // ---------- Landing Page Component ----------
 function LandingPage() {
   const navigate = useNavigate();
@@ -269,6 +340,11 @@ function LandingPage() {
 
   return (
     <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-16 sm:space-y-20 animate-in fade-in duration-1000">
+      {/* Companion nudge — self-hides once the extension is bound or dismissed. */}
+      <div className="max-w-2xl mx-auto !mt-0">
+        <ExtensionBanner />
+      </div>
+
       {/* Hero — the haven's sigil and the one search that opens every door. */}
       <div className="space-y-4 text-center max-w-3xl mx-auto pt-6 sm:pt-12">
         <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
@@ -953,6 +1029,8 @@ function App() {
           <Route path="/watch-show/:tmdbId/:season?/:episode?" element={<ShowWatch />} />
           <Route path="/movie/:tmdbId" element={<MovieOverview />} />
           <Route path="/watch-movie/:tmdbId" element={<MovieWatch />} />
+          {/* Companion-extension download + side-load guide. */}
+          <Route path="/extension" element={<DownloadExtensionPage />} />
           {/* Lumi's secret shrine — reached via the Konami code (see useKonami.js). */}
           <Route path="/lumi" element={<LumiSecret />} />
           <Route path="*" element={<NotFound />} />
@@ -982,6 +1060,7 @@ function App() {
             <div className="flex flex-col gap-3">
               <Link to="/catalogue" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Catalogue</Link>
               <Link to="/watchlists" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Watchlists</Link>
+              <Link to="/extension" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Companion</Link>
               <Link to="/about" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">About Us</Link>
               <Link to="/supporters" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Mortals</Link>
             </div>

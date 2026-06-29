@@ -135,7 +135,10 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
 
   let engine;
   try {
-    engine = await createEngine({ extension: bridge, signProxyUrl });
+    // `debug` turns on the engine's verbose per-source/discovery trace; failures
+    // are surfaced by the engine regardless. localStorage 'crimson:sources:debug'
+    // also enables it directly inside crimson-sources.
+    engine = await createEngine({ extension: bridge, signProxyUrl, debug: DEBUG });
   } catch (err) {
     console.warn('[clientSources] engine init failed:', err);
     return emitted;
