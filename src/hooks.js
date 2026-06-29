@@ -3,7 +3,7 @@ import { streamLocalSources, clientSourcesEnabled } from './clientSources';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '9.7.0';
+export const CLIENT_VERSION = '9.8.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -1346,7 +1346,15 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     streamsRef.current = [];
     userPickedRef.current = false;
 
-    const handleLine = (line) => {
+    // When the client engine is on, an anime source may resolve both locally and on
+    // the backend. Dedup by (source, language) and PREFER the local line: it streams
+    // straight from the CDN (token minted from the viewer's own ASN), so it
+    // supersedes a backend duplicate even if the backend arrived first. Guarded by
+    // clientSourcesEnabled() so default behavior is untouched when the engine is off.
+    //   key -> { idx, origin: 'local' | 'backend' }
+    const dedup = new Map();
+
+    const handleLine = (line, origin = 'backend') => {
       const trimmed = line.trim();
       if (!trimmed) return;
       let msg;
@@ -1366,35 +1374,48 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         // Initialise the container as soon as metadata flushes (before any scraper).
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        // Append each source the instant it resolves. Normalise `streamType` -> `type`
-        // so the existing player/sidebar rendering keeps working unchanged.
-        // `language` is optional (only some scrapers know it) and stays undefined
-        // otherwise, so the UI simply shows nothing for sources without one.
-        const next = [
-          ...streamsRef.current,
-          // `subtitles` is optional (only ShowBox/Febbox supplies external tracks)
-          // and stays undefined otherwise, so the player simply renders none.
-          // `cacheTicket` (optional) lets the player confirm this exact source for
-          // server-side caching once the viewer has actually watched it.
-          { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket },
-        ];
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        // Normalise `streamType` -> `type` so the existing player/sidebar rendering
+        // keeps working unchanged. `language`/`subtitles`/`cacheTicket` are optional
+        // (only some scrapers supply them) and stay undefined otherwise.
+        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket };
 
         // Auto-select the most preferred source available unless the user has
         // already picked one manually. Ranking honours the viewer's language/
         // dub-sub preference first, then the global source order (see streamRank).
-        // The list keeps its arrival order; only the active/playing source moves.
-        if (!userPickedRef.current) {
+        const reselect = () => {
+          if (userPickedRef.current) return;
           const prefs = getPlaybackPrefs();
-          let bestIdx = 0;
-          let bestRank = Infinity;
-          next.forEach((s, i) => {
+          let bestIdx = 0, bestRank = Infinity;
+          streamsRef.current.forEach((s, i) => {
             const r = streamRank(s, prefs);
             if (r < bestRank) { bestRank = r; bestIdx = i; }
           });
           setActiveStreamIdx(bestIdx);
+        };
+
+        if (clientSourcesEnabled()) {
+          const key = `${msg.source}|${msg.language || ''}`;
+          const prior = dedup.get(key);
+          if (prior) {
+            // A local line replaces an earlier backend one (in place); a backend
+            // line never displaces a local one, and same-origin dupes are dropped.
+            if (origin === 'local' && prior.origin !== 'local') {
+              const swapped = streamsRef.current.slice();
+              swapped[prior.idx] = incoming;
+              streamsRef.current = swapped;
+              dedup.set(key, { idx: prior.idx, origin });
+              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
+              reselect();
+            }
+            return;
+          }
+          dedup.set(key, { idx: streamsRef.current.length, origin });
         }
+
+        const next = [...streamsRef.current, incoming];
+        streamsRef.current = next;
+        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
+        reselect();
         // First playable source is in — drop the loading veil so it renders immediately.
         setStreamLoading(false);
       } else if (msg.type === 'done') {
@@ -1438,9 +1459,36 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       }
     };
 
-    consumeStream();
+    // E3/E2 client-side resolution for anime (no-op unless opted in via the
+    // companion + flag). Runs alongside the backend stream and feeds the SAME
+    // handleLine, so a locally-resolved anime source (VOE/AniWorld/S.to, minted from
+    // the viewer's own ASN) supersedes the backend duplicate. The backend stays the
+    // floor (E0). The engine's discovery sources match by title + synonyms +
+    // anilistId; tmdbId/season let enrichMediaCtx pull the AniList title set from
+    // the backend /scrape-meta grant exactly as the backend scrapers do.
+    const seasonRec =
+      availableSeasons.find((s) => s.anilist_id === anilistIdToUse) ||
+      availableSeasons.find((s) => s.season_number === currentSeason);
+    const mediaCtx = {
+      tmdbId: seasonRec?.tmdb_id,
+      mediaType: 'tv',
+      season: seasonRec?.tmdb_season ?? null,
+      episode: currentEpisode,
+      title: animeMetadata?.title || seasonGroups?.title || undefined,
+      anilistId: anilistIdToUse,
+    };
+
+    (async () => {
+      const local = streamLocalSources(mediaCtx, {
+        signal: controller.signal,
+        onLine: (s) => handleLine(s, 'local'),
+      });
+      await consumeStream();
+      await local;
+    })();
 
     return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode]);
 
   return {
