@@ -137,6 +137,73 @@ function signProxyUrl(fields) {
   return p;
 }
 
+// --- Backend resolve grant (cookie/secret-bound sources) -------------------
+// Some sources can't run in the browser at all — Febbox's final hop needs the `ui`
+// cookie (a C5 secret that must stay server-side). But only the *resolve* needs the
+// secret; the URL it yields is a direct CDN file. So the engine asks us to run the
+// backend `/resolve` grant, which does the token-gated lookup and returns the **raw**
+// stream URL + headers — and the engine then delivers the bytes (extension E3 / signed
+// proxy E2), keeping the heavy mp4/HLS off the backend. This is the cookie-source twin
+// of signProxyUrl (and only the host has the session token + API base, hence here).
+//
+// Cached per (source, tmdb, season, episode) — one round-trip per episode, not per
+// segment. A 503 (source unconfigured, e.g. FEBBOX_UI_TOKEN unset) or 404 (unknown
+// source) latches that source off for the session, so we stop asking and it cleanly
+// falls back to the backend /watch line (never a regression).
+const _grantDisabled = new Set();    // source keys the backend can't serve
+const _grantCache = new Map();       // key -> Promise<GrantStream[]>
+
+function _grantKey(req) {
+  const c = req.ctx;
+  return `${req.source}\n${c.tmdbId}\n${c.mediaType}\n${c.season ?? ''}\n${c.episode ?? ''}`;
+}
+
+async function _resolveGrantOnce(req) {
+  const c = req.ctx;
+  const res = await apiFetch('/resolve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      source: req.source,
+      tmdbId: c.tmdbId,
+      mediaType: c.mediaType,
+      season: c.season ?? null,
+      episode: c.episode ?? null,
+      title: c.title ?? null,
+      titleEnglish: c.titleEnglish ?? null,
+      titleRomaji: c.titleRomaji ?? null,
+      titleNative: c.titleNative ?? null,
+      synonyms: c.synonyms ?? null,
+    }),
+  });
+  if (res.status === 503 || res.status === 404) {
+    _grantDisabled.add(req.source); // unconfigured/unknown — stop asking this session
+    return [];
+  }
+  if (!res.ok) throw new Error(`/resolve failed: ${res.status}`);
+  const data = await res.json();
+  return Array.isArray(data?.streams) ? data.streams : [];
+}
+
+/**
+ * The `resolveGrant(req) => Promise<GrantStream[]>` the engine threads into its
+ * backend-resolved sources (Febbox today). Deduped + cached per episode; a failure
+ * bubbles up as "this source couldn't run client-side" → the backend covers it.
+ */
+function resolveGrant(req) {
+  if (_grantDisabled.has(req.source)) return Promise.resolve([]);
+  const key = _grantKey(req);
+  let p = _grantCache.get(key);
+  if (!p) {
+    p = _resolveGrantOnce(req).catch((err) => {
+      _grantCache.delete(key); // don't cache a transient failure
+      throw err;
+    });
+    _grantCache.set(key, p);
+  }
+  return p;
+}
+
 /**
  * Fetch the title bundle the discovery sources need (AniList variants + German
  * synonyms) from the backend `/scrape-meta` grant and fold it into `mediaCtx`. The
@@ -209,7 +276,7 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
     // are surfaced by the engine regardless. The signed-proxy grant (signProxyUrl)
     // lets the engine use the E2 path when the override forces it on without a
     // companion present.
-    engine = await createEngine({ extension: bridge, signProxyUrl, debug: DEBUG });
+    engine = await createEngine({ extension: bridge, signProxyUrl, resolveGrant, debug: DEBUG });
   } catch (err) {
     console.warn('[clientSources] engine init failed:', err);
     return emitted;
