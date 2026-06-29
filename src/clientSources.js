@@ -12,26 +12,60 @@
  * non-regressing addition — exactly the "shift of who does what" the design calls
  * for. Turning the live swap on per-source is the next step ("go from there").
  *
- *   Enable:  localStorage.setItem('crimson:clientSources', '1')   (per browser)
- *      or:   build with VITE_CLIENT_SOURCES=true
- *   Needs:   the crimson-extension companion installed + toggled on (E3). Without
- *            it there's no client-side fetch path yet (E2 needs a backend /sign
- *            grant, not built), so the engine simply runs nothing and the backend
- *            handles the title as always.
+ *   Auto:    nothing to flip. When the crimson-extension companion is installed
+ *            (it announces itself via a `crimson-extension-ready` handshake), the
+ *            engine engages on its own; whether it actually runs sources is then
+ *            gated by the companion's own on/off switch (E3). No companion => the
+ *            engine stays dark and the backend handles the title as always.
+ *   Override: localStorage 'crimson:clientSources' = '1' forces it on (e.g. to
+ *            test the no-extension paths) or '0' pins it off; VITE_CLIENT_SOURCES
+ *            =true forces on at build time.
+ *   Debug:   localStorage 'crimson:clientSources:debug' = '1' for per-source logs.
  */
-import { createEngine, getExtensionBridge } from 'crimson-sources';
+import { createEngine, waitForExtensionBridge } from 'crimson-sources';
 import { apiFetch } from './hooks';
 
-// Whether to even attempt client-side resolution. Default false => no behavior
-// change. A build-time opt-in (VITE_CLIENT_SOURCES) or a per-browser localStorage
-// flag both flip it on.
-export function clientSourcesEnabled() {
+const FLAG_KEY = 'crimson:clientSources';
+
+const DEBUG = (() => {
+  try { return localStorage.getItem(`${FLAG_KEY}:debug`) === '1'; } catch { return false; }
+})();
+function dbg(...args) { if (DEBUG) console.info('[clientSources]', ...args); }
+
+/**
+ * Explicit override of the auto-handshake:
+ *   '1' (or VITE_CLIENT_SOURCES=true) => force client sources on,
+ *   '0'                                => force off (pin to the backend),
+ *   unset                              => auto (engage when the companion is present).
+ * @returns {true|false|null} true/false to force, null for auto.
+ */
+function flagOverride() {
   try {
     if (import.meta.env?.VITE_CLIENT_SOURCES === 'true') return true;
-    return localStorage.getItem('crimson:clientSources') === '1';
+    const v = localStorage.getItem(FLAG_KEY);
+    if (v === '1') return true;
+    if (v === '0') return false;
+  } catch { /* no localStorage (SSR/sandbox) => fall through to auto */ }
+  return null;
+}
+
+/** Synchronous best-effort: is the companion's in-page API present right now? */
+function extensionPresent() {
+  try {
+    return Boolean(window.CrimsonExtension?.available);
   } catch {
     return false;
   }
+}
+
+// Whether the client engine is in play, for the dedup decision in handleLine.
+// Sync, so it mirrors the async gate as closely as a sync read allows: an explicit
+// override wins, otherwise it tracks companion presence. By the time stream lines
+// arrive the extension has long since injected, so this read is reliable there.
+export function clientSourcesEnabled() {
+  const o = flagOverride();
+  if (o !== null) return o;
+  return extensionPresent();
 }
 
 // E2 (crimson-proxy) needs a signed URL, and PROXY_SECRET must never ship to the
@@ -78,17 +112,43 @@ async function enrichMediaCtx(mediaCtx) {
  */
 export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   const emitted = new Set();
-  if (!clientSourcesEnabled()) return emitted;
+
+  const override = flagOverride();
+  if (override === false) return emitted; // explicitly pinned to the backend
+
+  // The handshake: discover the companion, waiting briefly for its `…-ready` event
+  // in case we beat its async inject (the cold-load-onto-/watch race). In auto mode
+  // (no override) the engine only engages when the companion is actually present.
+  const bridge = await waitForExtensionBridge();
+  if (override !== true && !bridge) {
+    dbg('no companion detected and no opt-in — staying on the backend (E0).');
+    return emitted;
+  }
+  if (signal?.aborted) return emitted;
 
   let engine;
   try {
-    engine = await createEngine({ extension: getExtensionBridge(), signProxyUrl });
+    engine = await createEngine({ extension: bridge, signProxyUrl });
   } catch (err) {
     console.warn('[clientSources] engine init failed:', err);
     return emitted;
   }
 
+  // One concise line so the shakeout is legible: did we see the companion, is it
+  // switched on, and which sources can run client-side for this title.
+  const caps = engine.capabilities({ mediaType: mediaCtx.mediaType });
+  console.info(
+    `[clientSources] companion ${bridge ? 'detected' : 'absent'}, ` +
+    `enabled=${caps.extensionEnabled}, runnable=[${caps.runnableSources.join(', ') || 'none'}]`,
+  );
+
   if (!engine.canRunAny({ mediaType: mediaCtx.mediaType })) {
+    if (bridge && !caps.extensionEnabled) {
+      console.info(
+        '[clientSources] companion is installed but switched OFF — using the backend. ' +
+        'Toggle it on (toolbar button) to resolve sources locally.',
+      );
+    }
     await engine.dispose();
     return emitted;
   }
@@ -105,6 +165,7 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
     for await (const line of engine.streamEpisode(enriched, { signal })) {
       if (signal?.aborted) break;
       emitted.add(line.source);
+      dbg(`resolved locally: ${line.source} (${line.streamType}) ${line.url}`);
       onLine?.(JSON.stringify(line));
     }
   } catch (err) {
