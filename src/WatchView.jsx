@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers } from 'lucide-react';
+import { Info, AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers, Puzzle, X } from 'lucide-react';
 import { API_BASE_URL, apiFetch, fetchSubtitles, fetchSkipTimes, usePlaybackPrefs, groupStreams, streamVariantLabel } from './hooks';
 import { setWatchActivity, clearWatchActivity } from './discordPresence';
 import { stripHtml } from './utils';
@@ -242,6 +242,32 @@ const WatchView = ({
     }
     if (streams.length > 1) handleSelectStream((idx + 1) % streams.length);
   }, [streams, handleSelectStream]);
+
+  // Contextual companion nudge: shown in the sources panel once scanning finishes
+  // and the companion isn't active — the moment of need (more sources resolve
+  // locally with it). Mirrors the home banner's detection + shares its dismiss key
+  // so dismissing in either place hides both; never shown for an unaired episode.
+  const EXT_DISMISS_KEY = 'crimson:extBanner:dismissed';
+  const [companionActive, setCompanionActive] = useState(() => {
+    try { return !!window.CrimsonExtension?.available; } catch { return false; }
+  });
+  const [nudgeDismissed, setNudgeDismissed] = useState(() => {
+    try { return localStorage.getItem(EXT_DISMISS_KEY) === '1'; } catch { return false; }
+  });
+  useEffect(() => {
+    if (companionActive) return undefined;
+    const onReady = () => setCompanionActive(true);
+    window.addEventListener('crimson-extension-ready', onReady, { once: true });
+    const t = setTimeout(() => {
+      try { if (window.CrimsonExtension?.available) setCompanionActive(true); } catch { /* ignore */ }
+    }, 500);
+    return () => { window.removeEventListener('crimson-extension-ready', onReady); clearTimeout(t); };
+  }, [companionActive]);
+  const dismissNudge = useCallback(() => {
+    try { localStorage.setItem(EXT_DISMISS_KEY, '1'); } catch { /* ignore */ }
+    setNudgeDismissed(true);
+  }, []);
+  const showCompanionNudge = !unaired && !streamLoading && !companionActive && !nudgeDismissed;
 
   // Provider-grouped view of the sources for the "Scraped Targets" sidebar (and
   // the in-player cog). `openGroups` holds explicit expand/collapse choices; a
@@ -548,10 +574,19 @@ const WatchView = ({
 
           <h3 className="text-lg font-black text-white mb-8 flex items-center gap-3 uppercase tracking-tighter relative z-10">
             <div className="relative">
-               <div className="w-2.5 h-2.5 rounded-full bg-crimson-500 animate-ping absolute inset-0"></div>
+               {streamLoading && <div className="w-2.5 h-2.5 rounded-full bg-crimson-500 animate-ping absolute inset-0"></div>}
                <div className="w-2.5 h-2.5 rounded-full bg-crimson-600 relative"></div>
             </div>
             Scraped Targets
+            {!unaired && (
+              <span className="ml-auto text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 normal-nums">
+                {streamLoading
+                  ? `Scanning${streams.length ? ` · ${streams.length}` : '…'}`
+                  : streams.length
+                    ? `${streams.length} found`
+                    : 'none'}
+              </span>
+            )}
           </h3>
           <div className="grid grid-cols-1 gap-3 relative z-10">
             {unaired ? (
@@ -604,6 +639,29 @@ const WatchView = ({
             <div className="mt-6 flex items-center justify-center gap-2 animate-pulse">
                <div className="w-1.5 h-1.5 bg-crimson-500 rounded-full"></div>
                <span className="text-[8px] font-black uppercase tracking-[0.3em] text-crimson-600">Probing more nodes</span>
+            </div>
+          )}
+
+          {showCompanionNudge && (
+            <div className="mt-6 relative z-10 flex items-start gap-3 p-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25">
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
+                <Puzzle className="w-4 h-4" />
+              </span>
+              <div className="min-w-0 flex-grow">
+                <Link to="/extension" className="block text-[11px] font-black text-white leading-snug hover:text-crimson-300 transition-colors">
+                  Want more transport nodes? Claim the Companion. 🦇
+                </Link>
+                <p className="text-[10px] text-crimson-100/50 font-medium leading-snug mt-0.5">
+                  It resolves &amp; plays extra sources locally, straight from your browser.
+                </p>
+              </div>
+              <button
+                onClick={dismissNudge}
+                aria-label="Dismiss"
+                className="shrink-0 text-crimson-700 hover:text-crimson-400 transition-colors"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
