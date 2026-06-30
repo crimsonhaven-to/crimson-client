@@ -8,7 +8,8 @@ import {
   HeartPulse, Cpu, Clock, Gauge, Boxes, Radio, Wifi, WifiOff, ExternalLink,
   KeyRound, Plug, Eye, EyeOff,
 } from 'lucide-react';
-import { useTitle, useProfile, adminApi } from './hooks';
+import { useTitle, useProfile } from './hooks';
+import { adminApi } from './adminApi';
 
 // ---------- status vocabulary (shared by the health views) ----------
 // One palette + label per status string the backend emits, so colours stay
