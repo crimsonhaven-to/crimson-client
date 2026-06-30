@@ -44,7 +44,28 @@ env:
   SWARM_MANAGER: crimsonswarm01
 
 jobs:
+  # Quality gate — MUST pass before the image is built/deployed. ESLint over the
+  # app source (vendored submodules are excluded — they're linted in their own
+  # repos). No submodule checkout needed, so it's fast. Runs in a clean
+  # node:24-slim container on the same self-hosted runner.
+  gate:
+    runs-on: [self-hosted]
+    container: node:24-slim
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - run: npm ci
+      - name: Lint (eslint)
+        run: npm run lint
+      - name: Hand the workspace back to the host runner
+        if: always()
+        # This container job writes files as root into the shared self-hosted
+        # workspace; make them world-writable so the next (host-run) `build` job's
+        # checkout can delete them. Without this it fails with EACCES.
+        run: chmod -R a+rwX "$GITHUB_WORKSPACE" || true
+
   build:
+    needs: gate
     runs-on: [self-hosted]
     permissions:
       contents: read

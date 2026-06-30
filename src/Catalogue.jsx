@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, Filter, ChevronDown, ChevronRight, Hash, Calendar, BookOpen } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, ChevronRight, Hash, Calendar, BookOpen } from 'lucide-react';
 import { useCatalogue, useTitle } from './hooks';
 
 const CataloguePage = () => {

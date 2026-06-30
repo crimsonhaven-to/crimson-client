@@ -8,7 +8,8 @@ import {
   HeartPulse, Cpu, Clock, Gauge, Boxes, Radio, Wifi, WifiOff, ExternalLink,
   KeyRound, Plug, Eye, EyeOff,
 } from 'lucide-react';
-import { useTitle, useProfile, adminApi } from './hooks';
+import { useTitle, useProfile } from './hooks';
+import { adminApi } from './adminApi';
 
 // ---------- status vocabulary (shared by the health views) ----------
 // One palette + label per status string the backend emits, so colours stay
@@ -1460,6 +1461,7 @@ function HealthTab({ notify }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [probing, setProbing] = useState(false);
+  const [resolveStats, setResolveStats] = useState(null);
 
   const load = useCallback(async (force = false) => {
     force ? setProbing(true) : setLoading(true);
@@ -1472,6 +1474,16 @@ function HealthTab({ notify }) {
   }, [notify]);
 
   useEffect(() => { load(false); }, [load]);
+
+  // Real client-side resolve success rates (anonymous beacons). Best-effort: an
+  // empty table just means no client/extension resolves have been reported yet.
+  useEffect(() => {
+    let alive = true;
+    adminApi.sourceStats(14)
+      .then((r) => { if (alive && r?.success) setResolveStats(r.sources || []); })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, []);
 
   if (loading && !data) {
     return <div className="py-24 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Listening for the heartbeat of the network…</div>;
@@ -1526,6 +1538,33 @@ function HealthTab({ notify }) {
         </h3>
         <div className="grid gap-3">{scrape.map((s) => <SourceRow key={s.id} s={s} />)}</div>
       </section>
+
+      {resolveStats && resolveStats.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+            <Gauge className="w-4 h-4" /> Client Resolve Stats <span className="text-crimson-700 normal-case tracking-normal">(last 14 days, anonymous)</span> <div className="h-px bg-crimson-900/30 flex-grow" />
+          </h3>
+          <div className="grid gap-2">
+            {resolveStats.map((s) => {
+              const rate = s.success_rate == null ? null : Math.round(s.success_rate * 100);
+              const accent = rate == null ? 'text-crimson-700' : rate >= 70 ? 'text-green-400' : rate >= 30 ? 'text-amber-300' : 'text-crimson-500';
+              return (
+                <div key={s.source} className="flex items-center gap-4 bg-crimson-950/30 border border-crimson-900/40 rounded-2xl px-5 py-3">
+                  <span className="text-xs font-black text-white truncate flex-1 min-w-0">{s.source}</span>
+                  <div className="hidden sm:block w-40 h-1.5 bg-crimson-950 rounded-full overflow-hidden">
+                    <div className={`h-full ${rate == null ? '' : rate >= 70 ? 'bg-green-400' : rate >= 30 ? 'bg-amber-300' : 'bg-crimson-500'}`} style={{ width: `${rate ?? 0}%` }} />
+                  </div>
+                  <span className={`text-sm font-black tabular-nums w-12 text-right ${accent}`}>{rate == null ? '—' : `${rate}%`}</span>
+                  <span className="text-[10px] font-bold text-crimson-700 tabular-nums w-24 text-right">{s.ok}✓ / {s.fail}✗</span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[10px] font-medium text-crimson-700 leading-relaxed max-w-3xl">
+            These are real success rates from viewers resolving sources client-side (extension/proxy), which the canary probe above can't see. A source that drops here is failing for actual users even if its probe is green.
+          </p>
+        </section>
+      )}
 
       <p className="text-[10px] font-medium text-crimson-700 leading-relaxed max-w-3xl">
         A <span className="text-green-400 font-bold">Healthy</span> streaming source resolved real embeds for the canary, so it would play right now. <span className="text-amber-300 font-bold">Empty</span> means the site answered but surfaced nothing (markup may have shifted). <span className="text-crimson-400 font-bold">Down</span> means it errored or was blocked. <span className="text-crimson-600 font-bold">Dormant</span> sources await their env keys. Library sources report what the haven itself holds.

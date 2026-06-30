@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Key, User, LogOut, Copy, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck, Info } from 'lucide-react';
 import { useAuth, useAccount, useTitle } from './hooks';

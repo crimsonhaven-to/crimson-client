@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useMovieStreamer, useAccount, useAuth, useTitle, apiFetch } from './hooks';
 import WatchView from './WatchView';
 
@@ -9,7 +9,6 @@ import WatchView from './WatchView';
 // <WatchView> in movie mode (no season/episode UI). Anime/shows untouched.
 function MovieWatch() {
   const { tmdbId } = useParams();
-  const navigate = useNavigate();
 
   const {
     overview, streamData, streamLoading,

@@ -244,6 +244,24 @@ async function enrichMediaCtx(mediaCtx) {
 }
 
 /**
+ * Fire-and-forget an anonymous resolve beacon (per-source ok/fail + env) to the
+ * backend so the admin dashboard can show real client-side success rates. Strictly
+ * aggregate — no title/user is sent. Best-effort: any failure is swallowed and
+ * never touches playback.
+ */
+function sendResolveBeacon(results) {
+  try {
+    const events = results.map((r) => ({ source: r.source, ok: !!r.ok, env: r.env }));
+    apiFetch('/telemetry/resolve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ events }),
+      keepalive: true, // survive a navigation right after the episode resolves
+    }).catch(() => {});
+  } catch { /* never let telemetry affect playback */ }
+}
+
+/**
  * Run the local engine for `mediaCtx`, invoking `onLine(jsonString)` for each
  * resolved source — same shape `streamWatchNdjson` feeds. Resolves immediately
  * (a no-op) when disabled or when nothing is runnable client-side, so callers can
@@ -320,8 +338,15 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
     return emitted;
   }
 
+  // Collect each source's anonymous outcome (id + ok/fail + env) so we can send a
+  // single resolve beacon at the end — this is the source-success visibility the
+  // backend lost when resolving moved client-side (see telemetry_engine).
+  const results = [];
   try {
-    for await (const line of engine.streamEpisode(enriched, { signal })) {
+    for await (const line of engine.streamEpisode(enriched, {
+      signal,
+      onResult: (r) => results.push(r),
+    })) {
       if (signal?.aborted) break;
       emitted.add(line.source);
       dbg(`resolved locally: ${line.source} (${line.streamType}) ${line.url}`);
@@ -330,6 +355,9 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   } catch (err) {
     if (err?.name !== 'AbortError') console.warn('[clientSources] stream error:', err);
   }
+  // Fire-and-forget the beacon (not when aborted — a superseded episode isn't a
+  // real resolve outcome). Never lets a telemetry failure affect playback.
+  if (!signal?.aborted && results.length) sendResolveBeacon(results);
   // NB: intentionally NO engine.dispose() here. dispose() clears the companion's DNR
   // media rules (the injected voe.sx Referer/UA the gated CDN needs), but the player
   // keeps fetching segments for the WHOLE episode — long after the last source
