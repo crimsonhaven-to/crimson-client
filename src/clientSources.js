@@ -213,9 +213,18 @@ function resolveGrant(req) {
  * run; only the title-matching ones go quiet.
  */
 async function enrichMediaCtx(mediaCtx) {
-  if (mediaCtx.mediaType !== 'tv' || mediaCtx.season == null) return mediaCtx;
+  // TV needs a season (the grant is season-keyed); movies use the /movie variant.
+  // Both add title + release year + imdb id so the title/IMDb-keyed Western sources
+  // (hdrezka / lookmovie / insertunit) can match — the year + imdb come from the
+  // server-held TMDB key (C5), same reason the German synonyms do.
+  const isMovie = mediaCtx.mediaType === 'movie';
+  const isTv = mediaCtx.mediaType === 'tv' && mediaCtx.season != null;
+  if (!isMovie && !isTv) return mediaCtx;
   try {
-    const res = await apiFetch(`/scrape-meta/${mediaCtx.tmdbId}/${mediaCtx.season}`);
+    const path = isMovie
+      ? `/scrape-meta/movie/${mediaCtx.tmdbId}`
+      : `/scrape-meta/${mediaCtx.tmdbId}/${mediaCtx.season}`;
+    const res = await apiFetch(path);
     if (!res.ok) return mediaCtx;
     const m = await res.json();
     return {
@@ -226,6 +235,8 @@ async function enrichMediaCtx(mediaCtx) {
       titleNative: m.title_native ?? null,
       synonyms: m.synonyms ?? null,
       anilistId: mediaCtx.anilistId ?? m.anilist_id ?? undefined,
+      releaseYear: mediaCtx.releaseYear ?? m.release_year ?? null,
+      imdbId: mediaCtx.imdbId ?? m.imdb_id ?? null,
     };
   } catch {
     return mediaCtx;
