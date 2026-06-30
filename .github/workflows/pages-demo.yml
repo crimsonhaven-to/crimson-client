@@ -1,0 +1,80 @@
+name: Deploy demo to GitHub Pages
+
+# Publishes a SOURCELESS demo of the client to GitHub Pages at demo.crimsonhaven.to.
+#
+#   * a published Release        -> build + deploy (tracks stable, like prod).
+#   * manual (workflow_dispatch)  -> rebuild on demand.
+#
+# Deliberately CLEAN, to mirror the demo backend:
+#   * crimson-sources / crimson-extension are NOT vendored, so vite.config.js swaps in
+#     the no-op stub (src/sourcesStub.js) — the demo resolves NOTHING client-side. The
+#     demo backend has no sources either, so the demo shows the UI + account UX only,
+#     never a stream (by design — no streams = nothing to host).
+#   * VITE_API_BASE_URL is baked to the demo backend at build time.
+#
+# Runs on GitHub-hosted runners (no swarm / self-hosted runner needed). Requires the
+# repo to be PUBLIC (or the org on a plan that allows private-repo Pages) and Pages
+# set to the "GitHub Actions" source in repo Settings. The custom domain is carried by
+# the CNAME file written below (demo.crimsonhaven.to).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+# One Pages deploy at a time; a newer run supersedes an in-flight one.
+concurrency:
+  group: pages-demo
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        # No submodule / vendor fetch on purpose — a sourceless demo build.
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build (sourceless, pointed at the demo backend)
+        env:
+          # Baked in by Vite at build time (see hooks.js API_BASE_URL).
+          VITE_API_BASE_URL: https://demo-backend.crimsonhaven.to
+        run: npm run build
+
+      - name: SPA fallback + custom domain
+        run: |
+          # GitHub Pages has no SPA rewrite; serving index.html as 404.html makes
+          # deep links (/watch/...) resolve to the app instead of a 404.
+          cp dist/index.html dist/404.html
+          # Custom domain — GitHub reads this from the published artifact.
+          echo 'demo.crimsonhaven.to' > dist/CNAME
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -4,7 +4,7 @@ import {
   Mail, Lock, KeyRound, LogIn, UserPlus, RefreshCw, AlertCircle,
   CheckCircle2, MailCheck, ArrowLeft, Ticket, Eye, EyeOff, Key, Copy,
 } from 'lucide-react';
-import { useAuth, useTitle } from './hooks';
+import { useAuth, useTitle, usePublicConfig } from './hooks';
 
 // Shared field shell — keeps every input on-theme without repeating the long
 // Tailwind class string at each call site.
@@ -36,6 +36,9 @@ const LoginWall = () => {
   } = useAuth();
   const navigate = useNavigate();
   useTitle('Enter the Haven');
+  // On a demo instance signup is open — the backend bypasses the invite gate, so the
+  // login page drops the invite field (and its required/disabled gating) entirely.
+  const { demo_mode: demoMode } = usePublicConfig();
 
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
@@ -78,8 +81,14 @@ const LoginWall = () => {
     }
     const res = await emailRegister(email.trim(), password, invite.trim());
     if (res.ok) {
-      setAwaitingVerify(true);
-      setNotice(res.message || 'Account created. Check your email to verify.');
+      // Demo auto-verifies + returns a session: land straight in the app instead of
+      // the "check your inbox" interstitial.
+      if (res.session || res.requiresVerification === false) {
+        navigate('/');
+      } else {
+        setAwaitingVerify(true);
+        setNotice(res.message || 'Account created. Check your email to verify.');
+      }
     }
   };
 
@@ -197,6 +206,12 @@ const LoginWall = () => {
         ))}
       </div>
 
+      {demoMode && (
+        <div className="mb-6">
+          <Banner kind="ok" text="Demo instance — open signup, no streaming sources, and all accounts reset nightly." />
+        </div>
+      )}
+
       {/* Mnemonic tab: P-Stream-style key-based identity. Sign-in needs no invite;
           creating a new identity is invite-gated, like email registration. */}
       {isMnemonic ? (
@@ -238,14 +253,16 @@ const LoginWall = () => {
               </p>
             </div>
 
-            <Field icon={Ticket}>
-              <input type="text" required placeholder="Invite code" value={invite}
-                onChange={(e) => setInvite(e.target.value)} className={inputCls} />
-            </Field>
+            {!demoMode && (
+              <Field icon={Ticket}>
+                <input type="text" required placeholder="Invite code" value={invite}
+                  onChange={(e) => setInvite(e.target.value)} className={inputCls} />
+              </Field>
+            )}
 
             {error && <Banner kind="err" text={error} />}
 
-            <button type="submit" disabled={busy || !genMnemonic.trim() || !invite.trim()} className={primaryBtn}>
+            <button type="submit" disabled={busy || !genMnemonic.trim() || (!demoMode && !invite.trim())} className={primaryBtn}>
               {busy ? <RefreshCw className="w-5 h-5 animate-spin" /> : <>Create Account <UserPlus className="w-4 h-4" /></>}
             </button>
 
@@ -278,10 +295,12 @@ const LoginWall = () => {
               <input type={showPw ? 'text' : 'password'} required placeholder="Confirm password" value={confirm}
                 onChange={(e) => setConfirm(e.target.value)} className={inputCls} autoComplete="new-password" minLength={8} />
             </Field>
-            <Field icon={Ticket}>
-              <input type="text" required placeholder="Invite code" value={invite}
-                onChange={(e) => setInvite(e.target.value)} className={inputCls} />
-            </Field>
+            {!demoMode && (
+              <Field icon={Ticket}>
+                <input type="text" required placeholder="Invite code" value={invite}
+                  onChange={(e) => setInvite(e.target.value)} className={inputCls} />
+              </Field>
+            )}
           </>
         )}
 
@@ -289,7 +308,7 @@ const LoginWall = () => {
         {notice && <Banner kind="ok" text={notice} />}
 
         <button type="submit"
-          disabled={busy || !email.trim() || !password || (isRegister && (!confirm || !invite.trim()))}
+          disabled={busy || !email.trim() || !password || (isRegister && (!confirm || (!demoMode && !invite.trim())))}
           className={primaryBtn}>
           {busy ? <RefreshCw className="w-5 h-5 animate-spin" /> : (
             isRegister ? <>Create Account <UserPlus className="w-4 h-4" /></> : <>Sign In <LogIn className="w-4 h-4" /></>

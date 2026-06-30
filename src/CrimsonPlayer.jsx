@@ -6,7 +6,7 @@ import {
   Captions, Download, Loader2, SkipForward, Layers, ChevronDown, MonitorPlay, Check,
 } from 'lucide-react';
 import { downloadStream } from './streamDownload';
-import { groupStreams, streamVariantLabel } from './hooks';
+import { groupStreams, streamVariantLabel, API_BASE_URL, getSessionToken } from './hooks';
 
 // How far the skip-back / skip-forward buttons (and ←/→ keys) jump, in seconds.
 const SKIP_SECONDS = 10;
@@ -99,6 +99,21 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
   const isHls = type === 'hls' || (typeof src === 'string' && src.toLowerCase().includes('.m3u8'));
 
+  // The on-the-fly transcode (/local_hls) is the one HLS surface behind the login
+  // wall, so its hls.js requests (manifest + segments) need the session bearer. We
+  // attach it ONLY to backend-origin /local_hls requests: never to a third-party CDN
+  // (would leak the token) and never to the PUBLIC backend proxies (an extra header
+  // turns each segment into a CORS-preflighted request — a needless 2x round-trip).
+  const attachBackendAuth = (xhr, url) => {
+    try {
+      const u = new URL(url, window.location.href);
+      const backend = new URL(API_BASE_URL, window.location.href).origin;
+      if (u.origin !== backend || !u.pathname.startsWith('/local_hls/')) return;
+      const token = getSessionToken();
+      if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    } catch { /* malformed URL — skip auth, request proceeds unauthenticated */ }
+  };
+
   // ---- Source / hls.js wiring -------------------------------------------
   useEffect(() => {
     const video = videoRef.current;
@@ -112,7 +127,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
     let hls;
     if (isHls && Hls.isSupported()) {
-      hls = new Hls({ maxBufferLength: 30, enableWorker: false });
+      hls = new Hls({ maxBufferLength: 30, enableWorker: false, xhrSetup: attachBackendAuth });
       hlsRef.current = hls;
       hls.loadSource(src);
       hls.attachMedia(video);
