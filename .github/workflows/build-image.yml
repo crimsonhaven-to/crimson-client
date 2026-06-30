@@ -11,6 +11,12 @@ name: Build and Deploy
 #                            that immutable :<tag> to the swarm (zero-downtime,
 #                            health-gated, auto-rollback).
 #
+# Submodules are baked in at the freshest branch tip per channel (build-time
+# only; the pinned gitlink is advanced in the runner, never committed back):
+#   * push to `dev`       -> crimson-sources@dev, crimson-extension@main.
+#   * a published Release -> both submodules @main.
+# crimson-extension has no `dev` branch, so it always follows `main`.
+#
 # IMPORTANT: VITE_API_BASE_URL is baked in at BUILD time (Vite), so dev and
 # release builds point at different backends. The image is PRIVATE; swarm nodes
 # pull it with the durable read:packages login already configured on the
@@ -57,6 +63,34 @@ jobs:
           # reach it — supply a PAT (or a deploy key) with read access to it.
           submodules: recursive
           token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+
+      - name: Advance submodules to the latest branch tip
+        run: |
+          # Build from the FRESHEST submodule code per channel rather than the
+          # pinned gitlink. This is build-time only: we advance the checkout in
+          # the runner but never commit the pointer back, so there's no
+          # CI-triggers-CI loop and Release tags stay immutable.
+          #
+          #   * push to `dev`   -> crimson-sources@dev, crimson-extension@main
+          #   * a Release       -> both submodules @main
+          #
+          # crimson-extension has no `dev` branch, so it tracks `main` always.
+          if [ "${{ github.event_name }}" = "release" ]; then
+            SOURCES_BRANCH=main
+          else
+            SOURCES_BRANCH=dev
+          fi
+
+          advance() {  # <submodule path> <remote branch>
+            echo "::group::Advancing $1 -> origin/$2"
+            git -C "$1" fetch --depth=1 origin "$2"
+            git -C "$1" checkout --detach FETCH_HEAD
+            echo "$1 now at $(git -C "$1" rev-parse HEAD)"
+            echo "::endgroup::"
+          }
+
+          advance vendor/crimson-sources   "${SOURCES_BRANCH}"
+          advance vendor/crimson-extension main
 
       - name: Compute image tags + API URL
         id: meta
