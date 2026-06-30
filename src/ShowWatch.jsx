@@ -17,7 +17,7 @@ function ShowWatch() {
   const {
     overview, metadata,
     streamData, streamLoading, unaired,
-    activeStreamIdx, selectStream,
+    activeStreamIdx, selectStream, reloadStreams,
   } = useShowStreamer(tmdbId, currentSeason, currentEpisode);
 
   const { updateProgress } = useAccount();
@@ -106,6 +106,7 @@ function ShowWatch() {
       unaired={unaired}
       activeStreamIdx={activeStreamIdx}
       onSelectStream={selectStream}
+      onReload={reloadStreams}
       poster={poster}
       playerStartAt={playerStartAt}
       onPlayerProgress={handlePlayerProgress}

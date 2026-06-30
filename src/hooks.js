@@ -1,9 +1,14 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { streamLocalSources, clientSourcesEnabled } from './clientSources';
+// Pure stream ranking/grouping moved to streamUtils.js. streamRank is used here by
+// the streamer hooks; the grouping/label helpers are re-exported for the existing
+// importers (WatchView, CrimsonPlayer) that still import them from './hooks'.
+import { streamRank } from './streamUtils';
+export { groupStreams, streamVariantLabel, streamProviderLabel, streamPriority } from './streamUtils';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '10.5.0';
+export const CLIENT_VERSION = '10.5.1';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -48,89 +53,6 @@ function memGet(key) {
 
 function memSet(key, data, ttlMs = MEM_TTL_MS) {
   _memCache.set(key, { data, expiry: Date.now() + ttlMs });
-}
-
-// --- Stream source preference ----------------------------------------------
-// Sources resolve in a race and arrive in arbitrary order. This ranks them so
-// the most reliable/performant one is auto-selected as the active source the
-// moment it lands (lower rank = preferred; unranked sources sit at 100). The
-// preferred order is: server-side Cache (bytes off our own NAS — fastest and most
-// reliable) > Voe > Jellyfin; everything else stays unranked. The list itself
-// stays in arrival order; only which source plays by default is affected, and the
-// user can still pick any source manually from the sidebar.
-const STREAM_PRIORITY = [
-  { match: 'voe', rank: 1 },
-  { match: 'jellyfin', rank: 2 },
-];
-
-function streamPriority(stream) {
-  // Cache sources carry a dynamic, admin-set label (the NAS target's name), so
-  // they can't be matched on the source string — detect them by their proxy URL.
-  if ((stream?.url || '').includes('/cache_proxy/')) return 0;
-  const s = (stream?.source || '').toLowerCase();
-  for (const { match, rank } of STREAM_PRIORITY) {
-    if (s.includes(match)) return rank;
-  }
-  return 100;
-}
-
-// --- Source grouping (Scraped Targets / player cog) -------------------------
-// Several sources fan a single title into many tiles that only differ by a server
-// or quality: ScreenScape ("ScreenScape · MovieBox (1080p)", "… · ShowBox (720p)",
-// ~15 servers × qualities), Cinema.bz ("Cinema.bz (tcloud)" ×3), aniworld/s.to
-// (the same VOE host in several dub/sub languages). Left flat that's a wall of
-// buttons. These helpers collapse a provider's variants into one expandable card.
-//
-// The provider name is whatever precedes the first " · " (server split) or " ("
-// (qualifier) in the source label, so the parsing is shared by the sidebar and the
-// in-player cog and stays consistent.
-
-export function streamProviderLabel(stream) {
-  const s = stream?.source || '';
-  const head = s.split(/\s+·\s+| \(/)[0].trim();
-  return head || s;
-}
-
-// The variant's display name *within* its group: the part of the label after the
-// provider name ("ScreenScape · MovieBox (1080p)" -> "MovieBox (1080p)";
-// "Cinema.bz (tcloud)" -> "tcloud"). Falls back to the provider when there's
-// nothing left (a lone, unqualified source).
-export function streamVariantLabel(stream) {
-  const s = stream?.source || '';
-  const provider = streamProviderLabel(stream);
-  if (!s.startsWith(provider)) return s;
-  let rest = s.slice(provider.length).trim();
-  rest = rest.replace(/^·\s*/, '').trim();
-  if (rest.startsWith('(') && rest.endsWith(')')) rest = rest.slice(1, -1).trim();
-  return rest || provider;
-}
-
-// Group resolved streams by provider, preserving first-arrival order (groups are
-// anchored at their first member, so the auto-selected source's group stays near
-// the top). Each group is { key, label, items: [{ stream, idx }], stacked }.
-// `idx` is the stream's index in the original array, so selection still maps back
-// to activeStreamIdx / onSelectStream. Cache sources are NEVER grouped — each NAS
-// target is its own standalone, never-stacked card (mirrors streamPriority's
-// /cache_proxy/ detection); same for any provider that yields a single tile.
-export function groupStreams(streams = []) {
-  const groups = [];
-  const byKey = new Map();
-  streams.forEach((stream, idx) => {
-    const entry = { stream, idx };
-    const isCache = (stream?.url || '').includes('/cache_proxy/');
-    const key = isCache ? `__solo_${idx}` : streamProviderLabel(stream);
-    let g = byKey.get(key);
-    if (!g) {
-      g = { key, label: isCache ? (stream?.source || 'Cache') : key, items: [], stacked: false };
-      byKey.set(key, g);
-      groups.push(g);
-    }
-    g.items.push(entry);
-  });
-  // A group only "stacks" (gets the collapsible card chrome) with 2+ members; the
-  // solo cache keys and one-off providers render as a single flat button.
-  for (const g of groups) g.stacked = g.items.length > 1;
-  return groups;
 }
 
 // --- User language / dub-sub preference -------------------------------------
@@ -370,26 +292,6 @@ export function useLiteBackground() {
   }, []);
   return lite;
 }
-
-// How badly a stream's language tag misses the preference (0 = perfect match,
-// higher = worse). An unset dimension never constrains; with no preference at all
-// every stream scores 0, so source priority alone decides.
-function languageMismatch(stream, prefs) {
-  if (!prefs || (!prefs.language && !prefs.type)) return 0;
-  const tag = (stream?.language || '').toLowerCase();
-  let miss = 0;
-  if (prefs.language && !tag.includes(prefs.language.toLowerCase())) miss += 1;
-  if (prefs.type && !tag.includes(prefs.type.toLowerCase())) miss += 1;
-  return miss;
-}
-
-// Combined auto-select rank used to pick the default source. Language preference
-// is the PRIMARY key (×1000 dwarfs any source rank, which tops out at 100); the
-// global source priority is the tiebreaker within a language tier. Lower wins.
-function streamRank(stream, prefs) {
-  return languageMismatch(stream, prefs) * 1000 + streamPriority(stream);
-}
-
 
 // --- Reactive session token -------------------------------------------------
 // The session token lives in localStorage, which isn't reactive. useAuth and
@@ -1143,6 +1045,11 @@ export function useAnimeStreamer(externalProps = {}) {
   // the watch UI shows a "not yet aired" notice instead of resolving zero sources.
   const [unaired, setUnaired] = useState(null);
 
+  // Bumping this re-runs the stream-resolution effect (a manual "rescan sources"),
+  // re-resolving the current episode from scratch — for when every source is dead.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
+
   // ---------- Helper: fetch search suggestions ----------
   const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.trim().length < 3) return;
@@ -1489,7 +1396,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode]);
+  }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode, reloadNonce]);
 
   return {
     // search & suggestions
@@ -1509,7 +1416,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
     // actions
     handleSelectSuggestion,
-    initializeFromIds
+    initializeFromIds,
+    reloadStreams,
   };
 }
 
@@ -1927,6 +1835,10 @@ export function useShowStreamer(tmdbId, season, episode) {
     setActiveStreamIdx(idx);
   }, []);
 
+  // Manual "rescan sources" — bump to re-run the resolution effect from scratch.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
+
   // Season list + title (reuses the overview payload / its cache).
   useEffect(() => {
     if (!tmdbId) return;
@@ -2064,13 +1976,14 @@ export function useShowStreamer(tmdbId, season, episode) {
     })();
 
     return () => controller.abort();
-  }, [tmdbId, season, episode]);
+  }, [tmdbId, season, episode, reloadNonce]);
 
   return {
     overview, metadata, metaLoading,
     streamData, streamLoading, unaired,
     activeStreamIdx, selectStream,
     apiError,
+    reloadStreams,
   };
 }
 
@@ -2156,6 +2069,10 @@ export function useMovieStreamer(tmdbId) {
     userPickedRef.current = true;
     setActiveStreamIdx(idx);
   }, []);
+
+  // Manual "rescan sources" — bump to re-run the resolution effect from scratch.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
 
   // Movie metadata (title/poster) — reuses the overview payload / its cache.
   useEffect(() => {
@@ -2263,9 +2180,9 @@ export function useMovieStreamer(tmdbId) {
     })();
 
     return () => controller.abort();
-  }, [tmdbId]);
+  }, [tmdbId, reloadNonce]);
 
-  return { overview, streamData, streamLoading, activeStreamIdx, selectStream, apiError };
+  return { overview, streamData, streamLoading, activeStreamIdx, selectStream, apiError, reloadStreams };
 }
 
 export function useSupporters() {
