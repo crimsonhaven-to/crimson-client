@@ -140,7 +140,7 @@ This project follows a strict **Atomic Design Manifest**:
 ---
 
 ## ⚖️ The Queen's Disclaimer
-*The Crimson Veil does not host, store, or upload any file assets locally. All links are scraped dynamically from external transport nodes. Any legal disputes should be addressed directly with the source providers. :3*
+*The Crimson Veil is a neutral viewing interface — a performance-optimized face for the Crimson Haven framework. It does **not** host, store, embed, or ship any sources, and it ships with **no** streaming providers of its own; we do **not** condone piracy. Any sources a self-hoster chooses to wire in live in their **own** private repository and resolve in the viewer's own browser — you, the mortal, are responsible for ensuring they are lawful in your realm. :3*
 
 ---
 
