@@ -12,7 +12,7 @@ function MovieWatch() {
 
   const {
     overview, streamData, streamLoading,
-    activeStreamIdx, selectStream,
+    activeStreamIdx, selectStream, reloadStreams,
   } = useMovieStreamer(tmdbId);
 
   const { updateProgress } = useAccount();
@@ -92,6 +92,7 @@ function MovieWatch() {
       streamLoading={streamLoading}
       activeStreamIdx={activeStreamIdx}
       onSelectStream={selectStream}
+      onReload={reloadStreams}
       poster={poster}
       playerStartAt={playerStartAt}
       onPlayerProgress={handlePlayerProgress}

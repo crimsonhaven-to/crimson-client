@@ -1143,6 +1143,11 @@ export function useAnimeStreamer(externalProps = {}) {
   // the watch UI shows a "not yet aired" notice instead of resolving zero sources.
   const [unaired, setUnaired] = useState(null);
 
+  // Bumping this re-runs the stream-resolution effect (a manual "rescan sources"),
+  // re-resolving the current episode from scratch — for when every source is dead.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
+
   // ---------- Helper: fetch search suggestions ----------
   const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.trim().length < 3) return;
@@ -1489,7 +1494,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
     return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode]);
+  }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode, reloadNonce]);
 
   return {
     // search & suggestions
@@ -1509,7 +1514,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
     // actions
     handleSelectSuggestion,
-    initializeFromIds
+    initializeFromIds,
+    reloadStreams,
   };
 }
 
@@ -1927,6 +1933,10 @@ export function useShowStreamer(tmdbId, season, episode) {
     setActiveStreamIdx(idx);
   }, []);
 
+  // Manual "rescan sources" — bump to re-run the resolution effect from scratch.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
+
   // Season list + title (reuses the overview payload / its cache).
   useEffect(() => {
     if (!tmdbId) return;
@@ -2064,13 +2074,14 @@ export function useShowStreamer(tmdbId, season, episode) {
     })();
 
     return () => controller.abort();
-  }, [tmdbId, season, episode]);
+  }, [tmdbId, season, episode, reloadNonce]);
 
   return {
     overview, metadata, metaLoading,
     streamData, streamLoading, unaired,
     activeStreamIdx, selectStream,
     apiError,
+    reloadStreams,
   };
 }
 
@@ -2156,6 +2167,10 @@ export function useMovieStreamer(tmdbId) {
     userPickedRef.current = true;
     setActiveStreamIdx(idx);
   }, []);
+
+  // Manual "rescan sources" — bump to re-run the resolution effect from scratch.
+  const [reloadNonce, setReloadNonce] = useState(0);
+  const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
 
   // Movie metadata (title/poster) — reuses the overview payload / its cache.
   useEffect(() => {
@@ -2263,9 +2278,9 @@ export function useMovieStreamer(tmdbId) {
     })();
 
     return () => controller.abort();
-  }, [tmdbId]);
+  }, [tmdbId, reloadNonce]);
 
-  return { overview, streamData, streamLoading, activeStreamIdx, selectStream, apiError };
+  return { overview, streamData, streamLoading, activeStreamIdx, selectStream, apiError, reloadStreams };
 }
 
 export function useSupporters() {

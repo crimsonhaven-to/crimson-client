@@ -522,7 +522,7 @@ function WatchPage() {
     currentSeason, setCurrentSeason,
     currentEpisode, setCurrentEpisode,
     activeStreamIdx, setActiveStreamIdx,
-    initializeFromIds
+    initializeFromIds, reloadStreams
   } = useAnimeStreamer({ initialAnilistId: anilistId, initialSeason: parseInt(season), initialEpisode: parseInt(episode) });
 
   const { updateProgress, fetchResumePosition } = useAccount();
@@ -605,6 +605,7 @@ function WatchPage() {
       unaired={unaired}
       activeStreamIdx={activeStreamIdx}
       onSelectStream={setActiveStreamIdx}
+      onReload={reloadStreams}
       poster={animeMetadata?.poster}
       playerStartAt={playerStartAt}
       onPlayerProgress={handlePlayerProgress}

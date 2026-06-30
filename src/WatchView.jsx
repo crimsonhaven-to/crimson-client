@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers, Puzzle, X } from 'lucide-react';
+import { Info, AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers, Puzzle, X, RefreshCw } from 'lucide-react';
 import { API_BASE_URL, apiFetch, fetchSubtitles, fetchSkipTimes, usePlaybackPrefs, groupStreams, streamVariantLabel } from './hooks';
 import { setWatchActivity, clearWatchActivity } from './discordPresence';
 import { stripHtml } from './utils';
@@ -148,7 +148,7 @@ const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle })
 // wrappers. Extracted from the original WatchPage so anime renders unchanged.
 const WatchView = ({
   // playback / sources
-  streams = [], streamLoading, activeStreamIdx, onSelectStream,
+  streams = [], streamLoading, activeStreamIdx, onSelectStream, onReload,
   unaired,
   poster, playerStartAt, onPlayerProgress,
   // header / info
@@ -579,12 +579,24 @@ const WatchView = ({
             </div>
             Scraped Targets
             {!unaired && (
-              <span className="ml-auto text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 normal-nums">
-                {streamLoading
-                  ? `Scanning${streams.length ? ` · ${streams.length}` : '…'}`
-                  : streams.length
-                    ? `${streams.length} found`
-                    : 'none'}
+              <span className="ml-auto flex items-center gap-2">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 normal-nums">
+                  {streamLoading
+                    ? `Scanning${streams.length ? ` · ${streams.length}` : '…'}`
+                    : streams.length
+                      ? `${streams.length} found`
+                      : 'none'}
+                </span>
+                {onReload && !streamLoading && (
+                  <button
+                    onClick={onReload}
+                    title="Rescan — re-resolve sources from scratch"
+                    aria-label="Rescan sources"
+                    className="text-crimson-700 hover:text-crimson-400 transition-colors"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </span>
             )}
           </h3>
@@ -629,8 +641,16 @@ const WatchView = ({
                 );
               })
             ) : (
-              <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40">
+              <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-800 italic">Zero transport nodes active</p>
+                {onReload && (
+                  <button
+                    onClick={onReload}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_10px_25px_rgba(255,0,60,0.2)]"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" /> Rescan sources
+                  </button>
+                )}
               </div>
             )}
           </div>
