@@ -99,9 +99,37 @@ and progress calls behave exactly as before.
 
 ---
 
+## 🩸 Client-Side Resolution (the New System)
+
+The client no longer just *consumes* the backend's `/watch` stream — it can **scrape
+and resolve sources itself**, in the viewer's own browser, so video bytes flow
+`CDN → viewer` and the backend leaves the byte path. It runs **alongside** the backend
+stream and feeds the same consumer, so a locally-resolved source is indistinguishable
+from a backend one and nothing regresses.
+
+- **`vendor/crimson-sources`** — the TS scrape/resolve engine, vendored as a **git
+  submodule** and bundled by Vite (aliased, transpiled inline — no separate build).
+- **`src/clientSources.js`** — the bridge: runs the engine, enriches the `MediaCtx`
+  from the backend `/scrape-meta` (+ `/scrape-meta/movie`) grant (title + year + imdb),
+  and wires the **E2** path (`signProxyUrl` → backend `/sign`) and the **`/resolve`**
+  grant for secret-bound sources. `src/hooks.js` runs it inside the anime / show /
+  movie watch hooks, deduping local vs backend by `(source, language)` (local wins).
+- **The Companion (E3)** — the [crimson-extension](../crimson-extension) is shipped
+  *from the client itself*: vendored at **`vendor/crimson-extension`**, zipped by the
+  Dockerfile `extpack` stage, and offered on the themed **`/extension`** download page
+  (`src/DownloadExtension.jsx`) with a home-page nudge banner. With it on, the engine
+  resolves gated sources (VOE, HDRezka, …) straight from the viewer's residential IP.
+- **CSP** `connect-src 'self' https:` (in `security-headers.conf`) — required so the
+  in-app player may load rotating hoster CDNs directly; `script-src 'self'` is untouched.
+
+All of this is a pure upgrade: with no companion **and** no proxy configured, the
+client falls back to the backend `/watch` line exactly as before.
+
 ## 🦇 Architectural Integrity
 This project follows a strict **Atomic Design Manifest**:
 - **`src/hooks.js`:** The cerebral cortex; handles API communications, stream scraping logic, and cryptographic state.
+- **`src/clientSources.js`:** The summoning circle; drives the local `crimson-sources` engine + the `/scrape-meta`, `/sign` and `/resolve` grants.
+- **`src/DownloadExtension.jsx`:** The Companion altar; the `/extension` download + side-load guide page.
 - **`src/CrimsonPlayer.jsx`:** The Heart; a custom HLS/MP4 engine with vampiric controls and CSP-compliant demuxing.
 - **`src/Account.jsx`:** The Sanctuary; manages cryptographic links and profile integrity via mnemonic-based authentication.
 - **`src/Catalogue.jsx`:** The Royal Archives; a dynamic, filterable list of all indexed manifestations.
