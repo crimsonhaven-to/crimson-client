@@ -31,7 +31,7 @@ const AUTO_NEXT_KEY = 'crimson:autoNext';
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -814,6 +814,15 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                             );
                           })}
                         </div>
+                        {onReportBroken && activeSourceIdx >= 0 && (
+                          <button
+                            onClick={() => { onReportBroken(activeSourceIdx); setShowSettings(false); }}
+                            title="This source won't play — report it and switch to the next"
+                            className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-500/20 transition-all"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5" /> Report broken · try next
+                          </button>
+                        )}
                       </div>
                     )}
 

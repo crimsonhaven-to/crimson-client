@@ -13,6 +13,33 @@ const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
 // from being cached over the one the viewer settled on (quality / language).
 const CACHE_CONFIRM_SECONDS = 10;
 
+// --- sticky per-show source preference -------------------------------------
+// Remember the source a viewer chose for a show (by its "Provider · variant"
+// label) so they don't re-pick it every episode. Persisted across devices? No —
+// purely local, best-effort, and bounded so it can't grow unbounded.
+const SRC_PREF_KEY = 'crimson:sourcePref';
+function readSourcePrefs() {
+  try { return JSON.parse(localStorage.getItem(SRC_PREF_KEY) || '{}') || {}; }
+  catch { return {}; }
+}
+function getPreferredSource(showKey) {
+  return showKey ? (readSourcePrefs()[showKey] || null) : null;
+}
+function setPreferredSource(showKey, label) {
+  if (!showKey || !label) return;
+  try {
+    const m = readSourcePrefs();
+    m[showKey] = label;
+    const keys = Object.keys(m);
+    if (keys.length > 200) delete m[keys[0]]; // bound the map
+    localStorage.setItem(SRC_PREF_KEY, JSON.stringify(m));
+  } catch { /* quota / SSR — ignore */ }
+}
+// Grace window (ms) after a show's sources first appear during which we may
+// auto-switch to the remembered source. Past it we assume the viewer is already
+// watching and never yank the stream out from under them.
+const STICKY_GRACE_MS = 6000;
+
 // Format a TMDB air date ('YYYY-MM-DD') as a readable day, e.g. "Jul 1, 2026".
 // Falls back to the raw string if it can't be parsed.
 const formatAirDate = (iso) => {
@@ -162,6 +189,59 @@ const WatchView = ({
     || 'No summary asset provided.';
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
+
+  // --- sticky source + report-broken ---------------------------------------
+  const showKeyForSource = tmdbId ? `${isMovie ? 'movie' : 'tv'}:${tmdbId}` : null;
+  // Per-episode guards so the sticky auto-switch fires at most once and only
+  // inside the grace window (sources race in progressively).
+  const stickyAppliedRef = useRef(false);
+  const streamsAppearedAtRef = useRef(0);
+  useEffect(() => {
+    stickyAppliedRef.current = false;
+    streamsAppearedAtRef.current = 0;
+  }, [tmdbId, currentSeason, currentEpisode, isMovie]);
+
+  useEffect(() => {
+    if (stickyAppliedRef.current || streamLoading || !streams.length || !showKeyForSource) return;
+    if (!streamsAppearedAtRef.current) streamsAppearedAtRef.current = Date.now();
+    if (Date.now() - streamsAppearedAtRef.current > STICKY_GRACE_MS) {
+      stickyAppliedRef.current = true; // viewer's likely watching now — leave it alone
+      return;
+    }
+    const pref = getPreferredSource(showKeyForSource);
+    if (!pref) return;
+    const idx = streams.findIndex((s) => s.source === pref);
+    if (idx >= 0) {
+      if (idx !== activeStreamIdx) onSelectStream(idx);
+      stickyAppliedRef.current = true;
+    }
+  }, [streams, streamLoading, showKeyForSource, activeStreamIdx, onSelectStream]);
+
+  // Wrap selection so a manual pick is remembered for this show AND stops the
+  // sticky auto-switch (the viewer has committed to this source).
+  const handleSelectStream = useCallback((idx) => {
+    const s = streams[idx];
+    if (s?.source) setPreferredSource(showKeyForSource, s.source);
+    stickyAppliedRef.current = true;
+    onSelectStream?.(idx);
+  }, [streams, showKeyForSource, onSelectStream]);
+
+  // Report a source as broken: anonymously beacon the failure (feeds the admin
+  // Client Resolve Stats) and fail over to the next source if there is one.
+  const handleReportBroken = useCallback((idx) => {
+    const s = streams[idx];
+    if (s?.source) {
+      try {
+        apiFetch('/telemetry/resolve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ events: [{ source: s.source, ok: false, env: 'report' }] }),
+          keepalive: true,
+        }).catch(() => {});
+      } catch { /* never let a report affect playback */ }
+    }
+    if (streams.length > 1) handleSelectStream((idx + 1) % streams.length);
+  }, [streams, handleSelectStream]);
 
   // Provider-grouped view of the sources for the "Scraped Targets" sidebar (and
   // the in-player cog). `openGroups` holds explicit expand/collapse choices; a
@@ -341,7 +421,8 @@ const WatchView = ({
                   skipTimes={skipTimes}
                   sources={streams}
                   activeSourceIdx={activeStreamIdx}
-                  onSelectSource={onSelectStream}
+                  onSelectSource={handleSelectStream}
+                  onReportBroken={handleReportBroken}
                 />
               </Suspense>
             )
@@ -495,7 +576,7 @@ const WatchView = ({
                       stream={stream}
                       label={stream.source}
                       active={activeStreamIdx === idx}
-                      onClick={() => onSelectStream(idx)}
+                      onClick={() => handleSelectStream(idx)}
                     />
                   );
                 }
@@ -506,7 +587,7 @@ const WatchView = ({
                     key={group.key}
                     group={group}
                     activeStreamIdx={activeStreamIdx}
-                    onSelectStream={onSelectStream}
+                    onSelectStream={handleSelectStream}
                     open={open}
                     onToggle={() => setOpenGroups((m) => ({ ...m, [group.key]: !open }))}
                   />
