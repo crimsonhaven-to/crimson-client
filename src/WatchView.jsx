@@ -190,6 +190,11 @@ const WatchView = ({
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
 
+  // TMDB id of the title — the key several things below hang off of (sticky source
+  // pref, OpenSubtitles fetch, cache scoping). Declared up here so the sticky-source
+  // block can use it without tripping a temporal-dead-zone ReferenceError.
+  const tmdbId = metadata?.tmdb_id;
+
   // --- sticky source + report-broken ---------------------------------------
   const showKeyForSource = tmdbId ? `${isMovie ? 'movie' : 'tv'}:${tmdbId}` : null;
   // Per-episode guards so the sticky auto-switch fires at most once and only
@@ -284,7 +289,6 @@ const WatchView = ({
   const [prefs] = usePlaybackPrefs();
   const subLangs = prefs.subtitleLanguages || [];
   const subLangKey = subLangs.join(',');
-  const tmdbId = metadata?.tmdb_id;
   const tmdbSeason = metadata?.current_season ?? currentSeason;
   const [openSubs, setOpenSubs] = useState([]);
 
