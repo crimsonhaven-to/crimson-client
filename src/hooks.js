@@ -557,7 +557,15 @@ export function useAuth() {
         setError(err);
         return { ok: false, error: err };
       }
-      return { ok: true, message: data.message, requiresVerification: data.requires_verification };
+      // Demo instances auto-verify and return a session straight away — store it so
+      // the user is signed in without the email round-trip.
+      if (data.session_token) setAuthStorage(data.session_token, null);
+      return {
+        ok: true,
+        message: data.message,
+        requiresVerification: data.requires_verification,
+        session: !!data.session_token,
+      };
     } catch (e) {
       setError(e.message);
       return { ok: false, error: e.message };

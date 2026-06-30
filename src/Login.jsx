@@ -81,8 +81,14 @@ const LoginWall = () => {
     }
     const res = await emailRegister(email.trim(), password, invite.trim());
     if (res.ok) {
-      setAwaitingVerify(true);
-      setNotice(res.message || 'Account created. Check your email to verify.');
+      // Demo auto-verifies + returns a session: land straight in the app instead of
+      // the "check your inbox" interstitial.
+      if (res.session || res.requiresVerification === false) {
+        navigate('/');
+      } else {
+        setAwaitingVerify(true);
+        setNotice(res.message || 'Account created. Check your email to verify.');
+      }
     }
   };
 
