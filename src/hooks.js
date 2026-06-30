@@ -2462,6 +2462,9 @@ export const adminApi = {
   system: () => apiFetch('/admin/system').then(_json),
   // Per-source health probe. force=true bypasses the backend's short result cache.
   sourceHealth: (force = false) => apiFetch(`/admin/source-health${force ? '?force=true' : ''}`).then(_json),
+  // Real per-source resolve success rates from anonymous client beacons (the
+  // client+extension path source_health can't see). days = aggregation window.
+  sourceStats: (days = 14) => apiFetch(`/admin/source-stats?days=${days}`).then(_json),
   listUsers: (params) => apiFetch(`/admin/users?${_qs(params)}`).then(_json),
   updateUser: (id, body) =>
     apiFetch(`/admin/users/${id}`, {
