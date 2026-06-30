@@ -8,7 +8,7 @@ export { groupStreams, streamVariantLabel, streamProviderLabel, streamPriority }
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '11.0.0';
+export const CLIENT_VERSION = '11.1.0';
 
 // Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
 // just for this one call — the crypto libs already hand back plain Uint8Arrays.
@@ -309,6 +309,38 @@ function setAuthStorage(sessionToken, publicKey) {
   if (publicKey) localStorage.setItem(PUBKEY_KEY, publicKey);
   else localStorage.removeItem(PUBKEY_KEY);
   window.dispatchEvent(new Event('crimson-auth'));
+}
+
+// Plain (non-hook) read of the current session token, for the few places that
+// can't use a React hook — notably hls.js's xhrSetup, which must attach the bearer
+// to login-walled media requests (the on-the-fly transcode at /local_hls) that a
+// <video>/hls.js request can't otherwise authenticate.
+export function getSessionToken() {
+  try { return localStorage.getItem(SESSION_KEY); } catch { return null; }
+}
+
+// Public, unauthenticated deployment flags (GET /config) — fetched once at boot and
+// cached module-wide so every caller shares a single request. Read pre-login by the
+// login page to drop the invite-code requirement on a demo instance (demo_mode).
+let _publicConfig = null;
+let _publicConfigPromise = null;
+export function usePublicConfig() {
+  const [config, setConfig] = useState(_publicConfig || {});
+  useEffect(() => {
+    if (_publicConfig) return;
+    if (!_publicConfigPromise) {
+      _publicConfigPromise = apiFetch('/config')
+        .then((r) => (r.ok ? r.json() : {}))
+        .catch(() => ({}));
+    }
+    let alive = true;
+    _publicConfigPromise.then((c) => {
+      _publicConfig = c || {};
+      if (alive) setConfig(_publicConfig);
+    });
+    return () => { alive = false; };
+  }, []);
+  return config;
 }
 
 // Pull a human-readable message out of a FastAPI error body (detail can be a

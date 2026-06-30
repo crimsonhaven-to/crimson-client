@@ -781,7 +781,13 @@ const localStatus = (st) => {
   if (!st.is_dir) return { text: 'Not a directory', ok: false };
   if (!st.readable) return { text: 'Not readable by backend', ok: false };
   const n = st.video_count ?? 0;
-  return { text: `${n}${st.video_count_capped ? '+' : ''} playable file${n === 1 ? '' : 's'}`, ok: true };
+  const t = st.transcodable_count ?? 0;
+  const cap = st.video_count_capped ? '+' : '';
+  let text = `${n}${cap} direct-play file${n === 1 ? '' : 's'}`;
+  // Surface how many files only become playable with encoding on, so the toggle's
+  // payoff is visible before flipping it.
+  if (t > 0) text += ` · ${t}${cap} need encoding`;
+  return { text, ok: true };
 };
 
 function SourcesTab({ notify }) {
@@ -789,6 +795,8 @@ function SourcesTab({ notify }) {
   const [loading, setLoading] = useState(true);
   const [label, setLabel] = useState('');
   const [path, setPath] = useState('');
+  const [encoding, setEncoding] = useState(false);
+  const [encodingSupported, setEncodingSupported] = useState(true);
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState(null);
   const [mounts, setMounts] = useState(null);
@@ -798,7 +806,10 @@ function SourcesTab({ notify }) {
     setLoading(true);
     try {
       const res = await adminApi.listLocalSources();
-      if (res.success) setSources(res.sources);
+      if (res.success) {
+        setSources(res.sources);
+        setEncodingSupported(res.encoding_supported !== false);
+      }
       else notify('Failed to load local sources', false);
     } catch { notify('Failed to load local sources', false); }
     finally { setLoading(false); }
@@ -811,8 +822,8 @@ function SourcesTab({ notify }) {
     if (!label.trim() || !path.trim()) return;
     setAdding(true);
     try {
-      const res = await adminApi.addLocalSource({ label: label.trim(), path: path.trim() });
-      if (res.success) { notify('Local source added', true); setLabel(''); setPath(''); await load(); }
+      const res = await adminApi.addLocalSource({ label: label.trim(), path: path.trim(), encoding });
+      if (res.success) { notify('Local source added', true); setLabel(''); setPath(''); setEncoding(false); await load(); }
       else notify(res.detail || res.error || 'Could not add source', false);
     } catch { notify('Could not add source', false); }
     finally { setAdding(false); }
@@ -823,6 +834,16 @@ function SourcesTab({ notify }) {
     try {
       const res = await adminApi.updateLocalSource(s.id, { enabled: !s.enabled });
       if (res.success) { notify(s.enabled ? 'Source disabled' : 'Source enabled', true); await load(); }
+      else notify(res.detail || 'Could not update source', false);
+    } catch { notify('Could not update source', false); }
+    finally { setBusyId(null); }
+  };
+
+  const toggleEncoding = async (s) => {
+    setBusyId(s.id);
+    try {
+      const res = await adminApi.updateLocalSource(s.id, { encoding: !s.encoding });
+      if (res.success) { notify(s.encoding ? 'Transcoding disabled' : 'Transcoding enabled', true); await load(); }
       else notify(res.detail || 'Could not update source', false);
     } catch { notify('Could not update source', false); }
     finally { setBusyId(null); }
@@ -871,7 +892,7 @@ function SourcesTab({ notify }) {
         <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-3xl">
           Register a directory the backend can read and the haven will match shows against the files inside it and stream them directly — no third-party scraper involved.
           The path is the one <span className="text-crimson-400 font-bold">inside the backend container</span>: bind-mount your library in <code className="font-mono text-crimson-400">docker-compose</code> (e.g. <code className="font-mono text-crimson-400">- /movies:/crimson/movies1</code>) and register <code className="font-mono text-crimson-400">/crimson/movies1</code> here.
-          MVP is <span className="text-crimson-400 font-bold">direct play only</span>: browser-playable files (mp4 / m4v / mov / webm). Other containers (MKV, HEVC…) are skipped — they'd need transcoding.
+          Browser-playable files (mp4 / m4v / mov / webm) always direct-play. Turn on <span className="text-crimson-400 font-bold">transcoding</span> to also serve other containers (MKV, HEVC, AC-3…) — they're re-encoded to a seekable HLS stream on the fly by ffmpeg.
         </p>
 
         <form onSubmit={add} className="space-y-4 relative z-10">
@@ -890,9 +911,25 @@ function SourcesTab({ notify }) {
               </button>
             </div>
           </div>
-          <button type="button" onClick={discover} disabled={discovering} className="flex items-center gap-2 px-4 py-2.5 bg-crimson-950/60 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-            <FolderSearch className={`w-4 h-4 ${discovering ? 'animate-pulse' : ''}`} /> {discovering ? 'Scanning…' : 'Discover mounts'}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={discover} disabled={discovering} className="flex items-center gap-2 px-4 py-2.5 bg-crimson-950/60 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+              <FolderSearch className={`w-4 h-4 ${discovering ? 'animate-pulse' : ''}`} /> {discovering ? 'Scanning…' : 'Discover mounts'}
+            </button>
+            {encodingSupported ? (
+              <button
+                type="button"
+                onClick={() => setEncoding((v) => !v)}
+                title="When on, this source will transcode non-web containers (MKV, HEVC…) to HLS on the fly"
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${encoding ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-300' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-600 hover:text-crimson-400 hover:border-crimson-600'}`}
+              >
+                <Film className="w-4 h-4" /> Transcoding {encoding ? 'on' : 'off'}
+              </button>
+            ) : (
+              <span title="ffmpeg/ffprobe not found in the backend image" className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border bg-crimson-950/30 border-crimson-900/40 text-crimson-700/70 cursor-not-allowed">
+                <Film className="w-4 h-4" /> Transcoding unavailable
+              </span>
+            )}
+          </div>
         </form>
 
         {mounts && (
@@ -944,10 +981,23 @@ function SourcesTab({ notify }) {
                       ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Enabled</span>
                       : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-600">Disabled</span>}
                     <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${st.ok ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-crimson-500/10 border-crimson-500/30 text-crimson-500'}`}>{st.text}</span>
+                    {s.encoding && (
+                      <span title="Transcoding non-web containers to HLS on the fly" className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-300 flex items-center gap-1">
+                        <Film className="w-2.5 h-2.5" /> Transcoding
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] font-mono text-crimson-500/80 mt-1.5 truncate">{s.path}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  <button
+                    title={!encodingSupported ? 'ffmpeg/ffprobe not found in the backend image' : (s.encoding ? 'Disable transcoding' : 'Enable transcoding (MKV, HEVC…)')}
+                    disabled={busyId === s.id || !encodingSupported}
+                    onClick={() => toggleEncoding(s)}
+                    className={`p-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${s.encoding ? 'text-crimson-300 hover:border-crimson-500/50 hover:bg-crimson-500/10' : 'text-crimson-600 hover:border-crimson-500/50 hover:bg-crimson-500/10'}`}
+                  >
+                    <Film className="w-4 h-4" />
+                  </button>
                   <button
                     title={s.enabled ? 'Disable' : 'Enable'}
                     disabled={busyId === s.id}
