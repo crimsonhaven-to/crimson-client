@@ -11,11 +11,16 @@ name: Build and Deploy
 #                            that immutable :<tag> to the swarm (zero-downtime,
 #                            health-gated, auto-rollback).
 #
-# Submodules are baked in at the freshest branch tip per channel (build-time
-# only; the pinned gitlink is advanced in the runner, never committed back):
-#   * push to `dev`       -> crimson-sources@dev, crimson-extension@main.
-#   * a published Release -> both submodules @main.
-# crimson-extension has no `dev` branch, so it always follows `main`.
+# The private sources engine + companion extension are fetched best-effort at the
+# freshest branch tip per channel (build-time only; nothing is committed back):
+#   * push to `dev`       -> sources@dev, extension@main.
+#   * a published Release -> both @main.
+# The companion has no `dev` branch, so it always follows `main`.
+#
+# Which repos to fetch is ENV-DRIVEN (not hardcoded): set the repo secret
+# CRIMSON_SOURCES_REPO (e.g. crimsonhaven-to/crimson-sources) + SUBMODULES_TOKEN.
+# If a repo is unset or unreachable, the build STILL succeeds with no client-side
+# sources (Vite swaps in the built-in stub) — so anyone without access can deploy.
 #
 # IMPORTANT: VITE_API_BASE_URL is baked in at BUILD time (Vite), so dev and
 # release builds point at different backends. The image is PRIVATE; swarm nodes
@@ -78,40 +83,59 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          # crimson-sources is a submodule (vendor/crimson-sources) baked into the
-          # Vite build. It's a private sibling repo, so the default job token can't
-          # reach it — supply a PAT (or a deploy key) with read access to it.
-          submodules: recursive
-          token: ${{ secrets.SUBMODULES_TOKEN || github.token }}
+        # Submodules are intentionally NOT checked out here. The private sources +
+        # companion repos are fetched best-effort in the next step, so a build
+        # WITHOUT access to them still succeeds (Vite swaps in the no-op stub).
 
-      - name: Advance submodules to the latest branch tip
+      - name: Fetch private sources + companion (optional, env-driven)
+        env:
+          # Which repo holds the client-side sources engine. Set as a repo SECRET
+          # (e.g. crimsonhaven-to/crimson-sources). UNSET / unreachable => build
+          # with NO sources: vite.config.js swaps in src/sourcesStub.js and the
+          # client plays via the backend only. Never hardcoded here.
+          SOURCES_REPO: ${{ secrets.CRIMSON_SOURCES_REPO }}
+          # The companion-extension repo. Defaults to <owner>/crimson-extension
+          # (follows whoever owns this repo, so forks work too); override with an
+          # optional CRIMSON_EXTENSION_REPO secret if it lives elsewhere.
+          EXTENSION_REPO: ${{ secrets.CRIMSON_EXTENSION_REPO || format('{0}/crimson-extension', github.repository_owner) }}
+          GIT_TOKEN: ${{ secrets.SUBMODULES_TOKEN || github.token }}
         run: |
-          # Build from the FRESHEST submodule code per channel rather than the
-          # pinned gitlink. This is build-time only: we advance the checkout in
-          # the runner but never commit the pointer back, so there's no
-          # CI-triggers-CI loop and Release tags stay immutable.
-          #
-          #   * push to `dev`   -> crimson-sources@dev, crimson-extension@main
-          #   * a Release       -> both submodules @main
-          #
-          # crimson-extension has no `dev` branch, so it tracks `main` always.
-          if [ "${{ github.event_name }}" = "release" ]; then
-            SOURCES_BRANCH=main
-          else
-            SOURCES_BRANCH=dev
-          fi
+          set -u
+          # Freshest code per channel: release -> main, otherwise dev. The
+          # companion has no `dev` branch, so it always tracks main.
+          if [ "${{ github.event_name }}" = "release" ]; then SOURCES_BRANCH=main; else SOURCES_BRANCH=dev; fi
 
-          advance() {  # <submodule path> <remote branch>
-            echo "::group::Advancing $1 -> origin/$2"
-            git -C "$1" fetch --depth=1 origin "$2"
-            git -C "$1" checkout --detach FETCH_HEAD
-            echo "$1 now at $(git -C "$1" rev-parse HEAD)"
+          # Clone <repo>@<branch> into <dest>, best-effort. Any failure (repo
+          # unset, no access, branch missing) leaves an EMPTY <dest> and never
+          # fails the job — that's the whole point of the safeguard.
+          fetch() {  # <repo slug or empty> <branch> <dest>
+            repo="$1"; branch="$2"; dest="$3"
+            rm -rf "$dest"
+            if [ -z "$repo" ]; then
+              mkdir -p "$dest"
+              echo "ℹ  no repo configured for ${dest} — building without it"
+              return 0
+            fi
+            url="https://x-access-token:${GIT_TOKEN}@github.com/${repo}.git"
+            echo "::group::Fetching ${repo}@${branch} -> ${dest}"
+            if git clone --depth 1 --branch "$branch" "$url" "$dest"; then
+              ok=1
+            else
+              rm -rf "$dest"
+              if git clone --depth 1 "$url" "$dest"; then ok=1; else ok=0; fi
+            fi
+            if [ "$ok" = 1 ]; then
+              rm -rf "$dest/.git"
+              echo "✓  ${repo} bundled"
+            else
+              rm -rf "$dest"; mkdir -p "$dest"
+              echo "⚠  could not fetch ${repo} (no access / not found) — building without it"
+            fi
             echo "::endgroup::"
           }
 
-          advance vendor/crimson-sources   "${SOURCES_BRANCH}"
-          advance vendor/crimson-extension main
+          fetch "$SOURCES_REPO"   "$SOURCES_BRANCH" vendor/crimson-sources
+          fetch "$EXTENSION_REPO" main              vendor/crimson-extension
 
       - name: Compute image tags + API URL
         id: meta

@@ -67,16 +67,27 @@ WORKDIR /work
 
 RUN apk add --no-cache zip
 
-COPY vendor/crimson-extension ./crimson-extension
+# The companion extension is a PRIVATE submodule (vendor/crimson-extension) and may
+# be ABSENT when building without access to it (a fork / no SUBMODULES_TOKEN). Copy
+# the whole vendor tree (always present, possibly with an empty extension dir) and
+# guard on the manifest so the image still builds — the /extension download is just
+# unavailable in that case, rather than failing the whole build.
+COPY vendor ./vendor
 
 # Drop any VCS metadata, then zip the folder itself so unpacking yields a single
 # `crimson-extension/` directory with manifest.json at its root (exactly what
 # "Load unpacked" expects). manifest.json is copied out alongside so the Download
 # page can show the live version without hardcoding it.
-RUN mkdir -p /out \
-    && rm -rf crimson-extension/.git \
-    && zip -r -X /out/crimson-extension.zip crimson-extension \
-    && cp crimson-extension/manifest.json /out/manifest.json
+RUN mkdir -p /out; \
+    if [ -f vendor/crimson-extension/manifest.json ]; then \
+      cp -r vendor/crimson-extension ./crimson-extension; \
+      rm -rf crimson-extension/.git; \
+      zip -r -X /out/crimson-extension.zip crimson-extension; \
+      cp crimson-extension/manifest.json /out/manifest.json; \
+      echo "✓ companion extension packed"; \
+    else \
+      echo "ℹ no companion extension bundled — /extension download will be unavailable"; \
+    fi
 
 # Production stage with Nginx
 FROM nginx:alpine
