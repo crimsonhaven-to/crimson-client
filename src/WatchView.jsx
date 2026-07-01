@@ -310,17 +310,37 @@ const WatchView = ({
 
   // AniSkip intro/outro timestamps (additive, anime-only). Keyed off the AniList id
   // /info resolved, so non-anime shows (no `anilist_id`) and movies simply skip the
-  // fetch and the player shows no skip affordances. Re-fetched per episode.
+  // fetch and the player shows no skip affordances.
+  //
+  // Re-fetched per episode AND per active source, feeding AniSkip the *measured*
+  // file duration. AniSkip stores each submission against the episode length it was
+  // timed on and returns the window for the closest length — so the SAME episode has
+  // different OP/ED offsets across encodes (e.g. a source with a recap or trimmed
+  // intro shifts the intro by tens of seconds). Fetching with length 0 pins us to
+  // one arbitrary submission, which only lines up with whichever encode it came from
+  // — the reason skip worked for backend-proxied sources but missed for the client
+  // engine's extension/proxy sources (different providers, different lengths). Giving
+  // AniSkip the real duration makes it return the window for the encode on screen.
   const anilistId = metadata?.anilist_id;
   const [skipTimes, setSkipTimes] = useState(null);
+  // Duration of the file actually playing, reported by the player. Reset per
+  // episode/source so each is re-measured (0 = not measured yet → a best-effort
+  // first fetch that gets refined the moment the player reports its duration).
+  const [playerDuration, setPlayerDuration] = useState(0);
+  const activeStreamUrl = activeStream?.url;
   useEffect(() => {
     setSkipTimes(null);
+    setPlayerDuration(0);
+  }, [anilistId, activeStreamUrl, currentEpisode]);
+  // Round so sub-second `timeupdate` jitter doesn't re-fire the fetch.
+  const roundedDuration = Math.round(playerDuration) || 0;
+  useEffect(() => {
     if (isMovie || !anilistId || !currentEpisode) return undefined;
     let cancelled = false;
-    fetchSkipTimes({ anilistId, episode: currentEpisode })
+    fetchSkipTimes({ anilistId, episode: currentEpisode, episodeLength: roundedDuration })
       .then((st) => { if (!cancelled) setSkipTimes(st); });
     return () => { cancelled = true; };
-  }, [anilistId, currentEpisode, isMovie]);
+  }, [anilistId, currentEpisode, isMovie, roundedDuration]);
 
   // Merge source-supplied tracks with the OpenSubtitles ones, de-duping by URL so a
   // source that already provides a language doesn't double up.
@@ -354,6 +374,12 @@ const WatchView = ({
   const confirmedTicketsRef = useRef(new Set());
   const handlePlayerProgress = useCallback((position, duration) => {
     if (onPlayerProgress) onPlayerProgress(position, duration);
+    // Feed the real file duration to the AniSkip fetch above (only when the rounded
+    // value actually changes, so this doesn't thrash on every timeupdate). This is
+    // what lets the skip windows align to the source that's actually playing.
+    if (duration && Number.isFinite(duration)) {
+      setPlayerDuration((prev) => (Math.round(prev) === Math.round(duration) ? prev : duration));
+    }
     const ticket = activeStream?.cacheTicket;
     if (!ticket || position < CACHE_CONFIRM_SECONDS) return;
     if (confirmedTicketsRef.current.has(ticket)) return;
