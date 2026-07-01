@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Crown, Search, Heart, History, SlidersHorizontal, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import lumiAvatar from './assets/lumi_cuty.png';
+import { HOSTED_IN } from './hooks';
 
 // Luminas Crimsonveil's welcome ritual — a stepped, themed introduction to the
 // haven's features, shown once per login (see the trigger in App.jsx). Self-
@@ -75,7 +76,7 @@ const STEPS = [
       <>
         Enough secrets for one evening, darling~. Everything waits behind the little crimson crest in the corner whenever
         you wish to wander back. Now — go. Lose yourself beautifully. And do rest easy: your data slumbers safely in
-        🇨🇭 Switzerland.
+        {' '}{HOSTED_IN}.
       </>
     ),
   },

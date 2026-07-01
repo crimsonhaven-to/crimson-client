@@ -1,5 +1,5 @@
 import { Scale, Shield, Eye, Cookie, FileText, RefreshCw } from 'lucide-react';
-import { useTitle } from './hooks';
+import { useTitle, DMCA_MAIL } from './hooks';
 
 const Section = ({ icon, title, children }) => (
   <div className="space-y-6">
@@ -41,7 +41,7 @@ const DisclaimerPage = () => {
         <p>
           If you have any legal issues, please contact the appropriate media file owners or the host sites directly.
           crimsonhaven is not the correct party to address regarding the takedown of content it does not store.
-          If you wish for the removal of a link to a media file, you can contact us at service@crimsonhaven.to with the exact URL of the media file in question and we will do our best to assist you.
+          If you wish for the removal of a link to a media file, you can contact us at {DMCA_MAIL} with the exact URL of the media file in question and we will do our best to assist you.
         </p>
       </Section>
 
