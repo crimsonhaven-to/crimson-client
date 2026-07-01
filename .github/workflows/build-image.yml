@@ -146,6 +146,7 @@ jobs:
             echo "deploy=true"      >> "$GITHUB_OUTPUT"
             echo "tags=${IMAGE}:${VER},${IMAGE}:latest" >> "$GITHUB_OUTPUT"
             echo "api_url=https://backend.crimsonhaven.to" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://crimsonhaven.to" >> "$GITHUB_OUTPUT"
             echo "image_tag=${VER}" >> "$GITHUB_OUTPUT"
           else
             SHORT_SHA="$(git rev-parse --short HEAD)"
@@ -153,6 +154,7 @@ jobs:
             echo "deploy=false"     >> "$GITHUB_OUTPUT"
             echo "tags=${IMAGE}:dev,${IMAGE}:dev-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
             echo "api_url=https://dev-backend.crimsonhaven.to" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://dev.crimsonhaven.to" >> "$GITHUB_OUTPUT"
             # Deploy the immutable per-commit tag, not the rolling :dev, so the
             # dev stack always rolls to exactly this build.
             echo "image_tag=dev-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
@@ -176,6 +178,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             VITE_API_BASE_URL=${{ steps.meta.outputs.api_url }}
+            VITE_SITE_URL=${{ steps.meta.outputs.site_url }}
             VITE_HOSTED_IN=${{ vars.HOSTED_IN }}
             VITE_DMCA_MAIL=${{ vars.DMCA_MAIL }}
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache

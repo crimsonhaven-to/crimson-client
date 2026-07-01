@@ -65,14 +65,18 @@ sensible default so a plain build still works:
 
 | Build arg         | Controls                                         | Default                    |
 | ----------------- | ------------------------------------------------ | -------------------------- |
+| `VITE_SITE_URL`   | Origin for social-embed (Open Graph) URLs        | `https://crimsonhaven.to`  |
 | `VITE_HOSTED_IN`  | Where user data lives (About/footer/tour badge)  | `Switzerland`              |
 | `VITE_DMCA_MAIL`  | Takedown / DMCA contact on the Disclaimer page   | `service@crimsonhaven.to`  |
 
 Because these are **baked at build time** (Vite), they must be set when the image
-is built, not at container runtime. In CI they come from the repo's Actions
-variables `HOSTED_IN` / `DMCA_MAIL` (Settings → Secrets and variables → Actions →
-Variables); leave them unset to keep the defaults. `VITE_HOSTED_IN` accepts a
-flag emoji too, e.g. `🇨🇭 Switzerland`.
+is built, not at container runtime. `VITE_SITE_URL` is set per environment by CI
+(dev vs prod) so link previews on Discord/Twitter resolve the `og:image` against
+the right host — social scrapers don't run JS, so this can't be done at runtime.
+`VITE_HOSTED_IN` / `VITE_DMCA_MAIL` come from the repo's Actions variables
+`HOSTED_IN` / `DMCA_MAIL` (Settings → Secrets and variables → Actions → Variables);
+leave them unset to keep the defaults. `VITE_HOSTED_IN` accepts a flag emoji too,
+e.g. `🇨🇭 Switzerland`.
 
 ### Single host — Docker Compose
 ```bash

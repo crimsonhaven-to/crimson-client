@@ -57,6 +57,9 @@ jobs:
         env:
           # Baked in by Vite at build time (see hooks.js API_BASE_URL).
           VITE_API_BASE_URL: https://demo-backend.crimsonhaven.to
+          # Origin for the social-embed (Open Graph) URLs — this is the demo domain,
+          # not prod (see vite.config.js SITE_URL).
+          VITE_SITE_URL: https://demo.crimsonhaven.to
         run: npm run build
 
       - name: Bake in the companion extension (public)
