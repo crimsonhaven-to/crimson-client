@@ -6,10 +6,14 @@ name: Deploy demo to GitHub Pages
 #   * manual (workflow_dispatch)  -> rebuild on demand.
 #
 # Deliberately CLEAN, to mirror the demo backend:
-#   * crimson-sources / crimson-extension are NOT vendored, so vite.config.js swaps in
-#     the no-op stub (src/sourcesStub.js) — the demo resolves NOTHING client-side. The
+#   * crimson-sources is NOT vendored (it's private), so vite.config.js swaps in the
+#     no-op stub (src/sourcesStub.js) — the demo resolves NOTHING client-side. The
 #     demo backend has no sources either, so the demo shows the UI + account UX only,
 #     never a stream (by design — no streams = nothing to host).
+#   * crimson-extension IS baked in, though: the companion repo is PUBLIC, so we clone
+#     + pack it into dist/extension/ (exactly like the prod image's `extpack` stage) so
+#     the /extension download page works on the demo too. It's hardcoded to the public
+#     crimsonhaven-to/crimson-extension@main — no token needed.
 #   * VITE_API_BASE_URL is baked to the demo backend at build time.
 #
 # Runs on GitHub-hosted runners (no swarm / self-hosted runner needed). Requires the
@@ -54,6 +58,24 @@ jobs:
           # Baked in by Vite at build time (see hooks.js API_BASE_URL).
           VITE_API_BASE_URL: https://demo-backend.crimsonhaven.to
         run: npm run build
+
+      - name: Bake in the companion extension (public)
+        run: |
+          set -euo pipefail
+          # The companion extension is PUBLIC, so clone it straight at main (no token)
+          # and pack it exactly like the Dockerfile's `extpack` stage does for the prod
+          # image: a zip that unpacks to a single `crimson-extension/` folder (with
+          # manifest.json at its root — what "Load unpacked" expects), plus the loose
+          # manifest.json so the /extension page can show the version without hardcoding.
+          # NOTE: only the extension is baked in — crimson-sources stays stubbed.
+          git clone --depth 1 --branch main \
+            https://github.com/crimsonhaven-to/crimson-extension.git crimson-extension
+          rm -rf crimson-extension/.git
+          mkdir -p dist/extension
+          zip -r -X dist/extension/crimson-extension.zip crimson-extension
+          cp crimson-extension/manifest.json dist/extension/manifest.json
+          rm -rf crimson-extension
+          echo "✓ companion extension baked into dist/extension"
 
       - name: SPA fallback + custom domain
         run: |
