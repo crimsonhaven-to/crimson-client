@@ -71,6 +71,9 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   const [currentLevel, setCurrentLevel] = useState(-1);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  // Presentational only: the fraction (0..1) the cursor hovers over the seek bar,
+  // driving the live timestamp bubble + ghost marker. `null` when not hovering.
+  const [seekHover, setSeekHover] = useState(null);
   // The in-player settings cog (movie-web-style): Sources / Quality / Subtitles in
   // one panel so none of them need leaving fullscreen. `settingsOpenGroup` tracks
   // which provider deck is expanded inside the Sources section (one at a time).
@@ -434,6 +437,13 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
     window.addEventListener('pointerup', up);
   }, [seekTo]);
 
+  // Track the cursor's position over the seek bar for the hover timestamp bubble
+  // and the ghost marker. Purely cosmetic — never touches playback.
+  const onSeekHover = useCallback((e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setSeekHover(Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)));
+  }, []);
+
   const toggleMute = useCallback(() => { const v = videoRef.current; if (v) v.muted = !v.muted; }, []);
   const changeVolume = useCallback((val) => {
     const v = videoRef.current;
@@ -585,40 +595,57 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
         ))}
       </video>
 
-      {/* Buffering sigil */}
+      {/* Buffering sigil — twin counter-rotating rings around a pulsing spark. */}
       {loading && !error && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-          <div className="relative">
+        <div className="absolute inset-0 grid place-items-center pointer-events-none z-20">
+          <div className="relative grid place-items-center">
+            <div className="absolute w-28 h-28 rounded-full bg-crimson-500/10 blur-2xl cp-breathe" />
             <div className="w-20 h-20 rounded-full border-[3px] border-crimson-500/10 border-t-crimson-500 animate-spin shadow-[0_0_50px_rgba(255,0,60,0.3)]" />
-            <Sparkles className="absolute inset-0 m-auto w-6 h-6 text-crimson-400 animate-pulse" />
+            <div className="absolute w-12 h-12 rounded-full border-2 border-crimson-500/10 border-b-crimson-400 cp-ring-rev" />
+            <Sparkles className="absolute w-6 h-6 text-crimson-400 animate-pulse" />
           </div>
         </div>
       )}
 
-      {/* Center play crest (paused, idle) — hidden while the Auto-Next card is up */}
+      {/* Center play crest (paused, idle) — hidden while the Auto-Next card is up.
+          Framed by a breathing halo and two slow, counter-rotating rings so the
+          idle state feels alive rather than a flat button. */}
       {!playing && !loading && !error && countdown === null && (
-        <button
-          onClick={togglePlay}
-          className="absolute inset-0 m-auto w-24 h-24 sm:w-28 sm:h-24 grid place-items-center rounded-full bg-crimson-950/40 border border-crimson-500/30 backdrop-blur-md text-white shadow-[0_0_60px_rgba(255,0,60,0.4)] hover:bg-crimson-500/20 hover:border-crimson-400 hover:scale-110 transition-all duration-300 active:scale-95 group z-10"
-          aria-label="Play"
-        >
-          <Play className="w-10 h-10 sm:w-12 sm:h-12 translate-x-0.5 fill-current drop-shadow-[0_0_15px_rgba(255,0,60,0.8)]" />
-        </button>
+        <div className="absolute inset-0 grid place-items-center z-10 pointer-events-none">
+          <div className="absolute w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-crimson-500/10 blur-2xl cp-breathe" />
+          <div className="absolute w-32 h-32 sm:w-36 sm:h-36 rounded-full border border-dashed border-crimson-500/30 cp-ring" />
+          <div className="absolute w-[10.5rem] h-[10.5rem] sm:w-44 sm:h-44 rounded-full border border-crimson-500/10 cp-ring-rev" />
+          <button
+            onClick={togglePlay}
+            className="pointer-events-auto relative grid place-items-center w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-crimson-950/50 border border-crimson-500/30 backdrop-blur-md text-white shadow-[0_0_60px_rgba(255,0,60,0.4)] hover:bg-crimson-500/20 hover:border-crimson-400 hover:scale-110 transition-all duration-300 active:scale-95 group"
+            aria-label="Play"
+          >
+            <Play className="w-10 h-10 sm:w-12 sm:h-12 translate-x-0.5 fill-current drop-shadow-[0_0_15px_rgba(255,0,60,0.8)]" />
+          </button>
+        </div>
       )}
 
-      {/* Top title ribbon */}
-      <div className={`absolute top-0 inset-x-0 px-6 sm:px-8 pt-6 pb-12 bg-gradient-to-b from-crimson-950/90 via-crimson-950/40 to-transparent flex items-center gap-3 transition-opacity duration-500 ${controlsVisible || !playing ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="w-1.5 h-1.5 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c]"></div>
-        <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-crimson-50 truncate drop-shadow-lg">
-          {title || 'Crimson Haven Manifest'}
-        </span>
+      {/* Top title ribbon — a floating glass sigil chip riding the fade gradient. */}
+      <div className={`absolute top-0 inset-x-0 px-4 sm:px-6 pt-5 pb-14 bg-gradient-to-b from-crimson-950/90 via-crimson-950/40 to-transparent flex items-center transition-all duration-500 ${controlsVisible || !playing ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+        <div className="flex items-center gap-2.5 min-w-0 px-3.5 py-2 rounded-2xl bg-crimson-950/50 border border-crimson-500/20 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
+          <span className="relative flex w-2 h-2 shrink-0">
+            <span className="absolute inline-flex w-full h-full rounded-full bg-crimson-500 opacity-60 animate-ping" />
+            <span className="relative inline-flex w-2 h-2 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c]" />
+          </span>
+          <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-crimson-50 truncate drop-shadow-lg">
+            {title || 'Crimson Haven Manifest'}
+          </span>
+        </div>
       </div>
 
       {/* Error sigil */}
       {error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 text-center p-8 backdrop-blur-xl z-30">
-          <div className="p-5 rounded-full bg-crimson-500/10 border border-crimson-500/20 mb-6">
-             <AlertTriangle className="w-12 h-12 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.5)]" />
+        <div className="cp-rise absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 text-center p-8 backdrop-blur-xl z-30">
+          <div className="relative grid place-items-center mb-6">
+            <div className="absolute w-28 h-28 rounded-full bg-crimson-500/15 blur-2xl cp-breathe" />
+            <div className="relative p-5 rounded-full bg-crimson-500/10 border border-crimson-500/20">
+              <AlertTriangle className="w-12 h-12 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.5)]" />
+            </div>
           </div>
           <p className="text-white font-black text-lg sm:text-2xl mb-2 uppercase tracking-tighter">Playback Link Severed</p>
           <p className="text-crimson-400/80 text-xs sm:text-sm max-w-sm mb-8 font-medium leading-relaxed">{error}</p>
@@ -633,7 +660,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
       {!error && countdown === null && (inOpRange || inEdRange) && (
         <button
           onClick={inOpRange ? skipIntro : skipOutro}
-          className="absolute z-40 bottom-28 right-4 sm:right-6 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-crimson-950/90 border border-crimson-500/40 backdrop-blur-2xl text-white shadow-[0_15px_50px_rgba(0,0,0,0.7)] hover:bg-crimson-600 hover:border-crimson-400 hover:scale-[1.03] transition-all active:scale-95 animate-in slide-in-from-bottom-4 fade-in duration-300"
+          className="cp-rise absolute z-40 bottom-28 right-4 sm:right-6 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-crimson-950/90 border border-crimson-500/40 backdrop-blur-2xl text-white shadow-[0_15px_50px_rgba(0,0,0,0.7)] hover:bg-crimson-600 hover:border-crimson-400 hover:scale-[1.03] transition-all active:scale-95"
         >
           <SkipForward className="w-4 h-4 fill-current text-crimson-400" />
           <span className="text-[11px] font-black uppercase tracking-[0.2em]">
@@ -644,7 +671,14 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
       {/* Auto-Next countdown crest — Netflix-style "Up Next" with a grace period */}
       {countdown !== null && !error && (
-        <div className="absolute z-40 bottom-28 right-4 sm:right-6 w-72 max-w-[calc(100%-2rem)] rounded-3xl bg-crimson-950/95 border border-crimson-500/30 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] p-5 animate-in slide-in-from-bottom-4 fade-in duration-300">
+        <div className="cp-rise absolute z-40 bottom-28 right-4 sm:right-6 w-72 max-w-[calc(100%-2rem)] rounded-3xl bg-crimson-950/95 border border-crimson-500/30 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] p-5">
+          {/* Slim grace-period progress rail draining left→right as the count ticks. */}
+          <div className="absolute top-0 inset-x-5 h-0.5 rounded-full bg-crimson-500/15 overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-crimson-600 to-crimson-400 shadow-[0_0_8px_rgba(255,0,60,0.7)] transition-[width] duration-1000 ease-linear"
+              style={{ width: `${(countdown / AUTO_NEXT_SECONDS) * 100}%` }}
+            />
+          </div>
           <div className="flex items-center gap-2 mb-2">
             <div className="w-1.5 h-1.5 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">Up Next</p>
@@ -676,17 +710,44 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
           onClick={(e) => e.stopPropagation()}
           className={`absolute bottom-0 inset-x-0 px-4 sm:px-6 pb-4 pt-20 bg-gradient-to-t from-crimson-950 via-crimson-950/70 to-transparent transition-opacity duration-500 ${controlsVisible || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         >
-          {/* Seek bar */}
+          {/* Seek bar — the "lifeline". Thin at rest, it swells on hover and grows
+              a glowing thumb, a ghost marker + a live timestamp bubble under the
+              cursor. All hover state is cosmetic; scrubbing runs through onScrubStart. */}
           <div
             onPointerDown={onScrubStart}
-            className="group/seek relative h-6 flex items-center cursor-pointer mb-2"
+            onPointerMove={onSeekHover}
+            onPointerLeave={() => setSeekHover(null)}
+            className="group/seek relative h-6 flex items-center cursor-pointer mb-1"
           >
-            <div className="absolute inset-x-0 h-1.5 rounded-full bg-white/5 overflow-hidden backdrop-blur-sm border border-white/5 shadow-inner">
-              <div className="absolute inset-y-0 left-0 bg-crimson-500/20" style={{ width: `${bufPct}%` }} />
+            {/* Live timestamp bubble at the cursor */}
+            {seekHover !== null && duration > 0 && (
+              <div
+                className="cp-pop absolute -top-9 z-20 px-2.5 py-1 rounded-lg bg-crimson-950/95 border border-crimson-500/40 backdrop-blur-md text-[10px] font-black tabular-nums text-crimson-50 shadow-[0_10px_25px_rgba(0,0,0,0.6)] pointer-events-none"
+                style={{ left: `${seekHover * 100}%`, transform: 'translateX(-50%)' }}
+              >
+                {fmt(seekHover * duration)}
+              </div>
+            )}
+            <div className="absolute inset-x-0 h-1.5 group-hover/seek:h-2.5 rounded-full bg-white/5 overflow-hidden backdrop-blur-sm border border-white/5 shadow-inner transition-all duration-200">
+              {/* Buffered ahead */}
+              <div className="absolute inset-y-0 left-0 bg-crimson-500/20 transition-[width] duration-300" style={{ width: `${bufPct}%` }} />
+              {/* Ghost fill up to the hovered point */}
+              {seekHover !== null && (
+                <div className="absolute inset-y-0 left-0 bg-crimson-400/20" style={{ width: `${seekHover * 100}%` }} />
+              )}
+              {/* Played */}
               <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-crimson-800 via-crimson-600 to-crimson-400 shadow-[0_0_20px_rgba(255,0,60,0.8)]" style={{ width: `${pct}%` }}>
-                 <div className="absolute top-0 right-0 w-12 h-full bg-gradient-to-r from-transparent to-white/30 animate-pulse"></div>
+                <div className="cp-sheen absolute inset-0" />
               </div>
             </div>
+            {/* Ghost marker at the hovered point */}
+            {seekHover !== null && (
+              <div
+                className="absolute w-0.5 h-4 rounded-full bg-crimson-100/70 -translate-x-1/2 pointer-events-none z-[5]"
+                style={{ left: `${seekHover * 100}%` }}
+              />
+            )}
+            {/* Playhead thumb */}
             <div
               className="absolute w-4 h-4 rounded-full bg-white border-[3px] border-crimson-500 shadow-[0_0_15px_rgba(255,0,60,1)] -translate-x-1/2 scale-0 group-hover/seek:scale-100 transition-transform duration-200 z-10"
               style={{ left: `${pct}%` }}
@@ -694,13 +755,15 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
           </div>
 
           {/* Button row */}
-          <div className="flex items-center gap-2 sm:gap-4 text-crimson-100">
-            <button onClick={togglePlay} className="p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={playing ? 'Pause' : 'Play'}>
-              {playing ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current translate-x-px" />}
-            </button>
+          <div className="flex items-center gap-1.5 sm:gap-2.5 text-crimson-100">
+            {/* Primary transport cluster — grouped on a glass slab so play/skip read
+                as one unit, with the main play/pause set in a filled crimson crest. */}
+            <div className="flex items-center gap-0.5 sm:gap-1 rounded-2xl bg-crimson-950/40 border border-white/5 p-1 backdrop-blur-sm">
+              <button onClick={togglePlay} className="grid place-items-center w-10 h-10 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white shadow-[0_0_18px_rgba(255,0,60,0.45)] transition-all active:scale-90" aria-label={playing ? 'Pause' : 'Play'}>
+                {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-px" />}
+              </button>
 
-            {/* Skip back / forward */}
-            <div className="flex items-center gap-1">
+              {/* Skip back / forward */}
               <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Back ${SKIP_SECONDS} seconds`}>
                 <RotateCcw className="w-5 h-5" />
                 <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
@@ -711,25 +774,35 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               </button>
             </div>
 
-            {/* Volume */}
-            <div className="flex items-center group/vol ml-2">
-              <button onClick={toggleMute} className="p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all" aria-label="Mute">
+            {/* Volume — custom crimson track (native range overlaid, opacity-0, so
+                the drag/keyboard behaviour is unchanged while the fill is styled). */}
+            <div className="flex items-center group/vol ml-0.5">
+              <button onClick={toggleMute} className="p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label="Mute">
                 {muted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
               <div className="overflow-hidden w-0 group-hover/vol:w-20 sm:group-hover/vol:w-24 transition-all duration-300 ease-out flex items-center">
-                 <input
-                  type="range" min="0" max="1" step="0.05"
-                  value={muted ? 0 : volume}
-                  onChange={(e) => changeVolume(parseFloat(e.target.value))}
-                  className="w-full opacity-0 group-hover/vol:opacity-100 transition-opacity duration-300 h-1 cursor-pointer mx-2"
-                  style={{ accentColor: '#ff003c' }}
-                  aria-label="Volume"
-                />
+                <div className="relative h-1.5 w-full mx-2 rounded-full bg-white/10 border border-white/5">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-crimson-600 to-crimson-400 shadow-[0_0_10px_rgba(255,0,60,0.7)]"
+                    style={{ width: `${(muted ? 0 : volume) * 100}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 w-3 h-3 rounded-full bg-white border-2 border-crimson-500 shadow-[0_0_8px_rgba(255,0,60,0.9)] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                    style={{ left: `${(muted ? 0 : volume) * 100}%` }}
+                  />
+                  <input
+                    type="range" min="0" max="1" step="0.05"
+                    value={muted ? 0 : volume}
+                    onChange={(e) => changeVolume(parseFloat(e.target.value))}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    aria-label="Volume"
+                  />
+                </div>
               </div>
             </div>
 
-            <span className="text-[11px] font-mono font-black text-crimson-100 tracking-tighter tabular-nums bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-white/5 ml-2">
-              {fmt(current)} <span className="text-crimson-500 mx-0.5">/</span> {fmt(duration)}
+            <span className="text-[11px] font-mono font-black tracking-tighter tabular-nums bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-white/5 ml-1">
+              <span className="text-white">{fmt(current)}</span> <span className="text-crimson-500 mx-0.5">/</span> <span className="text-crimson-300/80">{fmt(duration)}</span>
             </span>
 
             <div className="flex-1" />
@@ -769,7 +842,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                   <Settings className={`w-4 h-4 transition-transform duration-500 ${showSettings ? 'rotate-90 text-crimson-400' : 'text-crimson-500'}`} />
                 </button>
                 {showSettings && (
-                  <div className="absolute bottom-full right-0 mb-4 w-72 max-h-[60vh] overflow-y-auto no-scrollbar rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] animate-in slide-in-from-bottom-2 fade-in duration-300 z-50 divide-y divide-white/5">
+                  <div className="cp-rise absolute bottom-full right-0 mb-4 w-72 max-h-[60vh] overflow-y-auto no-scrollbar rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/5">
 
                     {/* Sources */}
                     {sources.length > 1 && (
@@ -808,7 +881,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                                   <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
                                 </button>
                                 {open && (
-                                  <div className="mt-1 ml-3 pl-2 border-l border-crimson-900/60 space-y-1 animate-in slide-in-from-top-1 fade-in duration-200">
+                                  <div className="cp-rise mt-1 ml-3 pl-2 border-l border-crimson-900/60 space-y-1">
                                     {group.items.map(({ stream, idx }) => (
                                       <button
                                         key={idx}
@@ -893,7 +966,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               </div>
             )}
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 rounded-2xl bg-crimson-950/40 border border-white/5 p-1 backdrop-blur-sm">
               {/* Download the current source to disk. Disabled label flips to a
                   live %/cancel affordance while a download is in flight. */}
               <button

@@ -25,6 +25,12 @@ COPY . .
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
+# The origin this build is served from — baked into index.html's Open Graph / Twitter
+# tags (see vite.config.js). Per-environment (dev vs prod); falls back to the prod
+# origin when unset so social embeds still resolve.
+ARG VITE_SITE_URL
+ENV VITE_SITE_URL=$VITE_SITE_URL
+
 # Deployment-specific copy baked in at build time (see src/hooks.js). Fall back to
 # the client's own defaults when unset, so a plain build still works.
 ARG VITE_HOSTED_IN

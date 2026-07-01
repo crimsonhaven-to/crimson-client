@@ -161,3 +161,65 @@ body {
   filter: none;
   will-change: auto;
 }
+
+/* ============================================================================
+   CrimsonPlayer flourishes (see CrimsonPlayer.jsx)
+   ----------------------------------------------------------------------------
+   Small, purely-cosmetic animations for the player chrome. The app has no
+   tailwindcss-animate plugin, so the `animate-in`/`fade-in` utilities sprinkled
+   around the tree are silent no-ops — these hand-rolled keyframes are what
+   actually move. All are transform/opacity/background-position only (compositor
+   friendly) so they never contend with video decode, and every one is disabled
+   under prefers-reduced-motion below.
+   ============================================================================ */
+
+/* A slow crimson highlight sweeping along the played portion of the seek bar —
+   the "lifeblood" running through the track. Driven by background-position on a
+   repeating linear-gradient laid over the fill. */
+@keyframes cp-sheen {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+.cp-sheen {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 245, 246, 0.55) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: cp-sheen 2.6s linear infinite;
+}
+
+/* Concentric ring behind the centre play crest — a slow, dashed halo rotation. */
+@keyframes cp-ring-rot { to { transform: rotate(360deg); } }
+.cp-ring { animation: cp-ring-rot 14s linear infinite; }
+.cp-ring-rev { animation: cp-ring-rot 9s linear infinite reverse; }
+
+/* Breathing bloom for the idle crest / sigils — a soft swell of the glow. */
+@keyframes cp-breathe {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50%      { opacity: 0.9;  transform: scale(1.08); }
+}
+.cp-breathe { animation: cp-breathe 3.4s ease-in-out infinite; }
+
+/* Entrance for floating cards (Up Next, Skip crests, settings, tooltip) — a
+   small rise + fade so they materialise rather than snap in. */
+@keyframes cp-rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.cp-rise { animation: cp-rise 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Tiny pop for the seek hover timestamp bubble. */
+@keyframes cp-pop {
+  from { opacity: 0; transform: translate(-50%, 4px) scale(0.9); }
+  to   { opacity: 1; transform: translate(-50%, 0)   scale(1); }
+}
+.cp-pop { animation: cp-pop 0.14s ease-out both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-sheen, .cp-ring, .cp-ring-rev, .cp-breathe, .cp-rise, .cp-pop {
+    animation: none !important;
+  }
+}

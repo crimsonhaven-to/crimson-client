@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs'
+import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -24,10 +25,28 @@ console.info(
     : '[crimson-sources] no vendor/crimson-sources — bundling the no-op stub (backend-only playback).',
 )
 
+// The canonical origin the deployed site is served from — baked into index.html's
+// Open Graph / Twitter tags (og:url, og:image, …) at BUILD time. Social scrapers
+// (Discord, Twitter, Slack) don't run JS, so these URLs must be absolute and correct
+// in the served HTML — a runtime rewrite would never be seen by them. The CI passes
+// the per-environment origin (dev.crimsonhaven.to vs crimsonhaven.to) as VITE_SITE_URL,
+// exactly like VITE_API_BASE_URL; a plain build falls back to production so it's still
+// correct. Every `__SITE_URL__` token in index.html is replaced with this (no trailing
+// slash, so the template controls the path that follows).
+const SITE_URL = (process.env.VITE_SITE_URL || 'https://crimsonhaven.to').replace(/\/+$/, '')
+
+const htmlSiteUrl = () => ({
+  name: 'html-site-url',
+  transformIndexHtml(html) {
+    return html.replaceAll('__SITE_URL__', SITE_URL)
+  },
+})
+
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    htmlSiteUrl(),
   ],
   resolve: {
     alias: {
