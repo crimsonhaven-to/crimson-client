@@ -51,8 +51,9 @@ env:
 jobs:
   # Quality gate — MUST pass before the image is built/deployed. ESLint over the
   # app source (vendored submodules are excluded — they're linted in their own
-  # repos). No submodule checkout needed, so it's fast. Runs in a clean
-  # node:24-slim container on the same self-hosted runner.
+  # repos) plus the Vitest unit suite (pure logic: the stream ranker, playback-pref
+  # sanitiser, error extraction — jsdom, no browser). No submodule checkout needed,
+  # so it's fast. Runs in a clean node:24-slim container on the same self-hosted runner.
   gate:
     runs-on: [self-hosted]
     container: node:24-slim
@@ -62,6 +63,8 @@ jobs:
       - run: npm ci
       - name: Lint (eslint)
         run: npm run lint
+      - name: Unit tests (vitest)
+        run: npm test
       - name: Hand the workspace back to the host runner
         if: always()
         # This container job writes files as root into the shared self-hosted
