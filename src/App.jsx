@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet, Puzzle } from 'lucide-react';
 import MeshBackground from './MeshBackground';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -681,7 +681,7 @@ function AboutPage() {
           <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
           <p className="italic text-crimson-100/90 leading-relaxed text-lg tracking-tight">
             "And a little secret between us, darling~ Ironically, this totally <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">morally correct</span> webpage
-            keeps all your data tucked away in <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">Switzerland</span>. Funny, isn't it?~"
+            keeps all your data tucked away in <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">{HOSTED_IN}</span>. Funny, isn't it?~"
           </p>
           <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
              <span className="block w-8 h-px bg-crimson-500/50"></span>
@@ -834,7 +834,7 @@ function AuthGate() {
       </div>
       <footer className="w-full text-center py-6 px-4 z-10 relative">
         <p className="text-[10px] font-medium tracking-wide text-crimson-700 uppercase">
-          crimsonhaven — members only · your data stays in Switzerland
+          crimsonhaven — members only · your data stays in {HOSTED_IN}
         </p>
       </footer>
     </div>
@@ -1088,7 +1088,7 @@ function App() {
             <div className="flex items-center gap-3 flex-wrap">
               <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">v{CLIENT_VERSION}</div>
               <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">Members Only</div>
-              <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">Hosted in 🇨🇭 Switzerland</div>
+              <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">Hosted in {HOSTED_IN}</div>
             </div>
           </div>
 
@@ -1123,7 +1123,10 @@ function App() {
             </Link>
           </p>
           <div className="flex items-center justify-between gap-4">
-            <p className="text-crimson-700 text-[10px] font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Crimsonhaven. All rites reserved.</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-crimson-700 text-[10px] font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Crimsonhaven. All rites reserved.</p>
+              <span className="px-2.5 py-0.5 bg-crimson-950/40 border border-crimson-900/60 rounded-full text-[9px] font-black text-crimson-600 uppercase tracking-widest">Hosted in {HOSTED_IN}</span>
+            </div>
             <div className="flex items-center gap-4 text-crimson-700">
               <Shield className="w-4 h-4" />
               <Server className="w-4 h-4" />

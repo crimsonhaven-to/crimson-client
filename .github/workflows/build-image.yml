@@ -176,6 +176,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           build-args: |
             VITE_API_BASE_URL=${{ steps.meta.outputs.api_url }}
+            VITE_HOSTED_IN=${{ vars.HOSTED_IN }}
+            VITE_DMCA_MAIL=${{ vars.DMCA_MAIL }}
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
 

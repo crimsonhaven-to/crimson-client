@@ -25,6 +25,13 @@ COPY . .
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
+# Deployment-specific copy baked in at build time (see src/hooks.js). Fall back to
+# the client's own defaults when unset, so a plain build still works.
+ARG VITE_HOSTED_IN
+ENV VITE_HOSTED_IN=$VITE_HOSTED_IN
+ARG VITE_DMCA_MAIL
+ENV VITE_DMCA_MAIL=$VITE_DMCA_MAIL
+
 # Build the Vite application
 RUN npm run build
 

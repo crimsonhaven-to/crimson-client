@@ -60,6 +60,20 @@ arg (defaults to the dev backend). The image is a multi-stage build: Vite compil
 the static bundle, then it's served by hardened Nginx (gzip, security headers,
 immutable hashing for content-addressed assets, `/healthz` probe).
 
+A couple of deployment-specific text bits are baked in the same way, each with a
+sensible default so a plain build still works:
+
+| Build arg         | Controls                                         | Default                    |
+| ----------------- | ------------------------------------------------ | -------------------------- |
+| `VITE_HOSTED_IN`  | Where user data lives (About/footer/tour badge)  | `Switzerland`              |
+| `VITE_DMCA_MAIL`  | Takedown / DMCA contact on the Disclaimer page   | `service@crimsonhaven.to`  |
+
+Because these are **baked at build time** (Vite), they must be set when the image
+is built, not at container runtime. In CI they come from the repo's Actions
+variables `HOSTED_IN` / `DMCA_MAIL` (Settings → Secrets and variables → Actions →
+Variables); leave them unset to keep the defaults. `VITE_HOSTED_IN` accepts a
+flag emoji too, e.g. `🇨🇭 Switzerland`.
+
 ### Single host — Docker Compose
 ```bash
 # Build + run locally on http://localhost:8080
@@ -149,4 +163,18 @@ This project follows a strict **Atomic Design Manifest**:
   <br>
   <b>Forged in the shadows for the anime community.</b>
 </p>
+
+---
+
+## 📜 License
+
+Released under the **MIT License** — see [`LICENSE`](LICENSE). In short: take it,
+fork it, remix it, build something lovely with it. ( ˶ ˆ ᗜ ˆ ˶ )
+
+A tiny request from Lumi, heart-to-heart 🩸 — the MIT license only asks that you
+keep the copyright notice, but I'd *so* appreciate it if you also left a little
+link back to the original home, [`crimsonhaven-to`](https://github.com/crimsonhaven-to),
+in anything you build on top of this. It's not a legal demand, just a kindness
+between mortals and curators — it helps others find their way home to the source,
+and it makes my little undead heart flutter. Thank you for being wonderful! ( ^ . ^ )
 

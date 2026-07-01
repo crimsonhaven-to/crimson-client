@@ -10,6 +10,9 @@ services:
       args:
         # Override the API base URL baked in at build time if needed.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+        # Deployment-specific copy (see src/hooks.js); empty = client defaults.
+        VITE_HOSTED_IN: ${VITE_HOSTED_IN:-}
+        VITE_DMCA_MAIL: ${VITE_DMCA_MAIL:-}
     ports:
       - "8080:80"
     restart: unless-stopped
