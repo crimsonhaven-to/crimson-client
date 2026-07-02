@@ -8,28 +8,6 @@
  * ranking both parse the same "Provider · variant (quality)" source-label shape.
  */
 
-// --- Source auto-select priority -------------------------------------------
-// When sources race in over the /watch stream, the most reliable/performant one
-// is auto-selected the moment it lands (lower rank = preferred; unranked sources
-// sit at 100). Preferred order: server-side Cache (bytes off our own NAS) > Voe >
-// Jellyfin; everything else stays unranked. Only the DEFAULT pick is affected —
-// the list stays in arrival order and the user can still pick any source.
-const STREAM_PRIORITY = [
-  { match: 'voe', rank: 1 },
-  { match: 'jellyfin', rank: 2 },
-];
-
-export function streamPriority(stream) {
-  // Cache sources carry a dynamic, admin-set label (the NAS target's name), so
-  // they can't be matched on the source string — detect them by their proxy URL.
-  if ((stream?.url || '').includes('/cache_proxy/')) return 0;
-  const s = (stream?.source || '').toLowerCase();
-  for (const { match, rank } of STREAM_PRIORITY) {
-    if (s.includes(match)) return rank;
-  }
-  return 100;
-}
-
 // --- Source grouping (Scraped Targets / player cog) -------------------------
 // Several sources fan a single title into many tiles that only differ by a server
 // or quality: ScreenScape ("ScreenScape · MovieBox (1080p)", ~15 servers ×
@@ -66,8 +44,8 @@ export function streamVariantLabel(stream) {
 // the top). Each group is { key, label, items: [{ stream, idx }], stacked }.
 // `idx` is the stream's index in the original array, so selection still maps back
 // to activeStreamIdx / onSelectStream. Cache sources are NEVER grouped — each NAS
-// target is its own standalone, never-stacked card (mirrors streamPriority's
-// /cache_proxy/ detection); same for any provider that yields a single tile.
+// target is its own standalone, never-stacked card (detected by the /cache_proxy/
+// marker in its URL); same for any provider that yields a single tile.
 export function groupStreams(streams = []) {
   const groups = [];
   const byKey = new Map();
@@ -90,9 +68,9 @@ export function groupStreams(streams = []) {
 }
 
 // --- Language-preference-aware ranking --------------------------------------
-// How badly a stream's language tag misses the preference (0 = perfect match,
-// higher = worse). An unset dimension never constrains; with no preference at all
-// every stream scores 0, so source priority alone decides.
+// How badly a stream's language tag misses the viewer's preference (0 = perfect
+// match, higher = worse). An unset dimension never constrains; with no preference
+// at all every stream scores 0, so nothing is preferred over anything else.
 function languageMismatch(stream, prefs) {
   if (!prefs || (!prefs.language && !prefs.type)) return 0;
   const tag = (stream?.language || '').toLowerCase();
@@ -102,9 +80,11 @@ function languageMismatch(stream, prefs) {
   return miss;
 }
 
-// Combined auto-select rank used to pick the default source. Language preference
-// is the PRIMARY key (×1000 dwarfs any source rank, which tops out at 100); the
-// global source priority is the tiebreaker within a language tier. Lower wins.
+// The auto-select rank used to pick the default source: the viewer's language/
+// dub-sub preference is the ONLY key. Lower wins. There is deliberately no
+// source-quality/provider ranking — sources are ranked purely on the user's
+// preference, and streams that tie (same language match, or no preference set at
+// all) fall back to arrival order, so the first one to resolve plays.
 export function streamRank(stream, prefs) {
-  return languageMismatch(stream, prefs) * 1000 + streamPriority(stream);
+  return languageMismatch(stream, prefs);
 }

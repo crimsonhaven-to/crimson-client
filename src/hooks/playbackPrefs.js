@@ -1,10 +1,10 @@
 // --- User language / dub-sub preference -------------------------------------
-// A purely client-side preference (stored in localStorage) that biases which
-// source auto-plays. It layers ON TOP of the global source priority: streams whose
-// `language` tag matches the user's preferred language/type are ranked first, and
-// WITHIN that matching tier the global source order (Cache > Voe > Jellyfin) still
-// decides — so "Cache German Dub" still beats "Voe German Dub". With no preference
-// set, every stream scores equal on language and pure source priority is restored.
+// A purely client-side preference (stored in localStorage) that decides which
+// source auto-plays. It is the ONLY auto-select key: streams whose `language` tag
+// matches the user's preferred language/type are ranked first, and there is no
+// source-quality/provider ranking underneath it — streams that tie (same language
+// match) fall back to arrival order, so the first to resolve plays. With no
+// preference set, every stream scores equal and pure arrival order decides.
 //
 // localStorage is the synchronous cache the ranker reads; the choice is also synced
 // to the account (see persistPlaybackPrefsRemote / syncPlaybackPrefsFromAccount) so

@@ -10,7 +10,7 @@
 // Pure stream ranking/grouping lives in streamUtils.js; the grouping/label helpers
 // are re-exported here for the importers (WatchView, CrimsonPlayer) that pull them
 // from './hooks'. `streamRank` stays internal to the streamer hooks (as before).
-export { groupStreams, streamVariantLabel, streamProviderLabel, streamPriority } from './streamUtils';
+export { groupStreams, streamVariantLabel, streamProviderLabel } from './streamUtils';
 
 export * from './hooks/config';
 export * from './hooks/apiClient';

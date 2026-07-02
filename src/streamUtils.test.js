@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 
 import {
   groupStreams,
-  streamPriority,
   streamProviderLabel,
   streamRank,
   streamVariantLabel,
@@ -11,51 +10,36 @@ import {
 // streamRank is the auto-select contract shared with the backend's continue-watching
 // warmup ranker (crimson-backend web/warmup.py _warmup_pick_best). If these two ever
 // disagree, the source the player auto-plays and the source the backend pre-caches
-// diverge — so this file pins the ranking rules that must stay in lockstep.
-
-describe('streamPriority', () => {
-  it('ranks a server-side Cache stream (by its /cache_proxy/ URL) highest', () => {
-    expect(streamPriority({ source: 'Whatever NAS label', url: 'https://x/cache_proxy/abc' })).toBe(0);
-  });
-
-  it('ranks VOE then Jellyfin, and leaves everything else unranked at 100', () => {
-    expect(streamPriority({ source: 'VOE (German Dub)' })).toBe(1);
-    expect(streamPriority({ source: 'Jellyfin' })).toBe(2);
-    expect(streamPriority({ source: 'ScreenScape · MovieBox' })).toBe(100);
-  });
-
-  it('is null-safe', () => {
-    expect(streamPriority(undefined)).toBe(100);
-    expect(streamPriority({})).toBe(100);
-  });
-});
+// diverge — so this file pins the ranking rules that must stay in lockstep. The rank
+// is purely the viewer's language/dub-sub preference: there is NO source-quality or
+// provider priority — ties (and the no-preference case) fall back to arrival order.
 
 describe('streamRank', () => {
-  it('equals the source priority when no preference is set', () => {
-    expect(streamRank({ source: 'VOE' }, null)).toBe(1);
-    expect(streamRank({ source: 'VOE' }, { language: '', type: '' })).toBe(1);
+  it('scores every stream equal when no preference is set (arrival order decides)', () => {
+    expect(streamRank({ source: 'VOE' }, null)).toBe(0);
+    expect(streamRank({ source: 'VOE' }, { language: '', type: '' })).toBe(0);
     expect(streamRank({ source: 'x', url: 'y/cache_proxy/z' }, {})).toBe(0);
   });
 
-  it('treats the language/type preference as the PRIMARY key (×1000)', () => {
+  it('ranks purely on how well the language/dub-sub preference matches', () => {
     const prefs = { language: 'German', type: 'Dub' };
-    // Perfect match -> only source priority contributes.
-    expect(streamRank({ source: 'VOE', language: 'German Dub' }, prefs)).toBe(1);
-    // Missing the type -> one mismatch tier above.
-    expect(streamRank({ source: 'VOE', language: 'German Sub' }, prefs)).toBe(1000 + 1);
-    // Missing both -> two tiers.
-    expect(streamRank({ source: 'VOE', language: 'English Sub' }, prefs)).toBe(2000 + 1);
+    // Perfect match -> best (0).
+    expect(streamRank({ source: 'VOE', language: 'German Dub' }, prefs)).toBe(0);
+    // Missing the type -> one mismatch.
+    expect(streamRank({ source: 'VOE', language: 'German Sub' }, prefs)).toBe(1);
+    // Missing both -> two mismatches.
+    expect(streamRank({ source: 'VOE', language: 'English Sub' }, prefs)).toBe(2);
   });
 
-  it('lets a language match beat a higher source priority (the whole point)', () => {
+  it('ignores the provider entirely — only the language match matters', () => {
     const prefs = { language: 'German' };
-    // A language-matching but otherwise unranked source (100)...
+    // A language-matching source beats a wrong-language one regardless of provider,
+    // and provider/URL (e.g. a server-side cache) no longer earns any bonus.
     const matching = streamRank({ source: 'ScreenScape', language: 'German Dub' }, prefs);
-    // ...must still auto-play over a top-priority Cache source in the wrong language.
     const cacheWrongLang = streamRank({ source: 'NAS', url: '/cache_proxy/x', language: 'English' }, prefs);
+    expect(matching).toBe(0);
+    expect(cacheWrongLang).toBe(1);
     expect(matching).toBeLessThan(cacheWrongLang);
-    expect(matching).toBe(100);
-    expect(cacheWrongLang).toBe(1000);
   });
 });
 
