@@ -1,22 +1,21 @@
 /*
  * The Companion download page (/extension).
  *
- * The crimson-extension repo is private, so its build can't be fetched from a
- * GitHub Release. Instead CI packs it into the client image (see Dockerfile's
- * `extpack` stage) and nginx serves it at /extension/crimson-extension.zip with
- * the live manifest at /extension/manifest.json. This page hands the viewer that
- * zip plus the side-load ritual, in Luminas' register.
+ * The companion now lives on the Chrome Web Store, so this page simply points
+ * the viewer at the listing and lets Chrome handle install/updates. No more
+ * zip packing, side-loading ritual, or same-origin /extension/ assets — the
+ * store is the single source of truth for the build.
  *
- * Same-origin static assets — fetched with a plain relative `fetch`, NOT apiFetch
- * (that points at the backend; the zip + manifest live on the client's own nginx).
+ * We still detect a live companion (window.CrimsonExtension, injected at
+ * document_start) to show an "already bound" state and its version.
  */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Puzzle, FolderOpen, Power, ShieldCheck, Sparkles, CheckCircle2, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Puzzle, Power, ShieldCheck, Sparkles, CheckCircle2, ExternalLink, ChevronRight } from 'lucide-react';
 import { useTitle } from './hooks';
 
-const ZIP_URL = '/extension/crimson-extension.zip';
-const MANIFEST_URL = '/extension/manifest.json';
+// The public listing. Chrome handles install + silent auto-updates from here.
+const STORE_URL = 'https://chromewebstore.google.com/detail/crimson-haven-companion/npfllfkcppdjimedcbaadpaidkjbgkki';
 
 // Reads window.CrimsonExtension synchronously and keeps it fresh: the companion
 // injects its MAIN-world API at document_start and fires a one-shot
@@ -71,20 +70,6 @@ function Step({ index, icon, title, children }) {
 export default function DownloadExtension() {
   useTitle('Claim the Companion');
   const { present, version: liveVersion } = useCompanionPresence();
-  // The downloadable build's version, read from the packed manifest. Falls back
-  // to whatever the live companion reports, then to nothing (chip just hides).
-  const [packVersion, setPackVersion] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch(MANIFEST_URL)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((m) => { if (!cancelled && m?.version) setPackVersion(m.version); })
-      .catch(() => { /* manifest missing on an old build — the button still works */ });
-    return () => { cancelled = true; };
-  }, []);
-
-  const shownVersion = packVersion || liveVersion;
 
   return (
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -100,7 +85,7 @@ export default function DownloadExtension() {
         <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed font-medium max-w-2xl">
           A featherlight browser familiar that lets the haven resolve and play your sources
           <strong className="text-white font-black"> straight from your own machine</strong> — no throne-room
-          relay in the path. Install it once and every supported source bends the knee locally.
+          relay in the path. One click from the Chrome Web Store and every supported source bends the knee locally.
         </p>
       </div>
 
@@ -118,7 +103,7 @@ export default function DownloadExtension() {
         </div>
       )}
 
-      {/* Download CTA */}
+      {/* Store CTA */}
       <div className="relative bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 p-8 rounded-[2rem] shadow-2xl overflow-hidden">
         <div className="absolute top-0 right-0 p-6 opacity-[0.07] pointer-events-none">
           <Puzzle className="w-24 h-24 text-crimson-500" />
@@ -126,9 +111,9 @@ export default function DownloadExtension() {
         <div className="relative space-y-5">
           <div className="flex flex-wrap items-center gap-3">
             <h3 className="text-lg font-black text-white tracking-tight">Crimson Haven Companion</h3>
-            {shownVersion && (
+            {liveVersion && (
               <span className="px-2.5 py-1 bg-crimson-500/10 border border-crimson-500/30 rounded-lg text-[10px] font-black uppercase tracking-widest text-crimson-300">
-                v{shownVersion}
+                v{liveVersion}
               </span>
             )}
             <span className="px-2.5 py-1 bg-crimson-950/60 border border-crimson-900/60 rounded-lg text-[10px] font-black uppercase tracking-widest text-crimson-500">
@@ -137,15 +122,17 @@ export default function DownloadExtension() {
           </div>
           <p className="text-sm text-crimson-100/70 font-medium leading-relaxed max-w-xl">
             Built for Chromium-blooded browsers — Chrome 111+, Edge, Brave, Opera. Firefox &amp; Safari
-            speak a different dialect of the rites and aren't supported yet.
+            speak a different dialect of the rites and aren't supported yet. Installed straight from the
+            Chrome Web Store, so it stays up to date on its own.
           </p>
           <a
-            href={ZIP_URL}
-            download
+            href={STORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex items-center gap-3 px-7 py-4 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl transition-all shadow-lg font-black uppercase tracking-widest text-xs group"
           >
-            <Download className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
-            Download the Companion
+            <ExternalLink className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+            Get it on the Chrome Web Store
           </a>
         </div>
       </div>
@@ -158,26 +145,17 @@ export default function DownloadExtension() {
         </h3>
 
         <ol className="space-y-0">
-          <Step index="1" icon={<Download className="w-4 h-4" />} title="Claim &amp; unseal">
-            Download the sigil above, then unzip it somewhere it won't be swept away — your Documents,
-            perhaps. You'll be left with a single <code className="px-1.5 py-0.5 rounded bg-crimson-950/60 border border-crimson-900/60 text-crimson-300 font-mono text-xs">crimson-extension</code> folder.
+          <Step index="1" icon={<ExternalLink className="w-4 h-4" />} title="Open the listing">
+            Follow the sigil above to the companion's page on the
+            <strong className="text-white font-black"> Chrome Web Store</strong>. It opens in a new tab,
+            leaving the haven undisturbed behind you.
           </Step>
-          <Step index="2" icon={<Puzzle className="w-4 h-4" />} title="Open the extensions altar">
-            Paste <code className="px-1.5 py-0.5 rounded bg-crimson-950/60 border border-crimson-900/60 text-crimson-300 font-mono text-xs">chrome://extensions</code> into
-            your address bar (or <code className="px-1.5 py-0.5 rounded bg-crimson-950/60 border border-crimson-900/60 text-crimson-300 font-mono text-xs">edge://extensions</code> on Edge,
-            <code className="px-1.5 py-0.5 rounded bg-crimson-950/60 border border-crimson-900/60 text-crimson-300 font-mono text-xs">brave://extensions</code> on Brave) and press enter.
+          <Step index="2" icon={<Puzzle className="w-4 h-4" />} title="Add to Chrome">
+            Press <strong className="text-white font-black">Add to Chrome</strong>, then confirm with
+            <strong className="text-white font-black"> Add extension</strong> when your browser asks. The crimson
+            blood-drop sigil joins your browser — and the store keeps it updated for you, forever.
           </Step>
-          <Step index="3" icon={<Power className="w-4 h-4" />} title="Reveal the rites — Developer mode">
-            Flip on <strong className="text-white font-black">Developer mode</strong> — the toggle hiding in
-            the top-right corner. The hidden incantations appear.
-          </Step>
-          <Step index="4" icon={<FolderOpen className="w-4 h-4" />} title="Load unpacked">
-            Click <strong className="text-white font-black">Load unpacked</strong> and choose the
-            unzipped <code className="px-1.5 py-0.5 rounded bg-crimson-950/60 border border-crimson-900/60 text-crimson-300 font-mono text-xs">crimson-extension</code> folder
-            (the one with <code className="px-1.5 py-0.5 rounded bg-crimson-950/60 border border-crimson-900/60 text-crimson-300 font-mono text-xs">manifest.json</code> inside).
-            The crimson blood-drop sigil joins your browser.
-          </Step>
-          <Step index="5" icon={<Power className="w-4 h-4" />} title="Kneel — one red button">
+          <Step index="3" icon={<Power className="w-4 h-4" />} title="Kneel — one red button">
             Pin the companion to your toolbar, click its sigil, and press the single red
             <strong className="text-white font-black"> "Use Extension"</strong> button. When it glows crimson, it's awake —
             that's the whole configuration. Refresh crimsonhaven and your sources now answer to you directly.
@@ -204,15 +182,15 @@ export default function DownloadExtension() {
         <ShieldCheck className="w-6 h-6 text-crimson-500 shrink-0 mt-0.5" />
         <p className="text-sm text-crimson-100/70 font-medium leading-relaxed">
           The companion is entirely optional — without it, the haven simply resolves your sources the old way,
-          through the backend. Nothing breaks; you just hand the work back to me. Loading an unpacked extension is
-          standard, safe, and reversible: remove it any time from the same extensions page.
+          through the backend. Nothing breaks; you just hand the work back to me. It's published on the
+          Chrome Web Store, reviewed by Google, and removable any time from the same extensions page.
         </p>
       </div>
 
       {/* Footer note */}
       <div className="flex items-center justify-between gap-4 pt-2">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 flex items-center gap-2">
-          <AlertTriangle className="w-3.5 h-3.5" /> Desktop Chromium only
+          <ShieldCheck className="w-3.5 h-3.5" /> Desktop Chromium only
         </p>
         <Link
           to="/about"
