@@ -179,8 +179,8 @@ const UserSettings = () => {
 
   // Human description of the resulting auto-select behaviour.
   const summary = !prefs.language && !prefs.type
-    ? 'No language preference — the fastest, most reliable source plays by default.'
-    : `Sources tagged ${[prefs.language, prefs.type].filter(Boolean).join(' ')} play first, with the global source order (Cache › Voe › Jellyfin) deciding within that group.`;
+    ? 'No language preference — the first source to load plays by default.'
+    : `Sources tagged ${[prefs.language, prefs.type].filter(Boolean).join(' ')} auto-play whenever one is available; otherwise the first source to load plays.`;
 
   return (
     <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">

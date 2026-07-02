@@ -292,8 +292,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket };
 
         // Auto-select the most preferred source available unless the user has
-        // already picked one manually. Ranking honours the viewer's language/
-        // dub-sub preference first, then the global source order (see streamRank).
+        // already picked one manually. Ranking is purely the viewer's language/
+        // dub-sub preference; ties fall back to arrival order (see streamRank).
         const reselect = () => {
           if (userPickedRef.current) return;
           const prefs = getPlaybackPrefs();
