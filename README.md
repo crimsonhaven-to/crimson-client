@@ -66,8 +66,8 @@ sensible default so a plain build still works:
 | Build arg         | Controls                                         | Default                    |
 | ----------------- | ------------------------------------------------ | -------------------------- |
 | `VITE_SITE_URL`   | Origin for social-embed (Open Graph) URLs        | `https://crimsonhaven.to`  |
-| `VITE_HOSTED_IN`  | Where user data lives (About/footer/tour badge)  | `Switzerland`              |
-| `VITE_DMCA_MAIL`  | Takedown / DMCA contact on the Disclaimer page   | `service@crimsonhaven.to`  |
+| `VITE_HOSTED_IN`  | Where user data lives (About/footer/tour badge)  | `Secret:3`                 |
+| `VITE_DMCA_MAIL`  | Takedown / DMCA contact on the Disclaimer page   | `NoEmailProvided`          |
 
 Because these are **baked at build time** (Vite), they must be set when the image
 is built, not at container runtime. `VITE_SITE_URL` is set per environment by CI
@@ -125,7 +125,8 @@ and resolve sources itself**, in the viewer's own browser, so video bytes flow
 stream and feeds the same consumer, so a locally-resolved source is indistinguishable
 from a backend one and nothing regresses.
 
-- **`vendor/crimson-sources`** — the TS scrape/resolve engine, vendored as a **git
+- **`vendor/crimson-sources`** — the TS scrape/resolve engine (the part you 
+  yourself need to bring and keep a tight secret ;3), vendored as a **git
   submodule** and bundled by Vite (aliased, transpiled inline — no separate build).
 - **`src/clientSources.js`** — the bridge: runs the engine, enriches the `MediaCtx`
   from the backend `/scrape-meta` (+ `/scrape-meta/movie`) grant (title + year + imdb),
@@ -136,7 +137,7 @@ from a backend one and nothing regresses.
   *from the client itself*: vendored at **`vendor/crimson-extension`**, zipped by the
   Dockerfile `extpack` stage, and offered on the themed **`/extension`** download page
   (`src/DownloadExtension.jsx`) with a home-page nudge banner. With it on, the engine
-  resolves gated sources (VOE, HDRezka, …) straight from the viewer's residential IP.
+  resolves gated sources straight from the viewer's residential IP.
 - **CSP** `connect-src 'self' https:` (in `security-headers.conf`) — required so the
   in-app player may load rotating hoster CDNs directly; `script-src 'self'` is untouched.
 
