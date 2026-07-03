@@ -598,6 +598,13 @@ function WatchPage() {
     navigate(`/watch/${anilistId}/${currentSeason}/${newEpisode}`);
   };
 
+  // Cross-season jump for the in-player picker: move season + episode together.
+  const handleSelectEpisode = (newSeason, newEpisode) => {
+    setCurrentSeason(newSeason);
+    setCurrentEpisode(newEpisode);
+    navigate(`/watch/${anilistId}/${newSeason}/${newEpisode}`);
+  };
+
   return (
     <WatchView
       streams={streamData?.streams || []}
@@ -618,6 +625,7 @@ function WatchPage() {
       availableSeasons={availableSeasons}
       onSeasonChange={handleSeasonChange}
       onEpisodeChange={handleEpisodeChange}
+      onSelectEpisode={handleSelectEpisode}
       isAuthenticated={isAuthenticated}
       watchlistItem={watchlistItem}
       backUrl={`/anime/${anilistId}`}

@@ -98,6 +98,8 @@ function ShowWatch() {
 
   const onSeasonChange = (newSeason) => navigate(`/watch-show/${tmdbId}/${newSeason}/1`);
   const onEpisodeChange = (newEpisode) => navigate(`/watch-show/${tmdbId}/${currentSeason}/${newEpisode}`);
+  // Cross-season jump for the in-player picker: season + episode in one hop.
+  const onSelectEpisode = (newSeason, newEpisode) => navigate(`/watch-show/${tmdbId}/${newSeason}/${newEpisode}`);
 
   return (
     <WatchView
@@ -119,6 +121,7 @@ function ShowWatch() {
       availableSeasons={availableSeasons}
       onSeasonChange={onSeasonChange}
       onEpisodeChange={onEpisodeChange}
+      onSelectEpisode={onSelectEpisode}
       isAuthenticated={isAuthenticated}
       watchlistItem={watchlistItem}
       backUrl={`/show/${tmdbId}`}
