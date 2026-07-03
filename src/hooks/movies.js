@@ -5,11 +5,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../clientSources';
-import { streamRank } from '../streamUtils';
 import { apiFetch } from './apiClient';
 import { memGet, memSet } from './memCache';
 import { getPlaybackPrefs } from './playbackPrefs';
 import { streamWatchNdjson } from './ndjson';
+import { mergeStreamLine, pickBestIdx } from './streamMerge';
 
 // Trending general movies for the landing page's secondary row.
 export function useTrendingMovies() {
@@ -138,40 +138,19 @@ export function useMovieStreamer(tmdbId) {
       if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles };
-        const reselect = () => {
-          if (userPickedRef.current) return;
-          const prefs = getPlaybackPrefs();
-          let bestIdx = 0, bestRank = Infinity;
-          streamsRef.current.forEach((s, i) => {
-            const r = streamRank(s, prefs);
-            if (r < bestRank) { bestRank = r; bestIdx = i; }
-          });
-          setActiveStreamIdx(bestIdx);
-        };
-        if (clientSourcesEnabled()) {
-          // Prefer local over a backend duplicate; distinct dub/sub variants stay
-          // separate. A local line supersedes backend even if backend arrived first.
-          const key = `${msg.source}|${msg.language || ''}`;
-          const prior = dedup.get(key);
-          if (prior) {
-            if (origin === 'local' && prior.origin !== 'local') {
-              const swapped = streamsRef.current.slice();
-              swapped[prior.idx] = incoming;
-              streamsRef.current = swapped;
-              dedup.set(key, { idx: prior.idx, origin });
-              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
-              reselect();
-            }
-            return;
-          }
-          dedup.set(key, { idx: streamsRef.current.length, origin });
+        // Prefer local over a backend duplicate; distinct dub/sub variants stay
+        // separate. A local line supersedes backend even if backend arrived first.
+        // Then auto-select by preference. See ./streamMerge.
+        const { streams, changed, appended } = mergeStreamLine(
+          { streams: streamsRef.current, dedup }, msg, origin,
+          { enabled: clientSourcesEnabled() },
+        );
+        if (changed) {
+          streamsRef.current = streams;
+          setStreamData((prev) => ({ ...(prev || {}), streams }));
+          if (!userPickedRef.current) setActiveStreamIdx(pickBestIdx(streams, getPlaybackPrefs()));
         }
-        const next = [...streamsRef.current, incoming];
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
-        reselect();
-        setStreamLoading(false);
+        if (appended) setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
       }

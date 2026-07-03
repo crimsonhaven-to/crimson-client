@@ -11,11 +11,13 @@ name: Build and Deploy
 #                            that immutable :<tag> to the swarm (zero-downtime,
 #                            health-gated, auto-rollback).
 #
-# The private sources engine + companion extension are fetched best-effort at the
-# freshest branch tip per channel (build-time only; nothing is committed back):
-#   * push to `dev`       -> sources@dev, extension@main.
-#   * a published Release -> both @main.
-# The companion has no `dev` branch, so it always follows `main`.
+# The private sources engine is fetched best-effort at the freshest branch tip
+# per channel (build-time only; nothing is committed back):
+#   * push to `dev`       -> sources@dev.
+#   * a published Release -> sources@main.
+# The companion extension is NO LONGER baked in: it ships on the Chrome Web
+# Store and the /extension page links to that listing (the fetch below is left
+# commented for an easy restore of the side-load fallback).
 #
 # Which repos to fetch is ENV-DRIVEN (not hardcoded): set the repo secret
 # CRIMSON_SOURCES_REPO (e.g. crimsonhaven-to/crimson-sources) + SUBMODULES_TOKEN.
@@ -138,7 +140,12 @@ jobs:
           }
 
           fetch "$SOURCES_REPO"   "$SOURCES_BRANCH" vendor/crimson-sources
-          fetch "$EXTENSION_REPO" main              vendor/crimson-extension
+          # The companion now ships on the Chrome Web Store, so the client no
+          # longer bakes it into the image / offers a zip download — the
+          # /extension page links straight to the store listing. Leave the fetch
+          # commented (not deleted) so it's easy to restore if we ever need the
+          # side-load fallback again.
+          # fetch "$EXTENSION_REPO" main              vendor/crimson-extension
 
       - name: Compute image tags + API URL
         id: meta

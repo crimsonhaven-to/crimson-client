@@ -6,10 +6,7 @@ import { useEffect, useState } from 'react';
 
 import { API_BASE_URL } from './config';
 import { PUBKEY_KEY, extractError, setAuthStorage, useSessionToken } from './apiClient';
-
-// Hex-encode a byte array. Replaces the `buffer` polyfill we previously pulled in
-// just for this one call — the crypto libs already hand back plain Uint8Arrays.
-const toHex = (arr) => Array.from(arr, (b) => b.toString(16).padStart(2, '0')).join('');
+import { toHex, deriveIdentity } from './identity';
 
 // --- Lazy crypto -----------------------------------------------------------
 // ed25519 + the bip39 wordlist are only ever needed when the viewer actually
@@ -52,10 +49,12 @@ export function useAuth() {
 
   const deriveKeypair = async (mnemonic) => {
     const { mnemonicToSeedSync, ed } = await loadCrypto();
-    const seed = mnemonicToSeedSync(mnemonic).slice(0, 32);
-    const pubKeyArr = await ed.getPublicKeyAsync(seed);
-    const pubKeyHex = toHex(pubKeyArr);
-    return { seed, publicKey: pubKeyHex };
+    // Pure derivation lives in ./identity (pinned by identity.test.js); the heavy
+    // libs stay lazy-loaded here and are injected in.
+    return deriveIdentity(mnemonic, {
+      mnemonicToSeedSync,
+      getPublicKeyAsync: (seed) => ed.getPublicKeyAsync(seed),
+    });
   };
 
   // Get a one-time challenge for this key and sign it with the private seed —

@@ -7,11 +7,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../clientSources';
-import { streamRank } from '../streamUtils';
 import { apiFetch, useSessionToken } from './apiClient';
 import { memGet, memSet } from './memCache';
 import { getPlaybackPrefs } from './playbackPrefs';
 import { streamWatchNdjson } from './ndjson';
+import { mergeStreamLine, pickBestIdx } from './streamMerge';
 
 // Unified search for the landing page: queries the anime AND show endpoints in
 // parallel and returns a merged suggestion list with anime FIRST (priority 1),
@@ -291,42 +291,19 @@ export function useShowStreamer(tmdbId, season, episode) {
       } else if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket };
-        const reselect = () => {
-          if (userPickedRef.current) return;
-          const prefs = getPlaybackPrefs();
-          let bestIdx = 0, bestRank = Infinity;
-          streamsRef.current.forEach((s, i) => {
-            const r = streamRank(s, prefs);
-            if (r < bestRank) { bestRank = r; bestIdx = i; }
-          });
-          setActiveStreamIdx(bestIdx);
-        };
-        if (clientSourcesEnabled()) {
-          // Dedup by (source, language) — distinct dub/sub variants stay separate
-          // (e.g. VOE English Sub vs German Dub). Prefer local: a locally-resolved
-          // line (direct CDN) supersedes a backend duplicate even if the backend
-          // arrived first; a backend line never displaces a local one.
-          const key = `${msg.source}|${msg.language || ''}`;
-          const prior = dedup.get(key);
-          if (prior) {
-            if (origin === 'local' && prior.origin !== 'local') {
-              const swapped = streamsRef.current.slice();
-              swapped[prior.idx] = incoming;
-              streamsRef.current = swapped;
-              dedup.set(key, { idx: prior.idx, origin });
-              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
-              reselect();
-            }
-            return; // local already won, or a same-origin duplicate
-          }
-          dedup.set(key, { idx: streamsRef.current.length, origin });
+        // Dedup by (source, language) — distinct dub/sub variants stay separate
+        // (e.g. VOE English Sub vs German Dub) — preferring local over a backend
+        // duplicate, then auto-select by preference. See ./streamMerge.
+        const { streams, changed, appended } = mergeStreamLine(
+          { streams: streamsRef.current, dedup }, msg, origin,
+          { enabled: clientSourcesEnabled() },
+        );
+        if (changed) {
+          streamsRef.current = streams;
+          setStreamData((prev) => ({ ...(prev || {}), streams }));
+          if (!userPickedRef.current) setActiveStreamIdx(pickBestIdx(streams, getPlaybackPrefs()));
         }
-        const next = [...streamsRef.current, incoming];
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
-        reselect();
-        setStreamLoading(false);
+        if (appended) setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
       }

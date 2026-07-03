@@ -5,9 +5,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../clientSources';
-import { streamRank } from '../streamUtils';
 import { apiFetch } from './apiClient';
 import { getPlaybackPrefs } from './playbackPrefs';
+import { mergeStreamLine, pickBestIdx } from './streamMerge';
 
 export function useAnimeStreamer(externalProps = {}) {
   // Search & Autocomplete state
@@ -286,50 +286,22 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
         // Initialise the container as soon as metadata flushes (before any scraper).
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        // Normalise `streamType` -> `type` so the existing player/sidebar rendering
-        // keeps working unchanged. `language`/`subtitles`/`cacheTicket` are optional
-        // (only some scrapers supply them) and stay undefined otherwise.
-        const incoming = { source: msg.source, type: msg.streamType, url: msg.url, language: msg.language, subtitles: msg.subtitles, cacheTicket: msg.cacheTicket };
-
-        // Auto-select the most preferred source available unless the user has
-        // already picked one manually. Ranking is purely the viewer's language/
-        // dub-sub preference; ties fall back to arrival order (see streamRank).
-        const reselect = () => {
-          if (userPickedRef.current) return;
-          const prefs = getPlaybackPrefs();
-          let bestIdx = 0, bestRank = Infinity;
-          streamsRef.current.forEach((s, i) => {
-            const r = streamRank(s, prefs);
-            if (r < bestRank) { bestRank = r; bestIdx = i; }
-          });
-          setActiveStreamIdx(bestIdx);
-        };
-
-        if (clientSourcesEnabled()) {
-          const key = `${msg.source}|${msg.language || ''}`;
-          const prior = dedup.get(key);
-          if (prior) {
-            // A local line replaces an earlier backend one (in place); a backend
-            // line never displaces a local one, and same-origin dupes are dropped.
-            if (origin === 'local' && prior.origin !== 'local') {
-              const swapped = streamsRef.current.slice();
-              swapped[prior.idx] = incoming;
-              streamsRef.current = swapped;
-              dedup.set(key, { idx: prior.idx, origin });
-              setStreamData((prev) => ({ ...(prev || {}), streams: swapped }));
-              reselect();
-            }
-            return;
-          }
-          dedup.set(key, { idx: streamsRef.current.length, origin });
+        // Fold the resolved source into the list: prefer-local dedup + append (see
+        // ./streamMerge, pinned by streamMerge.test.js), then auto-select the most
+        // preferred source unless the user has already picked one manually. Ranking
+        // is purely the viewer's language/dub-sub preference; ties fall back to
+        // arrival order (see streamRank).
+        const { streams, changed, appended } = mergeStreamLine(
+          { streams: streamsRef.current, dedup }, msg, origin,
+          { enabled: clientSourcesEnabled() },
+        );
+        if (changed) {
+          streamsRef.current = streams;
+          setStreamData((prev) => ({ ...(prev || {}), streams }));
+          if (!userPickedRef.current) setActiveStreamIdx(pickBestIdx(streams, getPlaybackPrefs()));
         }
-
-        const next = [...streamsRef.current, incoming];
-        streamsRef.current = next;
-        setStreamData((prev) => ({ ...(prev || {}), streams: next }));
-        reselect();
         // First playable source is in — drop the loading veil so it renders immediately.
-        setStreamLoading(false);
+        if (appended) setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
       }
