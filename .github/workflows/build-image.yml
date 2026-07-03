@@ -15,9 +15,8 @@ name: Build and Deploy
 # per channel (build-time only; nothing is committed back):
 #   * push to `dev`       -> sources@dev.
 #   * a published Release -> sources@main.
-# The companion extension is NO LONGER baked in: it ships on the Chrome Web
-# Store and the /extension page links to that listing (the fetch below is left
-# commented for an easy restore of the side-load fallback).
+# The companion extension is NOT baked in: it ships on the Chrome Web Store and
+# the /extension page links straight to that listing.
 #
 # Which repos to fetch is ENV-DRIVEN (not hardcoded): set the repo secret
 # CRIMSON_SOURCES_REPO (e.g. crimsonhaven-to/crimson-sources) + SUBMODULES_TOKEN.
@@ -95,26 +94,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        # Submodules are intentionally NOT checked out here. The private sources +
-        # companion repos are fetched best-effort in the next step, so a build
-        # WITHOUT access to them still succeeds (Vite swaps in the no-op stub).
+        # The private sources submodule is intentionally NOT checked out here. It's
+        # fetched best-effort in the next step, so a build WITHOUT access to it
+        # still succeeds (Vite swaps in the no-op stub).
 
-      - name: Fetch private sources + companion (optional, env-driven)
+      - name: Fetch private sources (optional, env-driven)
         env:
           # Which repo holds the client-side sources engine. Set as a repo SECRET
           # (e.g. crimsonhaven-to/crimson-sources). UNSET / unreachable => build
           # with NO sources: vite.config.js swaps in src/sourcesStub.js and the
           # client plays via the backend only. Never hardcoded here.
           SOURCES_REPO: ${{ secrets.CRIMSON_SOURCES_REPO }}
-          # The companion-extension repo. Defaults to <owner>/crimson-extension
-          # (follows whoever owns this repo, so forks work too); override with an
-          # optional CRIMSON_EXTENSION_REPO secret if it lives elsewhere.
-          EXTENSION_REPO: ${{ secrets.CRIMSON_EXTENSION_REPO || format('{0}/crimson-extension', github.repository_owner) }}
           GIT_TOKEN: ${{ secrets.SUBMODULES_TOKEN || github.token }}
         run: |
           set -u
-          # Freshest code per channel: release -> main, otherwise dev. The
-          # companion has no `dev` branch, so it always tracks main.
+          # Freshest code per channel: release -> main, otherwise dev.
           if [ "${{ github.event_name }}" = "release" ]; then SOURCES_BRANCH=main; else SOURCES_BRANCH=dev; fi
 
           # Clone <repo>@<branch> into <dest>, best-effort. Any failure (repo
@@ -146,13 +140,7 @@ jobs:
             echo "::endgroup::"
           }
 
-          fetch "$SOURCES_REPO"   "$SOURCES_BRANCH" vendor/crimson-sources
-          # The companion now ships on the Chrome Web Store, so the client no
-          # longer bakes it into the image / offers a zip download — the
-          # /extension page links straight to the store listing. Leave the fetch
-          # commented (not deleted) so it's easy to restore if we ever need the
-          # side-load fallback again.
-          # fetch "$EXTENSION_REPO" main              vendor/crimson-extension
+          fetch "$SOURCES_REPO" "$SOURCES_BRANCH" vendor/crimson-sources
 
       - name: Compute image tags + API URL
         id: meta
