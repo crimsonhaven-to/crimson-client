@@ -2,7 +2,3 @@
 	path = vendor/crimson-sources
 	url = ../crimson-sources
 	branch = main
-[submodule "vendor/crimson-extension"]
-	path = vendor/crimson-extension
-	url = ../crimson-extension
-	branch = main

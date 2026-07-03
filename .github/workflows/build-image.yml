@@ -41,6 +41,13 @@ on:
       - '**.md'
   release:
     types: [published]
+  # Sources-driven rebuild: crimson-sources' own CI fires this (via the API) on a
+  # push to its `dev` branch, so a change to the client-side sources engine ships to
+  # dev.crimsonhaven WITHOUT a manual submodule bump / client push. It behaves exactly
+  # like a `dev` push (builds :dev-<sha> from sources@dev and rolls the dev stack) —
+  # see `.github/workflows/deploy-client-dev.yml` in crimson-sources. Also runnable by
+  # hand from the Actions tab. Pick ref `dev` when dispatching.
+  workflow_dispatch:
 
 concurrency:
   group: crimson-client-${{ github.ref }}
@@ -217,7 +224,9 @@ jobs:
   # (~/dev-crimson-client-deploy/), so CI just triggers its deploy.sh.
   deploy-dev:
     needs: build
-    if: ${{ github.event_name == 'push' }}
+    # A `dev` push OR a sources-driven / manual dispatch both roll the dev stack
+    # (releases go through the prod `deploy` job above instead).
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: [self-hosted]
     steps:
       - name: Deploy to the dev swarm stack
