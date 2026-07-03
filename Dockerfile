@@ -69,39 +69,6 @@ RUN set -eu; \
     build linux   amd64 crimson-presence-helper-linux-amd64; \
     build linux   arm64 crimson-presence-helper-linux-arm64
 
-# Extension-pack stage – zip the companion extension (vendor/crimson-extension,
-# a private git submodule) so it's downloadable straight from the site. Same
-# rationale as the rpc-helper above: the repo is private, so GitHub Release
-# assets aren't publicly fetchable. The viewer downloads the zip, unpacks it and
-# side-loads it (Load unpacked) — see the /extension Download page in the client.
-FROM alpine:3.20 AS extpack
-
-WORKDIR /work
-
-RUN apk add --no-cache zip
-
-# The companion extension is a PRIVATE submodule (vendor/crimson-extension) and may
-# be ABSENT when building without access to it (a fork / no SUBMODULES_TOKEN). Copy
-# the whole vendor tree (always present, possibly with an empty extension dir) and
-# guard on the manifest so the image still builds — the /extension download is just
-# unavailable in that case, rather than failing the whole build.
-COPY vendor ./vendor
-
-# Drop any VCS metadata, then zip the folder itself so unpacking yields a single
-# `crimson-extension/` directory with manifest.json at its root (exactly what
-# "Load unpacked" expects). manifest.json is copied out alongside so the Download
-# page can show the live version without hardcoding it.
-RUN mkdir -p /out; \
-    if [ -f vendor/crimson-extension/manifest.json ]; then \
-      cp -r vendor/crimson-extension ./crimson-extension; \
-      rm -rf crimson-extension/.git; \
-      zip -r -X /out/crimson-extension.zip crimson-extension; \
-      cp crimson-extension/manifest.json /out/manifest.json; \
-      echo "✓ companion extension packed"; \
-    else \
-      echo "ℹ no companion extension bundled — /extension download will be unavailable"; \
-    fi
-
 # Production stage with Nginx
 FROM nginx:alpine
 
@@ -110,9 +77,6 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy the cross-compiled presence helpers so they're downloadable at /helper/.
 COPY --from=helper /out /usr/share/nginx/html/helper
-
-# Copy the packed companion extension so it's downloadable at /extension/.
-COPY --from=extpack /out /usr/share/nginx/html/extension
 
 # Copy custom Nginx config for SPA routing (+ shared security-headers snippet)
 COPY nginx.conf /etc/nginx/conf.d/default.conf

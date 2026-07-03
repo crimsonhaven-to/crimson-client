@@ -133,10 +133,10 @@ from a backend one and nothing regresses.
   and wires the **E2** path (`signProxyUrl` → backend `/sign`) and the **`/resolve`**
   grant for secret-bound sources. `src/hooks.js` runs it inside the anime / show /
   movie watch hooks, deduping local vs backend by `(source, language)` (local wins).
-- **The Companion (E3)** — the [crimson-extension](../crimson-extension) is shipped
-  *from the client itself*: vendored at **`vendor/crimson-extension`**, zipped by the
-  Dockerfile `extpack` stage, and offered on the themed **`/extension`** download page
-  (`src/DownloadExtension.jsx`) with a home-page nudge banner. With it on, the engine
+- **The Companion (E3)** — the crimson-extension ships on the **Chrome Web Store**.
+  The themed **`/extension`** page (`src/DownloadExtension.jsx`) links straight to the
+  listing, with a home-page nudge banner; the client detects a live companion via the
+  `window.CrimsonExtension` / `crimson-extension-ready` handshake. With it on, the engine
   resolves gated sources straight from the viewer's residential IP.
 - **CSP** `connect-src 'self' https:` (in `security-headers.conf`) — required so the
   in-app player may load rotating hoster CDNs directly; `script-src 'self'` is untouched.

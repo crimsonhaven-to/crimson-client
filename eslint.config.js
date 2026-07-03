@@ -5,9 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  // `dist` is build output; `vendor/` holds git submodules (crimson-sources,
-  // crimson-extension) that are separate repos with their own toolchains and
-  // runtime globals (chrome.*, CRX) — they're linted in their own CI, not here.
+  // `dist` is build output; `vendor/` holds the crimson-sources git submodule,
+  // a separate repo with its own toolchain and runtime globals — it's linted in
+  // its own CI, not here.
   globalIgnores(['dist', 'vendor']),
   {
     files: ['**/*.{js,jsx}'],
