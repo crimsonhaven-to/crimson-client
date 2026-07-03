@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Info, AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers, Puzzle, X, RefreshCw } from 'lucide-react';
+import { AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers, Puzzle, X, RefreshCw, Film, Calendar, Play, ListVideo } from 'lucide-react';
 import { API_BASE_URL, apiFetch, fetchSubtitles, fetchSkipTimes, usePlaybackPrefs, groupStreams, streamVariantLabel } from './hooks';
 import { setWatchActivity, clearWatchActivity } from './discordPresence';
 import { stripHtml } from './utils';
@@ -114,6 +114,58 @@ const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle })
   );
 };
 
+// One rich episode card for the below-player picker — TMDB still, name, air date
+// and summary, mirroring the overview's EpisodeCard so the two surfaces read as
+// one system. `active` marks the episode currently on screen (a pulsing "Now"
+// crest + a crimson-lit frame) so the viewer never loses their place.
+const PickerEpisodeCard = ({ ep, active, onSelect }) => {
+  const hasTitle = ep.title && ep.title !== `Episode ${ep.episode_number}`;
+  return (
+    <button
+      onClick={onSelect}
+      className={`group flex gap-3 sm:gap-4 text-left p-2.5 sm:p-3 rounded-2xl border transition-all duration-300 ${
+        active
+          ? 'bg-crimson-600/15 border-crimson-500/60 shadow-[0_0_25px_rgba(255,0,60,0.15)]'
+          : 'bg-crimson-950/30 border-crimson-900/40 hover:bg-crimson-900/20 hover:border-crimson-500/50 hover:shadow-[0_0_20px_rgba(255,0,60,0.1)]'
+      }`}
+    >
+      <div className="relative w-32 sm:w-44 aspect-video flex-shrink-0 rounded-xl overflow-hidden bg-crimson-900/40 shadow-inner">
+        {ep.thumbnail ? (
+          <img src={ep.thumbnail} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-crimson-800"><Film className="w-8 h-8 opacity-20" /></div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-crimson-950/60 opacity-0 group-hover:opacity-100 transition-all duration-300">
+          <div className="bg-crimson-500 p-2.5 rounded-full shadow-[0_0_15px_rgba(255,0,60,0.5)] transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+            <Play className="w-5 h-5 text-white fill-white" />
+          </div>
+        </div>
+        <span className="absolute top-2 left-2 bg-crimson-950/90 text-crimson-400 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border border-crimson-800/50 backdrop-blur-md">
+          E{ep.episode_number}
+        </span>
+        {active && (
+          <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-600 text-[8px] font-black uppercase tracking-widest text-white shadow-[0_0_10px_rgba(255,0,60,0.6)]">
+            <span className="w-1 h-1 rounded-full bg-white animate-pulse" /> Now
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col min-w-0 py-1">
+        <h4 className={`text-sm sm:text-base font-bold transition-colors line-clamp-1 tracking-tight ${active ? 'text-crimson-300' : 'text-crimson-50 group-hover:text-crimson-400'}`}>
+          {hasTitle ? ep.title : `Episode ${ep.episode_number}`}
+        </h4>
+        {ep.air_date && (
+          <span className="flex items-center gap-1 text-[10px] text-crimson-600 font-black uppercase tracking-widest mt-1 opacity-80">
+            <Calendar className="w-3 h-3" /> {ep.air_date}
+          </span>
+        )}
+        {ep.overview && (
+          <p className="text-xs text-crimson-200/50 leading-relaxed line-clamp-2 mt-2 font-medium">{ep.overview}</p>
+        )}
+      </div>
+    </button>
+  );
+};
+
 // Presentational watch UI shared by the anime watch page (/watch/:anilistId/...)
 // and the non-anime show watch page (/watch-show/:tmdbId/...). Both feed it the
 // same prop shape; only the data source (useAnimeStreamer vs useShowStreamer) and
@@ -128,7 +180,12 @@ const WatchView = ({
   metadata, displayTitle, totalSeasons,
   currentSeason, currentEpisode, refLabel,
   // selectors
-  availableSeasons = [], onSeasonChange, onEpisodeChange,
+  availableSeasons = [], onEpisodeChange,
+  // Cross-season episode jump: navigate straight to {season, episode} in one hop
+  // (onEpisodeChange only moves within the current season). The season chips and
+  // both pickers browse via this + onEpisodeChange; onSeasonChange is no longer
+  // needed here (the wrappers still pass it — harmlessly ignored).
+  onSelectEpisode,
   // account
   isAuthenticated, watchlistItem,
   // nav
@@ -137,7 +194,9 @@ const WatchView = ({
   // drop the SxEx from the download name. TV/anime render unchanged (default false).
   isMovie = false,
 }) => {
-  const episodesList = metadata?.episodes_list || [];
+  // Memoized so its identity is stable across renders — it feeds a useEffect dep
+  // array (the picker's season seed), which would otherwise re-run every render.
+  const episodesList = useMemo(() => metadata?.episodes_list || [], [metadata]);
   const currentEpisodeData = episodesList.find(e => e.episode_number === currentEpisode);
   const episodeTitle = currentEpisodeData?.title && currentEpisodeData.title !== `Episode ${currentEpisode}`
     ? currentEpisodeData.title
@@ -162,6 +221,71 @@ const WatchView = ({
     || 'No summary asset provided.';
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
+
+  // --- In-player Season / Episode picker -----------------------------------
+  // The player embeds a full season→episode browser (with TMDB stills) so the
+  // viewer can hop episodes without leaving the video — crucially, it works in
+  // fullscreen, unlike the selectors rendered below the player. Browsing a
+  // season the viewer isn't watching needs that season's episode list, so we
+  // fetch it lazily the first time the season is expanded and cache it. The
+  // reused endpoint (/info/{tmdb_id}?season={tmdb_season}) is the exact call the
+  // overview pages already make, and both surfaces carry {tmdb_id, tmdb_season}
+  // per season, so this works for anime and shows alike. The playing season is
+  // seeded straight from the metadata already loaded — no extra request.
+  const [pickerSeason, setPickerSeason] = useState(currentSeason);
+  const [seasonEpisodes, setSeasonEpisodes] = useState({}); // season_number -> episodes[]
+  const [pickerLoading, setPickerLoading] = useState(false);
+
+  // Follow whatever's playing: when the season changes, expand it in the picker.
+  useEffect(() => { setPickerSeason(currentSeason); }, [currentSeason]);
+
+  // Seed the playing season from the episode list we already have in metadata.
+  useEffect(() => {
+    if (episodesList.length) setSeasonEpisodes((m) => ({ ...m, [currentSeason]: episodesList }));
+  }, [currentSeason, episodesList]);
+
+  // Lazily resolve the expanded season's episodes the first time it's opened.
+  useEffect(() => {
+    if (isMovie || pickerSeason == null || seasonEpisodes[pickerSeason]) return undefined;
+    const season = availableSeasons.find((s) => s.season_number === pickerSeason);
+    if (!season?.tmdb_id) return undefined;
+    let cancelled = false;
+    setPickerLoading(true);
+    apiFetch(`/info/${season.tmdb_id}?season=${season.tmdb_season}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const list = Array.isArray(data.episodes_list) ? data.episodes_list : [];
+        setSeasonEpisodes((m) => ({ ...m, [pickerSeason]: list }));
+      })
+      .catch(() => { /* best-effort — the panel shows an empty state on failure */ })
+      .finally(() => { if (!cancelled) setPickerLoading(false); });
+    return () => { cancelled = true; };
+  }, [isMovie, pickerSeason, availableSeasons, seasonEpisodes]);
+
+  // Jump to an episode from the picker: stay in-season via onEpisodeChange, or
+  // hop seasons via onSelectEpisode when the wrapper provides it (falls back to
+  // an in-season change so a missing prop never dead-ends a click).
+  const handlePickEpisode = useCallback((seasonNumber, episodeNumber) => {
+    if (seasonNumber === currentSeason) onEpisodeChange?.(episodeNumber);
+    else if (onSelectEpisode) onSelectEpisode(seasonNumber, episodeNumber);
+    else onEpisodeChange?.(episodeNumber);
+  }, [currentSeason, onEpisodeChange, onSelectEpisode]);
+
+  // The bundle handed to the player. Null for movies (single feature) and when
+  // there's nothing to browse, so the player simply won't render the button.
+  const episodePicker = !isMovie && (availableSeasons.length > 0 || episodesList.length > 0)
+    ? {
+        seasons: availableSeasons,
+        currentSeason,
+        currentEpisode,
+        expandedSeason: pickerSeason,
+        onExpandSeason: setPickerSeason,
+        episodes: seasonEpisodes[pickerSeason] || [],
+        episodesLoading: pickerLoading && !seasonEpisodes[pickerSeason],
+        onSelectEpisode: handlePickEpisode,
+      }
+    : null;
 
   // TMDB id of the title — the key several things below hang off of (sticky source
   // pref, OpenSubtitles fetch, cache scoping). Declared up here so the sticky-source
@@ -427,6 +551,7 @@ const WatchView = ({
                   activeSourceIdx={activeStreamIdx}
                   onSelectSource={handleSelectStream}
                   onReportBroken={handleReportBroken}
+                  episodePicker={episodePicker}
                 />
               </Suspense>
             )
@@ -491,56 +616,81 @@ const WatchView = ({
           </div>
         </div>
 
-        {/* Season & Episode Selectors (hidden for movies — single feature) */}
-        {!isMovie && (
-        <div className="space-y-8">
-          {availableSeasons && availableSeasons.length > 1 && (
+        {/* Season & Episode picker (hidden for movies — single feature). Browse
+            any season's episodes in-place — TMDB stills, names, air dates and
+            summaries — mirroring the in-player overlay, so both read as one
+            system. Season chips BROWSE (not navigate); the episode card is what
+            commits, jumping across seasons in a single hop when needed. */}
+        {!isMovie && episodePicker && (
+        <div className="space-y-6">
+          {episodePicker.seasons.length > 1 && (
             <div className="p-4 sm:p-5 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl flex items-center gap-4 overflow-x-auto no-scrollbar backdrop-blur-sm">
               <span className="text-[10px] font-black uppercase text-crimson-700 tracking-[0.3em] whitespace-nowrap pl-2">Archives</span>
               <div className="flex gap-2">
-                {availableSeasons.map((season) => (
-                  <button
-                    key={season.season_number}
-                    onClick={() => onSeasonChange(season.season_number)}
-                    className={`px-5 py-2.5 rounded-xl text-[11px] font-black border transition-all duration-300 whitespace-nowrap uppercase tracking-widest ${
-                      currentSeason === season.season_number
-                        ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.2)]'
-                        : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-400 hover:border-crimson-600 hover:bg-crimson-900/30'
-                    }`}
-                  >
-                    Season {season.season_number}
-                  </button>
-                ))}
+                {episodePicker.seasons.map((season) => {
+                  const active = episodePicker.expandedSeason === season.season_number;
+                  const playing = episodePicker.currentSeason === season.season_number;
+                  return (
+                    <button
+                      key={season.season_number}
+                      onClick={() => episodePicker.onExpandSeason(season.season_number)}
+                      className={`px-5 py-2.5 rounded-xl text-[11px] font-black border transition-all duration-300 whitespace-nowrap uppercase tracking-widest ${
+                        active
+                          ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.2)]'
+                          : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-400 hover:border-crimson-600 hover:bg-crimson-900/30'
+                      }`}
+                    >
+                      Season {season.season_number}
+                      {playing && <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-crimson-300 shadow-[0_0_6px_#ff003c] align-middle" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
 
-          {metadata?.episodes_list && (
-            <div className="p-6 sm:p-10 bg-crimson-950/30 border border-crimson-900/30 rounded-[2.5rem] space-y-8 backdrop-blur-sm shadow-2xl">
-              <div className="flex items-center gap-4">
-                <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter">
-                  <Info className="w-6 h-6 text-crimson-500" /> Manifest Segments
-                </h3>
-                <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
-              </div>
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
-                {metadata.episodes_list.map((ep) => (
-                  <button
-                    key={ep.episode_number}
-                    onClick={() => onEpisodeChange(ep.episode_number)}
-                    className={`aspect-square rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-0.5 group/ep ${
-                      currentEpisode === ep.episode_number
-                        ? 'bg-crimson-600 border-crimson-400 text-white font-black shadow-[0_10px_20px_rgba(255,0,30,0.4)] scale-110 z-10'
-                        : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-200 hover:border-crimson-600 hover:bg-crimson-900/30'
-                    }`}
-                  >
-                    <span className={`text-[8px] uppercase font-black tracking-widest opacity-40 group-hover/ep:opacity-100 transition-opacity ${currentEpisode === ep.episode_number ? 'opacity-100' : ''}`}>E</span>
-                    <span className="text-lg font-black">{ep.episode_number}</span>
-                  </button>
+          <div className="p-6 sm:p-10 bg-crimson-950/30 border border-crimson-900/30 rounded-[2.5rem] space-y-8 backdrop-blur-sm shadow-2xl">
+            <div className="flex items-center gap-4">
+              <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter whitespace-nowrap">
+                <ListVideo className="w-6 h-6 text-crimson-500" /> Manifest Segments
+                {episodePicker.seasons.length > 1 && (
+                  <span className="text-[11px] font-black uppercase tracking-widest text-crimson-600 opacity-80">· Season {episodePicker.expandedSeason}</span>
+                )}
+              </h3>
+              <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
+              {!episodePicker.episodesLoading && episodePicker.episodes.length > 0 && (
+                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-600 whitespace-nowrap opacity-80">
+                  <Film className="w-3 h-3" /> {episodePicker.episodes.length} segments
+                </span>
+              )}
+            </div>
+
+            {episodePicker.episodesLoading ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <div key={n} className="h-28 bg-crimson-950/40 animate-pulse rounded-2xl border border-crimson-900/30" />
                 ))}
               </div>
-            </div>
-          )}
+            ) : episodePicker.episodes.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {episodePicker.episodes.map((ep) => (
+                  <PickerEpisodeCard
+                    key={ep.episode_number}
+                    ep={ep}
+                    active={episodePicker.expandedSeason === episodePicker.currentSeason && ep.episode_number === episodePicker.currentEpisode}
+                    onSelect={() => episodePicker.onSelectEpisode(episodePicker.expandedSeason, ep.episode_number)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-16 text-center space-y-4">
+                <div className="w-12 h-12 mx-auto grid place-items-center rounded-full border-2 border-dashed border-crimson-900/50">
+                  <Film className="w-6 h-6 text-crimson-900" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-crimson-700 italic">No segment data recorded for this season.</p>
+              </div>
+            )}
+          </div>
         </div>
         )}
       </div>
