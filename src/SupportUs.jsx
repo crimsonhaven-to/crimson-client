@@ -33,7 +33,7 @@ const WalletRow = ({ symbol, name, address }) => {
       </div>
 
       <div className="flex-1 min-w-0 relative z-10">
-        <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-tight group-hover:text-crimson-400 transition-colors">
+        <h3 className="text-base sm:text-lg font-black text-crimson-50 uppercase tracking-tight group-hover:text-crimson-400 transition-colors">
           {name}
         </h3>
         <p className="font-mono text-[11px] sm:text-xs text-crimson-300/70 break-all mt-1 leading-relaxed">
@@ -58,7 +58,7 @@ const SupportUsPage = () => {
   return (
     <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 space-y-3">
-        <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter flex items-center gap-4 leading-none">
+        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4 leading-none">
           <Heart className="w-10 h-10 text-crimson-500 fill-crimson-500/20 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]" /> Support Us
         </h2>
         <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Protocol: Sustaining the Sanctuary</p>
@@ -66,7 +66,7 @@ const SupportUsPage = () => {
 
       <div className="space-y-8 text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium">
         <p>
-          <strong className="text-white font-black tracking-tight uppercase">crimsonhaven</strong> is a performance-optimized high-fidelity manifest built for the community.
+          <strong className="text-crimson-50 font-black tracking-tight uppercase">crimsonhaven</strong> is a performance-optimized high-fidelity manifest built for the community.
           Maintaining the infrastructure, scraping engines, and dark network nodes requires constant calibration and resources.
         </p>
 

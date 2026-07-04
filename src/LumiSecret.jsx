@@ -1,17 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { apiFetch } from './hooks';
+import { apiFetch, themedAsset, useTheme } from './hooks';
 
 // --- The secret shrine -----------------------------------------------------
 // Revealed by the Konami code (see useKonami.js). Lumi art that the viewer can
 // click to cycle, plus a blessing pulled live from the backend /lumi endpoint
-// (with a local fallback so it's never empty).
-const LUMI_ART = [
-  '/lumi_secret_lumi_peace.png',
-  '/lumi_secret_nobackgroundmascot.png',
-  '/lumi_secret_lumi_cuty.png',
-  '/lumi_secret_lumi_sideways.png',
-  '/lumi_secret_annoyed_lumi.png',
+// (with a local fallback so it's never empty). The art is resolved per theme,
+// so a "Catgirl Lumi" shrine swaps in her catgirl forms once that art exists.
+const LUMI_ART_KEYS = [
+  'secret_peace',
+  'secret_mascot',
+  'secret_cuty',
+  'secret_sideways',
+  'secret_annoyed',
 ];
 
 const FALLBACK_BLESSING = 'You found my shrine, mortal. Few are so persistent. ✨';
@@ -20,6 +21,9 @@ export default function LumiSecret() {
   const [art, setArt] = useState(0);
   const [blessing, setBlessing] = useState(FALLBACK_BLESSING);
   const [title, setTitle] = useState('Eternal Empress of the Crimson Archives');
+  // Resolve the gallery for the active theme (length is stable across themes).
+  const theme = useTheme();
+  const LUMI_ART = LUMI_ART_KEYS.map((k) => themedAsset(k, theme));
 
   // Pull a fresh blessing from the backend (public endpoint). Best-effort.
   useEffect(() => {

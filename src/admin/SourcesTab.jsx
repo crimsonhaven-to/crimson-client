@@ -116,7 +116,7 @@ export default function SourcesTab({ notify }) {
         <div className="flex items-center gap-3 relative z-10">
           <HardDrive className="w-7 h-7 text-crimson-500" />
           <div>
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Local Media Sources</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Local Media Sources</h3>
             <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Direct-play streaming from a NAS / mounted directory</p>
           </div>
         </div>

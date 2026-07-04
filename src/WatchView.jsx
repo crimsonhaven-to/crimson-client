@@ -39,23 +39,23 @@ const StreamTile = ({ stream, label, active, nested = false, onClick }) => (
     <div className="flex flex-col min-w-0 pr-4">
       <div className="flex items-center gap-2 mb-1.5 leading-none">
         <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
-          active ? 'bg-white/20 border-white/20 text-white' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
+          active ? 'bg-white/20 border-white/20 text-crimson-50' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
         }`}>
           {stream.type}
         </span>
         {stream.language && (
           <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md ${
-            active ? 'bg-crimson-950/40 text-white' : 'bg-crimson-900 text-crimson-400'
+            active ? 'bg-crimson-950/40 text-crimson-50' : 'bg-crimson-900 text-crimson-400'
           }`}>
             {stream.language}
           </span>
         )}
       </div>
-      <span className={`font-black tracking-wide text-white truncate ${nested ? 'text-[11px]' : 'text-xs'}`}>
+      <span className={`font-black tracking-wide text-crimson-50 truncate ${nested ? 'text-[11px]' : 'text-xs'}`}>
         {label}
       </span>
     </div>
-    <ChevronRight className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 ${active ? 'text-white' : 'text-crimson-800'}`} />
+    <ChevronRight className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 ${active ? 'text-crimson-50' : 'text-crimson-800'}`} />
   </button>
 );
 
@@ -80,21 +80,21 @@ const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle })
         onClick={onToggle}
         className={`relative w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
           containsActive
-            ? 'bg-crimson-600/90 text-white border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
+            ? 'bg-crimson-600/90 text-crimson-50 border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
             : 'bg-crimson-950/70 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-600'
         }`}
       >
         <div className="flex flex-col min-w-0 pr-4">
           <div className="flex items-center gap-2 mb-1.5 leading-none">
             <span className={`flex items-center gap-1 text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
-              containsActive ? 'bg-white/20 border-white/20 text-white' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
+              containsActive ? 'bg-white/20 border-white/20 text-crimson-50' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
             }`}>
               <Layers className="w-2.5 h-2.5" /> {count} sources
             </span>
           </div>
-          <span className="text-xs font-black tracking-wide text-white truncate">{group.label}</span>
+          <span className="text-xs font-black tracking-wide text-crimson-50 truncate">{group.label}</span>
         </div>
-        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${containsActive ? 'text-white' : 'text-crimson-700'}`} />
+        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${containsActive ? 'text-crimson-50' : 'text-crimson-700'}`} />
       </button>
       {open && (
         <div className="mt-2 pl-3 ml-1.5 border-l border-crimson-900/50 space-y-2 animate-in slide-in-from-top-1 fade-in duration-300">
@@ -501,7 +501,7 @@ const WatchView = ({
           {unaired ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-crimson-950/70 backdrop-blur-sm">
               <CalendarClock className="w-16 h-16 text-crimson-500 mb-5 opacity-70" />
-              <p className="text-white font-black uppercase tracking-[0.2em] text-base sm:text-lg">Not Yet Manifested</p>
+              <p className="text-crimson-50 font-black uppercase tracking-[0.2em] text-base sm:text-lg">Not Yet Manifested</p>
               <p className="text-crimson-300/80 mt-3 max-w-md font-medium text-sm leading-relaxed">
                 This segment hasn't crossed into our dimension yet.
                 {unaired.airDate && (
@@ -559,7 +559,7 @@ const WatchView = ({
             !streamLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-crimson-950/50 backdrop-blur-sm">
                 <AlertTriangle className="w-16 h-16 text-crimson-500 mb-4 opacity-50" />
-                <p className="text-white font-black uppercase tracking-widest text-sm">No transport nodes active</p>
+                <p className="text-crimson-50 font-black uppercase tracking-widest text-sm">No transport nodes active</p>
               </div>
             )
           )}
@@ -585,7 +585,7 @@ const WatchView = ({
                 )}
               </div>
               <div className="space-y-2">
-                <h1 className="text-3xl sm:text-5xl font-black tracking-tighter text-white leading-[1.1]">
+                <h1 className="text-3xl sm:text-5xl font-black tracking-tighter text-crimson-50 leading-[1.1]">
                   {displayTitle || 'Unknown Cluster'}
                   {totalSeasons > 1 && (
                     <span className="text-xl text-crimson-500 ml-3 opacity-80">S{currentSeason}</span>
@@ -605,11 +605,11 @@ const WatchView = ({
               <div className="flex gap-3 w-full sm:w-auto">
                 <div className="flex-1 sm:flex-none bg-crimson-950/80 border border-crimson-900/60 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
                   <p className="text-[10px] uppercase text-crimson-500 font-black tracking-[0.3em] mb-1">SN</p>
-                  <p className="text-2xl font-black text-white">{currentSeason}</p>
+                  <p className="text-2xl font-black text-crimson-50">{currentSeason}</p>
                 </div>
                 <div className="flex-1 sm:flex-none bg-crimson-900/20 border border-crimson-800/40 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
                   <p className="text-[10px] uppercase text-crimson-400 font-black tracking-[0.3em] mb-1">EP</p>
-                  <p className="text-2xl font-black text-white">{currentEpisode}</p>
+                  <p className="text-2xl font-black text-crimson-50">{currentEpisode}</p>
                 </div>
               </div>
             )}
@@ -651,7 +651,7 @@ const WatchView = ({
 
           <div className="p-6 sm:p-10 bg-crimson-950/30 border border-crimson-900/30 rounded-[2.5rem] space-y-8 backdrop-blur-sm shadow-2xl">
             <div className="flex items-center gap-4">
-              <h3 className="text-xl font-black text-white flex items-center gap-3 uppercase tracking-tighter whitespace-nowrap">
+              <h3 className="text-xl font-black text-crimson-50 flex items-center gap-3 uppercase tracking-tighter whitespace-nowrap">
                 <ListVideo className="w-6 h-6 text-crimson-500" /> Manifest Segments
                 {episodePicker.seasons.length > 1 && (
                   <span className="text-[11px] font-black uppercase tracking-widest text-crimson-600 opacity-80">· Season {episodePicker.expandedSeason}</span>
@@ -700,7 +700,7 @@ const WatchView = ({
         <div className="bg-crimson-950/40 border border-crimson-900/40 p-6 sm:p-8 rounded-[2rem] sticky top-28 backdrop-blur-xl shadow-2xl overflow-hidden">
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
 
-          <h3 className="text-lg font-black text-white mb-8 flex items-center gap-3 uppercase tracking-tighter relative z-10">
+          <h3 className="text-lg font-black text-crimson-50 mb-8 flex items-center gap-3 uppercase tracking-tighter relative z-10">
             <div className="relative">
                {streamLoading && <div className="w-2.5 h-2.5 rounded-full bg-crimson-500 animate-ping absolute inset-0"></div>}
                <div className="w-2.5 h-2.5 rounded-full bg-crimson-600 relative"></div>
@@ -796,7 +796,7 @@ const WatchView = ({
                 <Puzzle className="w-4 h-4" />
               </span>
               <div className="min-w-0 flex-grow">
-                <Link to="/extension" className="block text-[11px] font-black text-white leading-snug hover:text-crimson-300 transition-colors">
+                <Link to="/extension" className="block text-[11px] font-black text-crimson-50 leading-snug hover:text-crimson-300 transition-colors">
                   Want more transport nodes? Claim the Companion. 🦇
                 </Link>
                 <p className="text-[10px] text-crimson-100/50 font-medium leading-snug mt-0.5">

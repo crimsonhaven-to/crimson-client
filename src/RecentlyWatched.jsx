@@ -217,7 +217,7 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
           </div>
           <button
             title={mode === 'upcoming' && nextAirDate ? `Next episode airs ${airDateLabel(nextAirDate)}` : undefined}
-            className="flex items-center gap-2.5 text-[10px] font-black text-white uppercase tracking-[0.2em] group-hover:translate-x-2 transition-all duration-300"
+            className="flex items-center gap-2.5 text-[10px] font-black text-crimson-50 uppercase tracking-[0.2em] group-hover:translate-x-2 transition-all duration-300"
           >
             <span>{actionLabel}</span>
             <div className="p-1.5 rounded-full bg-crimson-500 shadow-[0_0_10px_rgba(255,0,60,0.5)]">
@@ -275,7 +275,7 @@ const RecentlyWatchedPage = () => {
       <div className="max-w-2xl w-full mx-auto px-6 py-20 text-center space-y-6">
         <div className="bg-crimson-900/20 border border-crimson-500/50 p-8 rounded-2xl">
           <History className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-black text-white uppercase">Authentication Required</h2>
+          <h2 className="text-2xl font-black text-crimson-50 uppercase">Authentication Required</h2>
           <p className="text-crimson-300 mt-2">You must establish a link to track your watch progress across dimensions.</p>
           <button
             onClick={() => navigate('/account')}
@@ -304,7 +304,7 @@ const RecentlyWatchedPage = () => {
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-3">
-          <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">
+          <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
             Recent <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Echoes</span>
           </h1>
           <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
@@ -323,7 +323,7 @@ const RecentlyWatchedPage = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search your history…"
-              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-white placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
             />
             {query && (
               <button
@@ -452,7 +452,7 @@ const RecentlyWatchedPage = () => {
               <div className="p-2.5 rounded-2xl bg-crimson-500/10 border border-crimson-500/30">
                 <AlertTriangle className="w-6 h-6 text-crimson-400" />
               </div>
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Remove from History?</h3>
+              <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight">Remove from History?</h3>
             </div>
             <p className="text-sm text-crimson-300 leading-relaxed">
               This permanently erases <span className="font-black text-crimson-100">"{pendingRemove.title}"</span> and all its tracked progress from your watch history. This cannot be undone.

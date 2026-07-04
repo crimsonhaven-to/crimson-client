@@ -71,7 +71,7 @@ const CataloguePage = () => {
       <div className="max-w-2xl w-full mx-auto px-6 py-20 text-center space-y-6">
         <div className="bg-crimson-900/20 border border-crimson-500/50 p-8 rounded-2xl">
           <Hash className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-black text-white uppercase">Archive Link Severed</h2>
+          <h2 className="text-2xl font-black text-crimson-50 uppercase">Archive Link Severed</h2>
           <p className="text-crimson-300 mt-2">The librarians cannot reach the requested records: {error}</p>
           <button 
             onClick={() => window.location.reload()}
@@ -90,7 +90,7 @@ const CataloguePage = () => {
       <div className="space-y-8 border-b border-crimson-900/30 pb-12">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <div className="space-y-3">
-            <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">
+            <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
               The <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Catalogue</span>
             </h1>
             <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
@@ -182,7 +182,7 @@ const CataloguePage = () => {
           groupedAnimes.map(group => (
             <div key={group.name} className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
               <div className="flex items-center gap-6">
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter bg-crimson-950/40 px-6 py-2 rounded-2xl border border-crimson-900/40 backdrop-blur-md shadow-xl">
+                <h3 className="text-2xl font-black text-crimson-50 uppercase tracking-tighter bg-crimson-950/40 px-6 py-2 rounded-2xl border border-crimson-900/40 backdrop-blur-md shadow-xl">
                   {group.name}
                 </h3>
                 <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />

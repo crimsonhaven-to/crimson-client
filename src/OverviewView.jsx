@@ -111,7 +111,7 @@ const OverviewView = ({
       <div className="max-w-2xl w-full mx-auto px-6 py-20 text-center">
         <div className="bg-crimson-950/50 backdrop-blur-xl border border-crimson-900/50 p-12 rounded-3xl shadow-2xl">
           <AlertTriangle className="w-16 h-16 text-crimson-500 mx-auto mb-6 opacity-80" />
-          <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Manifestation Not Found</h2>
+          <h2 className="text-3xl font-black text-crimson-50 uppercase tracking-tighter">Manifestation Not Found</h2>
           <p className="text-crimson-400 mt-4 font-medium max-w-sm mx-auto">{error || notFoundText}</p>
           <button
             onClick={onBack}
@@ -204,7 +204,7 @@ const OverviewView = ({
               </div>
 
               <div className="space-y-2">
-                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-white leading-[0.9] drop-shadow-[0_10px_30px_rgba(255,0,60,0.2)]">
+                <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-crimson-50 leading-[0.9] drop-shadow-[0_10px_30px_rgba(255,0,60,0.2)]">
                   {overview.title}
                 </h1>
                 {overview.title_romaji && overview.title_romaji !== overview.title && (
@@ -338,7 +338,7 @@ const OverviewView = ({
           {currentSeason && (
             <div className="flex items-end justify-between gap-4 border-b border-crimson-900/30 pb-4">
               <div className="space-y-1">
-                <h2 className="text-2xl sm:text-4xl font-black text-white uppercase tracking-tighter">
+                <h2 className="text-2xl sm:text-4xl font-black text-crimson-50 uppercase tracking-tighter">
                   {currentSeason.name || `Season ${currentSeason.season_number}`}
                 </h2>
                 <div className="flex items-center gap-2 text-[10px] text-crimson-500 font-black uppercase tracking-widest opacity-70">
@@ -379,7 +379,7 @@ const OverviewView = ({
         {extras.length > 0 && (
           <div className="space-y-6 pt-10">
             <div className="flex items-center gap-4">
-              <h3 className="text-xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+              <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight flex items-center gap-3">
                 <Clapperboard className="w-6 h-6 text-crimson-500" /> Specials &amp; Movies
               </h3>
               <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />

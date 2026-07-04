@@ -55,7 +55,7 @@ function Step({ index, icon, title, children }) {
         <div className="flex-grow w-px bg-crimson-900/40 mt-2 last:hidden" />
       </div>
       <div className="pb-8 space-y-2 min-w-0">
-        <h4 className="text-white font-black tracking-tight flex items-center gap-2.5 text-base sm:text-lg">
+        <h4 className="text-crimson-50 font-black tracking-tight flex items-center gap-2.5 text-base sm:text-lg">
           <span className="text-crimson-500 shrink-0">{icon}</span>
           {title}
         </h4>
@@ -79,12 +79,12 @@ export default function DownloadExtension() {
           <Puzzle className="w-6 h-6" />
           <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80">The Crimson Companion</span>
         </div>
-        <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">
+        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
           Claim the <span className="text-crimson-500">Companion</span>
         </h2>
         <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed font-medium max-w-2xl">
           A featherlight browser familiar that lets the haven resolve and play your sources
-          <strong className="text-white font-black"> straight from your own machine</strong> — no throne-room
+          <strong className="text-crimson-50 font-black"> straight from your own machine</strong> — no throne-room
           relay in the path. One click from the Chrome Web Store and every supported source bends the knee locally.
         </p>
       </div>
@@ -94,7 +94,7 @@ export default function DownloadExtension() {
         <div className="flex items-start gap-4 p-5 rounded-2xl bg-green-500/5 border border-green-500/25 shadow-xl">
           <CheckCircle2 className="w-6 h-6 text-green-400 shrink-0 mt-0.5" />
           <div className="space-y-1">
-            <p className="text-white font-black tracking-tight">The companion is already bound to this browser, darling.</p>
+            <p className="text-crimson-50 font-black tracking-tight">The companion is already bound to this browser, darling.</p>
             <p className="text-sm text-crimson-100/70 font-medium leading-relaxed">
               {liveVersion ? `Version ${liveVersion} is awake and listening. ` : 'It is awake and listening. '}
               Just make sure its single red button is lit — then watch anything and your sources resolve in your own hands.
@@ -110,7 +110,7 @@ export default function DownloadExtension() {
         </div>
         <div className="relative space-y-5">
           <div className="flex flex-wrap items-center gap-3">
-            <h3 className="text-lg font-black text-white tracking-tight">Crimson Haven Companion</h3>
+            <h3 className="text-lg font-black text-crimson-50 tracking-tight">Crimson Haven Companion</h3>
             {liveVersion && (
               <span className="px-2.5 py-1 bg-crimson-500/10 border border-crimson-500/30 rounded-lg text-[10px] font-black uppercase tracking-widest text-crimson-300">
                 v{liveVersion}
@@ -147,17 +147,17 @@ export default function DownloadExtension() {
         <ol className="space-y-0">
           <Step index="1" icon={<ExternalLink className="w-4 h-4" />} title="Open the listing">
             Follow the sigil above to the companion's page on the
-            <strong className="text-white font-black"> Chrome Web Store</strong>. It opens in a new tab,
+            <strong className="text-crimson-50 font-black"> Chrome Web Store</strong>. It opens in a new tab,
             leaving the haven undisturbed behind you.
           </Step>
           <Step index="2" icon={<Puzzle className="w-4 h-4" />} title="Add to Chrome">
-            Press <strong className="text-white font-black">Add to Chrome</strong>, then confirm with
-            <strong className="text-white font-black"> Add extension</strong> when your browser asks. The crimson
+            Press <strong className="text-crimson-50 font-black">Add to Chrome</strong>, then confirm with
+            <strong className="text-crimson-50 font-black"> Add extension</strong> when your browser asks. The crimson
             blood-drop sigil joins your browser — and the store keeps it updated for you, forever.
           </Step>
           <Step index="3" icon={<Power className="w-4 h-4" />} title="Kneel — one red button">
             Pin the companion to your toolbar, click its sigil, and press the single red
-            <strong className="text-white font-black"> "Use Extension"</strong> button. When it glows crimson, it's awake —
+            <strong className="text-crimson-50 font-black"> "Use Extension"</strong> button. When it glows crimson, it's awake —
             that's the whole configuration. Refresh crimsonhaven and your sources now answer to you directly.
           </Step>
         </ol>
@@ -168,7 +168,7 @@ export default function DownloadExtension() {
         <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
         <p className="italic text-crimson-100/90 leading-relaxed text-lg tracking-tight">
           "Fear not, darling~ My little familiar scrapes nothing, hoards no secrets, and whispers to no one.
-          It merely unshackles your own browser's requests so the sources answer to <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">you</span>,
+          It merely unshackles your own browser's requests so the sources answer to <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">you</span>,
           directly — no relay, no middleman, no trace left at my door. A pure upgrade, as all my gifts are~"
         </p>
         <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">

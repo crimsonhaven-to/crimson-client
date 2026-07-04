@@ -38,7 +38,7 @@ const AccountPage = () => {
       <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="border-b border-crimson-900/30 pb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center sm:text-left">
-            <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">Your <span className="text-crimson-500">Sanctuary</span></h2>
+            <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Your <span className="text-crimson-500">Sanctuary</span></h2>
             <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Synchronized with the dark network</p>
           </div>
           <button 
@@ -56,7 +56,7 @@ const AccountPage = () => {
 
             <div className="flex items-center gap-4 text-crimson-500 relative z-10">
               <ShieldCheck className="w-8 h-8 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
-              <h3 className="text-xl font-black text-white uppercase tracking-tighter">Account Integrity</h3>
+              <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Account Integrity</h3>
             </div>
             
             <div className="space-y-8 font-mono text-xs relative z-10">
@@ -72,11 +72,11 @@ const AccountPage = () => {
               <div className="grid grid-cols-2 gap-6">
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
                   <p className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Favorites</p>
-                  <p className="text-4xl font-black text-white tracking-tighter">{profile?.favorites_count || 0}</p>
+                  <p className="text-4xl font-black text-crimson-50 tracking-tighter">{profile?.favorites_count || 0}</p>
                 </div>
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
                   <p className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Manifests</p>
-                  <p className="text-4xl font-black text-white tracking-tighter">{profile?.progress_count || 0}</p>
+                  <p className="text-4xl font-black text-crimson-50 tracking-tighter">{profile?.progress_count || 0}</p>
                 </div>
               </div>
             </div>
@@ -103,7 +103,7 @@ const AccountPage = () => {
   return (
     <div className="max-w-md w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="text-center space-y-3">
-        <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">Establish <span className="text-crimson-500">Link</span></h2>
+        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Establish <span className="text-crimson-500">Link</span></h2>
         <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Access your personal archives via mnemonic</p>
       </div>
 
@@ -159,7 +159,7 @@ const AccountPage = () => {
 
             <div className="flex items-center gap-4 text-crimson-500 relative z-10">
               <ShieldCheck className="w-8 h-8 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
-              <h3 className="text-xl font-black text-white uppercase tracking-tighter">Secret Manifest</h3>
+              <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Secret Manifest</h3>
             </div>
             <p className="text-xs text-crimson-300 font-medium leading-relaxed italic relative z-10 opacity-70">
               "This is your only key. If you lose it, your manifestations will be lost to the abyss. Store it safely."

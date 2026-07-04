@@ -17,6 +17,7 @@ export * from './hooks/apiClient';
 export * from './hooks/playbackPrefs';
 export * from './hooks/media';
 export * from './hooks/liteBackground';
+export * from './hooks/theme';
 export * from './hooks/useAuth';
 export * from './hooks/watchlists';
 export * from './hooks/useAccount';

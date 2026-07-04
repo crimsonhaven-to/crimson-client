@@ -162,7 +162,7 @@ export default function CacheTab({ notify }) {
         <div className="flex items-center gap-3 relative z-10">
           <DownloadCloud className="w-7 h-7 text-crimson-500" />
           <div className="flex-grow">
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Video Cache</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Video Cache</h3>
             <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Download played episodes to a NAS &amp; replay from disk</p>
           </div>
           <button
@@ -197,7 +197,7 @@ export default function CacheTab({ notify }) {
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-5 relative overflow-hidden">
         <div className="flex items-center gap-3 relative z-10">
           <HardDrive className="w-6 h-6 text-crimson-500" />
-          <h3 className="text-base font-black text-white uppercase tracking-tighter">Cache Targets</h3>
+          <h3 className="text-base font-black text-crimson-50 uppercase tracking-tighter">Cache Targets</h3>
         </div>
         <form onSubmit={add} className="space-y-4 relative z-10">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -291,7 +291,7 @@ export default function CacheTab({ notify }) {
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-5 relative overflow-hidden">
         <div className="flex items-center gap-3 relative z-10 flex-wrap">
           <Film className="w-6 h-6 text-crimson-500" />
-          <h3 className="text-base font-black text-white uppercase tracking-tighter flex-grow">Cached Episodes</h3>
+          <h3 className="text-base font-black text-crimson-50 uppercase tracking-tighter flex-grow">Cached Episodes</h3>
           <div className="flex items-center gap-1.5">
             {['', 'ready', 'downloading', 'pending', 'failed'].map((s) => (
               <button key={s || 'all'} onClick={() => setEpFilter(s)}

@@ -124,7 +124,7 @@ function renderMarkdown(body) {
       flushPara(); flushList();
       const level = heading[1].length;
       const cls = level <= 2
-        ? 'text-lg font-black text-white uppercase tracking-tight'
+        ? 'text-lg font-black text-crimson-50 uppercase tracking-tight'
         : 'text-sm font-black text-crimson-300 uppercase tracking-widest';
       blocks.push(<p key={`h-${key++}`} className={`${cls} mt-2`}>{renderInline(heading[2], `h${key}`)}</p>);
       continue;
@@ -184,7 +184,7 @@ function ReleaseEntry({ entry, latest }) {
       </div>
 
       {entry.name && entry.name !== entry.tag && (
-        <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight mb-3 leading-tight">{entry.name}</h3>
+        <h3 className="text-xl sm:text-2xl font-black text-crimson-50 tracking-tight mb-3 leading-tight">{entry.name}</h3>
       )}
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 mb-6">
@@ -227,7 +227,7 @@ export default function ChangelogPage() {
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to the Haven
         </Link>
-        <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter flex items-center gap-4 leading-none">
+        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4 leading-none">
           <ScrollText className="w-10 h-10 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]" />
           The <span className="text-crimson-500">Chronicle</span>
         </h2>
@@ -241,7 +241,7 @@ export default function ChangelogPage() {
         <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
         <p className="italic text-crimson-100/90 leading-relaxed text-base sm:text-lg tracking-tight">
           "Every refinement to my Haven is recorded here, darling~ Each version a little ritual,
-          each fix a drop of my centuries-old devotion. Scroll, and witness how I keep our sanctuary <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">flawless</span> for you."
+          each fix a drop of my centuries-old devotion. Scroll, and witness how I keep our sanctuary <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">flawless</span> for you."
         </p>
         <p className="mt-5 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
           <span className="block w-8 h-px bg-crimson-500/50"></span>
@@ -272,7 +272,7 @@ export default function ChangelogPage() {
       {!loading && notConfigured && (
         <div className="text-center py-16 space-y-5 bg-crimson-950/30 border border-crimson-900/40 rounded-[2.5rem] px-8">
           <Moon className="w-12 h-12 text-crimson-700 mx-auto" />
-          <h3 className="text-xl font-black text-white uppercase tracking-tight">The Chronicle Slumbers</h3>
+          <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight">The Chronicle Slumbers</h3>
           <p className="text-sm text-crimson-300/60 font-medium max-w-md mx-auto leading-relaxed italic">
             "The archive is sealed for now, little mortal. My scribes have yet to be granted their quill —
             return soon, and the chronicle shall awaken."

@@ -29,7 +29,7 @@ export const StatCard = ({ label, value, sub, icon: Icon, accent }) => (
       <p className="text-[9px] font-black uppercase tracking-[0.25em] text-crimson-600 group-hover:text-crimson-500 transition-colors">{label}</p>
       {Icon && <Icon className={`w-4 h-4 ${accent || 'text-crimson-700'}`} />}
     </div>
-    <p className="text-3xl sm:text-4xl font-black text-white tracking-tighter relative z-10">{value ?? '—'}</p>
+    <p className="text-3xl sm:text-4xl font-black text-crimson-50 tracking-tighter relative z-10">{value ?? '—'}</p>
     {sub && <p className="text-[10px] font-bold text-crimson-500/70 mt-1.5 relative z-10">{sub}</p>}
   </div>
 );

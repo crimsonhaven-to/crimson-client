@@ -59,7 +59,7 @@ const AdminPage = () => {
     return (
       <div className="max-w-md w-full mx-auto px-6 py-32 text-center space-y-6 animate-in fade-in duration-700">
         <ShieldOff className="w-14 h-14 text-crimson-600 mx-auto" />
-        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">Access <span className="text-crimson-500">Denied</span></h2>
+        <h2 className="text-3xl font-black text-crimson-50 uppercase tracking-tighter">Access <span className="text-crimson-500">Denied</span></h2>
         <p className="text-xs text-crimson-400/60 font-medium leading-relaxed">This sanctum is reserved for the haven's keepers. Your vessel lacks the crimson seal.</p>
       </div>
     );
@@ -71,7 +71,7 @@ const AdminPage = () => {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
             <Shield className="w-8 h-8 text-crimson-500 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
-            <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter">Admin <span className="text-crimson-500">Sanctum</span></h2>
+            <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Admin <span className="text-crimson-500">Sanctum</span></h2>
           </div>
           <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80 ml-1">Keeper controls for the dark network</p>
         </div>

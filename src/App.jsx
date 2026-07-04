@@ -191,7 +191,7 @@ function ContentRow({ icon, title, accent, subtitle, items, loading, onSelect, c
     <section className="space-y-6">
       <div className="flex items-end justify-between gap-4">
         <div className="space-y-1.5 min-w-0">
-          <h2 className="text-xl sm:text-2xl font-black tracking-tighter text-white uppercase flex items-center gap-3">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tighter text-crimson-50 uppercase flex items-center gap-3">
             <span className="text-crimson-500 shrink-0">{icon}</span>
             <span className="truncate">{title} {accent && <span className="text-crimson-500">{accent}</span>}</span>
           </h2>
@@ -261,7 +261,7 @@ function ExtensionBanner() {
         <Puzzle className="w-5 h-5" />
       </span>
       <span className="min-w-0 flex-grow">
-        <span className="block text-sm font-black text-white tracking-tight">
+        <span className="block text-sm font-black text-crimson-50 tracking-tight">
           Psst, darling — claim the Crimson Companion. 🦇
         </span>
         <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
@@ -301,7 +301,7 @@ function AdblockerNotice() {
         <AlertTriangle className="w-5 h-5" />
       </span>
       <span className="min-w-0 flex-grow">
-        <span className="block text-sm font-black text-white tracking-tight">
+        <span className="block text-sm font-black text-crimson-50 tracking-tight">
           Lower your wards on the haven, darling. 🩸
         </span>
         <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
@@ -383,7 +383,7 @@ function LandingPage() {
 
       {/* Hero — the haven's sigil and the one search that opens every door. */}
       <div className="space-y-4 text-center max-w-3xl mx-auto pt-6 sm:pt-12">
-        <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
+        <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-crimson-50 uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
           crimson<span className="text-crimson-500 font-light opacity-90">haven</span>
         </h1>
         <p className="text-crimson-400 text-sm sm:text-base tracking-[0.4em] font-black uppercase opacity-70 px-4">
@@ -660,12 +660,12 @@ function AboutPage() {
   return (
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 space-y-2">
-        <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none">About <span className="text-crimson-500">CrimsonHaven</span></h2>
+        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter leading-none">About <span className="text-crimson-500">CrimsonHaven</span></h2>
         <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">The architectural design manifest</p>
       </div>
 
       <div className="space-y-8 text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium">
-        <p><strong className="text-white font-black tracking-tight">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame, engineered for the most discerning mortals.</p>
+        <p><strong className="text-crimson-50 font-black tracking-tight">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame, engineered for the most discerning mortals.</p>
         
         <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 p-6 sm:p-8 rounded-[2rem] font-mono text-xs text-crimson-400 space-y-3 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -688,8 +688,8 @@ function AboutPage() {
         <div className="relative bg-crimson-500/5 backdrop-blur-md border border-crimson-500/20 p-8 rounded-[2.5rem] shadow-xl">
           <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
           <p className="italic text-crimson-100/90 leading-relaxed text-lg tracking-tight">
-            "And a little secret between us, darling~ Ironically, this totally <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">morally correct</span> webpage
-            keeps all your data tucked away in <span className="text-white not-italic font-black border-b-2 border-crimson-500/50">{HOSTED_IN}</span>. Funny, isn't it?~"
+            "And a little secret between us, darling~ Ironically, this totally <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">morally correct</span> webpage
+            keeps all your data tucked away in <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">{HOSTED_IN}</span>. Funny, isn't it?~"
           </p>
           <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
              <span className="block w-8 h-px bg-crimson-500/50"></span>
@@ -733,7 +733,7 @@ function AboutPage() {
                   )}
                 </div>
                 {latestRelease.name && latestRelease.name !== latestRelease.tag && (
-                  <h4 className="text-lg font-black text-white tracking-tight mb-3 leading-tight">{latestRelease.name}</h4>
+                  <h4 className="text-lg font-black text-crimson-50 tracking-tight mb-3 leading-tight">{latestRelease.name}</h4>
                 )}
                 <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed font-medium whitespace-pre-line">
                   {changelogExcerpt(latestRelease.body)}
@@ -950,7 +950,7 @@ function App() {
                   location.pathname === link.to
                     ? 'text-crimson-500 bg-crimson-500/10 xl:bg-transparent'
                     : link.highlight
-                      ? 'text-white bg-crimson-500/20 border border-crimson-500/30 hover:bg-crimson-500/40 xl:px-3 xl:py-1 xl:rounded-full'
+                      ? 'text-crimson-50 bg-crimson-500/20 border border-crimson-500/30 hover:bg-crimson-500/40 xl:px-3 xl:py-1 xl:rounded-full'
                       : 'text-crimson-200/50 hover:text-crimson-400 hover:bg-crimson-900/30 xl:hover:bg-transparent'
                 }`}
               >
@@ -981,7 +981,7 @@ function App() {
                 <div className="absolute top-full right-0 mt-4 w-64 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 rounded-2xl z-50">
                   <div className="p-4 border-b border-crimson-900/20 bg-crimson-600/5">
                     <p className="text-xs font-black text-crimson-600 uppercase tracking-widest mb-1">Session</p>
-                    <p className="text-white font-bold truncate">{profile?.username || 'Sanctuary Dweller'}</p>
+                    <p className="text-crimson-50 font-bold truncate">{profile?.username || 'Sanctuary Dweller'}</p>
                   </div>
                   <div className="p-2">
                     <Link
@@ -1101,7 +1101,7 @@ function App() {
           </div>
 
           <div>
-            <h4 className="text-white font-black uppercase text-xs tracking-widest mb-6">Navigate</h4>
+            <h4 className="text-crimson-50 font-black uppercase text-xs tracking-widest mb-6">Navigate</h4>
             <div className="flex flex-col gap-3">
               <Link to="/catalogue" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Catalogue</Link>
               <Link to="/watchlists" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Watchlists</Link>
@@ -1112,7 +1112,7 @@ function App() {
           </div>
 
           <div>
-            <h4 className="text-white font-black uppercase text-xs tracking-widest mb-6">Connect</h4>
+            <h4 className="text-crimson-50 font-black uppercase text-xs tracking-widest mb-6">Connect</h4>
             <div className="flex flex-col gap-3">
               <Link to="/disclaimer" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Disclaimer</Link>
               <Link to="/changelog" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Chronicle</Link>

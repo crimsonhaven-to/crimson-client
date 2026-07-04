@@ -1,4 +1,5 @@
 import React from 'react';
+import { themedAsset } from './hooks';
 
 /*
  * Top-level safety net. A render-time exception anywhere in the tree would
@@ -46,7 +47,7 @@ export default class ErrorBoundary extends React.Component {
         }}
       >
         <img
-          src="/lumi_nobackground.png"
+          src={themedAsset('lumi_nobackground')}
           alt=""
           width="140"
           height="151"

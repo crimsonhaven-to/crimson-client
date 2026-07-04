@@ -38,7 +38,7 @@ const ResetPassword = () => {
       <Shell subtitle="Your key has been reforged">
         <div className="space-y-6 text-center py-4 animate-in zoom-in-95 duration-500">
           <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto" />
-          <h3 className="text-xl font-black text-white uppercase tracking-tighter">Password updated</h3>
+          <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Password updated</h3>
           <p className="text-xs text-crimson-300/70 font-medium">Sign in with your new password to continue.</p>
           <button onClick={() => navigate('/')}
             className="group w-full py-4 bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(255,0,60,0.2)] flex items-center justify-center gap-3 active:scale-95">
@@ -56,7 +56,7 @@ const ResetPassword = () => {
   return (
     <Shell subtitle="Choose a new password">
       <form onSubmit={submit} className="space-y-5">
-        <h3 className="text-lg font-black text-white uppercase tracking-tighter text-center">Reset Password</h3>
+        <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter text-center">Reset Password</h3>
         <div className="relative flex items-center">
           <Lock className="absolute left-5 w-4 h-4 text-crimson-500/60 pointer-events-none" />
           <input type={showPw ? 'text' : 'password'} required minLength={8} placeholder="New password"
