@@ -56,20 +56,19 @@ export const THEMES = {
     id: 'catgirl',
     label: 'Catgirl Lumi',
     tagline: 'Light — with a mischievous crimson wink.',
-    // Colours live in index.css (:root[data-theme="catgirl"]). The image swaps
-    // are STUBBED: draw the Catgirl-Lumi PNGs, drop them in /public/catgirl/,
-    // then uncomment the matching keys below. Until then every key inherits the
-    // crimson art above, so the theme is fully usable right now — it just shows
-    // the normal Lumi until her catgirl form is illustrated.
+    // Colours live in index.css (:root[data-theme="catgirl"]). Her catgirl art
+    // lives in /public/catgirl/. Any key omitted here transparently falls back
+    // to the crimson art above — `secret_sideways` has no catgirl variant yet,
+    // so that one shrine pose intentionally shows the normal Lumi.
     images: {
-      // lumi_404: '/catgirl/lumi_404.png',
-      // lumi_nobackground: '/catgirl/lumi_nobackground.png',
-      // lumi_avatar: '/catgirl/lumi_avatar.png',
-      // secret_peace: '/catgirl/secret_peace.png',
-      // secret_mascot: '/catgirl/secret_mascot.png',
-      // secret_cuty: '/catgirl/secret_cuty.png',
-      // secret_sideways: '/catgirl/secret_sideways.png',
-      // secret_annoyed: '/catgirl/secret_annoyed.png',
+      lumi_404: '/catgirl/lumi_404_cat.png',
+      lumi_nobackground: '/catgirl/lumi_nobackground_cat.png',
+      lumi_avatar: '/catgirl/lumi_secret_lumi_cuty_cat.png',
+      secret_peace: '/catgirl/lumi_secret_lumi_peace_cat.png',
+      secret_mascot: '/catgirl/lumi_secret_nobackgroundmascot_cat.png',
+      secret_cuty: '/catgirl/lumi_secret_lumi_cuty_cat.png',
+      // secret_sideways — no catgirl art yet; falls back to the crimson pose.
+      secret_annoyed: '/catgirl/lumi_secret_annoyed_lumi_cat.png',
     },
   },
 };
