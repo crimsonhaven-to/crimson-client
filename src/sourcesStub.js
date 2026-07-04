@@ -36,6 +36,19 @@ export async function createEngine() {
   };
 }
 
+// No-op form of the manga (reading) engine — mirrors src/manga/engine.ts. With no
+// sources present it's never `available`, so the host leaves chapters/pages to the
+// backend, exactly as when the client engine can resolve nothing.
+export async function createMangaEngine() {
+  return {
+    available: false,
+    env: null,
+    resolveManga: () => Promise.resolve(null),
+    chapters: () => Promise.resolve([]),
+    pages: () => Promise.resolve([]),
+  };
+}
+
 export function getExtensionBridge() {
   return null;
 }
