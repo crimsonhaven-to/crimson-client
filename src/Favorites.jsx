@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Heart, Play, Trash2, Plus, ListPlus, X, Download, Upload, ChevronDown, Check, AlertTriangle,
   Search, Layers, LayoutGrid, List, Film, Tv, Sparkles, ArrowDownUp, GripVertical, ListChecks,
-  Circle, CircleCheck, FolderPlus,
+  Circle, CircleCheck, FolderPlus, BookOpen,
 } from 'lucide-react';
 import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST, ALL_LIST } from './hooks';
 import { setWatchlistActivity, clearActivity } from './discordPresence';
@@ -16,12 +16,19 @@ const ORDER_KEY = 'crimson:watchlist-order'; // per-list manual order: { [listNa
 // an AniList id means anime, an explicit 'movie' media_type means a movie, and
 // everything else is a (TMDB-keyed) show. This is the axis we group + filter on —
 // the watchlist equivalent of the history page's time buckets.
-const kindOf = (it) => (it.anilist_id != null ? 'anime' : it.media_type === 'movie' ? 'movie' : 'show');
+// Manga is checked first: a manga row also carries an AniList id, so it must be
+// distinguished by its explicit 'manga' media_type before the anilist_id⇒anime rule.
+const kindOf = (it) =>
+  it.media_type === 'manga' ? 'manga'
+    : it.anilist_id != null ? 'anime'
+      : it.media_type === 'movie' ? 'movie' : 'show';
 
 // Stable identity for a row — the same key scheme the backend de-dupes on
-// (AniList id preferred, else the TMDB id namespaced by movie vs show).
+// (manga namespaced, else AniList id preferred, else TMDB id namespaced by movie/show).
 const itemKey = (it) =>
-  it.anilist_id != null ? `a:${it.anilist_id}` : (it.media_type === 'movie' ? `m:${it.tmdb_id}` : `t:${it.tmdb_id}`);
+  it.media_type === 'manga' ? `g:${it.anilist_id}`
+    : it.anilist_id != null ? `a:${it.anilist_id}`
+      : (it.media_type === 'movie' ? `m:${it.tmdb_id}` : `t:${it.tmdb_id}`);
 
 // Per-kind label + icon, rendered as section headers and filter chips. Sections
 // always appear in this order; empty ones are skipped.
@@ -29,8 +36,9 @@ const TYPE_META = {
   anime: { label: 'Anime', icon: Sparkles },
   show: { label: 'Shows', icon: Tv },
   movie: { label: 'Movies', icon: Film },
+  manga: { label: 'Manga', icon: BookOpen },
 };
-const TYPE_ORDER = ['anime', 'show', 'movie'];
+const TYPE_ORDER = ['anime', 'show', 'movie', 'manga'];
 
 const SORTS = [
   { key: 'added', label: 'Recent' },   // server order (added_at desc) — the default
@@ -40,7 +48,9 @@ const SORTS = [
 
 // Overview route for a show — the same target the grid's Play button uses.
 const overviewHref = (it) =>
-  it.anilist_id ? `/anime/${it.anilist_id}` : it.media_type === 'movie' ? `/movie/${it.tmdb_id}` : `/show/${it.tmdb_id}`;
+  it.media_type === 'manga' ? `/manga/${it.anilist_id}`
+    : it.anilist_id ? `/anime/${it.anilist_id}`
+      : it.media_type === 'movie' ? `/movie/${it.tmdb_id}` : `/show/${it.tmdb_id}`;
 
 const loadOrders = () => {
   try { return JSON.parse(localStorage.getItem(ORDER_KEY)) || {}; } catch { return {}; }
@@ -205,7 +215,7 @@ const FavoritesPage = () => {
     createList, deleteList, exportWatchlists, importWatchlists,
   } = useWatchlists();
   const { isAuthenticated } = useAuth();
-  useTitle('Watchlists');
+  useTitle('Favorites');
   const navigate = useNavigate();
 
   const [activeList, setActiveList] = useState(ALL_LIST);
@@ -369,7 +379,7 @@ const FavoritesPage = () => {
 
   // Group the sorted shows into kind sections, dropping any empty section.
   const grouped = useMemo(() => {
-    const map = { anime: [], show: [], movie: [] };
+    const map = { anime: [], show: [], movie: [], manga: [] };
     for (const s of sorted) map[kindOf(s)].push(s);
     return TYPE_ORDER.map(k => ({ key: k, ...TYPE_META[k], items: map[k] })).filter(g => g.items.length > 0);
   }, [sorted]);
@@ -467,7 +477,7 @@ const FavoritesPage = () => {
         <div className="bg-crimson-900/20 border border-crimson-500/50 p-8 rounded-2xl">
           <Heart className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-crimson-50 uppercase">Authentication Required</h2>
-          <p className="text-crimson-300 mt-2">You must establish a link to view your watchlists.</p>
+          <p className="text-crimson-300 mt-2">You must establish a link to view your favorites.</p>
           <button
             onClick={() => navigate('/account')}
             className="mt-6 px-6 py-2 bg-crimson-500 hover:bg-crimson-400 text-white font-bold rounded-xl transition-all"
@@ -496,7 +506,7 @@ const FavoritesPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div className="space-y-3">
             <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
-              Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Watchlists</span>
+              Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Favorites</span>
             </h1>
             <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
               <Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />

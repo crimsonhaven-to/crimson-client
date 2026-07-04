@@ -26,15 +26,18 @@ export function useUnifiedSearch() {
   const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.trim().length < 3) return;
     try {
-      const [animeRes, showRes, movieRes] = await Promise.all([
+      const [animeRes, showRes, movieRes, mangaRes] = await Promise.all([
         apiFetch(`/search/anime?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch(`/search/shows?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
         apiFetch(`/search/movies?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        // Manga is optional (503 when disabled) — the catch turns that into no rows.
+        apiFetch(`/search/manga?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
       ]);
       const anime = (animeRes?.suggestions || []).map(s => ({ ...s, kind: 'anime' }));
       const shows = (showRes?.suggestions || []).map(s => ({ ...s, kind: 'show' }));
       const movies = (movieRes?.suggestions || []).map(s => ({ ...s, kind: 'movie' }));
-      setResults([...anime, ...shows, ...movies]); // anime first, then shows, then movies
+      const manga = (mangaRes?.suggestions || []).map(s => ({ ...s, kind: 'manga' }));
+      setResults([...anime, ...shows, ...movies, ...manga]); // video surfaces first, then manga
     } catch (e) {
       console.error('Unified search failed:', e);
       setResults([]);

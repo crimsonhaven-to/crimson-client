@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet, Puzzle } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet, Puzzle, BookOpen } from 'lucide-react';
 import MeshBackground from './MeshBackground';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -36,6 +36,10 @@ const ShowOverview = lazy(() => import('./ShowOverview'));
 const ShowWatch = lazy(() => import('./ShowWatch'));
 const MovieOverview = lazy(() => import('./MovieOverview'));
 const MovieWatch = lazy(() => import('./MovieWatch'));
+// Manga reading surface — the AniList-keyed overview + the page reader. Lazy like
+// every other content page; only downloaded once a signed-in user opens a manga.
+const MangaOverview = lazy(() => import('./MangaOverview'));
+const MangaReader = lazy(() => import('./MangaReader'));
 const LumiSecret = lazy(() => import('./LumiSecret'));
 // Companion-extension download page — lazy; only reached from the home banner /
 // footer link, and only meaningful to viewers who don't already have it.
@@ -71,6 +75,16 @@ const RedditIcon = () => (
   </svg>
 );
 
+// Per-kind tag: a label + a distinct tint so anime / show / movie / manga are
+// separable at a glance (not just by reading the word). Shared by every card badge.
+const KIND_STYLE = {
+  anime: { label: 'Anime', badge: 'bg-crimson-500/15 border-crimson-500/40 text-crimson-300' },
+  show:  { label: 'Show',  badge: 'bg-sky-500/15 border-sky-400/40 text-sky-300' },
+  movie: { label: 'Movie', badge: 'bg-amber-500/15 border-amber-400/40 text-amber-200' },
+  manga: { label: 'Manga', badge: 'bg-violet-500/15 border-violet-400/40 text-violet-300' },
+};
+const kindStyle = (kind) => KIND_STYLE[kind] || KIND_STYLE.anime;
+
 const AnimeCard = ({ title, poster, kind, onSelect }) => (
 
   <div
@@ -88,13 +102,9 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
       <span className="text-base font-semibold text-crimson-300 truncate max-w-[240px]">{title}</span>
     </div>
     <div className="flex items-center gap-2 flex-shrink-0">
-      {/* Tag so anime vs non-anime show vs movie is obvious at a glance. */}
-      <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${
-        kind === 'show' || kind === 'movie'
-          ? 'bg-crimson-900/30 border-crimson-800/50 text-crimson-400'
-          : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
-      }`}>
-        {kind === 'show' ? 'Show' : kind === 'movie' ? 'Movie' : 'Anime'}
+      {/* Tag so anime / show / movie / manga is obvious at a glance — distinct tint per kind. */}
+      <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${kindStyle(kind).badge}`}>
+        {kindStyle(kind).label}
       </span>
       <ChevronRight className="w-4 h-4 text-crimson-700" />
     </div>
@@ -105,8 +115,6 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
 // A single poster tile shared by every home row (recommendations + trending).
 // The kind badge, rating and year ride the artwork like the movie-web / P-Stream
 // cards — recoloured in crimson and lit by Luminas' glow on hover.
-const KIND_LABEL = { anime: 'Anime', show: 'Show', movie: 'Movie' };
-
 function PosterCard({ item, onSelect }) {
   const rating = typeof item.vote_average === 'number' && item.vote_average > 0
     ? item.vote_average.toFixed(1) : null;
@@ -129,10 +137,10 @@ function PosterCard({ item, onSelect }) {
         {/* Readability gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/10 to-transparent opacity-80"></div>
 
-        {/* Kind badge */}
+        {/* Kind badge — distinct tint per kind (anime / show / movie / manga) */}
         {item.kind && (
-          <span className="absolute top-2 left-2 text-[8px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded-md border bg-crimson-950/70 backdrop-blur-sm border-crimson-800/60 text-crimson-300">
-            {KIND_LABEL[item.kind] || item.kind}
+          <span className={`absolute top-2 left-2 text-[8px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded-md border backdrop-blur-sm ${kindStyle(item.kind).badge}`}>
+            {kindStyle(item.kind).label}
           </span>
         )}
 
@@ -330,6 +338,7 @@ function LandingPage() {
   const { trendingAnimes, trendLoading } = useTrendingAnime();
   const { trendingShows, trendLoading: showsLoading } = useTrendingShows();
   const { trendingMovies, trendLoading: moviesLoading } = useTrendingMovies();
+  const { trendingManga, trendLoading: mangaLoading } = useTrendingManga();
   // Personalized "watch next" feed + the viewer's display name for the greeting.
   const { recommendations, basedOn, loading: recsLoading } = useRecommendations(18);
   const profile = useProfile();
@@ -342,6 +351,8 @@ function LandingPage() {
     setShowSuggestions(false);
     if (item.kind === 'movie') {
       navigate(`/movie/${item.tmdb_id}`);
+    } else if (item.kind === 'manga' && item.anilist_id) {
+      navigate(`/manga/${item.anilist_id}`);
     } else if (item.kind === 'show' || (!item.anilist_id && item.tmdb_id)) {
       navigate(`/show/${item.tmdb_id}`);
     } else if (item.anilist_id) {
@@ -494,6 +505,15 @@ function LandingPage() {
         accent="Movies"
         items={trendingMovies}
         loading={moviesLoading}
+        onSelect={openOverview}
+      />
+
+      <ContentRow
+        icon={<BookOpen className="w-6 h-6" />}
+        title="Trending"
+        accent="Manga"
+        items={trendingManga}
+        loading={mangaLoading}
         onSelect={openOverview}
       />
     </div>
@@ -901,7 +921,7 @@ function App() {
   const navLinks = [
     { to: "/", label: "Search Home", icon: <Film className="w-4 h-4" /> },
     { to: "/catalogue", label: "Catalogue", icon: <Hash className="w-4 h-4" /> },
-    { to: "/watchlists", label: "Watchlists", icon: <Heart className="w-4 h-4" />, auth: true },
+    { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
     { to: "/support", label: "Support Us", icon: <Wallet className="w-4 h-4" /> },
     { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
@@ -1074,6 +1094,11 @@ function App() {
           <Route path="/watch-show/:tmdbId/:season?/:episode?" element={<ShowWatch />} />
           <Route path="/movie/:tmdbId" element={<MovieOverview />} />
           <Route path="/watch-movie/:tmdbId" element={<MovieWatch />} />
+          {/* Manga reading surface — AniList-keyed overview + the page reader. */}
+          <Route path="/manga/:anilistId" element={<MangaOverview />} />
+          {/* Resume route (no chapter id): the reader maps saved progress → chapter. */}
+          <Route path="/read/:anilistId" element={<MangaReader />} />
+          <Route path="/read/:anilistId/:chapterId" element={<MangaReader />} />
           {/* Companion-extension download + side-load guide. */}
           <Route path="/extension" element={<DownloadExtensionPage />} />
           {/* Lumi's secret shrine — reached via the Konami code (see useKonami.js). */}
@@ -1104,7 +1129,7 @@ function App() {
             <h4 className="text-crimson-50 font-black uppercase text-xs tracking-widest mb-6">Navigate</h4>
             <div className="flex flex-col gap-3">
               <Link to="/catalogue" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Catalogue</Link>
-              <Link to="/watchlists" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Watchlists</Link>
+              <Link to="/favorites" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Favorites</Link>
               <Link to="/extension" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Companion</Link>
               <Link to="/about" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">About Us</Link>
               <Link to="/supporters" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Mortals</Link>

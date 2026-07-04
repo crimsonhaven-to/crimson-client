@@ -123,7 +123,7 @@ async function _signOnce(fields) {
  * don't re-round-trip. Rejections bubble up as a failed E2 attempt, which the
  * engine treats as "this source couldn't run client-side" → the backend covers it.
  */
-function signProxyUrl(fields) {
+export function signProxyUrl(fields) {
   if (_proxyDisabled) return Promise.reject(new Error('crimson-proxy disabled'));
   const key = _signKey(fields);
   let p = _signCache.get(key);
