@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet, Puzzle } from 'lucide-react';
+import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet, Puzzle, BookOpen } from 'lucide-react';
 import MeshBackground from './MeshBackground';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -36,6 +36,10 @@ const ShowOverview = lazy(() => import('./ShowOverview'));
 const ShowWatch = lazy(() => import('./ShowWatch'));
 const MovieOverview = lazy(() => import('./MovieOverview'));
 const MovieWatch = lazy(() => import('./MovieWatch'));
+// Manga reading surface — the AniList-keyed overview + the page reader. Lazy like
+// every other content page; only downloaded once a signed-in user opens a manga.
+const MangaOverview = lazy(() => import('./MangaOverview'));
+const MangaReader = lazy(() => import('./MangaReader'));
 const LumiSecret = lazy(() => import('./LumiSecret'));
 // Companion-extension download page — lazy; only reached from the home banner /
 // footer link, and only meaningful to viewers who don't already have it.
@@ -90,11 +94,11 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
     <div className="flex items-center gap-2 flex-shrink-0">
       {/* Tag so anime vs non-anime show vs movie is obvious at a glance. */}
       <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${
-        kind === 'show' || kind === 'movie'
-          ? 'bg-crimson-900/30 border-crimson-800/50 text-crimson-400'
-          : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
+        kind === 'anime'
+          ? 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
+          : 'bg-crimson-900/30 border-crimson-800/50 text-crimson-400'
       }`}>
-        {kind === 'show' ? 'Show' : kind === 'movie' ? 'Movie' : 'Anime'}
+        {kind === 'show' ? 'Show' : kind === 'movie' ? 'Movie' : kind === 'manga' ? 'Manga' : 'Anime'}
       </span>
       <ChevronRight className="w-4 h-4 text-crimson-700" />
     </div>
@@ -105,7 +109,7 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
 // A single poster tile shared by every home row (recommendations + trending).
 // The kind badge, rating and year ride the artwork like the movie-web / P-Stream
 // cards — recoloured in crimson and lit by Luminas' glow on hover.
-const KIND_LABEL = { anime: 'Anime', show: 'Show', movie: 'Movie' };
+const KIND_LABEL = { anime: 'Anime', show: 'Show', movie: 'Movie', manga: 'Manga' };
 
 function PosterCard({ item, onSelect }) {
   const rating = typeof item.vote_average === 'number' && item.vote_average > 0
@@ -330,6 +334,7 @@ function LandingPage() {
   const { trendingAnimes, trendLoading } = useTrendingAnime();
   const { trendingShows, trendLoading: showsLoading } = useTrendingShows();
   const { trendingMovies, trendLoading: moviesLoading } = useTrendingMovies();
+  const { trendingManga, trendLoading: mangaLoading } = useTrendingManga();
   // Personalized "watch next" feed + the viewer's display name for the greeting.
   const { recommendations, basedOn, loading: recsLoading } = useRecommendations(18);
   const profile = useProfile();
@@ -342,6 +347,8 @@ function LandingPage() {
     setShowSuggestions(false);
     if (item.kind === 'movie') {
       navigate(`/movie/${item.tmdb_id}`);
+    } else if (item.kind === 'manga' && item.anilist_id) {
+      navigate(`/manga/${item.anilist_id}`);
     } else if (item.kind === 'show' || (!item.anilist_id && item.tmdb_id)) {
       navigate(`/show/${item.tmdb_id}`);
     } else if (item.anilist_id) {
@@ -494,6 +501,15 @@ function LandingPage() {
         accent="Movies"
         items={trendingMovies}
         loading={moviesLoading}
+        onSelect={openOverview}
+      />
+
+      <ContentRow
+        icon={<BookOpen className="w-6 h-6" />}
+        title="Trending"
+        accent="Manga"
+        items={trendingManga}
+        loading={mangaLoading}
         onSelect={openOverview}
       />
     </div>
@@ -1074,6 +1090,9 @@ function App() {
           <Route path="/watch-show/:tmdbId/:season?/:episode?" element={<ShowWatch />} />
           <Route path="/movie/:tmdbId" element={<MovieOverview />} />
           <Route path="/watch-movie/:tmdbId" element={<MovieWatch />} />
+          {/* Manga reading surface — AniList-keyed overview + the page reader. */}
+          <Route path="/manga/:anilistId" element={<MangaOverview />} />
+          <Route path="/read/:anilistId/:chapterId" element={<MangaReader />} />
           {/* Companion-extension download + side-load guide. */}
           <Route path="/extension" element={<DownloadExtensionPage />} />
           {/* Lumi's secret shrine — reached via the Konami code (see useKonami.js). */}

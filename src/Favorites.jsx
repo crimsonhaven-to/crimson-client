@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Heart, Play, Trash2, Plus, ListPlus, X, Download, Upload, ChevronDown, Check, AlertTriangle,
   Search, Layers, LayoutGrid, List, Film, Tv, Sparkles, ArrowDownUp, GripVertical, ListChecks,
-  Circle, CircleCheck, FolderPlus,
+  Circle, CircleCheck, FolderPlus, BookOpen,
 } from 'lucide-react';
 import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST, ALL_LIST } from './hooks';
 import { setWatchlistActivity, clearActivity } from './discordPresence';
@@ -16,12 +16,19 @@ const ORDER_KEY = 'crimson:watchlist-order'; // per-list manual order: { [listNa
 // an AniList id means anime, an explicit 'movie' media_type means a movie, and
 // everything else is a (TMDB-keyed) show. This is the axis we group + filter on —
 // the watchlist equivalent of the history page's time buckets.
-const kindOf = (it) => (it.anilist_id != null ? 'anime' : it.media_type === 'movie' ? 'movie' : 'show');
+// Manga is checked first: a manga row also carries an AniList id, so it must be
+// distinguished by its explicit 'manga' media_type before the anilist_id⇒anime rule.
+const kindOf = (it) =>
+  it.media_type === 'manga' ? 'manga'
+    : it.anilist_id != null ? 'anime'
+      : it.media_type === 'movie' ? 'movie' : 'show';
 
 // Stable identity for a row — the same key scheme the backend de-dupes on
-// (AniList id preferred, else the TMDB id namespaced by movie vs show).
+// (manga namespaced, else AniList id preferred, else TMDB id namespaced by movie/show).
 const itemKey = (it) =>
-  it.anilist_id != null ? `a:${it.anilist_id}` : (it.media_type === 'movie' ? `m:${it.tmdb_id}` : `t:${it.tmdb_id}`);
+  it.media_type === 'manga' ? `g:${it.anilist_id}`
+    : it.anilist_id != null ? `a:${it.anilist_id}`
+      : (it.media_type === 'movie' ? `m:${it.tmdb_id}` : `t:${it.tmdb_id}`);
 
 // Per-kind label + icon, rendered as section headers and filter chips. Sections
 // always appear in this order; empty ones are skipped.
@@ -29,8 +36,9 @@ const TYPE_META = {
   anime: { label: 'Anime', icon: Sparkles },
   show: { label: 'Shows', icon: Tv },
   movie: { label: 'Movies', icon: Film },
+  manga: { label: 'Manga', icon: BookOpen },
 };
-const TYPE_ORDER = ['anime', 'show', 'movie'];
+const TYPE_ORDER = ['anime', 'show', 'movie', 'manga'];
 
 const SORTS = [
   { key: 'added', label: 'Recent' },   // server order (added_at desc) — the default
@@ -40,7 +48,9 @@ const SORTS = [
 
 // Overview route for a show — the same target the grid's Play button uses.
 const overviewHref = (it) =>
-  it.anilist_id ? `/anime/${it.anilist_id}` : it.media_type === 'movie' ? `/movie/${it.tmdb_id}` : `/show/${it.tmdb_id}`;
+  it.media_type === 'manga' ? `/manga/${it.anilist_id}`
+    : it.anilist_id ? `/anime/${it.anilist_id}`
+      : it.media_type === 'movie' ? `/movie/${it.tmdb_id}` : `/show/${it.tmdb_id}`;
 
 const loadOrders = () => {
   try { return JSON.parse(localStorage.getItem(ORDER_KEY)) || {}; } catch { return {}; }
