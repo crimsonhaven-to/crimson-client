@@ -749,9 +749,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                 <div className="absolute inset-y-0 left-0 bg-crimson-400/20" style={{ width: `${seekHover * 100}%` }} />
               )}
               {/* Played */}
-              <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-crimson-800 via-crimson-600 to-crimson-400 shadow-[0_0_20px_rgba(255,0,60,0.8)]" style={{ width: `${pct}%` }}>
-                <div className="cp-sheen absolute inset-0" />
-              </div>
+              <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-crimson-800 via-crimson-600 to-crimson-400 shadow-[0_0_20px_rgba(255,0,60,0.8)]" style={{ width: `${pct}%` }} />
             </div>
             {/* Ghost marker at the hovered point */}
             {seekHover !== null && (

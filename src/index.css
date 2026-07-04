@@ -218,24 +218,6 @@ body {
    under prefers-reduced-motion below.
    ============================================================================ */
 
-/* A slow crimson highlight sweeping along the played portion of the seek bar —
-   the "lifeblood" running through the track. Driven by background-position on a
-   repeating linear-gradient laid over the fill. */
-@keyframes cp-sheen {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-.cp-sheen {
-  background-image: linear-gradient(
-    100deg,
-    transparent 20%,
-    rgba(255, 245, 246, 0.55) 50%,
-    transparent 80%
-  );
-  background-size: 200% 100%;
-  animation: cp-sheen 2.6s linear infinite;
-}
-
 /* Concentric ring behind the centre play crest — a slow, dashed halo rotation. */
 @keyframes cp-ring-rot { to { transform: rotate(360deg); } }
 .cp-ring { animation: cp-ring-rot 14s linear infinite; }
@@ -264,7 +246,7 @@ body {
 .cp-pop { animation: cp-pop 0.14s ease-out both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .cp-sheen, .cp-ring, .cp-ring-rev, .cp-breathe, .cp-rise, .cp-pop {
+  .cp-ring, .cp-ring-rev, .cp-breathe, .cp-rise, .cp-pop {
     animation: none !important;
   }
 }
