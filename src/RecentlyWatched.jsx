@@ -62,15 +62,17 @@ const isFutureDate = (iso) => {
 // finally to the original always-advance behaviour.
 const resumeInfo = (item) => {
   const finished = item.status === 'completed';
-  // Manga: chapter ordinal in episode_number, page in position_seconds. Resume
-  // routes to the overview, whose "Continue" button owns the chapter id (history
-  // rows don't carry it) — so there's no next-chapter arithmetic here.
+  // Manga: chapter ordinal in episode_number, page in position_seconds. Resume goes
+  // straight into the reader via the resume route (/read/:anilistId with no chapter
+  // id): the reader loads the chapter list, maps the saved ordinal → chapter id and
+  // opens it — so "Continue Reading" reads immediately instead of stopping at the
+  // overview (history rows don't carry the MangaDex chapter id themselves).
   if (item.media_type === 'manga') {
     const percent = item.duration_seconds
       ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
       : 0;
     return {
-      finished, ep: item.episode_number || 1, href: `/manga/${item.anilist_id}`, percent,
+      finished, ep: item.episode_number || 1, href: `/read/${item.anilist_id}`, percent,
       mode: finished ? 'rewatch' : 'resume',
       actionLabel: finished ? 'Read Again' : 'Continue Reading',
       nextAirDate: null,

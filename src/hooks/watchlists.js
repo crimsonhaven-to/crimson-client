@@ -46,10 +46,15 @@ const rowMatchesItem = (row, item) => {
 };
 
 // Query params identifying one show for the DELETE endpoint (AniList preferred).
+// media_type must be forwarded for the namespaced kinds (movie:, manga:) so the
+// backend rebuilds the SAME item_key it stored — otherwise an anilist_id-only
+// delete computes `anilist:{id}` and misses a manga row (`manga:{id}`) → 404.
 const itemQuery = (item, listName) => {
   const p = new URLSearchParams();
-  if (item.anilist_id != null) p.set('anilist_id', item.anilist_id);
-  else if (item.tmdb_id != null) {
+  if (item.anilist_id != null) {
+    p.set('anilist_id', item.anilist_id);
+    if (item.media_type === 'manga') p.set('media_type', 'manga');
+  } else if (item.tmdb_id != null) {
     p.set('tmdb_id', item.tmdb_id);
     if (item.media_type === 'movie') p.set('media_type', 'movie');
   }

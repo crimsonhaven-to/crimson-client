@@ -215,7 +215,7 @@ const FavoritesPage = () => {
     createList, deleteList, exportWatchlists, importWatchlists,
   } = useWatchlists();
   const { isAuthenticated } = useAuth();
-  useTitle('Watchlists');
+  useTitle('Favorites');
   const navigate = useNavigate();
 
   const [activeList, setActiveList] = useState(ALL_LIST);
@@ -379,7 +379,7 @@ const FavoritesPage = () => {
 
   // Group the sorted shows into kind sections, dropping any empty section.
   const grouped = useMemo(() => {
-    const map = { anime: [], show: [], movie: [] };
+    const map = { anime: [], show: [], movie: [], manga: [] };
     for (const s of sorted) map[kindOf(s)].push(s);
     return TYPE_ORDER.map(k => ({ key: k, ...TYPE_META[k], items: map[k] })).filter(g => g.items.length > 0);
   }, [sorted]);
@@ -477,7 +477,7 @@ const FavoritesPage = () => {
         <div className="bg-crimson-900/20 border border-crimson-500/50 p-8 rounded-2xl">
           <Heart className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-crimson-50 uppercase">Authentication Required</h2>
-          <p className="text-crimson-300 mt-2">You must establish a link to view your watchlists.</p>
+          <p className="text-crimson-300 mt-2">You must establish a link to view your favorites.</p>
           <button
             onClick={() => navigate('/account')}
             className="mt-6 px-6 py-2 bg-crimson-500 hover:bg-crimson-400 text-white font-bold rounded-xl transition-all"
@@ -506,7 +506,7 @@ const FavoritesPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div className="space-y-3">
             <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
-              Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Watchlists</span>
+              Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Favorites</span>
             </h1>
             <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
               <Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />
