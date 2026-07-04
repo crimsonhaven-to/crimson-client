@@ -12,28 +12,35 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { apiFetch, useSessionToken } from './apiClient';
 import { memGet, memSet } from './memCache';
-import { clientMangaEnabled, resolveMangaChapters, resolveMangaPages } from '../clientManga';
+import { clientMangaEnabled, resolveMangaSources, resolveMangaPages } from '../clientManga';
 
 // Fetch a manga overview from the backend and, when the backend didn't map any
 // chapters (public build), resolve the chapter list client-side and fold it in.
 // Shared by useMangaOverview and useMangaReader so a deep-linked reader resolves the
 // same way. Best-effort: on client-resolution failure we keep the backend response.
+//
+// Resolution is multi-source: `manga_sources` carries one entry per matched source
+// (each with its own tagged chapter list) so the overview can offer a source picker,
+// while `chapters` defaults to the first source so the existing single-list callers
+// (resume, "Start Reading") keep working unchanged.
 async function loadOverview(anilistId) {
   const res = await apiFetch(`/manga-overview/${anilistId}`);
   if (!res.ok) throw new Error(`Failed to load overview (HTTP ${res.status})`);
   const data = await res.json();
   if ((!data.chapters || data.chapters.length === 0) && clientMangaEnabled()) {
-    const resolved = await resolveMangaChapters({
+    const sources = await resolveMangaSources({
       titles: data.candidate_titles || [],
       contentRating: data.content_rating || [],
       language: data.language || data.languages?.[0] || 'en',
     });
-    if (resolved?.chapters?.length) {
+    const primary = sources[0];
+    if (primary?.chapters?.length) {
       return {
         ...data,
-        chapters: resolved.chapters,
-        chapter_count: resolved.chapters.length,
-        mangadex_id: resolved.mangaId,
+        manga_sources: sources,
+        chapters: primary.chapters,
+        chapter_count: primary.chapters.length,
+        mangadex_id: primary.mangaId,
         mapped: true,
         _clientResolved: true, // the reader must resolve pages client-side too
       };
@@ -198,7 +205,17 @@ export function useMangaReader(anilistId, chapterId) {
     // client-resolved chapter doesn't first (needlessly) probe the backend /read.
   }, [anilistId, chapterId, overview?._clientResolved]);
 
-  const chapters = overview?.chapters || [];
+  // With multi-source resolution the chapter id is namespaced "{sourceId}:{rawId}";
+  // use the chapter list of the source that owns the CURRENT chapter so prev/next and
+  // the reader's chapter dropdown stay within that source (each source has its own,
+  // differently-numbered chapter list). Falls back to the default `chapters`.
+  const sources = overview?.manga_sources;
+  let chapters = overview?.chapters || [];
+  if (Array.isArray(sources) && sources.length && chapterId) {
+    const prefix = String(chapterId).split(':')[0];
+    const owner = sources.find(s => s.sourceId === prefix);
+    if (owner?.chapters?.length) chapters = owner.chapters;
+  }
   const currentIndex = chapters.findIndex(c => String(c.id) === String(chapterId));
   const currentChapter = currentIndex >= 0 ? chapters[currentIndex] : null;
   const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
