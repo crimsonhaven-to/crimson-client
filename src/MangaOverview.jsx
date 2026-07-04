@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Star, Layers, PlayCircle, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useMangaOverview, useMangaResume, useTitle } from './hooks';
@@ -14,9 +14,21 @@ const STATUS_LABEL = {
   CANCELLED: 'Cancelled', HIATUS: 'On Hiatus',
 };
 
+// Short "May 15, 2026" for sources that give a date but no page count (WeebCentral).
+function shortDate(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime())
+    ? null
+    : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 function ChapterRow({ anilistId, chapter, active }) {
   const number = chapter.chapter != null ? `Chapter ${chapter.chapter}` : 'Oneshot';
   const vol = chapter.volume != null ? `Vol. ${chapter.volume}` : null;
+  // MangaDex gives a page count; WeebCentral doesn't (only a date). Show whichever
+  // we have so the sub-line is never a bare "0 pages".
+  const meta = chapter.pages > 0 ? `${chapter.pages} pages` : shortDate(chapter.published_at);
   return (
     <Link
       to={`/read/${anilistId}/${encodeURIComponent(chapter.id)}`}
@@ -32,7 +44,7 @@ function ChapterRow({ anilistId, chapter, active }) {
           {chapter.title ? <span className="text-crimson-400/70 font-bold"> · {chapter.title}</span> : null}
         </p>
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 mt-0.5">
-          {vol ? `${vol} · ` : ''}{chapter.pages} pages
+          {vol ? `${vol}${meta ? ' · ' : ''}` : ''}{meta || ''}
         </p>
       </div>
       <ChevronRight className="w-4 h-4 text-crimson-700 group-hover:text-crimson-400 group-hover:translate-x-1 transition-all shrink-0" />
@@ -49,7 +61,14 @@ const MangaOverview = () => {
   useTitle(overview?.title || 'Manga');
 
   const synopsis = useMemo(() => stripHtml(overview?.description || ''), [overview]);
-  const chapters = overview?.chapters || [];
+
+  // Multi-source (client-resolved): each source has its own chapter list. Let the
+  // reader pick; default to the first source (backend-provider builds have no
+  // `manga_sources`, so `chapters` falls back to the single backend list).
+  const sources = overview?.manga_sources || null;
+  const [activeSourceId, setActiveSourceId] = useState(null);
+  const activeSource = sources?.find(s => s.sourceId === activeSourceId) || sources?.[0] || null;
+  const chapters = activeSource ? activeSource.chapters : (overview?.chapters || []);
 
   // Resume points at a chapter ordinal (episode_number). Map it back to a chapter
   // id so "continue reading" jumps straight into the right chapter.
@@ -193,6 +212,29 @@ const MangaOverview = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600">{chapters.length} available</span>
             )}
           </div>
+
+          {/* Source picker — one pill per resolved source (client-resolved builds). */}
+          {sources && sources.length > 1 && (
+            <div className="flex flex-wrap gap-2 mb-5">
+              {sources.map((s) => {
+                const on = s.sourceId === (activeSource?.sourceId);
+                return (
+                  <button
+                    key={s.sourceId}
+                    onClick={() => setActiveSourceId(s.sourceId)}
+                    className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border transition-all ${
+                      on
+                        ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-200'
+                        : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-500 hover:text-crimson-300 hover:border-crimson-700'
+                    }`}
+                  >
+                    {s.sourceLabel}
+                    <span className="ml-1.5 text-crimson-600/80">{s.chapters.length}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {chapters.length === 0 ? (
             <div className="p-8 rounded-2xl bg-crimson-950/40 border border-dashed border-crimson-900/60 text-center">

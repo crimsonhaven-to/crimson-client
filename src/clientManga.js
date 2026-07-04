@@ -3,10 +3,13 @@
  *
  * The reading twin of clientSources.js. The public backend never talks to a manga
  * host: /manga-overview returns AniList metadata + the candidate titles, and THIS
- * resolves the MangaDex chapter list + page images in the viewer's own browser (via
- * the vendored `crimson-sources` manga engine), exactly like the video sources moved
- * client-side. The page images come back as raw `*.mangadex.network` URLs an <img>
- * loads directly — no proxy, no backend bytes.
+ * resolves the chapter list + page images in the viewer's own browser (via the
+ * vendored `crimson-sources` manga engine), exactly like the video sources moved
+ * client-side. Resolution is MULTI-SOURCE: the title is matched against every manga
+ * source the engine can run (MangaDex, WeebCentral, …) and the reader offers a source
+ * picker. Chapter ids are namespaced `"{sourceId}:{rawId}"` by the engine so a later
+ * page fetch routes back to the right source. The page images come back as raw CDN
+ * URLs an <img> loads directly — no proxy, no backend bytes.
  *
  * It reuses the same tiered fetchers as the video engine (extension E3 / signed
  * crimson-proxy E2 — MangaDex's API answers no ACAO, so a CORS bypass is required)
@@ -43,35 +46,37 @@ async function getEngine() {
 }
 
 /**
- * Resolve a manga's chapter list client-side from the AniList candidate titles the
- * backend overview hands us. Returns `{ mangaId, chapters }` or null when nothing
- * runs / matches. Best-effort: any failure yields null and the caller keeps whatever
- * the backend returned (an empty list in a base build).
+ * Resolve a manga across every runnable source client-side, from the AniList
+ * candidate titles the backend overview hands us. Returns an array of per-source
+ * results `[{ sourceId, sourceLabel, mangaId, chapters }]` (chapters' ids already
+ * namespaced by source), in the engine's source order; empty when nothing runs /
+ * matches. Best-effort: any failure yields [] and the caller keeps whatever the
+ * backend returned (an empty list in a base build).
  *
  * @param {{ titles: string[], contentRating: string[], language: string }} opts
  */
-export async function resolveMangaChapters({ titles, contentRating, language }) {
-  if (!clientMangaEnabled() || !Array.isArray(titles) || titles.length === 0) return null;
+export async function resolveMangaSources({ titles, contentRating, language }) {
+  if (!clientMangaEnabled() || !Array.isArray(titles) || titles.length === 0) return [];
   try {
     const engine = await getEngine();
     if (!engine.available) {
       dbg('no client path (no companion / proxy) — leaving to the backend');
-      return null;
+      return [];
     }
-    const mangaId = await engine.resolveManga(titles, contentRating || []);
-    if (!mangaId) { dbg('no MangaDex match for', titles[0]); return null; }
-    const chapters = await engine.chapters(mangaId, language || 'en', contentRating || []);
-    dbg(`resolved ${chapters.length} chapter(s) via ${engine.env} for ${mangaId}`);
-    return chapters.length ? { mangaId, chapters } : null;
+    const results = await engine.resolveAll(titles, contentRating || [], language || 'en');
+    dbg(`resolved ${results.length} source(s) via ${engine.env} for`, titles[0]);
+    return results;
   } catch (err) {
-    console.warn('[clientManga] chapter resolution failed:', err);
-    return null;
+    console.warn('[clientManga] source resolution failed:', err);
+    return [];
   }
 }
 
 /**
- * Resolve one chapter's ordered page-image URLs client-side (raw @Home URLs for an
- * <img>). Returns [] on any failure so the reader can surface a clean error.
+ * Resolve one chapter's ordered page-image URLs client-side (raw CDN URLs for an
+ * <img>). The chapter id is source-namespaced ("{sourceId}:{rawId}"), so the engine
+ * routes the fetch to the right source. Returns [] on any failure so the reader can
+ * surface a clean error.
  */
 export async function resolveMangaPages(chapterId, dataSaver = false) {
   if (!clientMangaEnabled() || !chapterId) return [];
