@@ -55,7 +55,7 @@ export default function InvitesTab({ notify }) {
   return (
     <div className="space-y-8">
       <form onSubmit={create} className="bg-crimson-950/40 border border-crimson-900/50 rounded-3xl p-6 space-y-5">
-        <h3 className="text-sm font-black text-white uppercase tracking-tighter flex items-center gap-2"><Ticket className="w-5 h-5 text-crimson-500" /> Mint Invite Codes</h3>
+        <h3 className="text-sm font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-2"><Ticket className="w-5 h-5 text-crimson-500" /> Mint Invite Codes</h3>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="space-y-2 flex-1">
             <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">How many (1–50)</label>

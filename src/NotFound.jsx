@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom';
 import { Home, Library, Ghost } from 'lucide-react';
+import { useThemedAsset } from './hooks';
 
 const NotFound = () => {
+  const lumi404 = useThemedAsset('lumi_404');
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-20 flex flex-col md:flex-row items-center justify-between gap-16 my-auto relative min-h-[80vh] overflow-hidden animate-in fade-in duration-1000">
       {/* Background Decorative Glow */}
@@ -13,7 +15,7 @@ const NotFound = () => {
           <div className="inline-flex items-center gap-2 px-4 py-1 bg-crimson-500/10 border border-crimson-500/20 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 mb-2">
              <Ghost className="w-3 h-3" /> Ethereal Error
           </div>
-          <h1 className="text-5xl sm:text-8xl font-black text-white uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.3)] leading-none">
+          <h1 className="text-5xl sm:text-8xl font-black text-crimson-50 uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.3)] leading-none">
             404 <span className="text-crimson-500">.</span> <span className="font-light opacity-50">Lost</span>
           </h1>
           <p className="text-xl sm:text-2xl text-crimson-100/90 font-medium italic leading-relaxed tracking-tight">
@@ -29,7 +31,7 @@ const NotFound = () => {
           <div className="absolute top-0 right-0 p-4 opacity-5">
              <Ghost className="w-16 h-16 text-crimson-500" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter flex items-center justify-center md:justify-start gap-3">
+          <h2 className="text-xl sm:text-2xl font-black text-crimson-50 uppercase tracking-tighter flex items-center justify-center md:justify-start gap-3">
             <div className="w-2.5 h-2.5 rounded-full bg-crimson-500 shadow-[0_0_15px_#ff003c]"></div>
             What happened?
           </h2>
@@ -40,7 +42,7 @@ const NotFound = () => {
         </div>
 
         <div className="space-y-8">
-          <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tighter">Let me guide you back, little mortal.</h2>
+          <h2 className="text-xl sm:text-2xl font-black text-crimson-50 uppercase tracking-tighter">Let me guide you back, little mortal.</h2>
           <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-5">
             <Link 
               to="/" 
@@ -81,9 +83,9 @@ const NotFound = () => {
           {/* Ambient Glows */}
           <div className="absolute -inset-20 bg-crimson-500/10 rounded-full blur-[120px] group-hover:bg-crimson-500/20 transition-all duration-1000 animate-pulse" />
           
-          <img 
-            src="/lumi_404.png"
-            alt="Luminas mascot" 
+          <img
+            src={lumi404}
+            alt="Luminas mascot"
             className="relative w-full h-auto drop-shadow-[0_-20px_100px_rgba(255,0,60,0.4)] transition-all duration-1000 wallpaper-img block"
             style={{ 
               maskImage: 'linear-gradient(to top, transparent 0%, black 20%)',

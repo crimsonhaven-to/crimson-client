@@ -16,6 +16,16 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Crimsonhaven" />
 
+    <!-- Theme FOUC guard: apply the saved per-device theme before first paint so
+         non-default (e.g. light "Catgirl Lumi") users never flash the dark look.
+         Mirrors src/hooks/theme.js — the default theme sets no attribute. -->
+    <script>
+      try {
+        var t = localStorage.getItem('crimson:theme');
+        if (t && t !== 'crimson') document.documentElement.setAttribute('data-theme', t);
+      } catch (e) {}
+    </script>
+
     <title>Crimsonhaven | Your Anime Sanctuary</title>
     <meta name="description" content="Welcome to the regal sanctuary of anime manifestations. I am Lumi, your crimson curator! ( ^ . ^ ) Step into our haven for a seamless streaming experience. ✨" />
     

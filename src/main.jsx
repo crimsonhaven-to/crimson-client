@@ -3,7 +3,13 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import ErrorBoundary from './ErrorBoundary';
 import { summonLumiConsole } from './lumiConsole';
+import { applyThemeToDom, getTheme } from './hooks/theme';
 import "./index.css";
+
+// Sync the saved theme into the DOM before first render. The inline guard in
+// index.html already set `data-theme` (to avoid a flash); this re-affirms it and
+// updates the mobile theme-color meta from the single source of truth.
+applyThemeToDom(getTheme());
 
 // Lumi's little flex in the devtools console — a styled banner + a chatty
 // `window.lumi` object for the curious. Purely cosmetic; wrapped so a console

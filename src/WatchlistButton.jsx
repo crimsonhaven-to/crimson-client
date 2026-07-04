@@ -109,7 +109,7 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
                   >
                     <Check className="w-3.5 h-3.5" strokeWidth={3} />
                   </span>
-                  <span className={`flex-1 text-sm font-bold tracking-tight truncate ${active ? 'text-white' : 'text-crimson-200'}`}>
+                  <span className={`flex-1 text-sm font-bold tracking-tight truncate ${active ? 'text-crimson-50' : 'text-crimson-200'}`}>
                     {listLabel(l.name)}
                   </span>
                   {l.name === DEFAULT_LIST && (
@@ -128,7 +128,7 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
                 onChange={(e) => setNewName(e.target.value)}
                 maxLength={100}
                 placeholder="New list…"
-                className="w-full pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-lg text-white placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+                className="w-full pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-lg text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
               />
             </div>
             <button

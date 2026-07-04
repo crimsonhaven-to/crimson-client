@@ -18,7 +18,7 @@ const SourceRow = ({ s }) => {
       <StatusDot status={s.status} />
       <div className="min-w-0 flex-grow">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <span className="text-sm font-black text-white tracking-tight">{s.label}</span>
+          <span className="text-sm font-black text-crimson-50 tracking-tight">{s.label}</span>
           <span className={`text-[9px] font-black uppercase tracking-widest ${m.text}`}>{m.label}</span>
           {s.supports_movies && <span className="text-[8px] font-black uppercase tracking-widest text-crimson-600 border border-crimson-900/60 rounded-full px-2 py-0.5">Movies</span>}
         </div>
@@ -87,7 +87,7 @@ export default function HealthTab({ notify }) {
       {/* Summary + re-probe */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
-          <h3 className="text-lg font-black text-white uppercase tracking-tighter flex items-center gap-2.5">
+          <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-2.5">
             <HeartPulse className="w-5 h-5 text-crimson-500" /> Source Vitals
           </h3>
           <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">
@@ -138,7 +138,7 @@ export default function HealthTab({ notify }) {
               const accent = rate == null ? 'text-crimson-700' : rate >= 70 ? 'text-green-400' : rate >= 30 ? 'text-amber-300' : 'text-crimson-500';
               return (
                 <div key={s.source} className="flex items-center gap-4 bg-crimson-950/30 border border-crimson-900/40 rounded-2xl px-5 py-3">
-                  <span className="text-xs font-black text-white truncate flex-1 min-w-0">{s.source}</span>
+                  <span className="text-xs font-black text-crimson-50 truncate flex-1 min-w-0">{s.source}</span>
                   <div className="hidden sm:block w-40 h-1.5 bg-crimson-950 rounded-full overflow-hidden">
                     <div className={`h-full ${rate == null ? '' : rate >= 70 ? 'bg-green-400' : rate >= 30 ? 'bg-amber-300' : 'bg-crimson-500'}`} style={{ width: `${rate ?? 0}%` }} />
                   </div>

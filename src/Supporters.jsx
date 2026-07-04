@@ -13,7 +13,7 @@ const SupportersPage = () => {
           <Sparkles className="w-10 h-10 text-crimson-500 animate-pulse" />
         </div>
         <div className="space-y-3">
-          <h1 className="text-5xl sm:text-7xl font-black text-white uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.2)]">
+          <h1 className="text-5xl sm:text-7xl font-black text-crimson-50 uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.2)]">
             Lumi's Favorite <span className="text-crimson-500">Mortals</span>
           </h1>
           <p className="text-crimson-400 font-black uppercase tracking-[0.4em] text-[10px] sm:text-xs opacity-80">
@@ -27,11 +27,11 @@ const SupportersPage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/40 p-8 rounded-[2rem] text-center shadow-2xl group hover:border-crimson-500/30 transition-all">
             <p className="text-[10px] font-black text-crimson-700 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Active Mortals</p>
-            <p className="text-4xl font-black text-white tracking-tighter">{stats.supporter_count}</p>
+            <p className="text-4xl font-black text-crimson-50 tracking-tighter">{stats.supporter_count}</p>
           </div>
           <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/40 p-8 rounded-[2rem] text-center shadow-2xl group hover:border-crimson-500/30 transition-all">
             <p className="text-[10px] font-black text-crimson-700 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Sanctuary Growth</p>
-            <p className="text-4xl font-black text-white tracking-tighter">
+            <p className="text-4xl font-black text-crimson-50 tracking-tighter">
               {stats.total_raised} <span className="text-sm font-black text-crimson-600 ml-1">{stats.currency}</span>
             </p>
           </div>
@@ -75,7 +75,7 @@ const SupportersPage = () => {
                        <span className="text-[8px] font-black uppercase tracking-[0.3em]">Eternal Rank</span>
                     </div>
                   )}
-                  <h3 className={`text-xl font-black text-white uppercase tracking-tight truncate transition-all duration-300 ${
+                  <h3 className={`text-xl font-black text-crimson-50 uppercase tracking-tight truncate transition-all duration-300 ${
                     supporter.is_subscription 
                       ? 'group-hover:text-crimson-400 group-hover:drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]' 
                       : 'group-hover:text-crimson-400'

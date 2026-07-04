@@ -240,7 +240,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
         <div className="flex items-center gap-3 relative z-10">
           <Database className="w-7 h-7 text-crimson-500" />
           <div>
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Metadata Resync</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Metadata Resync</h3>
             <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Forced AniList ↔ TMDB Fribb rebuild</p>
           </div>
         </div>
@@ -282,7 +282,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
         <div className="flex items-center gap-3 relative z-10">
           <DownloadCloud className="w-7 h-7 text-crimson-500" />
           <div>
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Catalogue Backfill</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Catalogue Backfill</h3>
             <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Pre-seed non-anime shows &amp; movies from TMDB</p>
           </div>
         </div>

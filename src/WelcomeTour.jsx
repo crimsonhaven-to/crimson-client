@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Crown, Search, Heart, History, SlidersHorizontal, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import lumiAvatar from './assets/lumi_cuty.png';
-import { HOSTED_IN } from './hooks';
+import { HOSTED_IN, useThemedAsset } from './hooks';
 
 // Luminas Crimsonveil's welcome ritual — a stepped, themed introduction to the
 // haven's features, shown once per login (see the trigger in App.jsx). Self-
@@ -17,7 +16,7 @@ const STEPS = [
     title: 'Welcome to the Haven',
     body: (
       <>
-        Ahh… a fresh pulse graces my sanctuary. I am <strong className="text-white">Luminas Crimsonveil</strong>,
+        Ahh… a fresh pulse graces my sanctuary. I am <strong className="text-crimson-50">Luminas Crimsonveil</strong>,
         eternal curator of this place. Lean close, darling~ — let me unveil the little delights woven into your
         <span className="text-crimson-400 font-bold"> crimsonhaven</span> before you lose yourself in the dark.
       </>
@@ -29,7 +28,7 @@ const STEPS = [
     body: (
       <>
         Whisper a name into the search and I shall conjure it — anime, mortal shows, and cinema alike. Crave a grander
-        hunt? The <strong className="text-white">Catalogue</strong> lays my entire archive bare for your wandering eyes.
+        hunt? The <strong className="text-crimson-50">Catalogue</strong> lays my entire archive bare for your wandering eyes.
       </>
     ),
   },
@@ -38,7 +37,7 @@ const STEPS = [
     title: 'Curate Your Collections',
     body: (
       <>
-        Claim what calls to you. Build as many <strong className="text-white">Watchlists</strong> as your heart desires —
+        Claim what calls to you. Build as many <strong className="text-crimson-50">Watchlists</strong> as your heart desires —
         "Devouring", "For Later", "Forsaken" — and a single jewel may rest in many at once. Export them, import them;
         they are forever yours.
       </>
@@ -50,7 +49,7 @@ const STEPS = [
     body: (
       <>
         I remember <em>everything</em>, darling~. Slip away mid-tale and I hold your place to the very second. Your
-        <strong className="text-white"> History</strong> keeps every manifestation you've savoured, ready to resume at a
+        <strong className="text-crimson-50"> History</strong> keeps every manifestation you've savoured, ready to resume at a
         single touch.
       </>
     ),
@@ -62,8 +61,8 @@ const STEPS = [
     body: (
       <>
         Each tale is drawn from many sources, and I always serve the swiftest first. And now — my newest gift — slip into
-        <strong className="text-white"> Preferences</strong> and name your tongue: German or English,{' '}
-        <strong className="text-white">Dubbed</strong> or <strong className="text-white">Subbed</strong>. I shall favour
+        <strong className="text-crimson-50"> Preferences</strong> and name your tongue: German or English,{' '}
+        <strong className="text-crimson-50">Dubbed</strong> or <strong className="text-crimson-50">Subbed</strong>. I shall favour
         your chosen language ever after, across every device you haunt.
       </>
     ),
@@ -85,6 +84,7 @@ const STEPS = [
 const WelcomeTour = ({ onClose }) => {
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
+  const lumiAvatar = useThemedAsset('lumi_avatar');
   const isFirst = step === 0;
   const isLast = step === STEPS.length - 1;
   const current = STEPS[step];
@@ -152,7 +152,7 @@ const WelcomeTour = ({ onClose }) => {
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-white tracking-tight truncate">Luminas Crimsonveil</h3>
+                <h3 className="text-base font-black text-crimson-50 tracking-tight truncate">Luminas Crimsonveil</h3>
                 <Crown className="w-3.5 h-3.5 text-crimson-500 shrink-0" />
               </div>
               <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-600 mt-0.5">
@@ -174,7 +174,7 @@ const WelcomeTour = ({ onClose }) => {
                 <span className="flex items-center justify-center w-9 h-9 rounded-2xl bg-crimson-600/15 border border-crimson-500/25 shrink-0">
                   <Icon className="w-[18px] h-[18px] text-crimson-400 drop-shadow-[0_0_8px_rgba(255,0,60,0.5)]" />
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight leading-[1.1]">
+                <h2 className="text-xl sm:text-2xl font-black text-crimson-50 uppercase tracking-tight leading-[1.1]">
                   {current.title}
                 </h2>
               </div>

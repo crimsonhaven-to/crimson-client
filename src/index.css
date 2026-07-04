@@ -21,6 +21,51 @@
   --color-crimson-50: #fff5f6;
 }
 
+/* ============================================================================
+   THEME: "Catgirl Lumi" — a LIGHT theme that keeps crimson accents.
+   ----------------------------------------------------------------------------
+   Every theme is just this: one block that re-points the SAME crimson variables.
+   Because the whole app draws from these vars, all ~1,200 `crimson-*` utilities
+   and the mesh background re-skin with no JSX changes. Activated by
+   src/hooks/theme.js stamping <html data-theme="catgirl">.
+
+   The scale is remapped by ROLE rather than kept as a smooth ramp:
+     950 → 800  become light SURFACES (page → cards → inputs),
+     700          a soft rose for dividers / secondary chrome,
+     600 / 500    stay VIVID CRIMSON — the accents/buttons/brand highlights,
+     400 → 50   become progressively darker INK for readable text on light.
+   Adding another theme later = copy this block, swap the values.
+   ============================================================================ */
+:root[data-theme="catgirl"] {
+  /* Light surfaces (were the darkest backgrounds) */
+  --color-crimson-950: #fff5f7; /* page canvas */
+  --color-crimson-900: #ffe9ef; /* raised cards / nav */
+  --color-crimson-800: #ffd7e0; /* inputs / overlays */
+
+  /* Mid — soft rose chrome (dividers, muted fills) */
+  --color-crimson-700: #f0a9ba;
+
+  /* Accents — kept vivid so "light but still crimson" holds. White button
+     labels stay readable on these (they remain deep reds), so button text is
+     intentionally left as-is by the text sweep. */
+  --color-crimson-600: #d1093a; /* primary button fill */
+  --color-crimson-500: #ff003c; /* piercing accent / brand highlight */
+
+  /* Ink (was the pale pink/near-white text end) — now darker toward the text,
+     so muted labels and body copy read on a light canvas. */
+  --color-crimson-400: #c11d43; /* small muted labels (text-crimson-400) */
+  --color-crimson-300: #a52141; /* secondary muted text */
+  --color-crimson-200: #7c1a34; /* deeper muted text */
+  --color-crimson-100: #4a0d1c; /* primary body text (root default) */
+  --color-crimson-50:  #2a0510; /* headings / emphasis (see text sweep) */
+}
+
+/* Tone the foreground-art boost down for the light theme — the dark-theme
+   brightness/saturation lift blows out on a pale canvas. */
+:root[data-theme="catgirl"] .wallpaper-img {
+  filter: saturate(1.03);
+}
+
 /* Paint the document canvas itself the app's darkest crimson. Without this the
    browser's default white shows through wherever the React tree doesn't cover the
    viewport — most visibly as the brief white seam between the sticky nav and the

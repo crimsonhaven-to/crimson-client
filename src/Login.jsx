@@ -24,7 +24,7 @@ const inputCls =
 
 const primaryBtn =
   'group relative w-full py-4 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 ' +
-  'disabled:cursor-not-allowed text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl ' +
+  'disabled:cursor-not-allowed text-crimson-50 font-black uppercase tracking-[0.2em] text-xs rounded-2xl ' +
   'transition-all shadow-[0_15px_30px_rgba(255,0,60,0.2)] flex items-center justify-center gap-3 active:scale-95';
 
 // modes: 'login' | 'register' | 'forgot' | 'mnemonic'
@@ -142,7 +142,7 @@ const LoginWall = () => {
             <MailCheck className="w-8 h-8 text-crimson-500" />
           </div>
           <div className="space-y-2">
-            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Verify your email</h3>
+            <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Verify your email</h3>
             <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
               We sent a confirmation link to <span className="text-crimson-400 font-bold break-all">{email}</span>.
               Click it to activate your account, then sign in.
@@ -170,7 +170,7 @@ const LoginWall = () => {
     return (
       <Shell subtitle="Recover access to your sanctuary">
         <form onSubmit={handleForgot} className="space-y-6">
-          <h3 className="text-lg font-black text-white uppercase tracking-tighter text-center">Reset Password</h3>
+          <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter text-center">Reset Password</h3>
           <Field icon={Mail}>
             <input type="email" required placeholder="you@example.com" value={email}
               onChange={(e) => setEmail(e.target.value)} className={inputCls} autoComplete="email" />
@@ -348,7 +348,7 @@ export function Shell({ subtitle, children }) {
   return (
     <div className="max-w-md w-full mx-auto px-6 py-16 sm:py-24 my-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
       <div className="text-center space-y-3 mb-10">
-        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-white uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
+        <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-crimson-50 uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
           crimson<span className="text-crimson-500 font-light">haven</span>
         </h1>
         <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">{subtitle}</p>

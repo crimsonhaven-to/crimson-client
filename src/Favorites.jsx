@@ -466,7 +466,7 @@ const FavoritesPage = () => {
       <div className="max-w-2xl w-full mx-auto px-6 py-20 text-center space-y-6">
         <div className="bg-crimson-900/20 border border-crimson-500/50 p-8 rounded-2xl">
           <Heart className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-black text-white uppercase">Authentication Required</h2>
+          <h2 className="text-2xl font-black text-crimson-50 uppercase">Authentication Required</h2>
           <p className="text-crimson-300 mt-2">You must establish a link to view your watchlists.</p>
           <button
             onClick={() => navigate('/account')}
@@ -495,7 +495,7 @@ const FavoritesPage = () => {
       <div className="border-b border-crimson-900/30 pb-10 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div className="space-y-3">
-            <h1 className="text-4xl sm:text-6xl font-black text-white uppercase tracking-tighter leading-none">
+            <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
               Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Watchlists</span>
             </h1>
             <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
@@ -623,7 +623,7 @@ const FavoritesPage = () => {
                   </span>
                 )}
                 <span className="relative z-10 flex items-center gap-2">
-                  {l.name === ALL_LIST && <Layers className={`w-3.5 h-3.5 ${active ? 'text-white' : 'text-crimson-500'}`} />}
+                  {l.name === ALL_LIST && <Layers className={`w-3.5 h-3.5 ${active ? 'text-crimson-50' : 'text-crimson-500'}`} />}
                   {l.name === DEFAULT_LIST && <Heart className={`w-3.5 h-3.5 ${active ? 'fill-white' : 'fill-crimson-700 text-crimson-500'}`} />}
                   <span>{listLabel(l.name)}</span>
                   <span className={`text-[10px] tabular-nums ${active ? 'text-crimson-100/90' : 'text-crimson-600'}`}>{l.count}</span>
@@ -644,7 +644,7 @@ const FavoritesPage = () => {
                   onBlur={() => { if (!newName.trim()) setCreating(false); }}
                   maxLength={100}
                   placeholder="List name…"
-                  className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-white placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+                  className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
                 />
               </div>
               <button type="submit" disabled={!newName.trim()} aria-label="Create list"
@@ -686,7 +686,7 @@ const FavoritesPage = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Search "${listLabel(effectiveList)}"…`}
-              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-white placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
             />
             {query && (
               <button
@@ -938,7 +938,7 @@ const FavoritesPage = () => {
                 <FolderPlus className="w-6 h-6 text-crimson-400" />
               </div>
               <div className="min-w-0">
-                <h3 className="text-xl font-black text-white uppercase tracking-tight leading-tight">
+                <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight leading-tight">
                   {listModal.mode === 'bulk' ? `Add ${modalItems.length} to a list` : 'Manage lists'}
                 </h3>
                 {listModal.mode === 'item' && (
@@ -999,7 +999,7 @@ const FavoritesPage = () => {
               <div className="p-2.5 rounded-2xl bg-crimson-500/10 border border-crimson-500/30">
                 <AlertTriangle className="w-6 h-6 text-crimson-400" />
               </div>
-              <h3 className="text-xl font-black text-white uppercase tracking-tight">Delete this list?</h3>
+              <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight">Delete this list?</h3>
             </div>
             <p className="text-sm text-crimson-300 leading-relaxed">
               The <span className="font-black text-crimson-100">"{listLabel(pendingDeleteList)}"</span> list will be removed and its shows unbound from it. The shows themselves stay in any other lists. This cannot be undone.

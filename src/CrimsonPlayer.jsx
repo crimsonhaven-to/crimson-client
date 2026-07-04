@@ -630,7 +630,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
           <div className="absolute w-[10.5rem] h-[10.5rem] sm:w-44 sm:h-44 rounded-full border border-crimson-500/10 cp-ring-rev" />
           <button
             onClick={togglePlay}
-            className="pointer-events-auto relative grid place-items-center w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-crimson-950/50 border border-crimson-500/30 backdrop-blur-md text-white shadow-[0_0_60px_rgba(255,0,60,0.4)] hover:bg-crimson-500/20 hover:border-crimson-400 hover:scale-110 transition-all duration-300 active:scale-95 group"
+            className="pointer-events-auto relative grid place-items-center w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-crimson-950/50 border border-crimson-500/30 backdrop-blur-md text-crimson-50 shadow-[0_0_60px_rgba(255,0,60,0.4)] hover:bg-crimson-500/20 hover:border-crimson-400 hover:scale-110 transition-all duration-300 active:scale-95 group"
             aria-label="Play"
           >
             <Play className="w-10 h-10 sm:w-12 sm:h-12 translate-x-0.5 fill-current drop-shadow-[0_0_15px_rgba(255,0,60,0.8)]" />
@@ -660,7 +660,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               <AlertTriangle className="w-12 h-12 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.5)]" />
             </div>
           </div>
-          <p className="text-white font-black text-lg sm:text-2xl mb-2 uppercase tracking-tighter">Playback Link Severed</p>
+          <p className="text-crimson-50 font-black text-lg sm:text-2xl mb-2 uppercase tracking-tighter">Playback Link Severed</p>
           <p className="text-crimson-400/80 text-xs sm:text-sm max-w-sm mb-8 font-medium leading-relaxed">{error}</p>
           <button onClick={retry} className="flex items-center gap-3 px-8 py-3.5 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-[0_10px_20px_rgba(255,0,60,0.3)] active:scale-95">
             <RotateCcw className="w-4 h-4" /> Re-Establish Node
@@ -673,7 +673,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
       {!error && countdown === null && (inOpRange || inEdRange) && (
         <button
           onClick={inOpRange ? skipIntro : skipOutro}
-          className="cp-rise absolute z-40 bottom-28 right-4 sm:right-6 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-crimson-950/90 border border-crimson-500/40 backdrop-blur-2xl text-white shadow-[0_15px_50px_rgba(0,0,0,0.7)] hover:bg-crimson-600 hover:border-crimson-400 hover:scale-[1.03] transition-all active:scale-95"
+          className="cp-rise absolute z-40 bottom-28 right-4 sm:right-6 flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-crimson-950/90 border border-crimson-500/40 backdrop-blur-2xl text-crimson-50 shadow-[0_15px_50px_rgba(0,0,0,0.7)] hover:bg-crimson-600 hover:border-crimson-400 hover:scale-[1.03] transition-all active:scale-95"
         >
           <SkipForward className="w-4 h-4 fill-current text-crimson-400" />
           <span className="text-[11px] font-black uppercase tracking-[0.2em]">
@@ -696,7 +696,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
             <div className="w-1.5 h-1.5 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">Up Next</p>
           </div>
-          <p className="text-sm font-black text-white truncate mb-1.5">{nextLabel || 'Next Episode'}</p>
+          <p className="text-sm font-black text-crimson-50 truncate mb-1.5">{nextLabel || 'Next Episode'}</p>
           <p className="text-[11px] font-bold text-crimson-300/70 mb-4">
             Manifesting in <span className="text-crimson-400 tabular-nums font-black">{countdown}</span>s
           </p>
@@ -815,7 +815,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
             </div>
 
             <span className="text-[11px] font-mono font-black tracking-tighter tabular-nums bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-white/5 ml-1">
-              <span className="text-white">{fmt(current)}</span> <span className="text-crimson-500 mx-0.5">/</span> <span className="text-crimson-300/80">{fmt(duration)}</span>
+              <span className="text-crimson-50">{fmt(current)}</span> <span className="text-crimson-500 mx-0.5">/</span> <span className="text-crimson-300/80">{fmt(duration)}</span>
             </span>
 
             <div className="flex-1" />
@@ -826,7 +826,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               <button
                 onClick={toggleAutoNext}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border transition-all active:scale-95 hover:text-white ${
-                  autoNext ? 'border-crimson-500/60 text-white' : 'border-white/5 hover:border-crimson-500/50'
+                  autoNext ? 'border-crimson-500/60 text-crimson-50' : 'border-white/5 hover:border-crimson-500/50'
                 }`}
                 aria-label="Auto-play next episode"
                 aria-pressed={autoNext}
@@ -845,7 +845,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               <button
                 onClick={() => { setShowSettings(false); revealControls(); setShowEpisodes((s) => !s); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border transition-all active:scale-95 hover:text-white ${
-                  showEpisodes ? 'border-crimson-500/60 text-white' : 'border-white/5 hover:border-crimson-500/50'
+                  showEpisodes ? 'border-crimson-500/60 text-crimson-50' : 'border-white/5 hover:border-crimson-500/50'
                 }`}
                 aria-label="Episodes"
                 aria-pressed={showEpisodes}
@@ -863,7 +863,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                 <button
                   onClick={() => { setShowEpisodes(false); setSettingsOpenGroup(activeGroupKey); setShowSettings((s) => !s); }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl bg-crimson-950/40 border transition-all active:scale-95 hover:text-white ${
-                    showSettings ? 'border-crimson-500/60 text-white' : 'border-white/5 hover:border-crimson-500/50'
+                    showSettings ? 'border-crimson-500/60 text-crimson-50' : 'border-white/5 hover:border-crimson-500/50'
                   }`}
                   aria-label="Settings"
                   aria-pressed={showSettings}
@@ -901,7 +901,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                               <div key={group.key}>
                                 <button
                                   onClick={() => setSettingsOpenGroup(open ? null : group.key)}
-                                  className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${containsActive && !open ? 'bg-crimson-600/80 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                                  className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${containsActive && !open ? 'bg-crimson-600/80 text-crimson-50' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
                                 >
                                   <span className="flex items-center gap-2 truncate">
                                     <Layers className="w-3 h-3 shrink-0 text-crimson-500" />
@@ -1039,7 +1039,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
             </div>
             <div className="min-w-0">
               <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">Manifest Index</p>
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-tight text-white truncate">{title || 'Episodes'}</h3>
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-tight text-crimson-50 truncate">{title || 'Episodes'}</h3>
             </div>
             <button
               onClick={() => setShowEpisodes(false)}

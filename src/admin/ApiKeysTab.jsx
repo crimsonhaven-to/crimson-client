@@ -74,7 +74,7 @@ export default function ApiKeysTab({ notify }) {
         <div className="flex items-center gap-3 relative z-10">
           <Plug className="w-7 h-7 text-crimson-500" />
           <div>
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Movie-Web Bridge Keys</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Movie-Web Bridge Keys</h3>
             <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Machine sigils that let an outer vessel speak to the haven</p>
           </div>
         </div>
@@ -125,7 +125,7 @@ export default function ApiKeysTab({ notify }) {
               {revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
             <button onClick={copyRaw} title="Copy"
-              className="p-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white transition-all flex-shrink-0">
+              className="p-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-crimson-50 transition-all flex-shrink-0">
               {copiedRaw ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </button>
           </div>

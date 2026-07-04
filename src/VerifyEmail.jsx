@@ -47,14 +47,14 @@ const VerifyEmail = () => {
         {status === 'ok' && (
           <div className="space-y-5 py-4 animate-in zoom-in-95 duration-500">
             <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto" />
-            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Email verified</h3>
+            <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Email verified</h3>
             <p className="text-xs text-crimson-300/70 font-medium">Welcome to the haven. Taking you inside…</p>
           </div>
         )}
         {status === 'error' && (
           <div className="space-y-6 py-4">
             <AlertCircle className="w-14 h-14 text-crimson-500 mx-auto" />
-            <h3 className="text-xl font-black text-white uppercase tracking-tighter">Verification failed</h3>
+            <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Verification failed</h3>
             <p className="text-xs text-crimson-300/70 font-medium leading-relaxed">{error}</p>
             <button onClick={() => navigate('/')}
               className="group w-full py-4 bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-[0.2em] text-xs rounded-2xl transition-all shadow-[0_15px_30px_rgba(255,0,60,0.2)] flex items-center justify-center gap-3 active:scale-95">

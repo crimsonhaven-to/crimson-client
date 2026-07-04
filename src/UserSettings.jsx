@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle, Gauge } from 'lucide-react';
-import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './hooks';
+import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle, Gauge, Palette } from 'lucide-react';
+import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTheme, setTheme, THEME_LIST, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './hooks';
 
 // The little local bridge that carries presence from the haven to your Discord
 // client (see rpc-helper/). The binaries are cross-compiled into the site image
@@ -108,7 +108,7 @@ const DisplayNameCard = () => {
       <div className="space-y-3 relative z-10">
         <div className="flex items-center gap-3 text-crimson-500">
           <UserRound className="w-6 h-6" />
-          <h3 className="text-lg font-black text-white uppercase tracking-tighter">Your Name</h3>
+          <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Your Name</h3>
         </div>
         <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
           What shall Luminas call you, darling? She'll whisper it when she lays your
@@ -156,6 +156,8 @@ const UserSettings = () => {
   const [prefs, setPrefs] = usePlaybackPrefs();
   // Client-only, per-device perf preference (not part of the synced prefs blob).
   const lite = useLiteBackground();
+  // Client-only, per-device visual theme (also not synced). See src/hooks/theme.js.
+  const theme = useTheme();
 
   // Toggle semantics: tapping the active value clears it back to "Any".
   const setLanguage = (value) => setPrefs({ ...prefs, language: prefs.language === value ? '' : value });
@@ -185,7 +187,7 @@ const UserSettings = () => {
   return (
     <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 space-y-2">
-        <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter flex items-center gap-4">
+        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4">
           <SlidersHorizontal className="w-9 h-9 text-crimson-500 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
           <span>Your <span className="text-crimson-500">Preferences</span></span>
         </h2>
@@ -202,7 +204,7 @@ const UserSettings = () => {
         <div className="space-y-5 relative z-10">
           <div className="flex items-center gap-3 text-crimson-500">
             <Languages className="w-6 h-6" />
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Preferred Language</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Preferred Language</h3>
           </div>
           <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
             Sources in this language are auto-selected when available.
@@ -219,7 +221,7 @@ const UserSettings = () => {
         <div className="space-y-5 relative z-10">
           <div className="flex items-center gap-3 text-crimson-500">
             <Mic className="w-6 h-6" />
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Dub or Sub</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Dub or Sub</h3>
           </div>
           <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
             Whether you prefer dubbed audio or subtitled originals.
@@ -242,7 +244,7 @@ const UserSettings = () => {
         <div className="space-y-5 relative z-10">
           <div className="flex items-center gap-3 text-crimson-500">
             <Subtitles className="w-6 h-6" />
-            <h3 className="text-lg font-black text-white uppercase tracking-tighter">Subtitle Languages</h3>
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Subtitle Languages</h3>
           </div>
           <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
             Pull matching subtitles from OpenSubtitles into the player's caption menu —
@@ -282,7 +284,7 @@ const UserSettings = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-crimson-500">
               <Gamepad2 className="w-6 h-6" />
-              <h3 className="text-lg font-black text-white uppercase tracking-tighter">Discord Presence</h3>
+              <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Discord Presence</h3>
             </div>
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
               Let Luminas whisper to Discord what you're watching — a little rich-presence
@@ -351,6 +353,72 @@ const UserSettings = () => {
         </div>
       </div>
 
+      {/* Theme — a per-device visual theme (not account-synced). Adding a theme
+          to src/hooks/theme.js makes it appear here automatically. */}
+      <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
+        <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
+
+        <div className="space-y-3 relative z-10">
+          <div className="flex items-center gap-3 text-crimson-500">
+            <Palette className="w-6 h-6" />
+            <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Theme</h3>
+          </div>
+          <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+            Dress the haven to your taste. The choice lives on this device alone —
+            it never leaves it, and never touches your account.
+          </p>
+        </div>
+
+        <div className="relative z-10 grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Theme">
+          {THEME_LIST.map((t) => {
+            const active = theme === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setTheme(t.id)}
+                role="radio"
+                aria-checked={active}
+                className={`text-left p-5 rounded-3xl border transition-all active:scale-[0.98] ${
+                  active
+                    ? 'bg-crimson-500/10 border-crimson-500/50 shadow-[0_8px_24px_rgba(255,0,60,0.15)]'
+                    : 'bg-crimson-950/40 border-crimson-900/50 hover:border-crimson-700/60'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-black text-crimson-50 uppercase tracking-tight">{t.label}</span>
+                  <span
+                    className={`shrink-0 w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                      active ? 'bg-crimson-500 border-crimson-400' : 'border-crimson-800'
+                    }`}
+                  >
+                    {active && <Check className="w-3 h-3 text-white" />}
+                  </span>
+                </div>
+                <p className="mt-1.5 text-xs text-crimson-300/70 font-medium leading-relaxed">{t.tagline}</p>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-500/5 border border-crimson-500/20 rounded-3xl">
+          <div className="p-2.5 rounded-2xl bg-crimson-900/20 shrink-0">
+            <Palette className="w-5 h-5 text-crimson-500" />
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
+            </p>
+            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+              The haven currently wears{' '}
+              <span className="text-crimson-300 font-bold">
+                {(THEME_LIST.find((t) => t.id === theme) || THEME_LIST[0]).label}
+              </span>
+              .
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Lite background — a per-device performance toggle (not account-synced). */}
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
@@ -359,7 +427,7 @@ const UserSettings = () => {
           <div className="space-y-3">
             <div className="flex items-center gap-3 text-crimson-500">
               <Gauge className="w-6 h-6" />
-              <h3 className="text-lg font-black text-white uppercase tracking-tighter">Lite Background</h3>
+              <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Lite Background</h3>
             </div>
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
               The living crimson mist is beautiful but hungry on weaker machines. Still it,
