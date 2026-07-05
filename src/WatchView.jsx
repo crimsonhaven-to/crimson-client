@@ -534,7 +534,13 @@ const WatchView = ({
             ) : (
               <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
                 <CrimsonPlayer
-                  key={activeStream.url}
+                  // No `key` on the stream URL on purpose: keying it here would
+                  // remount the player on every episode advance / source switch,
+                  // destroying the wrapper element that holds fullscreen — so the
+                  // player would "fall out" of fullscreen on Auto-Next and picker
+                  // jumps (and browsers won't let us re-enter without a gesture).
+                  // The player reloads new sources internally via its `src` effect,
+                  // so a persistent instance keeps fullscreen intact across episodes.
                   src={activeStream.url}
                   type={activeStream.type}
                   subtitles={mergedSubtitles}
