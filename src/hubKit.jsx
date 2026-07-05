@@ -3,7 +3,7 @@
 // Shows, Movies, Manga, Local) and the home rows. Lifted out of Catalogue.jsx /
 // App.jsx so the hubs render identically and App.jsx stays lean. Nothing here is
 // type-specific: a hub feeds in its items + facets and gets the same chrome.
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Play, Star, ChevronRight, ChevronDown, Filter, Hash, SlidersHorizontal, Tag } from 'lucide-react';
 import { useTitle } from './hooks';
@@ -228,7 +228,7 @@ export function PaginatedBrowseHub({
   useData, title, accent, icon, unit = 'shown', routeFor,
   sortOptions, defaultSort = 'trending', subtitle,
   emptyLabel, loadingLabel = 'Summoning…', moreLabel = 'Reveal More',
-  extraControls,
+  extraControls, onUnavailable, errorAction,
 }) {
   const navigate = useNavigate();
   const [genre, setGenre] = useState(null);
@@ -237,6 +237,13 @@ export function PaginatedBrowseHub({
 
   const { items, genres, total, hasNext, loading, loadingMore, error, loadMore } =
     useData({ genre, sort });
+
+  // Let a caller react to the live source being unavailable (e.g. the Anime hub
+  // auto-falls back to its local Archive when AniList is down). Fires on the
+  // first-page error only — not on a failed "load more" of an already-shown page.
+  useEffect(() => {
+    if (error && items.length === 0 && onUnavailable) onUnavailable();
+  }, [error, items.length, onUnavailable]);
 
   const genreOptions = (genres || []).map((g) => ({ value: g.genre, label: g.genre, count: g.count }));
   const resolvedSubtitle = loading
@@ -262,8 +269,13 @@ export function PaginatedBrowseHub({
     <HubShell title={title} accent={accent} icon={icon} subtitle={resolvedSubtitle} right={controls}>
       {loading ? (
         <ArchiveSpinner label={loadingLabel} />
-      ) : error ? (
-        <ArchiveError error={error} />
+      ) : error && items.length === 0 ? (
+        // Only take over the surface when the FIRST page failed; a failed "load
+        // more" keeps the already-shown grid (the button re-enables to retry).
+        <div className="space-y-6">
+          <ArchiveError error={error} />
+          {errorAction && <div className="flex justify-center">{errorAction}</div>}
+        </div>
       ) : items.length === 0 ? (
         <EmptyState label={emptyLabel} />
       ) : (

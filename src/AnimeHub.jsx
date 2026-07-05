@@ -8,9 +8,9 @@
 //     never runs while you're on Discover).
 //
 // The toggle lives in each view's header controls so it's always reachable.
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronRight, Flame, Library, BookOpen, Tag } from 'lucide-react';
+import { Calendar, ChevronRight, Flame, Library, BookOpen, Tag, AlertTriangle } from 'lucide-react';
 import {
   HubShell, ChipRow, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState,
   PaginatedBrowseHub, ViewToggle,
@@ -24,7 +24,9 @@ const VIEWS = [
 
 // Discover — the fast, paginated AniList grid (default). Thin wrapper over the
 // shared PaginatedBrowseHub, with the view toggle injected into its controls.
-function AnimeDiscover({ toggle }) {
+// `onUnavailable` lets the hub fall back to the local Archive when AniList is down;
+// the errorAction gives a manual escape hatch if the user explicitly picked Discover.
+function AnimeDiscover({ toggle, onUnavailable, onOpenArchive }) {
   return (
     <PaginatedBrowseHub
       useData={useAnimeCatalogue}
@@ -35,14 +37,39 @@ function AnimeDiscover({ toggle }) {
       emptyLabel="No manifestations answer this ritual"
       moreLabel="Reveal More"
       extraControls={toggle}
+      onUnavailable={onUnavailable}
+      errorAction={
+        <button
+          onClick={onOpenArchive}
+          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-widest text-[10px] transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
+        >
+          <Library className="w-3.5 h-3.5" /> Browse the full Archive
+        </button>
+      }
     />
+  );
+}
+
+// Shown atop the Archive when we auto-fell-back from Discover (AniList down).
+function FallbackNotice() {
+  return (
+    <div className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 shadow-lg backdrop-blur-sm mb-2">
+      <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
+        <AlertTriangle className="w-4 h-4" />
+      </span>
+      <span className="text-[11px] sm:text-xs text-crimson-100/70 font-medium leading-snug">
+        <span className="font-black text-crimson-50">Discover is resting.</span> AniList (the anime
+        index) is having a moment — showing the full local Archive instead. Flip back to
+        <span className="font-black text-crimson-200"> Discover</span> once it recovers.
+      </span>
+    </div>
   );
 }
 
 // Archive — the full local catalogue (~6,800 titles), grouped by format. Only
 // mounted when the Archive view is active, so its useCatalogue fetch/render never
 // runs on the (default) Discover view.
-function AnimeArchive({ toggle }) {
+function AnimeArchive({ toggle, notice }) {
   useTitle('Anime Archive');
   const { catalogue, loading, error } = useCatalogue();
   const navigate = useNavigate();
@@ -103,6 +130,7 @@ function AnimeArchive({ toggle }) {
       search={searchTerm} onSearch={setSearchTerm} searchPlaceholder="Search the full archive..."
       right={controls}
     >
+      {notice}
       {loading ? (
         <ArchiveSpinner />
       ) : error ? (
@@ -151,10 +179,28 @@ function AnimeArchive({ toggle }) {
 
 export default function AnimeHub() {
   const [view, setView] = useState('discover');
-  const toggle = <ViewToggle options={VIEWS} value={view} onChange={setView} />;
+  // Did we land on Archive because AniList was down (auto), vs the user choosing it?
+  const [autoFellBack, setAutoFellBack] = useState(false);
+  // Once the user picks a view explicitly, stop auto-falling-back (respect intent).
+  const userChoseRef = useRef(false);
+
+  const choose = useCallback((v) => {
+    userChoseRef.current = true;
+    setAutoFellBack(false);
+    setView(v);
+  }, []);
+
+  // Discover's live AniList source is unavailable → drop to the reliable local
+  // Archive, unless the user has explicitly chosen a view.
+  const handleUnavailable = useCallback(() => {
+    if (!userChoseRef.current) { setAutoFellBack(true); setView('archive'); }
+  }, []);
+
+  const toggle = <ViewToggle options={VIEWS} value={view} onChange={choose} />;
+
   // Mount only the active view so the heavy Archive catalogue never loads on the
-  // default Discover view.
+  // default Discover view (and Discover never loads once we're on Archive).
   return view === 'archive'
-    ? <AnimeArchive toggle={toggle} />
-    : <AnimeDiscover toggle={toggle} />;
+    ? <AnimeArchive toggle={toggle} notice={autoFellBack ? <FallbackNotice /> : null} />
+    : <AnimeDiscover toggle={toggle} onUnavailable={handleUnavailable} onOpenArchive={() => choose('archive')} />;
 }
