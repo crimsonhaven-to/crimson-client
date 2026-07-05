@@ -222,6 +222,26 @@ const WatchView = ({
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
 
+  // --- Keep the player mounted across the inter-episode resolve gap ---------
+  // On Auto-Next / a picker jump the streamer nulls `streamData` and flips
+  // `streamLoading` true while the next episode's sources resolve, so
+  // `activeStream` briefly becomes null. If the render keyed the player off
+  // `activeStream` directly, the <video> wrapper would UNMOUNT during that gap
+  // and take document.fullscreenElement with it — the "falls out of fullscreen
+  // on Auto-Next" bug — and browsers won't let us re-enter fullscreen without a
+  // fresh user gesture. So we hold the last *video* stream and keep feeding it to
+  // a persistent <CrimsonPlayer> through the gap (behind the loading veil); the
+  // player swaps to the new source in place via its own `src` effect once it
+  // lands, never unmounting. iframe embeds can't preserve fullscreen this way, so
+  // they're deliberately excluded (a live iframe still renders below as before).
+  const lastVideoStreamRef = useRef(null);
+  useEffect(() => {
+    if (activeStream && activeStream.type !== 'iframe') lastVideoStreamRef.current = activeStream;
+  }, [activeStream]);
+  const playerStream = (activeStream && activeStream.type !== 'iframe')
+    ? activeStream
+    : (streamLoading ? lastVideoStreamRef.current : null);
+
   // --- In-player Season / Episode picker -----------------------------------
   // The player embeds a full season→episode browser (with TMDB stills) so the
   // viewer can hop episodes without leaving the video — crucially, it works in
@@ -509,8 +529,7 @@ const WatchView = ({
                 )}
               </p>
             </div>
-          ) : activeStream ? (
-            activeStream.type === 'iframe' ? (
+          ) : (activeStream && activeStream.type === 'iframe') ? (
               (() => {
                 const url = activeStream.url;
                 // Sandbox iframes we host ourselves (the backend player page, or
@@ -531,12 +550,21 @@ const WatchView = ({
                   />
                 );
               })()
-            ) : (
+            ) : playerStream ? (
               <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
                 <CrimsonPlayer
-                  key={activeStream.url}
-                  src={activeStream.url}
-                  type={activeStream.type}
+                  // No `key` on the stream URL on purpose: keying it here would
+                  // remount the player on every episode advance / source switch,
+                  // destroying the wrapper element that holds fullscreen — so the
+                  // player would "fall out" of fullscreen on Auto-Next and picker
+                  // jumps (and browsers won't let us re-enter without a gesture).
+                  // The player reloads new sources internally via its `src` effect,
+                  // so a persistent instance keeps fullscreen intact across episodes.
+                  // `playerStream` (not `activeStream`) is the persistence key: it
+                  // holds the last video source through the resolve gap so this
+                  // element never unmounts mid-Auto-Next. See its definition above.
+                  src={playerStream.url}
+                  type={playerStream.type}
                   subtitles={mergedSubtitles}
                   poster={poster}
                   title={displayTitle}
@@ -554,8 +582,7 @@ const WatchView = ({
                   episodePicker={episodePicker}
                 />
               </Suspense>
-            )
-          ) : (
+            ) : (
             !streamLoading && (
               <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-crimson-950/50 backdrop-blur-sm">
                 <AlertTriangle className="w-16 h-16 text-crimson-500 mb-4 opacity-50" />
