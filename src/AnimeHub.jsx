@@ -13,7 +13,7 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, ChevronRight, Flame, Library, BookOpen, Tag, AlertTriangle } from 'lucide-react';
 import {
   HubShell, ChipRow, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState,
-  PaginatedBrowseHub, ViewToggle,
+  PaginatedBrowseHub, ViewToggle, FallbackBanner,
 } from './hubKit';
 import { useCatalogue, useAnimeCatalogue, CATALOGUE_SORTS, useTitle } from './hooks';
 
@@ -38,6 +38,13 @@ function AnimeDiscover({ toggle, onUnavailable, onOpenArchive }) {
       moreLabel="Reveal More"
       extraControls={toggle}
       onUnavailable={onUnavailable}
+      fallbackNotice={
+        <FallbackBanner>
+          <span className="font-black text-crimson-50">Discover is resting.</span> AniList (the anime
+          index) is having a moment — showing titles from your local Archive instead. It’ll return to
+          live results automatically once AniList recovers.
+        </FallbackBanner>
+      }
       errorAction={
         <button
           onClick={onOpenArchive}
