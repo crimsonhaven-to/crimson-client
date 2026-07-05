@@ -5,7 +5,7 @@
 // type-specific: a hub feeds in its items + facets and gets the same chrome.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Play, Star, ChevronRight, ChevronDown, Filter, Hash, SlidersHorizontal, Tag } from 'lucide-react';
+import { Search, Play, Star, ChevronRight, ChevronDown, Filter, Hash, SlidersHorizontal, Tag, AlertTriangle } from 'lucide-react';
 import { useTitle } from './hooks';
 // Pure helpers live in hubHelpers.js so this module stays component-only (React
 // Fast Refresh needs component-only modules). Consumers import posterSrc /
@@ -55,6 +55,18 @@ export const ArchiveError = ({ error }) => (
         Retry Ritual
       </button>
     </div>
+  </div>
+);
+
+// A soft inline banner shown when a hub is serving a degraded/fallback source
+// (e.g. Anime Discover riding the local archive while AniList is down). The
+// wording is passed in by the caller so this stays type-agnostic.
+export const FallbackBanner = ({ children }) => (
+  <div className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 shadow-lg backdrop-blur-sm">
+    <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
+      <AlertTriangle className="w-4 h-4" />
+    </span>
+    <span className="text-[11px] sm:text-xs text-crimson-100/70 font-medium leading-snug">{children}</span>
   </div>
 );
 
@@ -228,14 +240,14 @@ export function PaginatedBrowseHub({
   useData, title, accent, icon, unit = 'shown', routeFor,
   sortOptions, defaultSort = 'trending', subtitle,
   emptyLabel, loadingLabel = 'Summoning…', moreLabel = 'Reveal More',
-  extraControls, onUnavailable, errorAction,
+  extraControls, onUnavailable, errorAction, fallbackNotice,
 }) {
   const navigate = useNavigate();
   const [genre, setGenre] = useState(null);
   const [sort, setSort] = useState(defaultSort);
   useTitle(accent);
 
-  const { items, genres, total, hasNext, loading, loadingMore, error, loadMore } =
+  const { items, genres, total, hasNext, loading, loadingMore, error, loadMore, fallback } =
     useData({ genre, sort });
 
   // Let a caller react to the live source being unavailable (e.g. the Anime hub
@@ -280,6 +292,7 @@ export function PaginatedBrowseHub({
         <EmptyState label={emptyLabel} />
       ) : (
         <div className="space-y-8 pb-24">
+          {fallback && fallbackNotice}
           <SectionHeader title={accent} count={`${items.length} ${unit}`} />
           <PosterGrid items={items} onSelect={(it) => navigate(routeFor(it))} />
           {hasNext && (
@@ -338,18 +351,36 @@ export const SeeAll = ({ children }) => (
 export function PosterBrowseHub({
   useData, title, accent, icon, unit, routeFor,
   sortOptions, defaultSort = 'popular', searchPlaceholder = 'Search titles...',
+  pageSize = 50,
 }) {
   const { items, genres, total, loading, error } = useData();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [genre, setGenre] = useState(null);
   const [sort, setSort] = useState(defaultSort);
+  // The full list is loaded + filtered client-side (instant scoped search), but
+  // rendering thousands of poster tiles at once is the real jank — so only a
+  // window of `visible` tiles is mounted. "Reveal More" grows it; any change to
+  // the search/genre/sort resets back to the first page.
+  const [visible, setVisible] = useState(pageSize);
   useTitle(title);
 
   const filtered = useMemo(
     () => applyBrowse(items, { searchTerm, genre, sort }),
     [items, searchTerm, genre, sort],
   );
+  // Reset the render window to the first page whenever the search/genre/sort
+  // changes. Done during render (the React-blessed "adjust state on prop change"
+  // pattern) rather than in an effect, so there's no extra render pass.
+  const filterSig = `${searchTerm} ${genre} ${sort} ${pageSize}`;
+  const [prevSig, setPrevSig] = useState(filterSig);
+  if (filterSig !== prevSig) {
+    setPrevSig(filterSig);
+    setVisible(pageSize);
+  }
+
+  const shown = filtered.slice(0, visible);
+  const hasMore = filtered.length > shown.length;
 
   const genreOptions = (genres || []).map((g) => ({ value: g.genre, label: g.genre, count: g.count }));
   const subtitle = loading
@@ -384,8 +415,18 @@ export function PosterBrowseHub({
         <EmptyState />
       ) : (
         <div className="space-y-8 pb-24">
-          <SectionHeader title={accent} count={`${filtered.length} ${unit}`} />
-          <PosterGrid items={filtered} onSelect={(it) => navigate(routeFor(it))} />
+          <SectionHeader title={accent} count={`${shown.length} of ${filtered.length} ${unit}`} />
+          <PosterGrid items={shown} onSelect={(it) => navigate(routeFor(it))} />
+          {hasMore && (
+            <div className="flex justify-center pt-6">
+              <button
+                onClick={() => setVisible((v) => v + pageSize)}
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-widest text-[10px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
+              >
+                Reveal More <ChevronDown className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
     </HubShell>

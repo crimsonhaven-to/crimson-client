@@ -84,6 +84,9 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
   const [total, setTotal] = useState(() => seed?.total || 0);
   const [page, setPage] = useState(() => seed?.page || 0);
   const [hasNext, setHasNext] = useState(() => seed?.hasNext ?? true);
+  // Whether the backend served a degraded/local fallback (e.g. Anime Discover
+  // riding the local archive while AniList is down) — drives the hub's notice.
+  const [fallback, setFallback] = useState(() => seed?.fallback || false);
   const [loading, setLoading] = useState(() => !seed);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
@@ -121,9 +124,10 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
         setTotal(body.total || 0);
         setPage(body.page || nextPage);
         setHasNext(!!body.has_next);
+        setFallback(!!body.fallback);
         memSet(cacheKey, {
           items: merged, genres: body.genres || [], total: body.total || 0,
-          page: body.page || nextPage, hasNext: !!body.has_next,
+          page: body.page || nextPage, hasNext: !!body.has_next, fallback: !!body.fallback,
         });
       }
     } catch (e) {
@@ -138,7 +142,8 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
     const cached = memGet(cacheKey);
     if (cached) {
       setList(cached.items); setGenres(cached.genres); setTotal(cached.total);
-      setPage(cached.page); setHasNext(cached.hasNext); setLoading(false);
+      setPage(cached.page); setHasNext(cached.hasNext); setFallback(cached.fallback || false);
+      setLoading(false);
       return;
     }
     fetchPage(1, true);
@@ -149,7 +154,7 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
     fetchPage(page + 1, false);
   }, [loading, loadingMore, hasNext, page, fetchPage]);
 
-  return { items, genres, total, hasNext, loading, loadingMore, error, loadMore };
+  return { items, genres, total, hasNext, loading, loadingMore, error, loadMore, fallback };
 }
 
 // Manga browse hub: live AniList, paginated (see usePaginatedBrowse).
