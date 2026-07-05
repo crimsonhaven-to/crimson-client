@@ -1,8 +1,12 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
-import { Routes, Route, Link, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, Play, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Hash, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Star, Wallet, Puzzle, BookOpen } from 'lucide-react';
+import { Routes, Route, Link, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { Search, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Wallet, Puzzle, BookOpen, Clapperboard, HardDrive } from 'lucide-react';
 import MeshBackground from './MeshBackground';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
+// Shared browse-hub kit — the per-kind badge + the poster tile now live here so
+// the home rows and the browse hubs render the exact same card (see hubKit.jsx).
+import { kindStyle } from './hubHelpers';
+import { PosterCard, SeeAll } from './hubKit';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, usePublicConfig, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -16,7 +20,14 @@ import ResetPassword from './ResetPassword';
 // Authenticated pages — lazy. They (and the heavy hls.js player) only download
 // once a signed-in user actually navigates to them, so the login wall + landing
 // ship a much smaller bundle. See the <Suspense> fallback below.
-const CataloguePage = lazy(() => import('./Catalogue'));
+// Per-type browse hubs — the content-first replacement for the old single
+// Catalogue page. Each is the browse home for one media kind; /catalogue now
+// redirects to the Anime hub (see the Routes below). Lazy like every other page.
+const AnimeHub = lazy(() => import('./AnimeHub'));
+const ShowsHub = lazy(() => import('./ShowsHub'));
+const MoviesHub = lazy(() => import('./MoviesHub'));
+const MangaHub = lazy(() => import('./MangaHub'));
+const LocalHub = lazy(() => import('./LocalHub'));
 const AccountPage = lazy(() => import('./Account'));
 const SettingsPage = lazy(() => import('./UserSettings'));
 // Luminas' welcome ritual — shown once per login (see the auth-transition effect
@@ -79,16 +90,8 @@ const RedditIcon = () => (
   </svg>
 );
 
-// Per-kind tag: a label + a distinct tint so anime / show / movie / manga are
-// separable at a glance (not just by reading the word). Shared by every card badge.
-const KIND_STYLE = {
-  anime: { label: 'Anime', badge: 'bg-crimson-500/15 border-crimson-500/40 text-crimson-300' },
-  show:  { label: 'Show',  badge: 'bg-sky-500/15 border-sky-400/40 text-sky-300' },
-  movie: { label: 'Movie', badge: 'bg-amber-500/15 border-amber-400/40 text-amber-200' },
-  manga: { label: 'Manga', badge: 'bg-violet-500/15 border-violet-400/40 text-violet-300' },
-  local: { label: 'Local', badge: 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300' },
-};
-const kindStyle = (kind) => KIND_STYLE[kind] || KIND_STYLE.anime;
+// KIND_STYLE + kindStyle now live in hubKit (shared with the browse hubs) and are
+// imported at the top of this file.
 
 const AnimeCard = ({ title, poster, kind, onSelect }) => (
 
@@ -116,66 +119,10 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
   </div>
 );
 
-// ---------- Reusable poster card + content row ----------
-// A single poster tile shared by every home row (recommendations + trending).
-// The kind badge, rating and year ride the artwork like the movie-web / P-Stream
-// cards — recoloured in crimson and lit by Luminas' glow on hover.
-function PosterCard({ item, onSelect }) {
-  const rating = typeof item.vote_average === 'number' && item.vote_average > 0
-    ? item.vote_average.toFixed(1) : null;
-  return (
-    <button onClick={() => onSelect(item)} className="group text-left flex flex-col gap-2.5 w-full focus:outline-none">
-      <div className="relative w-full h-48 sm:h-60 lg:h-[16.5rem] rounded-2xl overflow-hidden bg-crimson-900/10 border border-crimson-900/40 transition-[border-color,box-shadow,transform] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_18px_40px_rgba(255,0,60,0.28)] group-hover:-translate-y-1">
-        {item.poster ? (
-          <img
-            src={item.poster}
-            alt={`${item.title} poster`}
-            loading="lazy"
-            className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 px-2 text-center">
-            No Sigil
-          </div>
-        )}
-
-        {/* Readability gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/10 to-transparent opacity-80"></div>
-
-        {/* Kind badge — distinct tint per kind (anime / show / movie / manga) */}
-        {item.kind && (
-          <span className={`absolute top-2 left-2 text-[8px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded-md border backdrop-blur-sm ${kindStyle(item.kind).badge}`}>
-            {kindStyle(item.kind).label}
-          </span>
-        )}
-
-        {/* Rating badge */}
-        {rating && (
-          <span className="absolute top-2 right-2 flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-crimson-950/70 backdrop-blur-sm border border-crimson-800/60 text-crimson-200">
-            <Star className="w-2.5 h-2.5 fill-crimson-400 text-crimson-400" /> {rating}
-          </span>
-        )}
-
-        {/* Hover play */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-crimson-950/20 backdrop-blur-[1px]">
-          <div className="p-3 bg-crimson-500 rounded-full shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-            <Play className="w-5 h-5 fill-white text-white" />
-          </div>
-        </div>
-
-        {/* Year over the gradient */}
-        {item.year && (
-          <span className="absolute bottom-2 left-2.5 text-[10px] font-black text-crimson-100/80 tracking-wide">
-            {item.year}
-          </span>
-        )}
-      </div>
-      <h4 className="text-xs sm:text-sm font-bold text-crimson-50 line-clamp-2 group-hover:text-crimson-400 transition-colors tracking-tight leading-snug px-0.5">
-        {item.title}
-      </h4>
-    </button>
-  );
-}
+// ---------- Reusable content row ----------
+// PosterCard (the artwork tile shared by every home row) now lives in hubKit and
+// is imported at the top of this file, so the home rows and the browse-hub grids
+// render the exact same card.
 
 // Fixed tile width shared by the cards and the loading skeletons, so a row is
 // always exactly one horizontal track (no wrapping into a grid).
@@ -483,6 +430,8 @@ function LandingPage() {
         />
       )}
 
+      {/* The home is a launchpad: each row previews what's trending, and its
+          "See all" opens that kind's own browse hub (the full, filterable grid). */}
       <ContentRow
         icon={<Flame className="w-6 h-6" />}
         title="Trending"
@@ -490,11 +439,7 @@ function LandingPage() {
         items={trendingAnimes}
         loading={trendLoading}
         onSelect={openOverview}
-        cta={
-          <Link to="/catalogue" className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 hover:text-crimson-400 transition-colors shrink-0">
-            View All Archives
-          </Link>
-        }
+        cta={<Link to="/anime"><SeeAll>See all</SeeAll></Link>}
       />
 
       <ContentRow
@@ -504,6 +449,7 @@ function LandingPage() {
         items={trendingShows}
         loading={showsLoading}
         onSelect={openOverview}
+        cta={<Link to="/shows"><SeeAll>See all</SeeAll></Link>}
       />
 
       <ContentRow
@@ -513,6 +459,7 @@ function LandingPage() {
         items={trendingMovies}
         loading={moviesLoading}
         onSelect={openOverview}
+        cta={<Link to="/movies"><SeeAll>See all</SeeAll></Link>}
       />
 
       <ContentRow
@@ -522,6 +469,7 @@ function LandingPage() {
         items={trendingManga}
         loading={mangaLoading}
         onSelect={openOverview}
+        cta={<Link to="/manga"><SeeAll>See all</SeeAll></Link>}
       />
     </div>
   );
@@ -885,6 +833,9 @@ function App() {
   const { health } = useHealthStatus();
   const profile = useProfile();
   const isAdmin = !!profile?.is_admin;
+  // Gates the Local hub nav entry + route — the on-disk library only exists on
+  // operator builds that configured a source (mirrors the old Catalogue toggle).
+  const { local_library_enabled: localEnabled } = usePublicConfig();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -925,16 +876,21 @@ function App() {
     return <AuthGate />;
   }
 
+  // Content-first navigation: Home is the search + discovery launchpad, then one
+  // entry per media kind (each opens that kind's own browse hub). Favorites +
+  // History stay for signed-in viewers. The informational pages (Support, Mortals,
+  // About) moved into the account dropdown + footer to de-clutter the bar; Local
+  // only appears on operator builds with a source, Admin only for admins.
   const navLinks = [
-    { to: "/", label: "Search Home", icon: <Film className="w-4 h-4" /> },
-    { to: "/catalogue", label: "Catalogue", icon: <Hash className="w-4 h-4" /> },
+    { to: "/", label: "Home", icon: <Sparkles className="w-4 h-4" /> },
+    { to: "/anime", label: "Anime", icon: <Flame className="w-4 h-4" /> },
+    { to: "/shows", label: "Shows", icon: <Tv className="w-4 h-4" /> },
+    { to: "/movies", label: "Movies", icon: <Clapperboard className="w-4 h-4" /> },
+    { to: "/manga", label: "Manga", icon: <BookOpen className="w-4 h-4" /> },
+    { to: "/local", label: "Local", icon: <HardDrive className="w-4 h-4" />, local: true },
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
-    { to: "/support", label: "Support Us", icon: <Wallet className="w-4 h-4" /> },
-    { to: "/supporters", label: "Mortals", icon: <Sparkles className="w-4 h-4" /> },
-    { to: "/about", label: "About Us", icon: <HelpCircle className="w-4 h-4" /> },
-    // Profile/account lives in the top-right account dropdown rather than the main nav.
-    // Admin-only — surfaced only to accounts flagged is_admin.
+    // Profile/account + the informational pages live in the top-right dropdown.
     { to: "/admin", label: "Admin", icon: <Shield className="w-4 h-4" />, admin: true },
   ];
 
@@ -967,7 +923,7 @@ function App() {
 
           {/* Desktop Navigation — icon-only on medium screens, icons + labels on large (xl) up */}
           <div className="hidden md:flex gap-1 lg:gap-2 xl:gap-6 text-[11px] font-black uppercase tracking-widest items-center">
-            {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin)).map(link => (
+            {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin) && (!l.local || localEnabled)).map(link => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -1025,6 +981,19 @@ function App() {
                     >
                       <SlidersHorizontal className="w-4 h-4" /> Preferences
                     </Link>
+                    {/* Informational pages — moved here out of the main nav to keep
+                        the top bar focused on browsing. */}
+                    <div className="my-2 border-t border-crimson-900/20" />
+                    <Link to="/support" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
+                      <Wallet className="w-4 h-4" /> Support Us
+                    </Link>
+                    <Link to="/supporters" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
+                      <Sparkles className="w-4 h-4" /> Mortals
+                    </Link>
+                    <Link to="/about" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
+                      <HelpCircle className="w-4 h-4" /> About Us
+                    </Link>
+                    <div className="my-2 border-t border-crimson-900/20" />
                     {isAdmin && (
                       <Link
                         to="/admin"
@@ -1059,7 +1028,7 @@ function App() {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
             <div className="flex flex-col p-4 space-y-4">
-              {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin)).map(link => (
+              {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin) && (!l.local || localEnabled)).map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -1086,7 +1055,15 @@ function App() {
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/changelog" element={<ChangelogPage />} />
-          <Route path="/catalogue" element={<CataloguePage />} />
+          {/* Per-type browse hubs — the content-first replacement for the old
+              single Catalogue page. */}
+          <Route path="/anime" element={<AnimeHub />} />
+          <Route path="/shows" element={<ShowsHub />} />
+          <Route path="/movies" element={<MoviesHub />} />
+          <Route path="/manga" element={<MangaHub />} />
+          <Route path="/local" element={<LocalHub />} />
+          {/* Legacy path — the Catalogue was anime + local; send it to the Anime hub. */}
+          <Route path="/catalogue" element={<Navigate to="/anime" replace />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/admin" element={<AdminPage />} />
@@ -1136,19 +1113,21 @@ function App() {
           </div>
 
           <div>
-            <h4 className="text-crimson-50 font-black uppercase text-xs tracking-widest mb-6">Navigate</h4>
+            <h4 className="text-crimson-50 font-black uppercase text-xs tracking-widest mb-6">Browse</h4>
             <div className="flex flex-col gap-3">
-              <Link to="/catalogue" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Catalogue</Link>
+              <Link to="/anime" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Anime</Link>
+              <Link to="/shows" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Shows</Link>
+              <Link to="/movies" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Movies</Link>
+              <Link to="/manga" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Manga</Link>
               <Link to="/favorites" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Favorites</Link>
-              <Link to="/extension" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Companion</Link>
-              <Link to="/about" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">About Us</Link>
-              <Link to="/supporters" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Mortals</Link>
             </div>
           </div>
 
           <div>
             <h4 className="text-crimson-50 font-black uppercase text-xs tracking-widest mb-6">Connect</h4>
             <div className="flex flex-col gap-3">
+              <Link to="/about" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">About Us</Link>
+              <Link to="/extension" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Companion</Link>
               <Link to="/disclaimer" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Disclaimer</Link>
               <Link to="/changelog" className="text-crimson-400 hover:text-crimson-500 transition-colors text-sm font-bold">Chronicle</Link>
               {SOCIAL_LINKS.slice(0, 3).map(({ label, href }) => (
