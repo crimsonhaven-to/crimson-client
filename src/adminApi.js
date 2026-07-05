@@ -95,6 +95,21 @@ export const adminApi = {
   deleteCacheTarget: (id) => apiFetch(`/admin/cache-targets/${id}`, { method: 'DELETE' }).then(_json),
   listCachedEpisodes: (params) => apiFetch(`/admin/cached-episodes?${_qs(params)}`).then(_json),
   deleteCachedEpisode: (id) => apiFetch(`/admin/cached-episodes/${id}`, { method: 'DELETE' }).then(_json),
+  // Background downloader (aria2): submit an http/magnet link that lands under a
+  // download-enabled local source's crimson-downloads/ dir. updateLocalSource above
+  // carries the per-source `download_enabled` toggle (generic PATCH body).
+  downloadsOverview: () => apiFetch('/admin/downloads').then(_json),
+  listDownloadJobs: (params) => apiFetch(`/admin/download-jobs?${_qs(params)}`).then(_json),
+  createDownload: (body) =>
+    apiFetch('/admin/downloads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(_json),
+  pauseDownload: (id) => apiFetch(`/admin/download-jobs/${id}/pause`, { method: 'POST' }).then(_json),
+  resumeDownload: (id) => apiFetch(`/admin/download-jobs/${id}/resume`, { method: 'POST' }).then(_json),
+  retryDownload: (id) => apiFetch(`/admin/download-jobs/${id}/retry`, { method: 'POST' }).then(_json),
+  deleteDownload: (id) => apiFetch(`/admin/download-jobs/${id}`, { method: 'DELETE' }).then(_json),
   // movie-web bridge API keys (machine credentials for the /mw endpoints, baked
   // into the movie-web fork's proxy). The raw key is only ever in the create
   // response — list/revoke deal in the non-secret key id (its hash).

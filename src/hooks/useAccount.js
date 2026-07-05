@@ -70,6 +70,7 @@ export function useAccount() {
   const removeFromHistory = useCallback(async (item) => {
     if (!sessionToken) return false;
     const matches = (r) => {
+      if (item.media_type === 'local') return String(r.local_id) === String(item.local_id) && r.media_type === 'local';
       if (item.anilist_id != null) return String(r.anilist_id) === String(item.anilist_id);
       if (item.media_type === 'movie') return String(r.tmdb_id) === String(item.tmdb_id) && r.media_type === 'movie';
       return String(r.tmdb_id) === String(item.tmdb_id) && r.anilist_id == null && r.media_type !== 'movie';

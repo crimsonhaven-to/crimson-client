@@ -27,4 +27,5 @@ export * from './hooks/ndjson';
 export * from './hooks/shows';
 export * from './hooks/movies';
 export * from './hooks/manga';
+export * from './hooks/local';
 export * from './hooks/misc';

@@ -40,6 +40,10 @@ const MovieWatch = lazy(() => import('./MovieWatch'));
 // every other content page; only downloaded once a signed-in user opens a manga.
 const MangaOverview = lazy(() => import('./MangaOverview'));
 const MangaReader = lazy(() => import('./MangaReader'));
+// Local media library — the on-disk title overview + its watch page (the Index's
+// "Local" view links here). Lazy like every other content page.
+const LocalOverview = lazy(() => import('./LocalOverview'));
+const LocalWatch = lazy(() => import('./LocalWatch'));
 const LumiSecret = lazy(() => import('./LumiSecret'));
 // Companion-extension download page — lazy; only reached from the home banner /
 // footer link, and only meaningful to viewers who don't already have it.
@@ -82,6 +86,7 @@ const KIND_STYLE = {
   show:  { label: 'Show',  badge: 'bg-sky-500/15 border-sky-400/40 text-sky-300' },
   movie: { label: 'Movie', badge: 'bg-amber-500/15 border-amber-400/40 text-amber-200' },
   manga: { label: 'Manga', badge: 'bg-violet-500/15 border-violet-400/40 text-violet-300' },
+  local: { label: 'Local', badge: 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300' },
 };
 const kindStyle = (kind) => KIND_STYLE[kind] || KIND_STYLE.anime;
 
@@ -349,7 +354,9 @@ function LandingPage() {
   const openOverview = (item) => {
     setQueryName(item.title || item.name || '');
     setShowSuggestions(false);
-    if (item.kind === 'movie') {
+    if (item.kind === 'local' && item.id) {
+      navigate(`/local/${item.id}`);
+    } else if (item.kind === 'movie') {
       navigate(`/movie/${item.tmdb_id}`);
     } else if (item.kind === 'manga' && item.anilist_id) {
       navigate(`/manga/${item.anilist_id}`);
@@ -1094,6 +1101,9 @@ function App() {
           <Route path="/watch-show/:tmdbId/:season?/:episode?" element={<ShowWatch />} />
           <Route path="/movie/:tmdbId" element={<MovieOverview />} />
           <Route path="/watch-movie/:tmdbId" element={<MovieWatch />} />
+          {/* Local media library — on-disk title overview + its watch page. */}
+          <Route path="/local/:token" element={<LocalOverview />} />
+          <Route path="/watch-local/:token" element={<LocalWatch />} />
           {/* Manga reading surface — AniList-keyed overview + the page reader. */}
           <Route path="/manga/:anilistId" element={<MangaOverview />} />
           {/* Resume route (no chapter id): the reader maps saved progress → chapter. */}

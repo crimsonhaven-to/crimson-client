@@ -1,9 +1,17 @@
 // Admin › Sources tab — register / toggle / transcode-toggle / remove local media
 // directories, with a mount discovery helper. Lifted verbatim from Admin.jsx.
 import { useCallback, useEffect, useState } from 'react';
-import { Film, FolderOpen, FolderSearch, HardDrive, Plus, Power, PowerOff, RefreshCw, Trash2 } from 'lucide-react';
+import { Download, Film, FolderOpen, FolderSearch, HardDrive, Plus, Power, PowerOff, RefreshCw, Trash2 } from 'lucide-react';
 
 import { adminApi } from '../adminApi';
+
+const formatBytes = (n) => {
+  if (n == null) return '—';
+  if (n === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+  return `${(n / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+};
 
 // Map a source's filesystem-probe into a one-line status with a colour cue.
 const localStatus = (st) => {
@@ -27,6 +35,7 @@ export default function SourcesTab({ notify }) {
   const [label, setLabel] = useState('');
   const [path, setPath] = useState('');
   const [encoding, setEncoding] = useState(false);
+  const [downloadEnabled, setDownloadEnabled] = useState(false);
   const [encodingSupported, setEncodingSupported] = useState(true);
   const [adding, setAdding] = useState(false);
   const [busyId, setBusyId] = useState(null);
@@ -53,8 +62,8 @@ export default function SourcesTab({ notify }) {
     if (!label.trim() || !path.trim()) return;
     setAdding(true);
     try {
-      const res = await adminApi.addLocalSource({ label: label.trim(), path: path.trim(), encoding });
-      if (res.success) { notify('Local source added', true); setLabel(''); setPath(''); setEncoding(false); await load(); }
+      const res = await adminApi.addLocalSource({ label: label.trim(), path: path.trim(), encoding, download_enabled: downloadEnabled });
+      if (res.success) { notify('Local source added', true); setLabel(''); setPath(''); setEncoding(false); setDownloadEnabled(false); await load(); }
       else notify(res.detail || res.error || 'Could not add source', false);
     } catch { notify('Could not add source', false); }
     finally { setAdding(false); }
@@ -75,6 +84,16 @@ export default function SourcesTab({ notify }) {
     try {
       const res = await adminApi.updateLocalSource(s.id, { encoding: !s.encoding });
       if (res.success) { notify(s.encoding ? 'Transcoding disabled' : 'Transcoding enabled', true); await load(); }
+      else notify(res.detail || 'Could not update source', false);
+    } catch { notify('Could not update source', false); }
+    finally { setBusyId(null); }
+  };
+
+  const toggleDownloads = async (s) => {
+    setBusyId(s.id);
+    try {
+      const res = await adminApi.updateLocalSource(s.id, { download_enabled: !s.download_enabled });
+      if (res.success) { notify(s.download_enabled ? 'Downloads disabled for source' : 'Downloads enabled for source', true); await load(); }
       else notify(res.detail || 'Could not update source', false);
     } catch { notify('Could not update source', false); }
     finally { setBusyId(null); }
@@ -124,6 +143,7 @@ export default function SourcesTab({ notify }) {
           Register a directory the backend can read and the haven will match shows against the files inside it and stream them directly — no third-party scraper involved.
           The path is the one <span className="text-crimson-400 font-bold">inside the backend container</span>: bind-mount your library in <code className="font-mono text-crimson-400">docker-compose</code> (e.g. <code className="font-mono text-crimson-400">- /movies:/crimson/movies1</code>) and register <code className="font-mono text-crimson-400">/crimson/movies1</code> here.
           Browser-playable files (mp4 / m4v / mov / webm) always direct-play. Turn on <span className="text-crimson-400 font-bold">transcoding</span> to also serve other containers (MKV, HEVC, AC-3…) — they're re-encoded to a seekable HLS stream on the fly by ffmpeg.
+          Turn on <span className="text-crimson-400 font-bold">downloads</span> to let the background downloader (Downloads tab) write finished media into this source under <code className="font-mono text-crimson-400">/crimson-downloads</code> — it picks the first download-enabled source with enough free space.
         </p>
 
         <form onSubmit={add} className="space-y-4 relative z-10">
@@ -160,6 +180,14 @@ export default function SourcesTab({ notify }) {
                 <Film className="w-4 h-4" /> Transcoding unavailable
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => setDownloadEnabled((v) => !v)}
+              title="When on, the background downloader may write finished media into this source under /crimson-downloads"
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${downloadEnabled ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-300' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-600 hover:text-crimson-400 hover:border-crimson-600'}`}
+            >
+              <Download className="w-4 h-4" /> Downloads {downloadEnabled ? 'on' : 'off'}
+            </button>
           </div>
         </form>
 
@@ -217,6 +245,11 @@ export default function SourcesTab({ notify }) {
                         <Film className="w-2.5 h-2.5" /> Transcoding
                       </span>
                     )}
+                    {s.download_enabled && (
+                      <span title={s.downloads?.free_bytes != null ? `${formatBytes(s.downloads.free_bytes)} free · ${s.downloads.titles ?? 0} downloaded title(s)` : 'Downloads land here under /crimson-downloads'} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-300 flex items-center gap-1">
+                        <Download className="w-2.5 h-2.5" /> Downloads{s.downloads?.free_bytes != null ? ` · ${formatBytes(s.downloads.free_bytes)} free` : ''}
+                      </span>
+                    )}
                   </div>
                   <p className="text-[11px] font-mono text-crimson-500/80 mt-1.5 truncate">{s.path}</p>
                 </div>
@@ -228,6 +261,14 @@ export default function SourcesTab({ notify }) {
                     className={`p-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${s.encoding ? 'text-crimson-300 hover:border-crimson-500/50 hover:bg-crimson-500/10' : 'text-crimson-600 hover:border-crimson-500/50 hover:bg-crimson-500/10'}`}
                   >
                     <Film className="w-4 h-4" />
+                  </button>
+                  <button
+                    title={s.download_enabled ? 'Disable downloads into this source' : 'Enable downloads into this source (crimson-downloads/)'}
+                    disabled={busyId === s.id}
+                    onClick={() => toggleDownloads(s)}
+                    className={`p-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 transition-all disabled:opacity-40 disabled:cursor-not-allowed ${s.download_enabled ? 'text-crimson-300 hover:border-crimson-500/50 hover:bg-crimson-500/10' : 'text-crimson-600 hover:border-crimson-500/50 hover:bg-crimson-500/10'}`}
+                  >
+                    <Download className="w-4 h-4" />
                   </button>
                   <button
                     title={s.enabled ? 'Disable' : 'Enable'}

@@ -78,6 +78,20 @@ const resumeInfo = (item) => {
       nextAirDate: null,
     };
   }
+  // Local media has no tmdb/anilist id — route back to its on-disk overview
+  // (/local/{local_id}), where the viewer resumes the exact file. One card per
+  // title (episodes dedup on local_id server-side), so no next-episode logic here.
+  if (item.media_type === 'local') {
+    const percent = item.duration_seconds
+      ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
+      : 0;
+    return {
+      finished, ep: item.episode_number || 1, href: `/local/${item.local_id}`, percent,
+      mode: finished ? 'rewatch' : 'resume',
+      actionLabel: finished ? 'Watch Again' : 'Resume Journey',
+      nextAirDate: null,
+    };
+  }
   // Movies are a single feature — no next-episode logic, just resume / rewatch.
   if (item.media_type === 'movie') {
     const percent = item.duration_seconds
@@ -158,7 +172,7 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
             {item.title}
           </h4>
           <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-600">
-            <span className="text-crimson-400">{item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : <>S{item.season_number}<span className="text-crimson-700 mx-0.5">•</span>E{item.episode_number}</>}</span>
+            <span className="text-crimson-400">{item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : (item.media_type === 'local' && item.episode_number == null) ? 'Local' : <>S{item.season_number}<span className="text-crimson-700 mx-0.5">•</span>E{item.episode_number}</>}</span>
             <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{percent}%</span>
             {item.status === 'completed' && <span className="text-crimson-400">Finished</span>}
             {ago && <span className="text-crimson-700 normal-case tracking-normal">· {ago}</span>}
@@ -216,7 +230,7 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
           </h4>
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 bg-crimson-500/10 text-crimson-400 text-[10px] font-black uppercase rounded-lg border border-crimson-500/20 tracking-widest">
-              {item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : <>S{item.season_number} <span className="text-crimson-700 mx-0.5">•</span> E{item.episode_number}</>}
+              {item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : (item.media_type === 'local' && item.episode_number == null) ? 'Local' : <>S{item.season_number} <span className="text-crimson-700 mx-0.5">•</span> E{item.episode_number}</>}
             </span>
             {ago && <span className="text-[10px] font-bold text-crimson-700">{ago}</span>}
           </div>
@@ -441,7 +455,7 @@ const RecentlyWatchedPage = () => {
               <div className={view === 'list' ? 'space-y-3' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'}>
                 {group.items.map((item, idx) => (
                   <HistoryCard
-                    key={`${item.anilist_id ?? item.tmdb_id}-${item.season_number}-${item.episode_number}-${idx}`}
+                    key={`${item.anilist_id ?? item.tmdb_id ?? item.local_id}-${item.season_number}-${item.episode_number}-${idx}`}
                     item={item}
                     view={view}
                     onOpen={() => openItem(item)}
