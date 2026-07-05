@@ -50,6 +50,40 @@ export function useLocalLibrary() {
   return { library, loading, error };
 }
 
+// Folder-navigation view of the library: the children of one directory (or the
+// source roots when `token` is null). Powers the Local view's "Browse" mode, the
+// fallback for media that never resolved to a title. Each `entries[]` item is a
+// `title` (poster tile → /local/:id), a `folder` (drill in → browse its id), or a
+// `file` (loose media → /watch-local/:id). Not memCached — it's navigational and
+// the disk can change under us.
+export function useLocalBrowse(token) {
+  const [view, setView] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    (async () => {
+      try {
+        const qs = token ? `?token=${encodeURIComponent(token)}` : '';
+        const res = await apiFetch(`/local-browse${qs}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (!cancelled) setView(data);
+      } catch (e) {
+        if (!cancelled) setError(e.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token]);
+
+  return { view, loading, error };
+}
+
 // One local title's detail (metadata + episodes for a show, or a play descriptor
 // for a movie). Keyed by the directory/file token from the list.
 export function useLocalOverview(token) {

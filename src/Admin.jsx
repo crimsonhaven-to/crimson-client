@@ -6,7 +6,7 @@
 // the top-level stats/health/system fetch, the tab bar, and the toast host.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Activity, DownloadCloud, HardDrive, HeartPulse, KeyRound, RefreshCw,
+  Activity, Download, DownloadCloud, HardDrive, HeartPulse, KeyRound, RefreshCw,
   Server, Shield, ShieldOff, Ticket, Users,
 } from 'lucide-react';
 
@@ -19,6 +19,7 @@ import UsersTab from './admin/UsersTab';
 import InvitesTab from './admin/InvitesTab';
 import SourcesTab from './admin/SourcesTab';
 import CacheTab from './admin/CacheTab';
+import DownloadsTab from './admin/DownloadsTab';
 import ApiKeysTab from './admin/ApiKeysTab';
 import SystemTab from './admin/SystemTab';
 
@@ -87,6 +88,7 @@ const AdminPage = () => {
         <TabButton active={tab === 'invites'} onClick={() => setTab('invites')} icon={Ticket} label="Invites" />
         <TabButton active={tab === 'sources'} onClick={() => setTab('sources')} icon={HardDrive} label="Sources" />
         <TabButton active={tab === 'cache'} onClick={() => setTab('cache')} icon={DownloadCloud} label="Cache" />
+        <TabButton active={tab === 'downloads'} onClick={() => setTab('downloads')} icon={Download} label="Downloads" />
         <TabButton active={tab === 'keys'} onClick={() => setTab('keys')} icon={KeyRound} label="Bridge Keys" />
         <TabButton active={tab === 'system'} onClick={() => setTab('system')} icon={Server} label="System" />
       </div>
@@ -100,6 +102,7 @@ const AdminPage = () => {
         {tab === 'invites' && <InvitesTab notify={notify} />}
         {tab === 'sources' && <SourcesTab notify={notify} />}
         {tab === 'cache' && <CacheTab notify={notify} />}
+        {tab === 'downloads' && <DownloadsTab notify={notify} />}
         {tab === 'keys' && <ApiKeysTab notify={notify} />}
         {tab === 'system' && <SystemTab stats={stats} system={system} notify={notify} refreshStats={loadStats} />}
       </div>
