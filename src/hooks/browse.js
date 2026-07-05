@@ -6,7 +6,7 @@
 // table), so useMangaCatalogue drives page/sort/genre and appends pages.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { apiFetch } from './apiClient';
+import { apiFetch, extractError } from './apiClient';
 import { memGet, memSet } from './memCache';
 
 // Shared shape for the two local (full-list) catalogues. `listKey` is the item
@@ -104,7 +104,13 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
       const params = new URLSearchParams({ sort, page: String(nextPage) });
       if (genre) params.set('genre', genre);
       const res = await apiFetch(`${path}?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        // Surface the backend's detail (e.g. the 503 "AniList temporarily
+        // unavailable" from an upstream outage) rather than a bare status code.
+        let detail = `HTTP ${res.status}`;
+        try { detail = extractError(await res.json(), detail); } catch { /* non-JSON body */ }
+        throw new Error(detail);
+      }
       const body = await res.json();
       if (token !== reqRef.current) return; // superseded by a newer request
       if (body.success) {
