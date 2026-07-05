@@ -59,19 +59,25 @@ export function useMoviesCatalogue() {
   return useLocalCatalogue('/catalogue/movies', 'movies', 'catalogue-movies');
 }
 
-export const MANGA_SORTS = [
+// Shared sort control for the live AniList browse hubs (anime + manga). The
+// tokens map to AniList MediaSort enums on the backend (_MEDIA_SORTS).
+export const CATALOGUE_SORTS = [
   { value: 'trending', label: 'Trending' },
   { value: 'popular', label: 'Popular' },
   { value: 'score', label: 'Top Rated' },
   { value: 'newest', label: 'Newest' },
   { value: 'title', label: 'A–Z' },
 ];
+// Back-compat alias for the earlier MangaHub import.
+export const MANGA_SORTS = CATALOGUE_SORTS;
 
-// Manga browse hub: live AniList, paginated. Re-fetches page 1 whenever `genre`
-// or `sort` change; `loadMore` appends the next page. The accumulated list (per
-// genre+sort) is memCached so returning to the hub restores what you'd scrolled.
-export function useMangaCatalogue({ genre = null, sort = 'trending' } = {}) {
-  const cacheKey = `catalogue-manga:${genre || 'all'}:${sort}`;
+// Generic paginated browse over a live AniList catalogue endpoint. `path` is the
+// endpoint (/catalogue/anime | /catalogue/manga), `listKey` the item array field
+// it returns ('animes' | 'manga'). Re-fetches page 1 whenever genre/sort change;
+// `loadMore` appends the next page. The accumulated list (per path+genre+sort) is
+// memCached so returning to the hub restores what you'd scrolled.
+function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) {
+  const cacheKey = `${path}:${genre || 'all'}:${sort}`;
   const seed = memGet(cacheKey);
   const [items, setItems] = useState(() => seed?.items || []);
   const [genres, setGenres] = useState(() => seed?.genres || []);
@@ -84,7 +90,7 @@ export function useMangaCatalogue({ genre = null, sort = 'trending' } = {}) {
   // Guards against a stale in-flight response landing after a genre/sort switch.
   const reqRef = useRef(0);
   // Latest accumulated list, read by the append path. fetchPage is keyed only by
-  // genre/sort/cacheKey (so loadMore doesn't rebuild every page and re-trigger the
+  // path/genre/sort (so loadMore doesn't rebuild every page and re-trigger the
   // reset effect), so it can't close over the freshest `items` — the ref bridges
   // that: appending to itemsRef.current instead of the (stale) closed-over items.
   const itemsRef = useRef(seed?.items || []);
@@ -97,13 +103,13 @@ export function useMangaCatalogue({ genre = null, sort = 'trending' } = {}) {
     try {
       const params = new URLSearchParams({ sort, page: String(nextPage) });
       if (genre) params.set('genre', genre);
-      const res = await apiFetch(`/catalogue/manga?${params.toString()}`);
+      const res = await apiFetch(`${path}?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const body = await res.json();
       if (token !== reqRef.current) return; // superseded by a newer request
       if (body.success) {
         const base = replace ? [] : itemsRef.current;
-        const merged = [...base, ...(body.manga || [])];
+        const merged = [...base, ...(body[listKey] || [])];
         setList(merged);
         setGenres(body.genres || []);
         setTotal(body.total || 0);
@@ -119,7 +125,7 @@ export function useMangaCatalogue({ genre = null, sort = 'trending' } = {}) {
     } finally {
       if (token === reqRef.current) { setLoading(false); setLoadingMore(false); }
     }
-  }, [genre, sort, cacheKey, setList]);
+  }, [path, listKey, genre, sort, cacheKey, setList]);
 
   // (Re)load page 1 when genre/sort change — unless the cache already has it.
   useEffect(() => {
@@ -138,4 +144,15 @@ export function useMangaCatalogue({ genre = null, sort = 'trending' } = {}) {
   }, [loading, loadingMore, hasNext, page, fetchPage]);
 
   return { items, genres, total, hasNext, loading, loadingMore, error, loadMore };
+}
+
+// Manga browse hub: live AniList, paginated (see usePaginatedBrowse).
+export function useMangaCatalogue({ genre = null, sort = 'trending' } = {}) {
+  return usePaginatedBrowse({ path: '/catalogue/manga', listKey: 'manga', genre, sort });
+}
+
+// Anime "Discover" browse — the fast, paginated, poster-rich default view of the
+// Anime hub (the full local /catalogue archive stays a secondary view).
+export function useAnimeCatalogue({ genre = null, sort = 'trending' } = {}) {
+  return usePaginatedBrowse({ path: '/catalogue/anime', listKey: 'animes', genre, sort });
 }

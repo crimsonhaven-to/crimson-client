@@ -1,16 +1,49 @@
-// The Anime browse hub — the full mapped anime archive from /catalogue, grouped by
-// format (TV / MOVIE / OVA / …) with a genre filter and client-side search. This
-// is the old Catalogue "Anime" tab promoted to its own hub. It stays a grouped
-// text list rather than a poster grid: catalogue posters are sparse (they come
-// from the lazily-populated tmdb_shows), so a grid would be mostly empty tiles.
+// The Anime browse hub — two views behind a local (non-persisted) toggle:
+//
+//   • Discover (DEFAULT): a fast, paginated, poster-rich AniList grid — the anime
+//     twin of the Manga/Shows/Movies hubs. This is what you land on.
+//   • Archive (secondary): the full mapped anime catalogue (~6,800 titles) from
+//     /catalogue, grouped by format with a genre filter + search. It's a big,
+//     slow list, so it only mounts when you actually switch to it (its useCatalogue
+//     never runs while you're on Discover).
+//
+// The toggle lives in each view's header controls so it's always reachable.
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, ChevronRight, BookOpen, Tag } from 'lucide-react';
-import { HubShell, ChipRow, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState } from './hubKit';
-import { useCatalogue, useTitle } from './hooks';
+import { Calendar, ChevronRight, Flame, Library, BookOpen, Tag } from 'lucide-react';
+import {
+  HubShell, ChipRow, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState,
+  PaginatedBrowseHub, ViewToggle,
+} from './hubKit';
+import { useCatalogue, useAnimeCatalogue, CATALOGUE_SORTS, useTitle } from './hooks';
 
-export default function AnimeHub() {
-  useTitle('Anime');
+const VIEWS = [
+  { value: 'discover', label: 'Discover', icon: <Flame className="w-3.5 h-3.5" /> },
+  { value: 'archive', label: 'Archive', icon: <Library className="w-3.5 h-3.5" /> },
+];
+
+// Discover — the fast, paginated AniList grid (default). Thin wrapper over the
+// shared PaginatedBrowseHub, with the view toggle injected into its controls.
+function AnimeDiscover({ toggle }) {
+  return (
+    <PaginatedBrowseHub
+      useData={useAnimeCatalogue}
+      title="The" accent="Anime" icon={<Flame className="w-4 h-4 text-crimson-500" />}
+      unit="shown" sortOptions={CATALOGUE_SORTS} defaultSort="trending"
+      routeFor={(it) => `/anime/${it.anilist_id}`}
+      loadingLabel="Divining the trending sigils…"
+      emptyLabel="No manifestations answer this ritual"
+      moreLabel="Reveal More"
+      extraControls={toggle}
+    />
+  );
+}
+
+// Archive — the full local catalogue (~6,800 titles), grouped by format. Only
+// mounted when the Archive view is active, so its useCatalogue fetch/render never
+// runs on the (default) Discover view.
+function AnimeArchive({ toggle }) {
+  useTitle('Anime Archive');
   const { catalogue, loading, error } = useCatalogue();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,6 +86,7 @@ export default function AnimeHub() {
 
   const controls = (
     <div className="space-y-6">
+      {toggle}
       <ChipRow label="Type" options={categoryOptions} value={category} onChange={setCategory} allLabel="All Types" />
       {genreOptions.length > 0 && (
         <div className="pt-6 border-t border-crimson-900/20">
@@ -64,9 +98,9 @@ export default function AnimeHub() {
 
   return (
     <HubShell
-      title="The" accent="Catalogue" icon={<BookOpen className="w-4 h-4 text-crimson-500" />}
-      subtitle={loading ? 'Accessing the archives…' : `Browsing ${catalogue.total} registered manifestations`}
-      search={searchTerm} onSearch={setSearchTerm} searchPlaceholder="Search archives..."
+      title="The" accent="Anime" icon={<BookOpen className="w-4 h-4 text-crimson-500" />}
+      subtitle={loading ? 'Accessing the archives…' : `The full archive — ${catalogue.total} registered manifestations`}
+      search={searchTerm} onSearch={setSearchTerm} searchPlaceholder="Search the full archive..."
       right={controls}
     >
       {loading ? (
@@ -113,4 +147,14 @@ export default function AnimeHub() {
       )}
     </HubShell>
   );
+}
+
+export default function AnimeHub() {
+  const [view, setView] = useState('discover');
+  const toggle = <ViewToggle options={VIEWS} value={view} onChange={setView} />;
+  // Mount only the active view so the heavy Archive catalogue never loads on the
+  // default Discover view.
+  return view === 'archive'
+    ? <AnimeArchive toggle={toggle} />
+    : <AnimeDiscover toggle={toggle} />;
 }

@@ -5,7 +5,7 @@
 // type-specific: a hub feeds in its items + facets and gets the same chrome.
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Play, Star, ChevronRight, Filter, Hash, SlidersHorizontal, Tag } from 'lucide-react';
+import { Search, Play, Star, ChevronRight, ChevronDown, Filter, Hash, SlidersHorizontal, Tag } from 'lucide-react';
 import { useTitle } from './hooks';
 // Pure helpers live in hubHelpers.js so this module stays component-only (React
 // Fast Refresh needs component-only modules). Consumers import posterSrc /
@@ -215,6 +215,98 @@ export function HubShell({
       </div>
 
       {children}
+    </div>
+  );
+}
+
+// Generic browse hub for a LIVE, PAGINATED AniList catalogue (Manga, Anime
+// "Discover"): server-side genre + sort (each re-queries page 1) and a "load
+// more" that appends pages. No free-text search (partial/live corpus — the home
+// search covers that). `useData` is the paginated hook (useAnimeCatalogue /
+// useMangaCatalogue); `extraControls` lets a caller inject e.g. a view toggle.
+export function PaginatedBrowseHub({
+  useData, title, accent, icon, unit = 'shown', routeFor,
+  sortOptions, defaultSort = 'trending', subtitle,
+  emptyLabel, loadingLabel = 'Summoning…', moreLabel = 'Reveal More',
+  extraControls,
+}) {
+  const navigate = useNavigate();
+  const [genre, setGenre] = useState(null);
+  const [sort, setSort] = useState(defaultSort);
+  useTitle(accent);
+
+  const { items, genres, total, hasNext, loading, loadingMore, error, loadMore } =
+    useData({ genre, sort });
+
+  const genreOptions = (genres || []).map((g) => ({ value: g.genre, label: g.genre, count: g.count }));
+  const resolvedSubtitle = loading
+    ? loadingLabel
+    : (subtitle != null ? subtitle : (total ? `${total.toLocaleString()} in the archive` : null));
+
+  const controls = (
+    <div className="space-y-6">
+      {extraControls}
+      <ChipRow
+        icon={<SlidersHorizontal className="w-3.5 h-3.5" />} label="Sort"
+        options={sortOptions} value={sort} onChange={(v) => setSort(v || defaultSort)} all={false}
+      />
+      {genreOptions.length > 0 && (
+        <div className="pt-6 border-t border-crimson-900/20">
+          <ChipRow icon={<Tag className="w-3.5 h-3.5" />} label="Genre" options={genreOptions} value={genre} onChange={setGenre} />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <HubShell title={title} accent={accent} icon={icon} subtitle={resolvedSubtitle} right={controls}>
+      {loading ? (
+        <ArchiveSpinner label={loadingLabel} />
+      ) : error ? (
+        <ArchiveError error={error} />
+      ) : items.length === 0 ? (
+        <EmptyState label={emptyLabel} />
+      ) : (
+        <div className="space-y-8 pb-24">
+          <SectionHeader title={accent} count={`${items.length} ${unit}`} />
+          <PosterGrid items={items} onSelect={(it) => navigate(routeFor(it))} />
+          {hasNext && (
+            <div className="flex justify-center pt-6">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900 text-white font-black uppercase tracking-widest text-[10px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
+              >
+                {loadingMore ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Unsealing…</>
+                ) : (
+                  <>{moreLabel} <ChevronDown className="w-4 h-4" /></>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </HubShell>
+  );
+}
+
+// A compact segmented view toggle (e.g. the Anime hub's Discover / Archive switch,
+// the Local hub's Library / Browse switch). `options` is [{ value, label, icon }].
+export function ViewToggle({ options, value, onChange }) {
+  return (
+    <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-crimson-950/40 border border-crimson-900/50 backdrop-blur-md">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+            value === o.value ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:text-crimson-200'
+          }`}
+        >
+          {o.icon} {o.label}
+        </button>
+      ))}
     </div>
   );
 }
