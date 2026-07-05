@@ -32,10 +32,18 @@ function LocalOverview() {
   const backUrl = `/local/${token}`;
   const poster = posterSrc(overview?.poster);
 
-  // Build a watch link for a file token, carrying the display title + a back link.
-  const watchLink = (fileToken, label) =>
-    `/watch-local/${fileToken}?title=${encodeURIComponent(label)}&back=${encodeURIComponent(backUrl)}` +
-    (poster ? `&poster=${encodeURIComponent(poster)}` : '');
+  // Build a watch link for a file token, carrying the display title, a back link,
+  // and the progress identity: `localId` is the TITLE token (so every episode dedups
+  // as one show in history), plus the season/episode this file is. The watch page
+  // needs all three to save + resume progress in the `local:` namespace.
+  const watchLink = (fileToken, label, season, episode) => {
+    let url = `/watch-local/${fileToken}?title=${encodeURIComponent(label)}` +
+      `&back=${encodeURIComponent(backUrl)}&localId=${encodeURIComponent(token)}`;
+    if (season != null) url += `&season=${season}`;
+    if (episode != null) url += `&episode=${episode}`;
+    if (poster) url += `&poster=${encodeURIComponent(poster)}`;
+    return url;
+  };
 
   if (loading) {
     return (
@@ -185,6 +193,8 @@ function LocalOverview() {
                   to={watchLink(
                     ep.id,
                     `${overview.title} · S${ep.season_number}E${ep.episode_number}${ep.title ? ` · ${ep.title}` : ''}`,
+                    ep.season_number,
+                    ep.episode_number,
                   )}
                   className="group flex items-center gap-4 p-3.5 rounded-2xl border border-crimson-900/40 bg-crimson-950/30 hover:bg-crimson-900/20 hover:border-crimson-500/50 transition-all"
                 >
