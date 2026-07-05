@@ -30,7 +30,7 @@ const SMALL_TEXT = 'Luminas Crimsonveil ( ^ . ^ )';
 // Up to two clickable buttons on the card (Discord's hard limit). Same pair on
 // every state, so it's defined once and shared by buildActivity.
 const BUTTONS = [
-  { label: 'Discord', url: 'https://discord.gg/yRjAcfCxpf' },
+  { label: 'Discord', url: 'https://discord.gg/6an7E8aKGj' },
   { label: 'GitHub', url: 'https://github.com/crimsonhaven-to' },
 ];
 

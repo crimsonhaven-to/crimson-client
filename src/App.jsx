@@ -657,7 +657,7 @@ function WatchPage() {
 const SOCIAL_LINKS = [
   { label: 'GitHub', href: 'https://github.com/crimsonhaven-to', icon: <GithubIcon /> },
   { label: 'Reddit', href: 'https://www.reddit.com/r/crimsonhaven/', icon: <RedditIcon /> },
-  { label: 'Discord', href: 'https://discord.crimsonhaven.to', icon: <DiscordIcon /> },
+  { label: 'Discord', href: 'https://discord.gg/6an7E8aKGj', icon: <DiscordIcon /> },
   { label: 'Instagram', href: 'https://www.instagram.com/crimsonhaven.to/', icon: <InstagramIcon /> },
   { label: 'TikTok', href: 'https://www.tiktok.com/@crimsonhaven.to', icon: <TikTokIcon /> },
 ];
