@@ -144,9 +144,21 @@ jobs:
 
       - name: Compute image tags + API URL
         id: meta
+        env:
+          # A release tag name is externally-influenced input, so it's passed
+          # through the environment instead of being interpolated straight into
+          # the script body — that keeps it out of shell command position (it's
+          # never re-parsed by the shell). The guard below then constrains it to
+          # a safe charset before it flows into image tags, job outputs, and the
+          # remote deploy command.
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            VER="${{ github.event.release.tag_name }}"
+            VER="$RELEASE_TAG"
+            if ! printf '%s' "$VER" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+              echo "::error::Refusing to build/deploy an unsafe release tag: '$VER'"
+              exit 1
+            fi
             echo "version=${VER}"  >> "$GITHUB_OUTPUT"
             echo "deploy=true"      >> "$GITHUB_OUTPUT"
             echo "tags=${IMAGE}:${VER},${IMAGE}:latest" >> "$GITHUB_OUTPUT"
@@ -203,9 +215,13 @@ jobs:
             docker-stack.yml "${SWARM_MANAGER}:/home/raymond/crimson-client-deploy/docker-stack.yml"
 
       - name: Deploy to the swarm
+        env:
+          # Via env, not inline interpolation, so the value is never spliced into
+          # the runner's command line (it's validated to a safe charset upstream).
+          VERSION: ${{ needs.build.outputs.version }}
         run: |
           ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" \
-            "/home/raymond/crimson-client-deploy/deploy.sh '${{ needs.build.outputs.version }}'"
+            "/home/raymond/crimson-client-deploy/deploy.sh '${VERSION}'"
 
   # Dev auto-deploy: a push to `dev` rolls the just-built dev-<sha> frontend onto
   # the crimson-client-dev stack. The dev docker-stack.yml lives on the manager
@@ -218,6 +234,9 @@ jobs:
     runs-on: [self-hosted]
     steps:
       - name: Deploy to the dev swarm stack
+        env:
+          # Via env, not inline interpolation (see the prod deploy job above).
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
         run: |
           ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" \
-            "/home/raymond/dev-crimson-client-deploy/deploy.sh '${{ needs.build.outputs.image_tag }}'"
+            "/home/raymond/dev-crimson-client-deploy/deploy.sh '${IMAGE_TAG}'"
