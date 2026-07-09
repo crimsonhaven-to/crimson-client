@@ -459,12 +459,31 @@ const WatchView = ({
     return () => clearWatchActivity();
   }, [displayTitle, isMovie, currentSeason, currentEpisode, totalSeasons]);
 
+  // --- Stale-progress gate ---------------------------------------------------
+  // The player stays mounted across episode jumps (that's what preserves
+  // fullscreen), so the OLD episode keeps playing — and reporting timeupdates —
+  // behind the loading veil while the next episode's sources resolve. Forwarding
+  // those reports would refill the parent's live-position ref (and its periodic
+  // progress save) with the old episode's timestamp AFTER the parent reset it,
+  // making the next episode start right at the old one's end. So reports are
+  // only forwarded while the episode whose stream is actually attached matches
+  // the episode being watched: the stamp below is set in the same effect flush
+  // that hands the player its new src (no old-source timeupdate can interleave
+  // with that flush), and anything reported while it trails the current
+  // season/episode is dropped.
+  const currentPlayKey = `${currentSeason}:${currentEpisode}`;
+  const playingKeyRef = useRef(null);
+  useEffect(() => {
+    if (!streamLoading && streams.length > 0) playingKeyRef.current = currentPlayKey;
+  }, [streamLoading, streams, currentPlayKey]);
+
   // Server-side cache trigger: once the viewer has watched the *active* source for
   // CACHE_CONFIRM_SECONDS, redeem its signed cacheTicket exactly once so the
   // backend caches that source (not whichever resolved first). Tickets already
   // confirmed are remembered so source-switching / re-renders don't re-POST.
   const confirmedTicketsRef = useRef(new Set());
   const handlePlayerProgress = useCallback((position, duration) => {
+    if (playingKeyRef.current !== currentPlayKey) return; // old episode still winding down
     if (onPlayerProgress) onPlayerProgress(position, duration);
     // Feed the real file duration to the AniSkip fetch above (only when the rounded
     // value actually changes, so this doesn't thrash on every timeupdate). This is
@@ -482,7 +501,7 @@ const WatchView = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ticket }),
     }).catch(() => confirmedTicketsRef.current.delete(ticket));
-  }, [onPlayerProgress, activeStream]);
+  }, [onPlayerProgress, activeStream, currentPlayKey]);
 
   // Filename for the in-player Download button, e.g.
   // "Frieren - S1E04 - The Land Where Souls Rest". Season is only stamped when
@@ -569,7 +588,12 @@ const WatchView = ({
                   poster={poster}
                   title={displayTitle}
                   downloadName={downloadName}
-                  startAt={playerStartAt}
+                  // 0 during the resolve gap: what's on screen then is the OLD
+                  // episode winding down, and a freshly-fetched resume position
+                  // for the NEXT one must not seek it. The real value is back in
+                  // place on the same render that delivers the new src, before
+                  // its resume-seek can run.
+                  startAt={streamLoading ? 0 : playerStartAt}
                   onProgress={handlePlayerProgress}
                   onNext={isMovie ? undefined : goToNextEpisode}
                   hasNext={!!nextEpisodeData}
