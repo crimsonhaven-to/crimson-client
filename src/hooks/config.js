@@ -4,7 +4,7 @@
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '12.8.2';
+export const CLIENT_VERSION = '12.9.0';
 
 // Deployment-specific copy that used to be hardcoded (from when the repo was
 // private). Baked in at BUILD time like VITE_API_BASE_URL, so set these as build

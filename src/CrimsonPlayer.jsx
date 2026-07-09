@@ -32,7 +32,7 @@ const AUTO_NEXT_KEY = 'crimson:autoNext';
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -53,6 +53,14 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   // re-subscribing on every render.
   const onNextRef = useRef(onNext);
   useEffect(() => { onNextRef.current = onNext; }, [onNext]);
+  // Optional fatal-error interceptor (Live TV's direct-first playback): called
+  // when a source is beyond recovery. Returning true means the parent handled it
+  // (it swaps `src` to a fallback), so the error screen is suppressed. When set,
+  // fatal hls.js NETWORK errors get ONE retry then hand off — the default
+  // infinite `startLoad()` retry would spin forever on a CORS-blocked manifest.
+  const onFatalErrorRef = useRef(onFatalError);
+  useEffect(() => { onFatalErrorRef.current = onFatalError; }, [onFatalError]);
+  const netRetriesRef = useRef(0);
   // Remembers whether the last interaction with the <video> was a touch or a
   // mouse press, so the tap handler can treat the two differently (mobile taps
   // reveal controls; desktop clicks play/pause). Set on pointerdown, read on click.
@@ -131,6 +139,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
     setLevels([]);
     setCurrentLevel(-1);
     seekedRef.current = false; // new source: allow one resume-seek again
+    netRetriesRef.current = 0; // new source: fresh network-retry budget
 
     let hls;
     if (isHls && Hls.isSupported()) {
@@ -146,13 +155,21 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
         setCurrentLevel(hls.autoLevelEnabled ? -1 : data.level));
       hls.on(Hls.Events.ERROR, (_e, data) => {
         if (!data.fatal) return;
-        switch (data.type) {
-          case Hls.ErrorTypes.NETWORK_ERROR: hls.startLoad(); break;
-          case Hls.ErrorTypes.MEDIA_ERROR: hls.recoverMediaError(); break;
-          default:
-            setError('This stream could not be played. Try another source.');
-            hls.destroy();
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; }
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          // Without a fallback handler, keep the historical behaviour: retry
+          // forever (flaky VOD hosts usually come back). With one installed,
+          // a CORS-blocked / dead manifest must fail fast so the parent can
+          // swap to its fallback — one retry, then hand off below.
+          if (!onFatalErrorRef.current || netRetriesRef.current < 1) {
+            netRetriesRef.current += 1;
+            hls.startLoad();
+            return;
+          }
         }
+        hls.destroy();
+        if (onFatalErrorRef.current?.()) return; // parent swaps src; no error screen
+        setError('This stream could not be played. Try another source.');
       });
     } else if (isHls && video.canPlayType('application/vnd.apple.mpegurl')) {
       video.src = src; // Safari / iOS native HLS
@@ -208,7 +225,11 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
         if (b.length) setBuffered(b.end(b.length - 1));
       } catch { /* no-op */ }
     };
-    const onErr = () => { if (!hlsRef.current) setError('Could not load this stream. Try another source.'); };
+    const onErr = () => {
+      if (hlsRef.current) return; // hls.js path reports through its own handler
+      if (onFatalErrorRef.current?.()) return; // parent swaps src (e.g. Safari native HLS direct-play failing over to the proxy)
+      setError('Could not load this stream. Try another source.');
+    };
     const onEnter = () => setPipActive(true);
     const onLeave = () => setPipActive(false);
 
@@ -410,14 +431,14 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
   const skip = useCallback((delta) => {
     const v = videoRef.current;
-    if (!v) return;
+    if (!v || live) return; // a live broadcast has no timeline to scrub
     cancelAutoNext();
     const dur = v.duration || duration || 0;
     const target = v.currentTime + delta;
     v.currentTime = dur ? Math.min(dur, Math.max(0, target)) : Math.max(0, target);
     setCurrent(v.currentTime);
     revealControls();
-  }, [duration, revealControls, cancelAutoNext]);
+  }, [duration, revealControls, cancelAutoNext, live]);
 
   // Tapping the video: on touch (mobile) the first tap only summons the controls
   // and a second tap dismisses them — it must NOT pause, which is jarring on a
@@ -433,13 +454,13 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
   const seekTo = useCallback((clientX, el) => {
     const v = videoRef.current;
-    if (!v || !duration) return;
+    if (!v || !duration || live) return;
     cancelAutoNext();
     const rect = el.getBoundingClientRect();
     const frac = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     v.currentTime = frac * duration;
     setCurrent(v.currentTime);
-  }, [duration, cancelAutoNext]);
+  }, [duration, cancelAutoNext, live]);
 
   const onScrubStart = useCallback((e) => {
     const bar = e.currentTarget;
@@ -725,7 +746,9 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
         >
           {/* Seek bar — the "lifeline". Thin at rest, it swells on hover and grows
               a glowing thumb, a ghost marker + a live timestamp bubble under the
-              cursor. All hover state is cosmetic; scrubbing runs through onScrubStart. */}
+              cursor. All hover state is cosmetic; scrubbing runs through onScrubStart.
+              Hidden for live broadcasts — there is no timeline to scrub. */}
+          {!live && (
           <div
             onPointerDown={onScrubStart}
             onPointerMove={onSeekHover}
@@ -764,6 +787,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               style={{ left: `${pct}%` }}
             />
           </div>
+          )}
 
           {/* Button row */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 text-crimson-100">
@@ -774,15 +798,19 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                 {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-px" />}
               </button>
 
-              {/* Skip back / forward */}
-              <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Back ${SKIP_SECONDS} seconds`}>
-                <RotateCcw className="w-5 h-5" />
-                <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
-              </button>
-              <button onClick={() => skip(SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Forward ${SKIP_SECONDS} seconds`}>
-                <RotateCw className="w-5 h-5" />
-                <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
-              </button>
+              {/* Skip back / forward — meaningless on a live broadcast, so hidden. */}
+              {!live && (
+                <>
+                  <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Back ${SKIP_SECONDS} seconds`}>
+                    <RotateCcw className="w-5 h-5" />
+                    <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
+                  </button>
+                  <button onClick={() => skip(SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Forward ${SKIP_SECONDS} seconds`}>
+                    <RotateCw className="w-5 h-5" />
+                    <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Volume — custom crimson track (native range overlaid, opacity-0, so
@@ -812,9 +840,20 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
               </div>
             </div>
 
-            <span className="text-[11px] font-mono font-black tracking-tighter tabular-nums bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-white/5 ml-1">
-              <span className="text-crimson-50">{fmt(current)}</span> <span className="text-crimson-500 mx-0.5">/</span> <span className="text-crimson-300/80">{fmt(duration)}</span>
-            </span>
+            {live ? (
+              /* LIVE crest — a broadcast has no timestamps to show. */
+              <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-crimson-500/30 ml-1 text-crimson-50">
+                <span className="relative flex w-2 h-2">
+                  <span className="absolute inline-flex w-full h-full rounded-full bg-crimson-500 opacity-60 animate-ping" />
+                  <span className="relative inline-flex w-2 h-2 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c]" />
+                </span>
+                Live
+              </span>
+            ) : (
+              <span className="text-[11px] font-mono font-black tracking-tighter tabular-nums bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-white/5 ml-1">
+                <span className="text-crimson-50">{fmt(current)}</span> <span className="text-crimson-500 mx-0.5">/</span> <span className="text-crimson-300/80">{fmt(duration)}</span>
+              </span>
+            )}
 
             <div className="flex-1" />
 
@@ -996,7 +1035,9 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
             <div className="flex items-center gap-0.5 rounded-2xl bg-crimson-950/40 border border-white/5 p-1 backdrop-blur-sm">
               {/* Download the current source to disk. Disabled label flips to a
-                  live %/cancel affordance while a download is in flight. */}
+                  live %/cancel affordance while a download is in flight. Hidden
+                  for live broadcasts — an endless stream never finishes saving. */}
+              {!live && (
               <button
                 onClick={handleDownload}
                 className={`flex items-center gap-1.5 p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90 ${downloading ? 'text-crimson-400' : ''}`}
@@ -1010,6 +1051,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
                   </span>
                 )}
               </button>
+              )}
 
               {document.pictureInPictureEnabled && (
                 <button onClick={togglePip} className={`p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90 ${pipActive ? 'text-crimson-400' : ''}`} aria-label="Picture in picture">
