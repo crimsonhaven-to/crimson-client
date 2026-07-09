@@ -28,5 +28,6 @@ export * from './hooks/shows';
 export * from './hooks/movies';
 export * from './hooks/manga';
 export * from './hooks/local';
+export * from './hooks/liveTv';
 export * from './hooks/browse';
 export * from './hooks/misc';
