@@ -18,7 +18,9 @@
 
     <!-- Theme FOUC guard: apply the saved per-device theme before first paint so
          non-default (e.g. light "Catgirl Lumi") users never flash the dark look.
-         Mirrors src/hooks/theme.js — the default theme sets no attribute. -->
+         Mirrors src/hooks/theme.js — the default theme sets no attribute.
+         CSP: this script's sha256 is pinned in security-headers.conf. Any edit
+         to its content (even whitespace) requires recomputing that hash. -->
     <script>
       try {
         var t = localStorage.getItem('crimson:theme');
