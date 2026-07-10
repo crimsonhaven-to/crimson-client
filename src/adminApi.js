@@ -24,6 +24,9 @@ export const adminApi = {
   // Real per-source resolve success rates from anonymous client beacons (the
   // client+extension path source_health can't see). days = aggregation window.
   sourceStats: (days = 14) => apiFetch(`/admin/source-stats?days=${days}`).then(_json),
+  // Security event ledger (auth denials, rate-limit trips, admin actions).
+  securityStats: (days = 14) => apiFetch(`/admin/security/stats?days=${days}`).then(_json),
+  securityEvents: (params) => apiFetch(`/admin/security/events?${_qs(params)}`).then(_json),
   listUsers: (params) => apiFetch(`/admin/users?${_qs(params)}`).then(_json),
   updateUser: (id, body) =>
     apiFetch(`/admin/users/${id}`, {
