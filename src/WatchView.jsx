@@ -467,14 +467,22 @@ const WatchView = ({
   // progress save) with the old episode's timestamp AFTER the parent reset it,
   // making the next episode start right at the old one's end. So reports are
   // only forwarded while the episode whose stream is actually attached matches
-  // the episode being watched: the stamp below is set in the same effect flush
-  // that hands the player its new src (no old-source timeupdate can interleave
-  // with that flush), and anything reported while it trails the current
-  // season/episode is dropped.
+  // the episode being watched. The episode key advances a full render BEFORE the
+  // streamer flips streamLoading/clears the old streams (its effect runs after
+  // commit), so there is an intermediate render where the new key coincides with
+  // the old episode's loaded state — stamping there would reopen the gate while
+  // the old source is still playing. The stamp therefore also requires having
+  // seen streamLoading===true for this same key first, i.e. the loaded state
+  // must belong to THIS episode's resolve cycle, not the previous one's.
   const currentPlayKey = `${currentSeason}:${currentEpisode}`;
   const playingKeyRef = useRef(null);
+  const loadSeenKeyRef = useRef(null);
   useEffect(() => {
-    if (!streamLoading && streams.length > 0) playingKeyRef.current = currentPlayKey;
+    if (streamLoading) {
+      loadSeenKeyRef.current = currentPlayKey;
+    } else if (streams.length > 0 && loadSeenKeyRef.current === currentPlayKey) {
+      playingKeyRef.current = currentPlayKey;
+    }
   }, [streamLoading, streams, currentPlayKey]);
 
   // Server-side cache trigger: once the viewer has watched the *active* source for
