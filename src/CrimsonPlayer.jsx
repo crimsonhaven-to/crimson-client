@@ -32,7 +32,7 @@ const AUTO_NEXT_KEY = 'crimson:autoNext';
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null }) {
+export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -143,7 +143,15 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
 
     let hls;
     if (isHls && Hls.isSupported()) {
-      hls = new Hls({ maxBufferLength: 30, enableWorker: false, xhrSetup: attachBackendAuth });
+      // `hlsLoader` (Live TV only) routes every manifest/segment fetch through the
+      // crimson-extension companion — see liveTvExt.makeExtensionLoader. When unset
+      // (all VOD playback), hls.js uses its default XHR loader unchanged.
+      hls = new Hls({
+        maxBufferLength: 30,
+        enableWorker: false,
+        xhrSetup: attachBackendAuth,
+        ...(hlsLoader ? { loader: hlsLoader } : {}),
+      });
       hlsRef.current = hls;
       hls.loadSource(src);
       hls.attachMedia(video);
@@ -184,7 +192,9 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
       video.removeAttribute('src');
       video.load();
     };
-  }, [src, isHls, autoPlay, reloadKey]);
+    // hlsLoader is in the deps so a Live TV tier escalation that keeps the same
+    // src (extension media-rules → extension fetch loader) still re-inits hls.js.
+  }, [src, isHls, autoPlay, reloadKey, hlsLoader]);
 
   // Seek to the saved resume position once the media knows its duration. No-op
   // unless we have a positive startAt we haven't applied yet for this source.
