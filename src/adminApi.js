@@ -35,6 +35,16 @@ export const adminApi = {
       body: JSON.stringify(body),
     }).then(_json),
   deleteUser: (id) => apiFetch(`/admin/users/${id}`, { method: 'DELETE' }).then(_json),
+  // Broadcast email (Users tab's "E-Mail sender"): status carries whether SMTP is
+  // configured, the reachable-recipient counts and live send progress; send fans
+  // the plaintext message out to every email account in the background.
+  broadcastEmailStatus: () => apiFetch('/admin/broadcast-email').then(_json),
+  sendBroadcastEmail: (body) =>
+    apiFetch('/admin/broadcast-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(_json),
   revokeUserSessions: (id) =>
     apiFetch(`/admin/users/${id}/revoke-sessions`, { method: 'POST' }).then(_json),
   listInvites: (params) => apiFetch(`/admin/invites?${_qs(params)}`).then(_json),
