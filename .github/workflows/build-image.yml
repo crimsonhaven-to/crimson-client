@@ -15,6 +15,7 @@ name: Build and Deploy
 # per channel (build-time only; nothing is committed back):
 #   * push to `dev`       -> sources@dev.
 #   * a published Release -> sources@main.
+#   * dispatch channel=prod -> sources@main (see workflow_dispatch below).
 # The companion extension is NOT baked in: it ships on the Chrome Web Store and
 # the /extension page links straight to that listing.
 #
@@ -40,13 +41,24 @@ on:
       - '**.md'
   release:
     types: [published]
-  # Sources-driven rebuild: crimson-sources' own CI fires this (via the API) on a
-  # push to its `dev` branch, so a change to the client-side sources engine ships to
-  # dev.crimsonhaven WITHOUT a manual submodule bump / client push. It behaves exactly
-  # like a `dev` push (builds :dev-<sha> from sources@dev and rolls the dev stack) —
-  # see `.github/workflows/deploy-client-dev.yml` in crimson-sources. Also runnable by
-  # hand from the Actions tab. Pick ref `dev` when dispatching.
+  # Sources-driven rebuild: crimson-sources' own CI fires this (via the API) so a change
+  # to the client-side sources engine ships WITHOUT a manual submodule bump / client push.
+  # The `channel` input picks the target — see the deploy-client-{dev,prod}.yml workflows
+  # in crimson-sources. Also runnable by hand from the Actions tab.
+  #   * channel=dev  (default): builds :dev-<sha> from sources@dev  and rolls the dev stack.
+  #                             Dispatch with ref `dev`.
+  #   * channel=prod          : builds :main-<sha> from sources@main and rolls the prod
+  #                             swarm (auto-deploy), same target as a published Release.
+  #                             Dispatch with ref `main`.
   workflow_dispatch:
+    inputs:
+      channel:
+        description: "Target channel: dev rolls the dev stack (sources@dev); prod builds sources@main and auto-deploys to the prod swarm."
+        type: choice
+        default: dev
+        options:
+          - dev
+          - prod
 
 concurrency:
   group: crimson-client-${{ github.ref }}
@@ -89,7 +101,11 @@ jobs:
     outputs:
       version: ${{ steps.meta.outputs.version }}
       deploy: ${{ steps.meta.outputs.deploy }}
-      # The exact, immutable tag to deploy (vX.Y.Z on release, dev-<sha> on dev).
+      # dev | prod — the two deploy jobs below key off this so a prod dispatch never
+      # also rolls the dev stack (and vice-versa).
+      channel: ${{ steps.meta.outputs.channel }}
+      # The exact, immutable tag to deploy (vX.Y.Z on release, main-<sha> on a prod
+      # dispatch, dev-<sha> on dev).
       image_tag: ${{ steps.meta.outputs.image_tag }}
     steps:
       - name: Checkout code
@@ -108,8 +124,12 @@ jobs:
           GIT_TOKEN: ${{ secrets.SUBMODULES_TOKEN || github.token }}
         run: |
           set -u
-          # Freshest code per channel: release -> main, otherwise dev.
-          if [ "${{ github.event_name }}" = "release" ]; then SOURCES_BRANCH=main; else SOURCES_BRANCH=dev; fi
+          # Freshest code per channel: release OR a prod dispatch -> main, otherwise dev.
+          if [ "${{ github.event_name }}" = "release" ] || [ "${{ github.event.inputs.channel }}" = "prod" ]; then
+            SOURCES_BRANCH=main
+          else
+            SOURCES_BRANCH=dev
+          fi
 
           # Clone <repo>@<branch> into <dest>, best-effort. Any failure (repo
           # unset, no access, branch missing) leaves an EMPTY <dest> and never
@@ -152,19 +172,37 @@ jobs:
           # a safe charset before it flows into image tags, job outputs, and the
           # remote deploy command.
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          # A manual/sources-driven prod build carries channel=prod; empty otherwise.
+          CHANNEL_INPUT: ${{ github.event.inputs.channel }}
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            VER="$RELEASE_TAG"
-            if ! printf '%s' "$VER" | grep -Eq '^[A-Za-z0-9._-]+$'; then
-              echo "::error::Refusing to build/deploy an unsafe release tag: '$VER'"
-              exit 1
+          # Prod ships on a published Release OR an explicit channel=prod dispatch;
+          # everything else (dev push, default dispatch) is the dev channel.
+          if [ "${{ github.event_name }}" = "release" ] || [ "$CHANNEL_INPUT" = "prod" ]; then
+            CHANNEL=prod
+          else
+            CHANNEL=dev
+          fi
+          echo "channel=${CHANNEL}" >> "$GITHUB_OUTPUT"
+
+          if [ "$CHANNEL" = "prod" ]; then
+            if [ "${{ github.event_name }}" = "release" ]; then
+              # Immutable, human-chosen version tag straight off the Release.
+              VER="$RELEASE_TAG"
+              if ! printf '%s' "$VER" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+                echo "::error::Refusing to build/deploy an unsafe release tag: '$VER'"
+                exit 1
+              fi
+            else
+              # Sources-driven / manual prod rebuild: no Release tag exists, so mint an
+              # immutable per-commit tag off the client's main HEAD to deploy.
+              VER="main-$(git rev-parse --short HEAD)"
             fi
-            echo "version=${VER}"  >> "$GITHUB_OUTPUT"
-            echo "deploy=true"      >> "$GITHUB_OUTPUT"
-            echo "tags=${IMAGE}:${VER},${IMAGE}:latest" >> "$GITHUB_OUTPUT"
+            echo "version=${VER}"                          >> "$GITHUB_OUTPUT"
+            echo "deploy=true"                             >> "$GITHUB_OUTPUT"
+            echo "tags=${IMAGE}:${VER},${IMAGE}:latest"    >> "$GITHUB_OUTPUT"
             echo "api_url=https://backend.crimsonhaven.to" >> "$GITHUB_OUTPUT"
-            echo "site_url=https://crimsonhaven.to" >> "$GITHUB_OUTPUT"
-            echo "image_tag=${VER}" >> "$GITHUB_OUTPUT"
+            echo "site_url=https://crimsonhaven.to"        >> "$GITHUB_OUTPUT"
+            echo "image_tag=${VER}"                        >> "$GITHUB_OUTPUT"
           else
             SHORT_SHA="$(git rev-parse --short HEAD)"
             echo "version="         >> "$GITHUB_OUTPUT"
@@ -201,12 +239,15 @@ jobs:
           cache-from: type=registry,ref=${{ env.IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.IMAGE }}:buildcache,mode=max
 
+  # Prod rollout — a published Release (immutable vX.Y.Z) OR a channel=prod dispatch
+  # (immutable main-<sha>, fired by crimson-sources on a dev -> main merge). Both are
+  # channel=prod / deploy=true and roll the prod swarm the same way.
   deploy:
     needs: build
     if: ${{ needs.build.outputs.deploy == 'true' }}
     runs-on: [self-hosted]
     steps:
-      - name: Checkout release
+      - name: Checkout the built ref
         uses: actions/checkout@v4
 
       - name: Ship stack file to the manager
@@ -228,9 +269,11 @@ jobs:
   # (~/dev-crimson-client-deploy/), so CI just triggers its deploy.sh.
   deploy-dev:
     needs: build
-    # A `dev` push OR a sources-driven / manual dispatch both roll the dev stack
-    # (releases go through the prod `deploy` job above instead).
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    # Roll the dev stack for any dev-channel build (a `dev` push or a default/dev
+    # dispatch). Releases and prod dispatches are channel=prod and go through the
+    # prod `deploy` job above instead — keying on the channel keeps a prod dispatch
+    # from rolling BOTH stacks.
+    if: ${{ needs.build.outputs.channel == 'dev' }}
     runs-on: [self-hosted]
     steps:
       - name: Deploy to the dev swarm stack
