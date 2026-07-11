@@ -1,11 +1,137 @@
 // Admin › Users tab — member search + per-user actions (grant/revoke admin, mark
-// verified, revoke sessions, delete). Lifted verbatim from Admin.jsx.
+// verified, revoke sessions, delete), plus the E-Mail sender (broadcast a
+// plaintext message to every member who signed up with an email address).
 import { useCallback, useEffect, useState } from 'react';
-import { LogOut, Mail, Search, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
+import { LogOut, Mail, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 
 import { useProfile } from '../hooks';
 import { adminApi } from '../adminApi';
 import { fmtDate } from './format';
+
+// Broadcast a plaintext email to every email-based account (mnemonic accounts
+// have no address and are skipped server-side; each mail greets the member by
+// their display name when they've set one). Greys out when the backend reports
+// SMTP isn't configured, and polls live progress while a send is running.
+function EmailSender({ notify }) {
+  const [status, setStatus] = useState(null); // GET /admin/broadcast-email payload
+  const [subject, setSubject] = useState('');
+  const [message, setMessage] = useState('');
+  const [verifiedOnly, setVerifiedOnly] = useState(true);
+  const [sending, setSending] = useState(false);
+
+  const refresh = useCallback(async () => {
+    try {
+      const res = await adminApi.broadcastEmailStatus();
+      if (res.success) setStatus(res);
+    } catch { /* keep the last known status */ }
+  }, []);
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const running = status?.broadcast?.running;
+  useEffect(() => {
+    if (!running) return undefined;
+    const t = setInterval(refresh, 2000);
+    return () => clearInterval(t);
+  }, [running, refresh]);
+
+  const configured = status?.configured;
+  const recipients = status ? (verifiedOnly ? status.recipients?.verified : status.recipients?.all) : null;
+  const broadcast = status?.broadcast;
+  const disabled = !configured || sending || running;
+
+  const send = async (e) => {
+    e.preventDefault();
+    if (!subject.trim() || !message.trim() || disabled) return;
+    if (!window.confirm(`Send this email to ${recipients} member${recipients === 1 ? '' : 's'}?`)) return;
+    setSending(true);
+    try {
+      const res = await adminApi.sendBroadcastEmail({
+        subject: subject.trim(),
+        message,
+        verified_only: verifiedOnly,
+      });
+      if (res.success) {
+        notify(res.message || 'Sending…', true);
+        setSubject('');
+        setMessage('');
+        await refresh();
+      } else notify(res.detail || res.message || 'Send failed', false);
+    } catch { notify('Send failed', false); }
+    finally { setSending(false); }
+  };
+
+  return (
+    <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl p-4 sm:p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <Send className="w-4 h-4 text-crimson-500" />
+        <h3 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">E-Mail Sender</h3>
+        {status && configured && (
+          <span className="ml-auto text-[10px] font-bold text-crimson-700 tracking-wide">
+            reaches {recipients} member{recipients === 1 ? '' : 's'}
+          </span>
+        )}
+      </div>
+
+      {status && !configured && (
+        <p className="text-xs font-bold text-crimson-600 leading-relaxed">
+          SMTP isn&apos;t configured on the backend — set <code className="text-crimson-400">SMTP_HOST</code> (and friends) to enable member emails.
+        </p>
+      )}
+
+      {running && (
+        <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 animate-pulse">
+          Sending “{broadcast.subject}”… {broadcast.sent + broadcast.failed}/{broadcast.total}
+        </p>
+      )}
+      {!running && broadcast?.finished_at && (
+        <p className="text-[10px] font-bold text-crimson-700 tracking-wide">
+          Last broadcast “{broadcast.subject}”: {broadcast.sent} sent{broadcast.failed ? `, ${broadcast.failed} failed` : ''} · {fmtDate(broadcast.finished_at)}
+        </p>
+      )}
+
+      <form onSubmit={send} className="space-y-3">
+        <input
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          placeholder="Subject…"
+          maxLength={200}
+          disabled={disabled}
+          className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all disabled:opacity-40"
+        />
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Write your message in plaintext — every member gets it with their own greeting…"
+          rows={5}
+          maxLength={20000}
+          disabled={disabled}
+          className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all resize-y disabled:opacity-40"
+        />
+        <div className="flex items-center gap-4 flex-wrap">
+          <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-crimson-500 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={verifiedOnly}
+              onChange={(e) => setVerifiedOnly(e.target.checked)}
+              disabled={disabled}
+              className="accent-crimson-600"
+            />
+            Verified emails only
+          </label>
+          <button
+            type="submit"
+            disabled={disabled || !subject.trim() || !message.trim() || recipients === 0}
+            className="ml-auto flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:hover:bg-crimson-600"
+          >
+            <Send className="w-3.5 h-3.5" />
+            {sending || running ? 'Sending…' : 'Send'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 export default function UsersTab({ notify }) {
   const profile = useProfile();
@@ -54,6 +180,8 @@ export default function UsersTab({ notify }) {
         </div>
         <button type="submit" className="px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Search</button>
       </form>
+
+      <EmailSender notify={notify} />
 
       <p className="text-[10px] font-black uppercase tracking-widest text-crimson-700">{data.total} member{data.total === 1 ? '' : 's'} total</p>
 
