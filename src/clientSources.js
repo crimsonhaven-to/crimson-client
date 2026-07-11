@@ -235,6 +235,9 @@ async function enrichMediaCtx(mediaCtx) {
       titleNative: m.title_native ?? null,
       synonyms: m.synonyms ?? null,
       anilistId: mediaCtx.anilistId ?? m.anilist_id ?? undefined,
+      // MAL id (AniList idMal) for the MAL-keyed source (kissanime.ing -> megaplay);
+      // null for movies / no-AniList shows, so that source just skips itself.
+      malId: mediaCtx.malId ?? m.mal_id ?? null,
       releaseYear: mediaCtx.releaseYear ?? m.release_year ?? null,
       imdbId: mediaCtx.imdbId ?? m.imdb_id ?? null,
     };
