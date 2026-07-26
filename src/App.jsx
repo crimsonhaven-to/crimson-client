@@ -6,7 +6,7 @@ import MeshBackground from './MeshBackground';
 // the home rows and the browse hubs render the exact same card (see hubKit.jsx).
 import { kindStyle } from './hubHelpers';
 import { PosterCard, SeeAll } from './hubKit';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, usePublicConfig, apiFetch, CLIENT_VERSION, HOSTED_IN } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, usePublicConfig, apiFetch, startsFresh, CLIENT_VERSION, HOSTED_IN } from './hooks';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -507,6 +507,21 @@ function WatchPage() {
   const { updateProgress, fetchResumePosition } = useAccount();
   const { isAuthenticated } = useAuth();
 
+  // Sequential-advance "start fresh" stamp: set at episode-change time (while the
+  // outgoing episode's playback state is still known) when the viewer just
+  // finished the current episode and moves to the next one — Auto-Next, or
+  // clicking the next episode over the credits. The resume lookup below skips
+  // the saved position ONCE for the stamped target, so a re-watch rolling into
+  // an episode that was left mid-way on an earlier watch-through starts at 0
+  // instead of yanking to the stale spot. Direct navigation (continue-watching,
+  // opening an episode cold) never stamps and resumes as before.
+  const startFreshKeyRef = useRef(null);
+  const markEpisodeAdvance = (nextSeason, nextEpisode) => {
+    if (startsFresh(playbackRef.current, currentSeason, currentEpisode, nextSeason, nextEpisode)) {
+      startFreshKeyRef.current = `${nextSeason}:${nextEpisode}`;
+    }
+  };
+
   // Saved-position resume: look up where the user left off on this exact episode
   // and hand it to the player as a start time. Re-runs per episode/season change;
   // resets to 0 first so switching to a fresh episode never inherits a stale seek.
@@ -515,6 +530,10 @@ function WatchPage() {
     let cancelled = false;
     setResumeAt(0);
     livePositionRef.current = 0; // new episode: forget the previous one's live spot
+    if (startFreshKeyRef.current === `${currentSeason}:${currentEpisode}`) {
+      startFreshKeyRef.current = null; // one-shot: consumed by this episode load
+      return;
+    }
     if (!isAuthenticated) return;
     fetchResumePosition(anilistId, parseInt(currentSeason), parseInt(currentEpisode))
       .then(pos => { if (!cancelled && pos) setResumeAt(pos); });
@@ -573,12 +592,14 @@ function WatchPage() {
   };
 
   const handleEpisodeChange = (newEpisode) => {
+    markEpisodeAdvance(currentSeason, newEpisode);
     setCurrentEpisode(newEpisode);
     navigate(`/watch/${anilistId}/${currentSeason}/${newEpisode}`);
   };
 
   // Cross-season jump for the in-player picker: move season + episode together.
   const handleSelectEpisode = (newSeason, newEpisode) => {
+    markEpisodeAdvance(newSeason, newEpisode);
     setCurrentSeason(newSeason);
     setCurrentEpisode(newEpisode);
     navigate(`/watch/${anilistId}/${newSeason}/${newEpisode}`);

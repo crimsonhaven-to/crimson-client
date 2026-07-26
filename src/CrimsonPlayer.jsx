@@ -32,7 +32,14 @@ const AUTO_NEXT_KEY = 'crimson:autoNext';
  * enabled, playlists load but every fragment silently fails (segments demux in
  * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
  */
-export default function CrimsonPlayer({ src, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null }) {
+// `mediaKey` is the identity of the media item `src` belongs to (the watch page
+// passes its season:episode key). The source-wiring effect keys on it alongside
+// `src` because two DIFFERENT episodes can resolve to the SAME url (stable
+// client-engine / capture endpoints serve every episode from one url) — on `src`
+// alone the player would never reload across such an episode advance and the new
+// episode would keep the old one's playback position. Callers that don't pass it
+// (Live TV, local media) get a constant null: behaviour unchanged.
+export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -194,7 +201,9 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
     };
     // hlsLoader is in the deps so a Live TV tier escalation that keeps the same
     // src (extension media-rules → extension fetch loader) still re-inits hls.js.
-  }, [src, isHls, autoPlay, reloadKey, hlsLoader]);
+    // mediaKey is in the deps so an episode advance that resolves to the same
+    // url still tears down and reloads the media (see the prop's doc above).
+  }, [src, mediaKey, isHls, autoPlay, reloadKey, hlsLoader]);
 
   // Seek to the saved resume position once the media knows its duration. No-op
   // unless we have a positive startAt we haven't applied yet for this source.
@@ -421,7 +430,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   // Auto-arm the Up Next card when playback reaches the outro (not just on `ended`),
   // so Auto-Next viewers roll into the next episode over the credits. Once per source.
   const edAutoArmed = useRef(false);
-  useEffect(() => { edAutoArmed.current = false; }, [src]);
+  useEffect(() => { edAutoArmed.current = false; }, [src, mediaKey]);
   useEffect(() => {
     if (!inEdRange || edAutoArmed.current || countdown !== null) return;
     if (autoNext && hasNext && onNextRef.current) {
@@ -565,7 +574,7 @@ export default function CrimsonPlayer({ src, type = '', subtitles = [], poster =
   }, [downloading, src, type, downloadName, title]);
 
   // Abort an in-flight download if the source changes or the player unmounts.
-  useEffect(() => () => dlAbortRef.current?.abort(), [src]);
+  useEffect(() => () => dlAbortRef.current?.abort(), [src, mediaKey]);
 
   // ---- Keyboard shortcuts -----------------------------------------------
   // Active while the player is mounted (only one ever is). Ignored while typing

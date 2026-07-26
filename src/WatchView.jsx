@@ -222,6 +222,32 @@ const WatchView = ({
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
 
+  // --- Stale-progress gate (key tracking) ------------------------------------
+  // The player stays mounted across episode jumps (that's what preserves
+  // fullscreen), so the OLD episode keeps playing — and reporting timeupdates —
+  // behind the loading veil while the next episode's sources resolve. Forwarding
+  // those reports would refill the parent's live-position ref (and its periodic
+  // progress save) with the old episode's timestamp AFTER the parent reset it,
+  // making the next episode start right at the old one's end. So reports are
+  // only forwarded while the episode whose stream is actually attached matches
+  // the episode being watched. The episode key advances a full render BEFORE the
+  // streamer flips streamLoading/clears the old streams (its effect runs after
+  // commit), so there is an intermediate render where the new key coincides with
+  // the old episode's loaded state — stamping there would reopen the gate while
+  // the old source is still playing. The stamp therefore also requires having
+  // seen streamLoading===true for this same key first, i.e. the loaded state
+  // must belong to THIS episode's resolve cycle, not the previous one's.
+  const currentPlayKey = `${currentSeason}:${currentEpisode}`;
+  const playingKeyRef = useRef(null);
+  const loadSeenKeyRef = useRef(null);
+  useEffect(() => {
+    if (streamLoading) {
+      loadSeenKeyRef.current = currentPlayKey;
+    } else if (streams.length > 0 && loadSeenKeyRef.current === currentPlayKey) {
+      playingKeyRef.current = currentPlayKey;
+    }
+  }, [streamLoading, streams, currentPlayKey]);
+
   // --- Keep the player mounted across the inter-episode resolve gap ---------
   // On Auto-Next / a picker jump the streamer nulls `streamData` and flips
   // `streamLoading` true while the next episode's sources resolve, so
@@ -234,13 +260,28 @@ const WatchView = ({
   // player swaps to the new source in place via its own `src` effect once it
   // lands, never unmounting. iframe embeds can't preserve fullscreen this way, so
   // they're deliberately excluded (a live iframe still renders below as before).
-  const lastVideoStreamRef = useRef(null);
+  //
+  // The stream travels with the episode key it belongs to ({ stream, key }): the
+  // player reloads on `mediaKey` as well as `src`, because an episode advance can
+  // resolve to the SAME url as the one already attached (stable client-engine /
+  // capture endpoints serve every episode from one url) — keyed on `src` alone
+  // the player would never reload and the new episode would sit at the old one's
+  // position. The inline pair is only trusted once this episode's resolve cycle
+  // has been seen (same loadSeenKeyRef condition as the gate above); the
+  // intermediate render right after an episode click — old loaded state, new key
+  // — falls back to the ref, so the old source keeps its old key through the gap
+  // and is never spuriously reloaded.
+  const lastVideoStreamRef = useRef(null); // { stream, key } of the last attached video source
   useEffect(() => {
-    if (activeStream && activeStream.type !== 'iframe') lastVideoStreamRef.current = activeStream;
-  }, [activeStream]);
-  const playerStream = (activeStream && activeStream.type !== 'iframe')
-    ? activeStream
-    : (streamLoading ? lastVideoStreamRef.current : null);
+    if (activeStream && activeStream.type !== 'iframe' && loadSeenKeyRef.current === currentPlayKey) {
+      lastVideoStreamRef.current = { stream: activeStream, key: currentPlayKey };
+    }
+  }, [activeStream, currentPlayKey]);
+  const attachedPlay = (activeStream && activeStream.type !== 'iframe' && loadSeenKeyRef.current === currentPlayKey)
+    ? { stream: activeStream, key: currentPlayKey }
+    : ((streamLoading || activeStream) ? lastVideoStreamRef.current : null);
+  const playerStream = attachedPlay?.stream || null;
+  const playerKey = attachedPlay?.key ?? null;
 
   // --- In-player Season / Episode picker -----------------------------------
   // The player embeds a full season→episode browser (with TMDB stills) so the
@@ -459,32 +500,6 @@ const WatchView = ({
     return () => clearWatchActivity();
   }, [displayTitle, isMovie, currentSeason, currentEpisode, totalSeasons]);
 
-  // --- Stale-progress gate ---------------------------------------------------
-  // The player stays mounted across episode jumps (that's what preserves
-  // fullscreen), so the OLD episode keeps playing — and reporting timeupdates —
-  // behind the loading veil while the next episode's sources resolve. Forwarding
-  // those reports would refill the parent's live-position ref (and its periodic
-  // progress save) with the old episode's timestamp AFTER the parent reset it,
-  // making the next episode start right at the old one's end. So reports are
-  // only forwarded while the episode whose stream is actually attached matches
-  // the episode being watched. The episode key advances a full render BEFORE the
-  // streamer flips streamLoading/clears the old streams (its effect runs after
-  // commit), so there is an intermediate render where the new key coincides with
-  // the old episode's loaded state — stamping there would reopen the gate while
-  // the old source is still playing. The stamp therefore also requires having
-  // seen streamLoading===true for this same key first, i.e. the loaded state
-  // must belong to THIS episode's resolve cycle, not the previous one's.
-  const currentPlayKey = `${currentSeason}:${currentEpisode}`;
-  const playingKeyRef = useRef(null);
-  const loadSeenKeyRef = useRef(null);
-  useEffect(() => {
-    if (streamLoading) {
-      loadSeenKeyRef.current = currentPlayKey;
-    } else if (streams.length > 0 && loadSeenKeyRef.current === currentPlayKey) {
-      playingKeyRef.current = currentPlayKey;
-    }
-  }, [streamLoading, streams, currentPlayKey]);
-
   // Server-side cache trigger: once the viewer has watched the *active* source for
   // CACHE_CONFIRM_SECONDS, redeem its signed cacheTicket exactly once so the
   // backend caches that source (not whichever resolved first). Tickets already
@@ -591,6 +606,11 @@ const WatchView = ({
                   // holds the last video source through the resolve gap so this
                   // element never unmounts mid-Auto-Next. See its definition above.
                   src={playerStream.url}
+                  // The episode identity of the attached source. The player's
+                  // reload effect keys on this too, so an episode advance whose
+                  // new source resolves to the SAME url still reloads instead of
+                  // playing on from the old episode's position.
+                  mediaKey={playerKey}
                   type={playerStream.type}
                   subtitles={mergedSubtitles}
                   poster={poster}
