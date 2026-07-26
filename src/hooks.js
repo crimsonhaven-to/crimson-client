@@ -21,6 +21,7 @@ export * from './hooks/theme';
 export * from './hooks/useAuth';
 export * from './hooks/watchlists';
 export * from './hooks/useAccount';
+export * from './hooks/resumeRules';
 export * from './hooks/useAnimeStreamer';
 export * from './hooks/anime';
 export * from './hooks/ndjson';

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useShowStreamer, useAccount, useAuth, useTitle, apiFetch } from './hooks';
+import { useShowStreamer, useAccount, useAuth, useTitle, apiFetch, startsFresh } from './hooks';
 import WatchView from './WatchView';
 
 // Non-anime show watch page (/watch-show/:tmdbId/:season?/:episode?). The
@@ -39,6 +39,16 @@ function ShowWatch() {
     livePositionRef.current = position;
   }, []);
 
+  // Sequential-advance "start fresh" stamp — same policy as the anime WatchPage:
+  // finishing an episode and rolling into the next one starts it at 0, ignoring
+  // any position saved on an earlier watch-through. Direct navigation resumes.
+  const startFreshKeyRef = useRef(null);
+  const markEpisodeAdvance = (nextSeason, nextEpisode) => {
+    if (startsFresh(playbackRef.current, currentSeason, currentEpisode, nextSeason, nextEpisode)) {
+      startFreshKeyRef.current = `${nextSeason}:${nextEpisode}`;
+    }
+  };
+
   // Saved-position resume, keyed by tmdb_id (shows have no anilist_id). Mirrors
   // the anime page's resume but matches progress rows on tmdb_id.
   const [resumeAt, setResumeAt] = useState(0);
@@ -46,6 +56,10 @@ function ShowWatch() {
     let cancelled = false;
     setResumeAt(0);
     livePositionRef.current = 0;
+    if (startFreshKeyRef.current === `${currentSeason}:${currentEpisode}`) {
+      startFreshKeyRef.current = null; // one-shot: consumed by this episode load
+      return;
+    }
     if (!isAuthenticated) return;
     (async () => {
       try {
@@ -97,9 +111,15 @@ function ShowWatch() {
   const watchlistItem = { tmdb_id: parseInt(tmdbId), anilist_id: null, title: displayTitle, poster };
 
   const onSeasonChange = (newSeason) => navigate(`/watch-show/${tmdbId}/${newSeason}/1`);
-  const onEpisodeChange = (newEpisode) => navigate(`/watch-show/${tmdbId}/${currentSeason}/${newEpisode}`);
+  const onEpisodeChange = (newEpisode) => {
+    markEpisodeAdvance(currentSeason, newEpisode);
+    navigate(`/watch-show/${tmdbId}/${currentSeason}/${newEpisode}`);
+  };
   // Cross-season jump for the in-player picker: season + episode in one hop.
-  const onSelectEpisode = (newSeason, newEpisode) => navigate(`/watch-show/${tmdbId}/${newSeason}/${newEpisode}`);
+  const onSelectEpisode = (newSeason, newEpisode) => {
+    markEpisodeAdvance(newSeason, newEpisode);
+    navigate(`/watch-show/${tmdbId}/${newSeason}/${newEpisode}`);
+  };
 
   return (
     <WatchView
