@@ -19,6 +19,21 @@ export const adminApi = {
   health: () => apiFetch('/health').then(_json),
   // Rich runtime snapshot (version/uptime, registry sizes, flags, DB pool, cache).
   system: () => apiFetch('/admin/system').then(_json),
+  // Prometheus text exposition from the replica that answers (see the backend's
+  // core/observability.py). The odd one out here: the body is text/plain rather
+  // than JSON, and a build without prometheus-client answers 503 with a JSON error
+  // body instead. So this returns a small envelope rather than a bare string, and
+  // the Metrics tab renders each case on its own.
+  //
+  // /metrics is whitelisted on the login wall but is NOT public: the route itself
+  // requires either the admin session bearer apiFetch attaches, or a METRICS_TOKEN
+  // (which is the path a real Prometheus scrape uses).
+  metrics: async () => {
+    const res = await apiFetch('/metrics');
+    if (res.status === 503) return { ok: false, unavailable: true };
+    if (!res.ok) return { ok: false, status: res.status };
+    return { ok: true, text: await res.text() };
+  },
   // Per-source health probe. force=true bypasses the backend's short result cache.
   sourceHealth: (force = false) => apiFetch(`/admin/source-health${force ? '?force=true' : ''}`).then(_json),
   // Real per-source resolve success rates from anonymous client beacons (the

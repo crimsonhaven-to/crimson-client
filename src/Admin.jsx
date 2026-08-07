@@ -6,8 +6,8 @@
 // the top-level stats/health/system fetch, the tab bar, and the toast host.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Activity, Download, DownloadCloud, HardDrive, HeartPulse, KeyRound, RefreshCw,
-  Server, Shield, ShieldAlert, ShieldOff, Ticket, Users,
+  Activity, Download, DownloadCloud, HardDrive, HeartPulse, KeyRound, LineChart,
+  RefreshCw, Server, Shield, ShieldAlert, ShieldOff, Ticket, Users,
 } from 'lucide-react';
 
 import { useTitle, useProfile } from './hooks';
@@ -23,6 +23,7 @@ import DownloadsTab from './admin/DownloadsTab';
 import ApiKeysTab from './admin/ApiKeysTab';
 import SecurityTab from './admin/SecurityTab';
 import SystemTab from './admin/SystemTab';
+import MetricsTab from './admin/MetricsTab';
 
 const AdminPage = () => {
   useTitle('Admin Sanctum');
@@ -85,6 +86,7 @@ const AdminPage = () => {
       <div className="flex flex-wrap gap-3">
         <TabButton active={tab === 'overview'} onClick={() => setTab('overview')} icon={Activity} label="Overview" />
         <TabButton active={tab === 'health'} onClick={() => setTab('health')} icon={HeartPulse} label="Health" />
+        <TabButton active={tab === 'metrics'} onClick={() => setTab('metrics')} icon={LineChart} label="Metrics" />
         <TabButton active={tab === 'security'} onClick={() => setTab('security')} icon={ShieldAlert} label="Security" />
         <TabButton active={tab === 'users'} onClick={() => setTab('users')} icon={Users} label="Users" />
         <TabButton active={tab === 'invites'} onClick={() => setTab('invites')} icon={Ticket} label="Invites" />
@@ -100,6 +102,7 @@ const AdminPage = () => {
           ? <div className="py-24 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Gathering diagnostics…</div>
           : <OverviewTab stats={stats} health={health} system={system} />)}
         {tab === 'health' && <HealthTab notify={notify} />}
+        {tab === 'metrics' && <MetricsTab notify={notify} />}
         {tab === 'security' && <SecurityTab notify={notify} />}
         {tab === 'users' && <UsersTab notify={notify} />}
         {tab === 'invites' && <InvitesTab notify={notify} />}
