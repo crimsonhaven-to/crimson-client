@@ -1,17 +1,23 @@
-// Admin › Metrics tab. Reads the backend's Prometheus exposition (GET /metrics,
-// see core/observability.py) with the admin bearer the dashboard already holds,
-// parses it in the browser and renders the current values.
+// Admin › Metrics tab. Two halves, which answer different questions and must not
+// be confused for one another:
 //
-// Phase 0 of the metrics story: no Prometheus server is involved, so there is no
-// history and no rate-over-time. Two consequences the operator has to be told
-// about rather than left to discover, both surfaced in the banner below:
+//   History  (MetricsHistory.jsx, Phase 1) reads a private Prometheus through
+//            /admin/metrics/*. Fleet-wide, survives restarts, rates over time.
+//            Absent unless PROMETHEUS_URL is set, and says so.
 //
-//   1. Counters here are TOTALS SINCE THAT REPLICA STARTED, not "per minute".
-//   2. With several replicas behind a load balancer, each refresh lands on
-//      whichever one answered, so the numbers move around. Gauges (pool, queues)
-//      read correctly either way; counters look like they jump.
+//   Snapshot (this file, Phase 0) reads the backend's Prometheus exposition
+//            (GET /metrics, see core/observability.py) with the admin bearer the
+//            dashboard already holds and parses it in the browser. Always
+//            available, needs no extra infrastructure, and carries two caveats
+//            the operator has to be told rather than left to discover:
 //
-// Phase 1 replaces both caveats with a real scrape behind an /admin/metrics proxy.
+//              1. Counters here are TOTALS SINCE THAT REPLICA STARTED.
+//              2. Each refresh lands on whichever replica answered, so counters
+//                 jump around. Gauges (pool, queues) read correctly either way.
+//
+// The snapshot is kept rather than replaced by the history, because it is the
+// only half that works with nothing but the backend deployed, and because a
+// gauge read directly is the ground truth a scrape is only ever approximating.
 import { useCallback, useEffect, useState } from 'react';
 import {
   Activity, AlertTriangle, Boxes, Clock, Cpu, Database, Gauge, HardDrive,
@@ -19,6 +25,7 @@ import {
 } from 'lucide-react';
 
 import { adminApi } from '../adminApi';
+import MetricsHistory from './MetricsHistory';
 import { StatCard } from './ui';
 import {
   parseMetrics, samplesOf, sumOf, valueOf, infoLabel, groupSum,
@@ -125,6 +132,24 @@ const Facts = ({ rows }) => (
 // ---------- the tab ----------
 
 export default function MetricsTab({ notify }) {
+  return (
+    <div className="space-y-12">
+      <Section icon={LineChart} title="History" note="every replica, from the metrics archive">
+        <MetricsHistory notify={notify} />
+      </Section>
+
+      <div className="border-t border-crimson-900/30 pt-10">
+        <Section icon={Gauge} title="This replica, right now" note="read straight off the backend, no archive involved">
+          <LiveSnapshot notify={notify} />
+        </Section>
+      </div>
+    </div>
+  );
+}
+
+// ---------- the live snapshot (Phase 0) ----------
+
+function LiveSnapshot({ notify }) {
   const [parsed, setParsed] = useState(null);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
@@ -256,7 +281,8 @@ export default function MetricsTab({ notify }) {
             These are totals since <span className="font-black">one replica</span> started, read straight from
             its <span className="font-mono">/metrics</span>. Each refresh may land on a different replica, so
             counters can jump around and drop to zero after a deploy. Gauges (pool, queues, in flight) are
-            always truthful for the replica that answered.
+            always truthful for the replica that answered. For fleet-wide numbers that survive a restart, read
+            the History charts above instead.
             {fetchedAt && <> Last read {fetchedAt.toLocaleTimeString()}.</>}
           </p>
         </div>

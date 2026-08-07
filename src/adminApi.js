@@ -34,6 +34,19 @@ export const adminApi = {
     if (!res.ok) return { ok: false, status: res.status };
     return { ok: true, text: await res.text() };
   },
+  // History, from a private Prometheus that scrapes every replica (see the
+  // backend's core/prom_query.py + deploy/prometheus/README.md). Unlike /metrics
+  // above these are ordinary JSON admin endpoints.
+  //
+  // `panels` answers `available: false` on a deploy with no Prometheus, which is
+  // a normal environment fact rather than an error, and the tab then shows only
+  // the live snapshot. The panel and range ids come FROM that response and are
+  // sent straight back: the browser never composes a query, it picks a name off a
+  // server-owned list.
+  metricsPanels: () => apiFetch('/admin/metrics/panels').then(_json),
+  metricsSeries: (panel, range) =>
+    apiFetch(`/admin/metrics/series?${_qs({ panel, range })}`).then(_json),
+  metricsTargets: () => apiFetch('/admin/metrics/targets').then(_json),
   // Per-source health probe. force=true bypasses the backend's short result cache.
   sourceHealth: (force = false) => apiFetch(`/admin/source-health${force ? '?force=true' : ''}`).then(_json),
   // Real per-source resolve success rates from anonymous client beacons (the

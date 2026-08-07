@@ -11,7 +11,20 @@ import MetricsTab from './MetricsTab';
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const metrics = vi.fn();
-vi.mock('../adminApi', () => ({ adminApi: { metrics: (...a) => metrics(...a) } }));
+// The tab now also mounts the history half, which asks whether a Prometheus
+// exists. These tests are about the live snapshot, so it answers "no" and the
+// history section renders its setup note (MetricsHistory.test.jsx covers the
+// other side). Leaving these unmocked would still "pass", but by crashing the
+// history section rather than by exercising the snapshot, which is worth nothing.
+const metricsPanels = vi.fn();
+vi.mock('../adminApi', () => ({
+  adminApi: {
+    metrics: (...a) => metrics(...a),
+    metricsPanels: (...a) => metricsPanels(...a),
+    metricsSeries: vi.fn(),
+    metricsTargets: vi.fn(),
+  },
+}));
 
 const PAYLOAD = `# HELP crimson_http_requests_total HTTP requests completed.
 # TYPE crimson_http_requests_total counter
@@ -63,11 +76,18 @@ async function mount() {
     root = createRoot(container);
     root.render(<MetricsTab notify={() => {}} />);
   });
+  await act(async () => {});
   return container.textContent;
 }
 
 beforeEach(() => {
   metrics.mockReset();
+  metricsPanels.mockReset();
+  metricsPanels.mockResolvedValue({
+    success: true, available: false,
+    reason: 'PROMETHEUS_URL is not set, so no history is being collected',
+    panels: [], ranges: [],
+  });
   if (root) { act(() => root.unmount()); root = null; }
   document.body.innerHTML = '';
 });
@@ -109,6 +129,25 @@ describe('MetricsTab', () => {
     metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
     const text = await mount();
     expect(text).toContain('Live snapshot, one replica');
+  });
+
+  it('keeps the two halves labelled so their numbers are not read as one', async () => {
+    // History is fleet-wide and survives restarts; the snapshot is one replica
+    // since boot. Side by side and unlabelled, the two invite exactly the wrong
+    // comparison.
+    metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
+    const text = await mount();
+    expect(text).toContain('History');
+    expect(text).toContain('This replica, right now');
+  });
+
+  it('still renders the snapshot when no history is being kept', async () => {
+    // The whole reason the snapshot was not simply replaced by the charts: it is
+    // the half that needs nothing beyond the backend itself.
+    metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
+    const text = await mount();
+    expect(text).toContain('No history is being kept');
+    expect(text).toContain('163');
   });
 
   it('explains a build with no prometheus-client instead of rendering zeroes', async () => {
