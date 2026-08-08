@@ -17,6 +17,14 @@ import {
 } from './hubKit';
 import { useCatalogue, useAnimeCatalogue, CATALOGUE_SORTS, useTitle } from './hooks';
 
+// Where an Archive card goes. Anime films that TMDB tracks as movies in their own
+// right have no show to sit under (no tmdb_id, no season), so /anime/:id has
+// nothing to open. They carry their own movie id instead and open the movie page.
+const archiveRouteFor = (item) =>
+  item.tmdb_id == null && item.tmdb_movie_id
+    ? `/movie/${item.tmdb_movie_id}`
+    : `/anime/${item.anilist_id}`;
+
 const VIEWS = [
   { value: 'discover', label: 'Discover', icon: <Flame className="w-3.5 h-3.5" /> },
   { value: 'archive', label: 'Archive', icon: <Library className="w-3.5 h-3.5" /> },
@@ -151,7 +159,7 @@ function AnimeArchive({ toggle, notice }) {
                 {group.animes.map(anime => (
                   <button
                     key={anime.anilist_id}
-                    onClick={() => navigate(`/anime/${anime.anilist_id}`)}
+                    onClick={() => navigate(archiveRouteFor(anime))}
                     className="flex items-center justify-between group p-3.5 hover:bg-crimson-900/10 rounded-2xl transition-all border border-transparent hover:border-crimson-900/30 text-left"
                   >
                     <div className="flex flex-col truncate pr-6 space-y-1">

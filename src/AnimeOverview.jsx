@@ -35,7 +35,15 @@ const AnimeOverview = () => {
     navigate(`/watch/${watchId}/${season.season_number}/${episodeNumber}`);
   };
 
-  const goToExtra = (extra) => navigate(`/watch/${extra.anilist_id}/1/1`);
+  // Extras split by what they actually are. A film TMDB tracks in its own right
+  // carries a tmdb_movie_id and plays through the movie route (the anime route
+  // would build a season/episode URL a film has no page for); a special/OVA/ONA
+  // stays on the anilist route as season 0, the specials season.
+  const goToExtra = (extra) => navigate(
+    extra.tmdb_movie_id
+      ? `/watch-movie/${extra.tmdb_movie_id}`
+      : `/watch/${extra.anilist_id}/0/1`
+  );
 
   return (
     <OverviewView
