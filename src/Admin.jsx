@@ -6,7 +6,7 @@
 // the top-level stats/health/system fetch, the tab bar, and the toast host.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Activity, Download, DownloadCloud, HardDrive, HeartPulse, KeyRound, LineChart,
+  Activity, Bot, Download, DownloadCloud, HardDrive, HeartPulse, KeyRound, LineChart,
   RefreshCw, Server, Shield, ShieldAlert, ShieldOff, Ticket, Users,
 } from 'lucide-react';
 
@@ -24,6 +24,7 @@ import ApiKeysTab from './admin/ApiKeysTab';
 import SecurityTab from './admin/SecurityTab';
 import SystemTab from './admin/SystemTab';
 import MetricsTab from './admin/MetricsTab';
+import LumiTab from './admin/LumiTab';
 
 const AdminPage = () => {
   useTitle('Admin Sanctum');
@@ -89,6 +90,7 @@ const AdminPage = () => {
         <TabButton active={tab === 'metrics'} onClick={() => setTab('metrics')} icon={LineChart} label="Metrics" />
         <TabButton active={tab === 'security'} onClick={() => setTab('security')} icon={ShieldAlert} label="Security" />
         <TabButton active={tab === 'users'} onClick={() => setTab('users')} icon={Users} label="Users" />
+        <TabButton active={tab === 'lumi'} onClick={() => setTab('lumi')} icon={Bot} label="Lumi" />
         <TabButton active={tab === 'invites'} onClick={() => setTab('invites')} icon={Ticket} label="Invites" />
         <TabButton active={tab === 'sources'} onClick={() => setTab('sources')} icon={HardDrive} label="Sources" />
         <TabButton active={tab === 'cache'} onClick={() => setTab('cache')} icon={DownloadCloud} label="Cache" />
@@ -105,6 +107,7 @@ const AdminPage = () => {
         {tab === 'metrics' && <MetricsTab notify={notify} />}
         {tab === 'security' && <SecurityTab notify={notify} />}
         {tab === 'users' && <UsersTab notify={notify} />}
+        {tab === 'lumi' && <LumiTab notify={notify} />}
         {tab === 'invites' && <InvitesTab notify={notify} />}
         {tab === 'sources' && <SourcesTab notify={notify} />}
         {tab === 'cache' && <CacheTab notify={notify} />}
