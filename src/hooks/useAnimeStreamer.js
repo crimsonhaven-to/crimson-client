@@ -37,6 +37,7 @@ export function useAnimeStreamer(externalProps = {}) {
 
   // Multi-season support
   const [availableSeasons, setAvailableSeasons] = useState([]);
+  const [availableExtras, setAvailableExtras] = useState([]);
   const [seasonGroups, setSeasonGroups] = useState(null);
   const [currentSeasonAnilistId, setCurrentSeasonAnilistId] = useState(null);
 
@@ -98,6 +99,11 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
         if (data.success && data.seasons) {
             setAvailableSeasons(data.seasons);
+            // The specials/OVAs/films of the same show. Needed here (not just on
+            // the overview page) because a viewer can land on an extra's watch URL
+            // directly, and the discovery sources have to be told which item
+            // inside the show they are looking for. See extraTitle below.
+            setAvailableExtras(data.extras || []);
             let title = data.title;
             // If title is missing or "Unknown Anime", try to get it from first season's metadata
             if ((!title || title === "Unknown Anime") && data.seasons.length > 0) {
@@ -128,6 +134,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     setApiError(null);
     setAnimeMetadata(null);
     setAvailableSeasons([]);
+    setAvailableExtras([]);
     setStreamData(null);
 
     try {
@@ -353,6 +360,12 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     const seasonRec =
       availableSeasons.find((s) => s.anilist_id === anilistIdToUse) ||
       availableSeasons.find((s) => s.season_number === currentSeason);
+    // Watching an extra rather than a numbered season. The ctx deliberately keeps
+    // the *show's* titles (seasonRec fell back to a real season, so enrichMediaCtx
+    // still fetches the show's title bundle) because that is what finds the show
+    // on the target site, and carries the extra's own title separately, because
+    // that is what picks it out of the show's specials/films list once there.
+    const extraRec = availableExtras.find((x) => x.anilist_id === anilistIdToUse);
     const mediaCtx = {
       tmdbId: seasonRec?.tmdb_id,
       mediaType: 'tv',
@@ -360,6 +373,9 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       episode: currentEpisode,
       title: animeMetadata?.title || seasonGroups?.title || undefined,
       anilistId: anilistIdToUse,
+      extraTitle: extraRec
+        ? (extraRec.title_english || extraRec.title_romaji || null)
+        : null,
     };
 
     (async () => {

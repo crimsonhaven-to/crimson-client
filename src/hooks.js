@@ -32,3 +32,4 @@ export * from './hooks/local';
 export * from './hooks/liveTv';
 export * from './hooks/browse';
 export * from './hooks/misc';
+export * from './hooks/lumi';

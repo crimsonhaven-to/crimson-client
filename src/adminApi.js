@@ -75,6 +75,19 @@ export const adminApi = {
     }).then(_json),
   revokeUserSessions: (id) =>
     apiFetch(`/admin/users/${id}/revoke-sessions`, { method: 'POST' }).then(_json),
+  // Lumi's chatbot. Settings carries the operator config plus two environment
+  // facts the dashboard can't otherwise know: which provider API keys are present
+  // (presence only, never the values, which stay server-side) and whether the
+  // optional Anthropic SDK is installed in this build. Per-user chat grants are
+  // NOT here; they ride on updateUser alongside the admin flag.
+  chatSettings: () => apiFetch('/admin/chat/settings').then(_json),
+  updateChatSettings: (body) =>
+    apiFetch('/admin/chat/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }).then(_json),
+  chatUsage: (days = 30) => apiFetch(`/admin/chat/usage?days=${days}`).then(_json),
   listInvites: (params) => apiFetch(`/admin/invites?${_qs(params)}`).then(_json),
   createInvites: (body) =>
     apiFetch('/admin/invites', {
