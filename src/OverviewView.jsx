@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, Tag, History } from 'lucide-react';
 import { stripHtml } from './utils';
+import { extraTitle, groupExtras } from './overviewExtras';
 import { setOverviewActivity, clearActivity } from './discordPresence';
 import WatchlistButton from './WatchlistButton';
 
@@ -56,6 +57,27 @@ const EpisodeCard = ({ ep, onSelect }) => {
     </button>
   );
 };
+
+// One extra: its own title, what kind of thing it is, and the year it came out.
+const ExtraCard = ({ x, onSelect }) => (
+  <button
+    onClick={onSelect}
+    className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-crimson-900/40 bg-crimson-950/30 backdrop-blur-md hover:bg-crimson-900/20 hover:border-crimson-500/50 hover:shadow-[0_8px_20px_rgba(255,0,60,0.1)] transition-all group"
+  >
+    <div className="flex flex-col truncate">
+      <span className="text-sm font-black text-crimson-50 group-hover:text-crimson-400 transition-colors truncate">
+        {extraTitle(x)}
+      </span>
+      <span className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
+        <div className="w-1 h-1 rounded-full bg-crimson-500"></div>
+        {x.anime_type || 'Special'}{x.start_year ? ` • ${x.start_year}` : ''}
+      </span>
+    </div>
+    <div className="p-2 rounded-full bg-crimson-900/20 group-hover:bg-crimson-500 transition-colors">
+      <Play className="w-3.5 h-3.5 text-crimson-500 group-hover:text-white group-hover:fill-white transition-colors" />
+    </div>
+  </button>
+);
 
 // `notFoundText` lets the show page say "show" where the anime page says "anime".
 // `onPlayEpisode(season, episodeNumber)` and `onPlayExtra(extra)` are supplied by
@@ -126,6 +148,7 @@ const OverviewView = ({
 
   const seasons = overview.seasons || [];
   const extras = overview.extras || [];
+  const extraGroups = groupExtras(extras);
   const synopsis = stripHtml(overview.description) || overview.summary;
   const currentSeason = seasons.find(s => s.season_number === activeSeason);
 
@@ -384,28 +407,22 @@ const OverviewView = ({
               </h3>
               <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {extras.map((x) => (
-                <button
-                  key={x.anilist_id}
-                  onClick={() => onPlayExtra(x)}
-                  className="flex items-center justify-between gap-4 p-4 rounded-2xl border border-crimson-900/40 bg-crimson-950/30 backdrop-blur-md hover:bg-crimson-900/20 hover:border-crimson-500/50 hover:shadow-[0_8px_20px_rgba(255,0,60,0.1)] transition-all group"
-                >
-                  <div className="flex flex-col truncate">
-                    <span className="text-sm font-black text-crimson-50 group-hover:text-crimson-400 transition-colors truncate">
-                      {x.title_english || x.title_romaji || `Entry ${x.anilist_id}`}
-                    </span>
-                    <span className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
-                      <div className="w-1 h-1 rounded-full bg-crimson-500"></div>
-                      {x.anime_type || 'Special'}{x.start_year ? ` • ${x.start_year}` : ''}
-                    </span>
-                  </div>
-                  <div className="p-2 rounded-full bg-crimson-900/20 group-hover:bg-crimson-500 transition-colors">
-                    <Play className="w-3.5 h-3.5 text-crimson-500 group-hover:text-white group-hover:fill-white transition-colors" />
-                  </div>
-                </button>
-              ))}
-            </div>
+            {extraGroups.map((group) => (
+              <div key={group.key} className="space-y-3">
+                {/* The kind label is only worth its line when both kinds are
+                    present; with one group the section heading already says it. */}
+                {extraGroups.length > 1 && (
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-600">
+                    {group.label}
+                  </p>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {group.items.map((x) => (
+                    <ExtraCard key={x.anilist_id} x={x} onSelect={() => onPlayExtra(x)} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

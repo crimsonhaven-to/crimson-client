@@ -2,7 +2,7 @@
 // The anime surface is priority 1 and deliberately keeps its own inline NDJSON
 // reader (the show/movie streamers share ./ndjson instead). Lifted verbatim from
 // hooks.js.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../clientSources';
 import { apiFetch } from './apiClient';
@@ -247,6 +247,21 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
   // effect here re-fetched /info on every currentSeason change too, which simply
   // duplicated those requests — removed so each season switch hits /info once.
 
+  // The id whose sources are being resolved: a numbered season's own AniList id
+  // when one is selected, otherwise whatever the URL asked for (which is how an
+  // extra keeps its own id — extras have no season to be selected by).
+  const watchedAnilistId = currentSeasonAnilistId || selectedAnilistId;
+
+  // The extra (special / OVA / film) currently on screen, or null for a numbered
+  // episode. An extra's AniList id is its own and never one of the show's season
+  // ids, so matching it against the extras list is what identifies it. Exposed
+  // because the watch page has to name what it is playing: without this it shows
+  // the parent show's season/episode, which for a special is simply wrong.
+  const currentExtra = useMemo(
+    () => availableExtras.find((x) => x.anilist_id === watchedAnilistId) || null,
+    [availableExtras, watchedAnilistId],
+  );
+
   // ---------- Stream sources progressively (NDJSON) when anilistId + episode changes ----------
   // The backend now streams one JSON object per line: a `meta` line first, then a
   // `stream` line the instant each scraper resolves, then a final `done` line.
@@ -365,7 +380,7 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     // still fetches the show's title bundle) because that is what finds the show
     // on the target site, and carries the extra's own title separately, because
     // that is what picks it out of the show's specials/films list once there.
-    const extraRec = availableExtras.find((x) => x.anilist_id === anilistIdToUse);
+    const extraRec = currentExtra;
     const mediaCtx = {
       tmdbId: seasonRec?.tmdb_id,
       mediaType: 'tv',
@@ -405,6 +420,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     // data
     animeMetadata, streamData, streamLoading,
     availableSeasons, seasonGroups,
+    // The show's specials/OVAs/films, and which of them (if any) is playing.
+    availableExtras, currentExtra,
     unaired,
 
     // actions

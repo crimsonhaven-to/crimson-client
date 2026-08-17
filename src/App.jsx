@@ -500,7 +500,7 @@ function WatchPage() {
   const {
     animeMetadata, streamData,
     streamLoading, unaired,
-    availableSeasons, seasonGroups,
+    availableSeasons, seasonGroups, currentExtra,
     currentSeason, setCurrentSeason,
     currentEpisode, setCurrentEpisode,
     activeStreamIdx, setActiveStreamIdx,
@@ -547,7 +547,15 @@ function WatchPage() {
   // advanced (source switches keep their place), else the saved resume position.
   const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
   
-  useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
+  // What is actually on screen. Watching an extra (a special, OVA or film of the
+  // show) still loads the parent season's metadata for its art and synopsis, so
+  // the title has to come from the extra itself or the page would claim to be
+  // playing the show's first season.
+  const watchTitle = currentExtra
+    ? (currentExtra.title_english || currentExtra.title_romaji || seasonGroups?.title)
+    : (seasonGroups?.title || animeMetadata?.title);
+
+  useTitle(watchTitle ? `Watch ${watchTitle}` : 'Streaming Manifestation');
 
   const watchlistItem = { ...animeMetadata, anilist_id: parseInt(anilistId) };
 
@@ -573,7 +581,11 @@ function WatchPage() {
         anilist_id: parseInt(anilistId),
         season_number: parseInt(currentSeason),
         episode_number: parseInt(currentEpisode),
-        title: animeMetadata.title,
+        // The extra's own name when one is playing, so "continue watching" says
+        // "Overlord: The Undead King" rather than the parent show's season title.
+        // The row is keyed by the extra's AniList id, so it never collides with
+        // the show's real episodes.
+        title: watchTitle || animeMetadata.title,
         poster: animeMetadata.poster,
         position_seconds: Math.round(position),
         duration_seconds: Math.round(duration),
@@ -587,7 +599,7 @@ function WatchPage() {
       clearInterval(progressTimerRef.current);
       save();
     };
-  }, [anilistId, currentSeason, currentEpisode, animeMetadata, isAuthenticated, updateProgress]);
+  }, [anilistId, currentSeason, currentEpisode, animeMetadata, watchTitle, isAuthenticated, updateProgress]);
 
   const handleSeasonChange = (newSeason) => {
     setCurrentSeason(newSeason);
@@ -620,7 +632,8 @@ function WatchPage() {
       playerStartAt={playerStartAt}
       onPlayerProgress={handlePlayerProgress}
       metadata={animeMetadata}
-      displayTitle={seasonGroups?.title || animeMetadata?.title}
+      displayTitle={watchTitle}
+      isExtra={Boolean(currentExtra)}
       totalSeasons={seasonGroups?.totalSeasons}
       currentSeason={currentSeason}
       currentEpisode={currentEpisode}
