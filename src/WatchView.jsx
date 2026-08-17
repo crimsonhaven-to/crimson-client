@@ -193,7 +193,18 @@ const WatchView = ({
   // Movie mode (additive): hide the season/episode stat boxes + selectors and
   // drop the SxEx from the download name. TV/anime render unchanged (default false).
   isMovie = false,
+  // Extra mode (additive): a special / OVA / film of a show. It is a single
+  // self-contained item exactly like a movie — it has no season and no episode of
+  // its own — but it still belongs to its parent show, so it keeps the anime back
+  // link and the anime metadata around it. Default false, so every existing
+  // caller renders byte-identically.
+  isExtra = false,
 }) => {
+  // Everything that is "one feature, no episodes to browse" — movies and extras
+  // alike. Kept separate from `isMovie` because a few things stay movie-only (the
+  // OpenSubtitles lookup is keyed by media type, and an extra's parent id is a TV
+  // one), and because the two read very differently in the UI copy.
+  const singleItem = isMovie || isExtra;
   // Memoized so its identity is stable across renders — it feeds a useEffect dep
   // array (the picker's season seed), which would otherwise re-run every render.
   const episodesList = useMemo(() => metadata?.episodes_list || [], [metadata]);
@@ -206,7 +217,7 @@ const WatchView = ({
   // to drive the player's opt-in "play next when this ends" feature. Movies and a
   // missing/last episode leave this null, so the player simply won't offer it.
   const currentEpisodeIdx = episodesList.findIndex(e => e.episode_number === currentEpisode);
-  const nextEpisodeData = !isMovie && currentEpisodeIdx >= 0 ? episodesList[currentEpisodeIdx + 1] : null;
+  const nextEpisodeData = !singleItem && currentEpisodeIdx >= 0 ? episodesList[currentEpisodeIdx + 1] : null;
   const goToNextEpisode = useCallback(() => {
     if (nextEpisodeData) onEpisodeChange(nextEpisodeData.episode_number);
   }, [nextEpisodeData, onEpisodeChange]);
@@ -215,7 +226,10 @@ const WatchView = ({
         ? `E${nextEpisodeData.episode_number} · ${nextEpisodeData.title}`
         : `Episode ${nextEpisodeData.episode_number}`)
     : '';
-  const episodeDescription = currentEpisodeData?.overview
+  // A single item has no episode of its own, but `metadata` is still the parent
+  // season's (that is where its poster and synopsis come from), so the per-episode
+  // overview would describe episode 1 of the show — never the extra. Skip it.
+  const episodeDescription = (!singleItem && currentEpisodeData?.overview)
     || metadata?.summary
     || stripHtml(metadata?.description)
     || 'No summary asset provided.';
@@ -307,7 +321,7 @@ const WatchView = ({
 
   // Lazily resolve the expanded season's episodes the first time it's opened.
   useEffect(() => {
-    if (isMovie || pickerSeason == null || seasonEpisodes[pickerSeason]) return undefined;
+    if (singleItem || pickerSeason == null || seasonEpisodes[pickerSeason]) return undefined;
     const season = availableSeasons.find((s) => s.season_number === pickerSeason);
     if (!season?.tmdb_id) return undefined;
     let cancelled = false;
@@ -322,7 +336,7 @@ const WatchView = ({
       .catch(() => { /* best-effort — the panel shows an empty state on failure */ })
       .finally(() => { if (!cancelled) setPickerLoading(false); });
     return () => { cancelled = true; };
-  }, [isMovie, pickerSeason, availableSeasons, seasonEpisodes]);
+  }, [singleItem, pickerSeason, availableSeasons, seasonEpisodes]);
 
   // Jump to an episode from the picker: stay in-season via onEpisodeChange, or
   // hop seasons via onSelectEpisode when the wrapper provides it (falls back to
@@ -333,9 +347,9 @@ const WatchView = ({
     else onEpisodeChange?.(episodeNumber);
   }, [currentSeason, onEpisodeChange, onSelectEpisode]);
 
-  // The bundle handed to the player. Null for movies (single feature) and when
-  // there's nothing to browse, so the player simply won't render the button.
-  const episodePicker = !isMovie && (availableSeasons.length > 0 || episodesList.length > 0)
+  // The bundle handed to the player. Null for a single feature (movie or extra)
+  // and when there's nothing to browse, so the player simply won't render the button.
+  const episodePicker = !singleItem && (availableSeasons.length > 0 || episodesList.length > 0)
     ? {
         seasons: availableSeasons,
         currentSeason,
@@ -427,7 +441,10 @@ const WatchView = ({
 
   useEffect(() => {
     setOpenSubs([]);
-    if (!tmdbId || !subLangs.length) return undefined;
+    // Extras are skipped: `tmdbId` here is the *parent show's*, and the extra has
+    // no season/episode under it, so any lookup would return the wrong episode's
+    // subtitles rather than none.
+    if (!tmdbId || !subLangs.length || isExtra) return undefined;
     let cancelled = false;
     fetchSubtitles({
       tmdbId,
@@ -439,7 +456,7 @@ const WatchView = ({
     return () => { cancelled = true; };
     // subLangKey stands in for the array identity so we don't refetch each render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tmdbId, tmdbSeason, currentEpisode, isMovie, subLangKey]);
+  }, [tmdbId, tmdbSeason, currentEpisode, isMovie, isExtra, subLangKey]);
 
   // AniSkip intro/outro timestamps (additive, anime-only). Keyed off the AniList id
   // /info resolved, so non-anime shows (no `anilist_id`) and movies simply skip the
@@ -468,12 +485,12 @@ const WatchView = ({
   // Round so sub-second `timeupdate` jitter doesn't re-fire the fetch.
   const roundedDuration = Math.round(playerDuration) || 0;
   useEffect(() => {
-    if (isMovie || !anilistId || !currentEpisode) return undefined;
+    if (singleItem || !anilistId || !currentEpisode) return undefined;
     let cancelled = false;
     fetchSkipTimes({ anilistId, episode: currentEpisode, episodeLength: roundedDuration })
       .then((st) => { if (!cancelled) setSkipTimes(st); });
     return () => { cancelled = true; };
-  }, [anilistId, currentEpisode, isMovie, roundedDuration]);
+  }, [anilistId, currentEpisode, singleItem, roundedDuration]);
 
   // Merge source-supplied tracks with the OpenSubtitles ones, de-duping by URL so a
   // source that already provides a language doesn't double up.
@@ -491,14 +508,16 @@ const WatchView = ({
     if (!displayTitle) return undefined;
     setWatchActivity({
       title: displayTitle,
-      isMovie,
+      // An extra announces itself like a movie: one title, no "S1 E4" line, which
+      // is what it actually is. Its own name is already in `displayTitle`.
+      isMovie: singleItem,
       season: currentSeason,
       episode: currentEpisode,
       totalSeasons,
       startedAt: Date.now(),
     });
     return () => clearWatchActivity();
-  }, [displayTitle, isMovie, currentSeason, currentEpisode, totalSeasons]);
+  }, [displayTitle, singleItem, currentSeason, currentEpisode, totalSeasons]);
 
   // Server-side cache trigger: once the viewer has watched the *active* source for
   // CACHE_CONFIRM_SECONDS, redeem its signed cacheTicket exactly once so the
@@ -529,7 +548,7 @@ const WatchView = ({
   // Filename for the in-player Download button, e.g.
   // "Frieren - S1E04 - The Land Where Souls Rest". Season is only stamped when
   // the title actually has more than one.
-  const downloadName = isMovie
+  const downloadName = singleItem
     ? (displayTitle || 'video')
     : [
         displayTitle || 'video',
@@ -623,7 +642,7 @@ const WatchView = ({
                   // its resume-seek can run.
                   startAt={streamLoading ? 0 : playerStartAt}
                   onProgress={handlePlayerProgress}
-                  onNext={isMovie ? undefined : goToNextEpisode}
+                  onNext={singleItem ? undefined : goToNextEpisode}
                   hasNext={!!nextEpisodeData}
                   nextLabel={nextEpisodeLabel}
                   skipTimes={skipTimes}
@@ -666,11 +685,11 @@ const WatchView = ({
               <div className="space-y-2">
                 <h1 className="text-3xl sm:text-5xl font-black tracking-tighter text-crimson-50 leading-[1.1]">
                   {displayTitle || 'Unknown Cluster'}
-                  {totalSeasons > 1 && (
+                  {!singleItem && totalSeasons > 1 && (
                     <span className="text-xl text-crimson-500 ml-3 opacity-80">S{currentSeason}</span>
                   )}
                 </h1>
-                {episodeTitle && (
+                {!singleItem && episodeTitle && (
                   <p className="text-base sm:text-xl font-bold text-crimson-400 tracking-tight leading-snug">
                     <span className="text-crimson-600 font-black uppercase text-sm mr-2 opacity-60">E{currentEpisode}</span> {episodeTitle}
                   </p>
@@ -680,7 +699,7 @@ const WatchView = ({
                 {episodeDescription}
               </p>
             </div>
-            {!isMovie && (
+            {!singleItem && (
               <div className="flex gap-3 w-full sm:w-auto">
                 <div className="flex-1 sm:flex-none bg-crimson-950/80 border border-crimson-900/60 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
                   <p className="text-[10px] uppercase text-crimson-500 font-black tracking-[0.3em] mb-1">SN</p>
@@ -695,12 +714,13 @@ const WatchView = ({
           </div>
         </div>
 
-        {/* Season & Episode picker (hidden for movies — single feature). Browse
+        {/* Season & Episode picker (hidden for a single feature — a movie, or a
+            special/OVA/film of a show). Browse
             any season's episodes in-place — TMDB stills, names, air dates and
             summaries — mirroring the in-player overlay, so both read as one
             system. Season chips BROWSE (not navigate); the episode card is what
             commits, jumping across seasons in a single hop when needed. */}
-        {!isMovie && episodePicker && (
+        {!singleItem && episodePicker && (
         <div className="space-y-6">
           {episodePicker.seasons.length > 1 && (
             <div className="p-4 sm:p-5 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl flex items-center gap-4 overflow-x-auto no-scrollbar backdrop-blur-sm">
