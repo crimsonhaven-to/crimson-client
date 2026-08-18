@@ -1,7 +1,7 @@
 # Docker Swarm stack for the Crimsonhaven client.
 #
 # Deployed by CI (.github/workflows/build-image.yml) on a published release via
-#   CRIMSON_IMAGE=ghcr.io/crimsonhaven-to/crimson-client:<tag> \
+#   CRIMSON_IMAGE=registry.ramon.moe/crimsonhaven-to/crimson-client:<tag> \
 #   docker stack deploy --with-registry-auth -c docker-stack.yml crimson-client
 # (the image is PRIVATE; --with-registry-auth ships the manager's GHCR read
 # login to every node). The stack name MUST stay 'crimson-client'.
@@ -14,7 +14,7 @@ version: "3.8"
 
 services:
   frontend:
-    image: ${CRIMSON_IMAGE:-ghcr.io/crimsonhaven-to/crimson-client:latest}
+    image: ${CRIMSON_IMAGE:-registry.ramon.moe/crimsonhaven-to/crimson-client:latest}
     ports:
       # Ingress (routing mesh) => built-in L4 load balancing across replicas.
       # Published port MUST match what the TLS reverse proxy forwards to (8800).

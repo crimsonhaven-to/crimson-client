@@ -1,0 +1,284 @@
+# GitLab CI/CD — translated from .github/workflows/build-image.yml and
+# pages-demo.yml, both left in place so the project still builds on GitHub.
+#
+# Build the Vite frontend, bake it into an nginx image, push it to the PRIVATE
+# GitLab Container Registry, then roll it out to the Docker Swarm.
+#
+#   * push to `dev`   -> build + push registry.ramon.moe/.../crimson-client:dev
+#                        with VITE_API_BASE_URL = https://dev-backend...
+#                        and roll the crimson-client-dev stack.
+#   * a v* tag        -> build + push :<tag> and :latest with
+#                        VITE_API_BASE_URL = https://backend... then deploy
+#                        that immutable :<tag> to the swarm (zero-downtime,
+#                        health-gated, auto-rollback).
+#
+# The private sources engine is fetched best-effort at the freshest branch tip
+# per channel (build-time only; nothing is committed back):
+#   * push to `dev`         -> sources@dev.
+#   * a v* tag              -> sources@main.
+#   * CHANNEL=prod run      -> sources@main (see the channel note below).
+# The companion extension is NOT baked in: it ships on the Chrome Web Store and
+# the /extension page links straight to that listing.
+#
+# Which repo to fetch is ENV-DRIVEN (not hardcoded): set the CI/CD variable
+# CRIMSON_SOURCES_REPO (e.g. crimsonhaven-to/crimson-sources). If it is unset or
+# unreachable, the build STILL succeeds with no client-side sources (Vite swaps in
+# the built-in stub) — so anyone without access can deploy. The clone uses
+# CI_JOB_TOKEN, which needs this project added to crimson-sources' job token
+# allowlist (Settings > CI/CD > Job token permissions on crimson-sources).
+#
+# IMPORTANT: VITE_API_BASE_URL is baked in at BUILD time (Vite), so dev and
+# release builds point at different backends. The image is PRIVATE; swarm nodes
+# pull it with the durable read_registry deploy token configured on the managers,
+# shipped by `docker stack deploy --with-registry-auth`.
+#
+# Runner: `crimsonrunner`, the base-OS shell runner on server10 (Docker + buildx +
+# passwordless SSH to the managers), the same one crimson-backend uses. The gate and
+# the Pages demo run on the containerised `docker` runner.
+#
+# Channel: GitHub used a workflow_dispatch `channel` input. The GitLab equivalent is
+# a pipeline variable CHANNEL, set when running the pipeline manually or by the
+# multi-project trigger in crimson-sources:
+#   * CHANNEL=dev (default): builds :dev-<sha> from sources@dev and rolls the dev stack.
+#   * CHANNEL=prod         : builds :main-<sha> from sources@main and rolls the prod
+#                            swarm (auto-deploy), same target as a v* tag.
+
+stages:
+  - gate
+  - build
+  - deploy
+  - pages
+
+variables:
+  IMAGE: $CI_REGISTRY_IMAGE
+  SWARM_MANAGER: raymond@crimsonswarm01
+  CHANNEL:
+    value: "dev"
+    description: "Target channel: dev rolls the dev stack (sources@dev); prod builds sources@main and auto-deploys to the prod swarm."
+
+default:
+  interruptible: false
+
+# --- when things run ---------------------------------------------------------
+.prod_trigger:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+    - if: ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline") && $CHANNEL == "prod"
+
+.dev_trigger:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline") && $CHANNEL != "prod"
+
+.any_trigger:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline"
+
+# Quality gate — MUST pass before the image is built/deployed. ESLint over the
+# app source (vendored sources are excluded — they're linted in their own repo)
+# plus the Vitest unit suite (pure logic: the stream ranker, playback-pref
+# sanitiser, error extraction — jsdom, no browser). No sources checkout needed,
+# so it's fast. Runs in a clean node:24-slim container.
+#
+# The GitHub version ended with a chmod that handed the shared self-hosted
+# workspace back to the host user; on GitLab this is an ordinary containerised job
+# with its own workspace, so that step is gone.
+gate:
+  extends: .any_trigger
+  stage: gate
+  tags: [docker]
+  image: node:24-slim
+  script:
+    - npm ci
+    - echo "Lint (eslint)"
+    - npm run lint
+    - echo "Unit tests (vitest)"
+    - npm test
+
+build:
+  extends: .any_trigger
+  stage: build
+  tags: [crimsonrunner]
+  needs: [gate]
+  resource_group: crimson-client-$CI_COMMIT_REF_NAME
+  variables:
+    # Which repo holds the client-side sources engine. Override with a CI/CD
+    # variable; empty / unreachable => build with NO sources: vite.config.js swaps
+    # in src/sourcesStub.js and the client plays via the backend only.
+    CRIMSON_SOURCES_REPO: "crimsonhaven-to/crimson-sources"
+  before_script:
+    - docker buildx inspect crimson >/dev/null 2>&1 || docker buildx create --name crimson --driver docker-container
+    - docker buildx use crimson
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+  script:
+    - |
+      set -u
+      # Prod ships on a v* tag OR an explicit CHANNEL=prod run; everything else
+      # (dev push, default manual run, sources-driven dev trigger) is the dev channel.
+      if [ -n "${CI_COMMIT_TAG:-}" ] || [ "${CHANNEL:-dev}" = "prod" ]; then
+        BUILD_CHANNEL=prod
+        SOURCES_BRANCH=main
+      else
+        BUILD_CHANNEL=dev
+        SOURCES_BRANCH=dev
+      fi
+      echo "channel=${BUILD_CHANNEL} sources=${SOURCES_BRANCH}"
+
+      # Clone <repo>@<branch> into <dest>, best-effort. Any failure (repo unset, no
+      # access, branch missing) leaves an EMPTY <dest> and never fails the job —
+      # that's the whole point of the safeguard.
+      fetch() {  # <repo slug or empty> <branch> <dest>
+        repo="$1"; branch="$2"; dest="$3"
+        rm -rf "$dest"
+        if [ -z "$repo" ]; then
+          mkdir -p "$dest"
+          echo "no repo configured for ${dest} — building without it"
+          return 0
+        fi
+        url="https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${repo}.git"
+        echo "Fetching ${repo}@${branch} -> ${dest}"
+        if git clone --depth 1 --branch "$branch" "$url" "$dest"; then
+          ok=1
+        else
+          rm -rf "$dest"
+          if git clone --depth 1 "$url" "$dest"; then ok=1; else ok=0; fi
+        fi
+        if [ "$ok" = 1 ]; then
+          rm -rf "$dest/.git"
+          echo "${repo} bundled"
+        else
+          rm -rf "$dest"; mkdir -p "$dest"
+          echo "could not fetch ${repo} (no access / not found) — building without it"
+        fi
+      }
+      fetch "${CRIMSON_SOURCES_REPO:-}" "$SOURCES_BRANCH" vendor/crimson-sources
+
+      if [ "$BUILD_CHANNEL" = "prod" ]; then
+        if [ -n "${CI_COMMIT_TAG:-}" ]; then
+          # Immutable, human-chosen version tag straight off the tag.
+          VER="$CI_COMMIT_TAG"
+          if ! printf '%s' "$VER" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+            echo "Refusing to build/deploy an unsafe release tag: '$VER'" >&2
+            exit 1
+          fi
+        else
+          # Sources-driven / manual prod rebuild: no tag exists, so mint an
+          # immutable per-commit tag off the client's main HEAD to deploy.
+          VER="main-$(git rev-parse --short HEAD)"
+        fi
+        TAGS="--tag ${IMAGE}:${VER} --tag ${IMAGE}:latest"
+        API_URL="https://backend.crimsonhaven.to"
+        SITE_URL="https://crimsonhaven.to"
+        {
+          echo "VERSION=${VER}"
+          echo "DEPLOY=true"
+          echo "BUILD_CHANNEL=prod"
+          echo "IMAGE_TAG=${VER}"
+        } >> build.env
+      else
+        SHORT_SHA="$(git rev-parse --short HEAD)"
+        TAGS="--tag ${IMAGE}:dev --tag ${IMAGE}:dev-${SHORT_SHA}"
+        API_URL="https://dev-backend.crimsonhaven.to"
+        SITE_URL="https://dev.crimsonhaven.to"
+        {
+          echo "VERSION="
+          echo "DEPLOY=false"
+          echo "BUILD_CHANNEL=dev"
+          # Deploy the immutable per-commit tag, not the rolling :dev, so the
+          # dev stack always rolls to exactly this build.
+          echo "IMAGE_TAG=dev-${SHORT_SHA}"
+        } >> build.env
+      fi
+
+      docker buildx build \
+        --push \
+        $TAGS \
+        --build-arg "VITE_API_BASE_URL=${API_URL}" \
+        --build-arg "VITE_SITE_URL=${SITE_URL}" \
+        --build-arg "VITE_HOSTED_IN=${HOSTED_IN:-}" \
+        --build-arg "VITE_DMCA_MAIL=${DMCA_MAIL:-}" \
+        --cache-from "type=registry,ref=${IMAGE}:buildcache" \
+        --cache-to "type=registry,ref=${IMAGE}:buildcache,mode=max" \
+        .
+  artifacts:
+    reports:
+      dotenv: build.env
+
+# Prod rollout — a v* tag (immutable vX.Y.Z) OR a CHANNEL=prod run (immutable
+# main-<sha>, fired by crimson-sources on a dev -> main merge). Both roll the prod
+# swarm the same way.
+deploy:
+  extends: .prod_trigger
+  stage: deploy
+  tags: [crimsonrunner]
+  needs: [build]
+  resource_group: crimson-client-prod
+  environment:
+    name: production
+    url: https://crimsonhaven.to
+  script:
+    - echo "Ship stack file to the manager"
+    - scp -o BatchMode=yes -o StrictHostKeyChecking=accept-new docker-stack.yml "${SWARM_MANAGER}:/home/raymond/crimson-client-deploy/docker-stack.yml"
+    - echo "Deploy to the swarm"
+    # Via a variable, not inline interpolation, so the value is never spliced into
+    # the runner's command line (it is validated to a safe charset upstream).
+    - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/crimson-client-deploy/deploy.sh '${VERSION}'"
+
+# Dev auto-deploy: a push to `dev` rolls the just-built dev-<sha> frontend onto
+# the crimson-client-dev stack. The dev docker-stack.yml lives on the manager
+# (~/dev-crimson-client-deploy/), so CI just triggers its deploy.sh.
+deploy-dev:
+  extends: .dev_trigger
+  stage: deploy
+  tags: [crimsonrunner]
+  needs: [build]
+  resource_group: crimson-client-dev
+  environment:
+    name: dev
+    url: https://dev.crimsonhaven.to
+  script:
+    - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/dev-crimson-client-deploy/deploy.sh '${IMAGE_TAG}'"
+
+# ------------------------------------------------------------ pages-demo.yml ----
+# Publishes a SOURCELESS demo of the client to GitLab Pages at demo.crimsonhaven.to
+# (the custom domain is registered on this project under Settings > Pages).
+#
+#   * a v* tag                   -> build + deploy (tracks stable, like prod).
+#   * a manual run from the UI   -> rebuild on demand.
+#
+# Deliberately CLEAN, to mirror the demo backend:
+#   * crimson-sources is NOT vendored (it's private), so vite.config.js swaps in the
+#     no-op stub (src/sourcesStub.js) — the demo resolves NOTHING client-side. The
+#     demo backend has no sources either, so the demo shows the UI + account UX only,
+#     never a stream (by design — no streams = nothing to host).
+#   * the companion extension ships on the Chrome Web Store, so nothing is baked in
+#     here — the /extension page just links to that listing.
+#   * VITE_API_BASE_URL is baked to the demo backend at build time.
+pages:
+  stage: pages
+  tags: [docker]
+  image: node:24
+  needs: []
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v/
+    - if: $CI_PIPELINE_SOURCE == "web"
+  resource_group: pages-demo
+  variables:
+    # Baked in by Vite at build time (see hooks.js API_BASE_URL).
+    VITE_API_BASE_URL: https://demo-backend.crimsonhaven.to
+    # Origin for the social-embed (Open Graph) URLs — the demo domain, not prod
+    # (see vite.config.js SITE_URL).
+    VITE_SITE_URL: https://demo.crimsonhaven.to
+  script:
+    # No sources fetch on purpose — a sourceless demo build.
+    - npm ci
+    - npm run build
+    # GitLab Pages has no SPA rewrite either; serving index.html as 404.html makes
+    # deep links (/watch/...) resolve to the app instead of a 404.
+    - cp dist/index.html dist/404.html
+    - rm -rf public && mv dist public
+  artifacts:
+    paths:
+      - public
