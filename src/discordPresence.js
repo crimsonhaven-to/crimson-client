@@ -31,7 +31,7 @@ const SMALL_TEXT = 'Luminas Crimsonveil ( ^ . ^ )';
 // every state, so it's defined once and shared by buildActivity.
 const BUTTONS = [
   { label: 'Discord', url: 'https://discord.gg/6an7E8aKGj' },
-  { label: 'GitHub', url: 'https://github.com/crimsonhaven-to' },
+  { label: 'GitLab', url: 'https://gitlab.ramon.moe/crimsonhaven-to' },
 ];
 
 // Discord's local RPC server binds the first free port in this range; the client

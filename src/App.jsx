@@ -638,7 +638,7 @@ function WatchPage() {
 
 // ---------- About Page Component ----------
 const SOCIAL_LINKS = [
-  { label: 'GitHub', href: 'https://github.com/crimsonhaven-to', icon: <GithubIcon /> },
+  { label: 'GitLab', href: 'https://gitlab.ramon.moe/crimsonhaven-to', icon: <GithubIcon /> },
   { label: 'Reddit', href: 'https://www.reddit.com/r/crimsonhaven/', icon: <RedditIcon /> },
   { label: 'Discord', href: 'https://discord.gg/6an7E8aKGj', icon: <DiscordIcon /> },
   { label: 'Instagram', href: 'https://www.instagram.com/crimsonhaven.to/', icon: <InstagramIcon /> },
