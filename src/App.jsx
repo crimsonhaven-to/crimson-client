@@ -11,6 +11,9 @@ import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
 import WatchView from './WatchView';
+// Lumi's chat drawer. Eager, but it self-suppresses: it renders nothing until
+// /chat/status says this account has been granted access, which is deny-by-default.
+import Lumi from './Lumi';
 import NotFound from './NotFound';
 // Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
 // in the main bundle avoids a chunk round-trip on the critical path.
@@ -635,7 +638,7 @@ function WatchPage() {
 
 // ---------- About Page Component ----------
 const SOCIAL_LINKS = [
-  { label: 'GitHub', href: 'https://github.com/crimsonhaven-to', icon: <GithubIcon /> },
+  { label: 'GitLab', href: 'https://gitlab.ramon.moe/crimsonhaven-to', icon: <GithubIcon /> },
   { label: 'Reddit', href: 'https://www.reddit.com/r/crimsonhaven/', icon: <RedditIcon /> },
   { label: 'Discord', href: 'https://discord.gg/6an7E8aKGj', icon: <DiscordIcon /> },
   { label: 'Instagram', href: 'https://www.instagram.com/crimsonhaven.to/', icon: <InstagramIcon /> },
@@ -1124,6 +1127,11 @@ function App() {
         </Routes>
         </Suspense>
       </div>
+
+      {/* Lumi's chat drawer. Mounted once here rather than per page so she is
+          reachable from anywhere; it hides itself on the watch routes, where the
+          player owns the corner the summon button would occupy. */}
+      <Lumi />
 
       {/* Footer */}
       <footer className="w-full border-t border-crimson-900/40 bg-crimson-950/90 backdrop-blur-md py-12 px-6 z-10 relative">

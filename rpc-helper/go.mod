@@ -1,4 +1,4 @@
-module github.com/crimsonhaven-to/crimson-client/rpc-helper
+module gitlab.ramon.moe/crimsonhaven-to/crimson-client/rpc-helper
 
 go 1.26
 

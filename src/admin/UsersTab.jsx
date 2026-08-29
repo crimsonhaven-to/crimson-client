@@ -1,8 +1,9 @@
-// Admin › Users tab — member search + per-user actions (grant/revoke admin, mark
-// verified, revoke sessions, delete), plus the E-Mail sender (broadcast a
-// plaintext message to every member who signed up with an email address).
+// Admin › Users tab. Member search plus per-user actions (grant/revoke admin,
+// grant/revoke Lumi chat access, mark verified, revoke sessions, delete), plus
+// the E-Mail sender (broadcast a plaintext message to every member who signed up
+// with an email address).
 import { useCallback, useEffect, useState } from 'react';
-import { LogOut, Mail, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
+import { Bot, BotOff, LogOut, Mail, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 
 import { useProfile } from '../hooks';
 import { adminApi } from '../adminApi';
@@ -204,6 +205,7 @@ export default function UsersTab({ notify }) {
                       ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Verified</span>
                       : u.email ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-500">Unverified</span> : null}
                     {u.has_mnemonic && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/30 border border-crimson-800/50 text-crimson-400">Mnemonic</span>}
+                    {u.chat_enabled && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-500/30 text-violet-300">Lumi</span>}
                   </div>
                   <p className="text-[10px] font-bold text-crimson-700 mt-1.5 tracking-wide">
                     #{u.user_id} · {u.favorites_count} favs · {u.progress_count} watched · {u.sessions_count} session{u.sessions_count === 1 ? '' : 's'} · joined {fmtDate(u.created_at)}
@@ -217,6 +219,18 @@ export default function UsersTab({ notify }) {
                     className="p-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 text-amber-400 hover:border-amber-500/50 hover:bg-amber-500/10 transition-all disabled:opacity-40"
                   >
                     {u.is_admin ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
+                  </button>
+                  {/* Chat access is a spending grant, so it gets its own explicit
+                      toggle rather than riding along with anything else. It is
+                      deny-by-default server-side; this is the only way to turn it
+                      on for someone. */}
+                  <button
+                    title={u.chat_enabled ? 'Revoke Lumi chat access' : 'Grant Lumi chat access'}
+                    disabled={busyId === u.user_id}
+                    onClick={() => act(u.user_id, () => adminApi.updateUser(u.user_id, { chat_enabled: !u.chat_enabled }), u.chat_enabled ? 'Lumi access revoked' : 'Lumi access granted')}
+                    className="p-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 text-violet-300 hover:border-violet-500/50 hover:bg-violet-500/10 transition-all disabled:opacity-40"
+                  >
+                    {u.chat_enabled ? <BotOff className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </button>
                   {u.email && !u.email_verified && (
                     <button
