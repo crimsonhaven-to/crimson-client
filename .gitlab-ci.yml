@@ -246,7 +246,7 @@ deploy-dev:
     - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/dev-crimson-client-deploy/deploy.sh '${IMAGE_TAG}'"
 
 # ------------------------------------------------------------ pages-demo.yml ----
-# Publishes a SOURCELESS demo of the client to GitLab Pages at demo.crimsonhaven.to
+# Publishes a SOURCELESS demo of the client to GitLab Pages at demo.crimsonhaven.org
 # (the custom domain is registered on this project under Settings > Pages).
 #
 #   * a v* tag                   -> build + deploy (tracks stable, like prod).
@@ -274,7 +274,7 @@ pages:
     VITE_API_BASE_URL: https://demo-backend.crimsonhaven.to
     # Origin for the social-embed (Open Graph) URLs — the demo domain, not prod
     # (see vite.config.js SITE_URL).
-    VITE_SITE_URL: https://demo.crimsonhaven.to
+    VITE_SITE_URL: https://demo.crimsonhaven.org
   script:
     # No sources fetch on purpose — a sourceless demo build.
     - npm ci

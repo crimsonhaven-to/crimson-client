@@ -1,6 +1,6 @@
 name: Deploy demo to GitHub Pages
 
-# Publishes a SOURCELESS demo of the client to GitHub Pages at demo.crimsonhaven.to.
+# Publishes a SOURCELESS demo of the client to GitHub Pages at demo.crimsonhaven.org.
 #
 #   * a published Release        -> build + deploy (tracks stable, like prod).
 #   * manual (workflow_dispatch)  -> rebuild on demand.
@@ -17,7 +17,7 @@ name: Deploy demo to GitHub Pages
 # Runs on GitHub-hosted runners (no swarm / self-hosted runner needed). Requires the
 # repo to be PUBLIC (or the org on a plan that allows private-repo Pages) and Pages
 # set to the "GitHub Actions" source in repo Settings. The custom domain is carried by
-# the CNAME file written below (demo.crimsonhaven.to).
+# the CNAME file written below (demo.crimsonhaven.org).
 
 on:
   release:
@@ -57,7 +57,7 @@ jobs:
           VITE_API_BASE_URL: https://demo-backend.crimsonhaven.to
           # Origin for the social-embed (Open Graph) URLs — this is the demo domain,
           # not prod (see vite.config.js SITE_URL).
-          VITE_SITE_URL: https://demo.crimsonhaven.to
+          VITE_SITE_URL: https://demo.crimsonhaven.org
         run: npm run build
 
       - name: SPA fallback + custom domain
@@ -66,7 +66,7 @@ jobs:
           # deep links (/watch/...) resolve to the app instead of a 404.
           cp dist/index.html dist/404.html
           # Custom domain — GitHub reads this from the published artifact.
-          echo 'demo.crimsonhaven.to' > dist/CNAME
+          echo 'demo.crimsonhaven.org' > dist/CNAME
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
