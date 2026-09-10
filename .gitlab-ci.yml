@@ -1,10 +1,9 @@
-# GitLab CI/CD — translated from .github/workflows/build-image.yml and
-# pages-demo.yml, both left in place so the project still builds on GitHub.
+# GitLab CI/CD for crimson-client.
 #
 # Build the Vite frontend, bake it into an nginx image, push it to the PRIVATE
 # GitLab Container Registry, then roll it out to the Docker Swarm.
 #
-#   * push to `dev`   -> build + push registry.ramon.moe/.../crimson-client:dev
+#   * push to `main`  -> build + push registry.ramon.moe/.../crimson-client:dev
 #                        with VITE_API_BASE_URL = https://dev-backend...
 #                        and roll the crimson-client-dev stack.
 #   * a v* tag        -> build + push :<tag> and :latest with
@@ -12,11 +11,11 @@
 #                        that immutable :<tag> to the swarm (zero-downtime,
 #                        health-gated, auto-rollback).
 #
-# The private sources engine is fetched best-effort at the freshest branch tip
-# per channel (build-time only; nothing is committed back):
-#   * push to `dev`         -> sources@dev.
-#   * a v* tag              -> sources@main.
-#   * CHANNEL=prod run      -> sources@main (see the channel note below).
+# The private sources engine is fetched best-effort at build time from
+# crimson-sources@main, for every channel (nothing is committed back).
+# crimson-sources is single-branch too, so dev and prod builds bake the same
+# engine tip; a prod release pins it by baking it into the immutable :<tag>
+# image rather than by tracking a separate branch.
 # The companion extension is NOT baked in: it ships on the Chrome Web Store and
 # the /extension page links straight to that listing.
 #
@@ -36,12 +35,11 @@
 # passwordless SSH to the managers), the same one crimson-backend uses. The gate and
 # the Pages demo run on the containerised `docker` runner.
 #
-# Channel: GitHub used a workflow_dispatch `channel` input. The GitLab equivalent is
-# a pipeline variable CHANNEL, set when running the pipeline manually or by the
-# multi-project trigger in crimson-sources:
-#   * CHANNEL=dev (default): builds :dev-<sha> from sources@dev and rolls the dev stack.
-#   * CHANNEL=prod         : builds :main-<sha> from sources@main and rolls the prod
-#                            swarm (auto-deploy), same target as a v* tag.
+# Channel: a pipeline variable CHANNEL, set when running the pipeline manually or
+# by the multi-project trigger in crimson-sources:
+#   * CHANNEL=dev (default): builds :dev-<sha> and rolls the dev stack.
+#   * CHANNEL=prod         : builds :main-<sha> and rolls the prod swarm
+#                            (auto-deploy), same target as a v* tag.
 
 stages:
   - gate
@@ -54,7 +52,7 @@ variables:
   SWARM_MANAGER: raymond@crimsonswarm01
   CHANNEL:
     value: "dev"
-    description: "Target channel: dev rolls the dev stack (sources@dev); prod builds sources@main and auto-deploys to the prod swarm."
+    description: "Target channel: dev rolls the dev stack; prod auto-deploys to the prod swarm."
 
 default:
   interruptible: false
@@ -65,15 +63,18 @@ default:
     - if: $CI_COMMIT_TAG =~ /^v/
     - if: ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline") && $CHANNEL == "prod"
 
+# `main` now carries BOTH channels, so the dev rule has to exclude a CHANNEL=prod
+# run explicitly. Without that guard a sources-driven prod trigger (which also runs
+# on `main`) would match here too and roll the dev stack alongside prod.
 .dev_trigger:
   rules:
-    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "main" && $CHANNEL != "prod"
     - if: ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline") && $CHANNEL != "prod"
 
 .any_trigger:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v/
-    - if: $CI_COMMIT_BRANCH == "dev"
+    - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline"
 
 # Quality gate — MUST pass before the image is built/deployed. ESLint over the
@@ -123,11 +124,11 @@ build:
       # (dev push, default manual run, sources-driven dev trigger) is the dev channel.
       if [ -n "${CI_COMMIT_TAG:-}" ] || [ "${CHANNEL:-dev}" = "prod" ]; then
         BUILD_CHANNEL=prod
-        SOURCES_BRANCH=main
       else
         BUILD_CHANNEL=dev
-        SOURCES_BRANCH=dev
       fi
+      # crimson-sources is single-branch, so every channel bakes the same tip.
+      SOURCES_BRANCH=main
       echo "channel=${BUILD_CHANNEL} sources=${SOURCES_BRANCH}"
 
       # Clone <repo>@<branch> into <dest>, best-effort. Any failure (repo unset, no
@@ -211,7 +212,7 @@ build:
       dotenv: build.env
 
 # Prod rollout — a v* tag (immutable vX.Y.Z) OR a CHANNEL=prod run (immutable
-# main-<sha>, fired by crimson-sources on a dev -> main merge). Both roll the prod
+# main-<sha>, fired by crimson-sources on a tag). Both roll the prod
 # swarm the same way.
 deploy:
   extends: .prod_trigger
@@ -230,7 +231,7 @@ deploy:
     # the runner's command line (it is validated to a safe charset upstream).
     - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/crimson-client-deploy/deploy.sh '${VERSION}'"
 
-# Dev auto-deploy: a push to `dev` rolls the just-built dev-<sha> frontend onto
+# Dev auto-deploy: a push to `main` rolls the just-built dev-<sha> frontend onto
 # the crimson-client-dev stack. The dev docker-stack.yml lives on the manager
 # (~/dev-crimson-client-deploy/), so CI just triggers its deploy.sh.
 deploy-dev:
@@ -245,7 +246,7 @@ deploy-dev:
   script:
     - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/dev-crimson-client-deploy/deploy.sh '${IMAGE_TAG}'"
 
-# ------------------------------------------------------------ pages-demo.yml ----
+# --- Pages demo ---------------------------------------------------------------
 # Publishes a SOURCELESS demo of the client to GitLab Pages at demo.crimsonhaven.org
 # (the custom domain is registered on this project under Settings > Pages).
 #

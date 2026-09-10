@@ -1,6 +1,6 @@
 # Docker Swarm stack for the Crimsonhaven client.
 #
-# Deployed by CI (.github/workflows/build-image.yml) on a published release via
+# Deployed by CI (.gitlab-ci.yml) on a v* tag via
 #   CRIMSON_IMAGE=registry.ramon.moe/crimsonhaven-to/crimson-client:<tag> \
 #   docker stack deploy --with-registry-auth -c docker-stack.yml crimson-client
 # (the image is PRIVATE; --with-registry-auth ships the manager's GHCR read
