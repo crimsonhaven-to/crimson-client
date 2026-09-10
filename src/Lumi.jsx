@@ -7,7 +7,7 @@
 // accounts this component is invisible and costs one small request on mount.
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bot, Play, RotateCcw, Send, Sparkles, X } from 'lucide-react';
+import { Bot, ChevronLeft, Play, RotateCcw, Send, Sparkles, X } from 'lucide-react';
 
 import { useLumiChat, useLumiStatus } from './hooks';
 
@@ -15,6 +15,12 @@ import { useLumiChat, useLumiStatus } from './hooks';
 // the summon button would. Hiding it there beats floating a button over the
 // player's seek bar.
 const HIDDEN_ON = [/^\/watch/, /^\/watch-show/, /^\/watch-movie/, /^\/watch-local/, /^\/watch-live/];
+
+// The manga reader keeps its own controls near the bottom edge, and on a phone
+// the summon button lands on top of them. Rather than hide her there too, the
+// button tucks itself off the right edge once it has been ignored this long,
+// leaving a sliver to tap when she is actually wanted.
+const TUCK_AFTER_MS = 4000;
 
 function Bubble({ msg, onOpen }) {
   const mine = msg.role === 'user';
@@ -63,6 +69,7 @@ function Bubble({ msg, onOpen }) {
 export default function Lumi() {
   const status = useLumiStatus();
   const [open, setOpen] = useState(false);
+  const [tucked, setTucked] = useState(false);
   const [draft, setDraft] = useState('');
   const [greeting, setGreeting] = useState(null);
   const { messages, busy, send, reset } = useLumiChat();
@@ -78,8 +85,15 @@ export default function Lumi() {
   const summon = () => {
     const pool = status?.greetings || [];
     if (pool.length) setGreeting(pool[Math.floor(Math.random() * pool.length)]);
+    setTucked(false);
     setOpen(true);
   };
+
+  useEffect(() => {
+    if (open || tucked) return undefined;
+    const timer = setTimeout(() => setTucked(true), TUCK_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [open, tucked]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -116,11 +130,13 @@ export default function Lumi() {
     <>
       {!open && (
         <button
-          onClick={summon}
-          title="Summon Lumi"
-          className="fixed bottom-6 right-6 z-[80] w-14 h-14 rounded-full bg-crimson-600 hover:bg-crimson-500 text-white shadow-[0_10px_30px_rgba(255,0,60,0.35)] flex items-center justify-center transition-all hover:scale-105"
+          onClick={tucked ? () => setTucked(false) : summon}
+          title={tucked ? 'Bring Lumi back' : 'Summon Lumi'}
+          className={`fixed bottom-6 right-6 z-[80] w-14 h-14 rounded-full bg-crimson-600 hover:bg-crimson-500 text-white shadow-[0_10px_30px_rgba(255,0,60,0.35)] flex items-center transition-all duration-500 ${
+            tucked ? 'translate-x-14 opacity-70 justify-start pl-1.5' : 'justify-center hover:scale-105'
+          }`}
         >
-          <Sparkles className="w-6 h-6" />
+          {tucked ? <ChevronLeft className="w-4 h-4" /> : <Sparkles className="w-6 h-6" />}
         </button>
       )}
 
