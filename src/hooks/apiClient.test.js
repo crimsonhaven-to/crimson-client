@@ -22,4 +22,21 @@ describe('extractError', () => {
     expect(extractError({})).toBe('Something went wrong');
     expect(extractError(null, 'Custom fallback')).toBe('Custom fallback');
   });
+
+  // The backend rewrites everything it raises as an HTTPException into
+  // {success, error, message} (api.py's http_exception_handler), so `detail` is
+  // only present on FastAPI's own 422s. Reading just `detail` meant every raised
+  // error reached the user as the generic fallback.
+  it('reads the raised-error shape the backend actually sends', () => {
+    expect(extractError({ success: false, error: 'Password is incorrect', status_code: 401 }))
+      .toBe('Password is incorrect');
+  });
+
+  it('still prefers detail when both are present', () => {
+    expect(extractError({ detail: 'from detail', error: 'from error' })).toBe('from detail');
+  });
+
+  it('falls back when error is present but empty', () => {
+    expect(extractError({ success: false, error: '' }, 'Deletion failed')).toBe('Deletion failed');
+  });
 });

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Key, User, LogOut, Copy, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck, Info } from 'lucide-react';
 import { useAuth, useAccount, useTitle } from './hooks';
+import AccountSecurity from './AccountSecurity';
 
 const AccountPage = () => {
   const { login, logout, createNewMnemonic, isAuthenticated, publicKey, loading, error } = useAuth();
@@ -95,6 +96,11 @@ const AccountPage = () => {
               </p>
             </div>
           </div>
+
+          {/* Sessions, the account's own slice of the security ledger, export
+              and deletion. None of it is a preference, so it lives here rather
+              than in Settings. */}
+          <AccountSecurity hasEmail={Boolean(profile?.email)} />
         </div>
       </div>
     );

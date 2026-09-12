@@ -3,6 +3,7 @@ import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, T
 import { stripHtml } from './utils';
 import { setOverviewActivity, clearActivity } from './discordPresence';
 import WatchlistButton from './WatchlistButton';
+import FollowButton from './FollowButton';
 
 // Presentational overview UI shared by the anime Overview (/anime/:anilistId) and
 // the non-anime show Overview (/show/:tmdbId). It is purely props-driven — the two
@@ -298,6 +299,9 @@ const OverviewView = ({
                     </button>
                   )}
                   {watchlistItem && <WatchlistButton item={watchlistItem} variant="overview" />}
+                  {/* Anime only: it renders nothing without an anilist_id, which is
+                      what the airing schedule is keyed on. */}
+                  {watchlistItem && <FollowButton item={watchlistItem} variant="overview" />}
                 </div>
               )}
             </div>
