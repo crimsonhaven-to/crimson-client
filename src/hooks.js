@@ -33,3 +33,6 @@ export * from './hooks/liveTv';
 export * from './hooks/browse';
 export * from './hooks/misc';
 export * from './hooks/lumi';
+export * from './hooks/airing';
+export * from './hooks/security';
+export * from './hooks/wrapped';

@@ -53,12 +53,21 @@ export function usePublicConfig() {
   return config;
 }
 
-// Pull a human-readable message out of a FastAPI error body (detail can be a
-// string, or an array of validation errors on a 422).
+// Pull a human-readable message out of a backend error body.
+//
+// Two shapes reach us. FastAPI's own validation errors keep `detail`, which is a
+// string or an array of field errors on a 422. Everything the backend raises as
+// an HTTPException is rewritten by its handler into
+// {success, error, message}: `error` carries the real reason and `message` is
+// Lumi's voiced line for the banner. Reading only `detail` meant every raised
+// error showed the caller's generic fallback instead of what actually went
+// wrong, which matters most exactly where the reason is actionable ("Password is
+// incorrect", "This invite code has already been used").
 export function extractError(data, fallback = 'Something went wrong') {
   const d = data?.detail;
   if (typeof d === 'string') return d;
   if (Array.isArray(d) && d.length) return d[0]?.msg || fallback;
+  if (typeof data?.error === 'string' && data.error) return data.error;
   return fallback;
 }
 

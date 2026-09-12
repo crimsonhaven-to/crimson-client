@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Wallet, Puzzle, BookOpen, Clapperboard, HardDrive, Radio } from 'lucide-react';
+import { Search, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Wallet, Puzzle, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays } from 'lucide-react';
 import MeshBackground from './MeshBackground';
 // Shared browse-hub kit — the per-kind badge + the poster tile now live here so
 // the home rows and the browse hubs render the exact same card (see hubKit.jsx).
@@ -38,6 +38,8 @@ const SettingsPage = lazy(() => import('./UserSettings'));
 const WelcomeTour = lazy(() => import('./WelcomeTour'));
 const FavoritesPage = lazy(() => import('./Favorites'));
 const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
+const AiringCalendarPage = lazy(() => import('./AiringCalendar'));
+const WrappedPage = lazy(() => import('./CrimsonWrapped'));
 const SupportUsPage = lazy(() => import('./SupportUs'));
 const SupportersPage = lazy(() => import('./Supporters'));
 const DisclaimerPage = lazy(() => import('./Disclaimer'));
@@ -920,6 +922,7 @@ function App() {
     { to: "/local", label: "Local", icon: <HardDrive className="w-4 h-4" />, local: true },
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
+    { to: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" />, auth: true },
     // Profile/account + the informational pages live in the top-right dropdown.
     { to: "/admin", label: "Admin", icon: <Shield className="w-4 h-4" />, admin: true },
   ];
@@ -1010,6 +1013,13 @@ function App() {
                       className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
                     >
                       <SlidersHorizontal className="w-4 h-4" /> Preferences
+                    </Link>
+                    <Link
+                      to="/wrapped"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                    >
+                      <Sparkles className="w-4 h-4" /> Crimson Wrapped
                     </Link>
                     {/* Informational pages — moved here out of the main nav to keep
                         the top bar focused on browsing. */}
@@ -1102,6 +1112,8 @@ function App() {
           {/* Legacy path — keep old bookmarks/links working. */}
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/recently-watched" element={<RecentlyWatchedPage />} />
+          <Route path="/calendar" element={<AiringCalendarPage />} />
+          <Route path="/wrapped" element={<WrappedPage />} />
           <Route path="/anime/:anilistId" element={<AnimeOverview />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
           {/* Non-anime TV shows — TMDB-keyed twins of the anime routes above. */}

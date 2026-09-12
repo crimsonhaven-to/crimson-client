@@ -108,6 +108,15 @@ export function useAuth() {
     }
   };
 
+  // Prove ownership of a mnemonic identity outside of signing in, for the one
+  // action that must not be reachable with a stolen session token alone:
+  // deleting the account. Same challenge-and-sign as login, so nothing new is
+  // invented for an identity that has no password to re-enter.
+  const signChallenge = async (mnemonic) => {
+    const { seed, publicKey: pubKey } = await deriveKeypair(mnemonic);
+    return challengeAndSign(pubKey, seed);
+  };
+
   // Create a NEW mnemonic account. Invite-gated exactly like email signup: the
   // backend /auth/register now requires a valid invite_code, so this is the only
   // way to mint a mnemonic account and it can't sidestep the invite gate.
@@ -288,6 +297,7 @@ export function useAuth() {
     error,
     setError,
     login,
+    signChallenge,
     registerMnemonic,
     logout,
     createNewMnemonic,
