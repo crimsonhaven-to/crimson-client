@@ -88,6 +88,8 @@ export const adminApi = {
       body: JSON.stringify(body),
     }).then(_json),
   chatUsage: (days = 30) => apiFetch(`/admin/chat/usage?days=${days}`).then(_json),
+  // Every song on the music share, newest first; q, status, limit, offset.
+  musicLibrary: (params) => apiFetch(`/admin/music/library?${_qs(params)}`).then(_json),
   listInvites: (params) => apiFetch(`/admin/invites?${_qs(params)}`).then(_json),
   createInvites: (body) =>
     apiFetch('/admin/invites', {

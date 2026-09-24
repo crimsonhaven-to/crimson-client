@@ -10,15 +10,8 @@ import {
 } from 'lucide-react';
 
 import { adminApi } from '../adminApi';
+import { formatBytes } from './format';
 import { StatCard } from './ui';
-
-const formatBytes = (n) => {
-  if (n == null) return '—';
-  if (n === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
-  return `${(n / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-};
 
 const STATUS_STYLES = {
   active: 'bg-amber-500/10 border-amber-500/30 text-amber-400',
