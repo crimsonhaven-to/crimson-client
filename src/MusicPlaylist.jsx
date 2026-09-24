@@ -3,7 +3,7 @@
 // keeping them is the point of this whole surface. A playlist of your own
 // (source 'local') is edited here instead: songs are added by search.
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft, CircleAlert, Clock, Loader2, Pause, Play, Plus, RefreshCw, RotateCw, Search, Shuffle, Trash2, X,
 } from 'lucide-react';
@@ -46,11 +46,13 @@ function StatusCell({ track, onReview, onRetry }) {
 export default function MusicPlaylist() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { playlist, tracks, loading, error, reload } = useMusicPlaylist(id);
   const player = useMusicPlayer();
   const playing = currentTrack(player);
   const [reviewing, setReviewing] = useState(null);
-  const [adding, setAdding] = useState(false);
+  // A playlist that was just created opens straight into the song search.
+  const [adding, setAdding] = useState(!!location.state?.addSongs);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
 
@@ -71,6 +73,12 @@ export default function MusicPlaylist() {
   const isThisPlaylist = player.source?.path === source.path;
   const totalMs = tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
   const own = playlist.source === 'local';
+
+  // Dropping the flag keeps a reload or a step back from opening the search again.
+  const closeAdding = () => {
+    setAdding(false);
+    if (location.state?.addSongs) navigate(location.pathname, { replace: true, state: null });
+  };
 
   const run = async (action, doneMessage) => {
     setBusy(true);
@@ -212,7 +220,7 @@ export default function MusicPlaylist() {
       </ol>
 
       {adding && (
-        <AddSongsDialog playlist={playlist} onClose={() => setAdding(false)} onAdded={reload} />
+        <AddSongsDialog playlist={playlist} onClose={closeAdding} onAdded={reload} />
       )}
 
       {reviewing && (

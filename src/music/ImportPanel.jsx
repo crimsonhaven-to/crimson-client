@@ -1,9 +1,8 @@
-// Every way to a new playlist: a playlist of your own filled by search, a
-// Spotify link, and a CSV export. Without a Spotify connection a link is read
+// The ways to bring a playlist in from Spotify: a link, and a CSV export. Without a Spotify connection a link is read
 // from the public page; with one it goes through the Web API, which reads
 // private playlists and every song.
 import { useRef, useState } from 'react';
-import { ExternalLink, FileUp, Link2, ListPlus, Loader2 } from 'lucide-react';
+import { ExternalLink, FileUp, Link2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { musicApi } from '../hooks';
@@ -14,7 +13,6 @@ export default function ImportPanel({ connected }) {
   const navigate = useNavigate();
   const fileRef = useRef(null);
   const [link, setLink] = useState('');
-  const [name, setName] = useState('');
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
 
@@ -27,19 +25,6 @@ export default function ImportPanel({ connected }) {
     setError(null);
     try {
       opened(await musicApi.importPlaylist(connected ? 'spotify' : 'public', link.trim()));
-    } catch (err) {
-      setError(err.message);
-      setBusy(null);
-    }
-  };
-
-  const create = async (e) => {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setBusy('create');
-    setError(null);
-    try {
-      opened(await musicApi.createPlaylist(name.trim()));
     } catch (err) {
       setError(err.message);
       setBusy(null);
@@ -63,31 +48,9 @@ export default function ImportPanel({ connected }) {
 
   return (
     <section className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl p-5 sm:p-6 space-y-5">
-      <h2 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Add a playlist</h2>
+      <h2 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Import from Spotify</h2>
 
-      <form onSubmit={create} className="space-y-2">
-        <div className="flex gap-2">
-          <div className="relative flex-grow min-w-0">
-            <ListPlus className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700" />
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={200}
-              placeholder="Name a new playlist"
-              className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm focus:outline-none focus:border-crimson-500"
-            />
-          </div>
-          <button type="submit" disabled={!!busy || !name.trim()}
-            className="px-5 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
-            {busy === 'create' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create'}
-          </button>
-        </div>
-        <p className="text-[11px] text-crimson-600 leading-relaxed">
-          Your own playlist, kept only here. Add songs to it by searching, no Spotify needed.
-        </p>
-      </form>
-
-      <form onSubmit={addLink} className="border-t border-crimson-900/30 pt-5 space-y-2">
+      <form onSubmit={addLink} className="space-y-2">
         <div className="flex gap-2">
           <div className="relative flex-grow min-w-0">
             <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700" />
