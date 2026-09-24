@@ -3,9 +3,9 @@
 // the root while visible, which Lumi's summon button reads to sit above it.
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Loader2, Pause, Play, SkipForward, X } from 'lucide-react';
+import { Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 
-import { close, currentTrack, next, restoreQueue, toggle, useMusicPlayer } from './player';
+import { close, currentTrack, next, previous, restoreQueue, toggle, useMusicPlayer } from './player';
 import { Cover } from './Cover';
 
 const BAR_HEIGHT = '4.5rem';
@@ -47,6 +47,9 @@ export default function MiniPlayer() {
               </p>
             </div>
           </Link>
+          <button onClick={previous} aria-label="Previous" className="p-2 text-crimson-300 hover:text-white transition-colors flex-shrink-0">
+            <SkipBack className="w-5 h-5" fill="currentColor" />
+          </button>
           <button
             onClick={toggle}
             aria-label={state.playing ? 'Pause' : 'Play'}
