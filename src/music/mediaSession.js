@@ -46,16 +46,21 @@ export function showPlaying(playing) {
   if (supported()) navigator.mediaSession.playbackState = playing ? 'playing' : 'paused';
 }
 
-// Drives the scrubber on the lock screen. Browsers throw on a position past
-// the duration or a duration that is not finite yet, so both are checked.
-export function showPosition(duration, position) {
+// Drives the scrubber on the lock screen. Called only when the position jumps
+// (start, pause, seek, a new song); in between, the browser extrapolates from
+// the rate. A duration that is not known yet clears the old song's state,
+// since browsers throw on one that is not finite.
+export function showPosition(duration, position, playbackRate = 1) {
   if (!supported() || !navigator.mediaSession.setPositionState) return;
-  if (!Number.isFinite(duration) || duration <= 0) return;
   try {
+    if (!Number.isFinite(duration) || duration <= 0) {
+      navigator.mediaSession.setPositionState();
+      return;
+    }
     navigator.mediaSession.setPositionState({
       duration,
       position: Math.min(Math.max(position, 0), duration),
-      playbackRate: 1,
+      playbackRate: playbackRate > 0 ? playbackRate : 1,
     });
   } catch {
     // Mid-transition values; the next timeupdate sets it right.

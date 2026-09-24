@@ -1,19 +1,22 @@
 // One playlist: its tracks in order, what state each is in on the server, and
 // playback. Tracks Spotify has dropped stay listed at the end, marked, because
-// keeping them is the point of this whole surface.
+// keeping them is the point of this whole surface. A playlist of your own
+// (source 'local') is edited here instead: songs are added by search.
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, CircleAlert, Clock, Loader2, Pause, Play, RefreshCw, RotateCw, Search, Shuffle, Trash2,
+  ArrowLeft, CircleAlert, Clock, Loader2, Pause, Play, Plus, RefreshCw, RotateCw, Search, Shuffle, Trash2, X,
 } from 'lucide-react';
 
 import { musicApi, useMusicPlaylist } from './hooks';
 import { Cover } from './music/Cover';
+import AddSongsDialog from './music/AddSongsDialog';
 import ReviewDialog from './music/ReviewDialog';
 import { formatTime } from './music/queue';
 import { currentTrack, playTracks, toggle, useMusicPlayer } from './music/player';
 
-const SOURCE_LABEL = { spotify: 'Spotify', public: 'Public link', csv: 'CSV import' };
+const SOURCE_LABEL = { spotify: 'Spotify', public: 'Public link', csv: 'CSV import', local: 'Your playlist' };
+const SYNCED_SOURCES = ['spotify', 'public'];
 
 function StatusCell({ track, onReview, onRetry }) {
   switch (track.status) {
@@ -47,6 +50,7 @@ export default function MusicPlaylist() {
   const player = useMusicPlayer();
   const playing = currentTrack(player);
   const [reviewing, setReviewing] = useState(null);
+  const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
 
@@ -66,6 +70,7 @@ export default function MusicPlaylist() {
   const source = { name: playlist.name, path: `/music/playlist/${playlist.id}` };
   const isThisPlaylist = player.source?.path === source.path;
   const totalMs = tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
+  const own = playlist.source === 'local';
 
   const run = async (action, doneMessage) => {
     setBusy(true);
@@ -124,7 +129,13 @@ export default function MusicPlaylist() {
             >
               <Shuffle className="w-4 h-4" /> Shuffle
             </button>
-            {playlist.source !== 'csv' && (
+            {own && (
+              <button onClick={() => setAdding(true)}
+                className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest">
+                <Plus className="w-4 h-4" /> Add songs
+              </button>
+            )}
+            {SYNCED_SOURCES.includes(playlist.source) && (
               <>
                 <button disabled={busy} onClick={() => run(() => musicApi.sync(playlist.id), 'Synced.')}
                   className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
@@ -145,6 +156,16 @@ export default function MusicPlaylist() {
           {notice && <p className="text-xs font-bold text-crimson-300">{notice}</p>}
         </div>
       </div>
+
+      {own && tracks.length === 0 && (
+        <div className="py-16 text-center space-y-4 border-t border-crimson-900/30">
+          <p className="text-crimson-500 text-sm">No songs yet.</p>
+          <button onClick={() => setAdding(true)}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">
+            <Plus className="w-4 h-4" /> Add songs
+          </button>
+        </div>
+      )}
 
       <ol className="divide-y divide-crimson-900/30 border-t border-crimson-900/30">
         {tracks.map((track, index) => {
@@ -177,11 +198,22 @@ export default function MusicPlaylist() {
                 onReview={() => setReviewing(track)}
                 onRetry={() => run(() => musicApi.retry(track.id))}
               />
+              {own && (
+                <button disabled={busy} onClick={() => run(() => musicApi.removeSong(playlist.id, track.id))}
+                  aria-label={`Remove ${track.title}`} title="Remove from playlist"
+                  className="p-1.5 rounded-lg text-crimson-700 hover:text-crimson-300 hover:bg-crimson-900/40 disabled:opacity-40 flex-shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
               <span className="hidden sm:block w-12 text-right text-[11px] text-crimson-700 tabular-nums flex-shrink-0">{formatTime(track.duration_ms / 1000)}</span>
             </li>
           );
         })}
       </ol>
+
+      {adding && (
+        <AddSongsDialog playlist={playlist} onClose={() => setAdding(false)} onAdded={reload} />
+      )}
 
       {reviewing && (
         <ReviewDialog
