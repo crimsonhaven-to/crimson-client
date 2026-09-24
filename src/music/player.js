@@ -105,19 +105,28 @@ function element() {
   audio = new Audio();
   audio.preload = 'auto';
   audio.addEventListener('play', () => { emit({ playing: true }); showPlaying(true); });
-  audio.addEventListener('pause', () => { emit({ playing: false }); showPlaying(false); save(); });
+  audio.addEventListener('pause', () => {
+    emit({ playing: false });
+    showPlaying(false);
+    syncPosition();
+    save();
+  });
   audio.addEventListener('waiting', () => emit({ loading: true }));
   audio.addEventListener('playing', () => {
     failedInARow = 0;
     emit({ loading: false, playing: true, error: null });
+    syncPosition();
   });
   audio.addEventListener('loadedmetadata', () => {
     emit({ duration: audio.duration });
-    showPosition(audio.duration, audio.currentTime);
+    syncPosition();
   });
+  audio.addEventListener('seeked', syncPosition);
+  audio.addEventListener('ratechange', syncPosition);
+  // No lock screen update here: it counts forward by itself from the last jump,
+  // which is how the Media Session API expects to be fed.
   audio.addEventListener('timeupdate', () => {
     emit({ currentTime: audio.currentTime });
-    showPosition(audio.duration, audio.currentTime);
     if (Date.now() - lastSavedAt > 10_000) {
       lastSavedAt = Date.now();
       save();
@@ -135,6 +144,10 @@ function element() {
   return audio;
 }
 
+function syncPosition() {
+  showPosition(audio.duration, audio.currentTime, audio.playbackRate);
+}
+
 function onError() {
   const track = currentTrack();
   failedInARow += 1;
@@ -147,6 +160,8 @@ function load(position, autoplay, startAt = 0) {
   if (!track) return;
   const el = element();
   emit({ position, currentTime: startAt, duration: track.duration_ms / 1000, loading: autoplay, error: null });
+  // The last song's position must not linger on the lock screen until this one's metadata loads.
+  showPosition(0, 0);
   el.src = track.stream_url;
   if (startAt > 0) {
     el.addEventListener('loadedmetadata', () => { el.currentTime = startAt; }, { once: true });

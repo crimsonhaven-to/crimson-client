@@ -35,6 +35,10 @@ export const musicApi = {
   playlists: () => call('/music/playlists'),
   importPlaylist: (source, playlist) => call('/music/playlists', { json: { source, playlist } }),
   importCsv: (name, csv) => call('/music/playlists/csv', { json: { name, csv } }),
+  createPlaylist: (name) => call('/music/playlists/local', { json: { name } }),
+  addSong: (playlistId, result) => call(`/music/playlists/${playlistId}/tracks`, { json: result }),
+  removeSong: (playlistId, trackId) =>
+    call(`/music/playlists/${playlistId}/tracks/${trackId}`, { method: 'DELETE' }),
   playlist: (id) => call(`/music/playlists/${id}`),
   setSync: (id, syncEnabled) =>
     call(`/music/playlists/${id}`, { method: 'PATCH', json: { sync_enabled: syncEnabled } }),

@@ -2,9 +2,10 @@
 // Shows what it found with its reasons, lets the member search again, or paste
 // a link. A pick is remembered on the server and never second-guessed.
 import { useEffect, useState } from 'react';
-import { Check, ExternalLink, Link2, Loader2, Search, X } from 'lucide-react';
+import { Check, Link2, Loader2, Search, X } from 'lucide-react';
 
 import { musicApi } from '../hooks';
+import SearchResult from './SearchResult';
 import { formatTime } from './queue';
 
 function deltaLabel(candidateMs, trackMs) {
@@ -88,31 +89,22 @@ export default function ReviewDialog({ track, onClose, onChosen }) {
             <p className="py-12 text-center text-crimson-700 text-sm italic">Nothing found. Search again or paste a link below.</p>
           ) : (
             <ul className="space-y-1">
-              {candidates.map((c) => (
-                <li key={c.url} className="flex items-center gap-3 p-2 rounded-xl hover:bg-crimson-900/20">
-                  {c.thumbnail_url
-                    ? <img src={c.thumbnail_url} alt="" className="w-20 h-12 object-cover rounded-md flex-shrink-0" loading="lazy" />
-                    : <div className="w-20 h-12 rounded-md bg-crimson-900/40 flex-shrink-0" />}
-                  <div className="min-w-0 flex-grow">
-                    <p className="text-sm font-bold text-crimson-100 truncate">{c.title}</p>
-                    <p className="text-xs text-crimson-500 truncate">
-                      {c.channel} · {formatTime(c.duration_ms / 1000)}
-                      {deltaLabel(c.duration_ms, track.duration_ms) && ` · ${deltaLabel(c.duration_ms, track.duration_ms)}`}
-                      {c.score > 0 && ` · ${Math.round(c.score * 100)}%`}
-                    </p>
-                    {c.reasons?.length > 0 && (
-                      <p className="text-[11px] text-crimson-700 truncate" title={c.reasons.join(' ')}>{c.reasons.join(' ')}</p>
-                    )}
-                  </div>
-                  <a href={c.url} target="_blank" rel="noopener noreferrer" aria-label="Open the source" className="p-2 text-crimson-700 hover:text-crimson-300">
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                  <button onClick={() => choose(c.url)} disabled={busy} aria-label="Use this recording"
-                    className="p-2 rounded-lg bg-crimson-600 hover:bg-crimson-500 text-white disabled:opacity-40">
-                    <Check className="w-4 h-4" />
-                  </button>
-                </li>
-              ))}
+              {candidates.map((c) => {
+                const delta = deltaLabel(c.duration_ms, track.duration_ms);
+                return (
+                  <SearchResult
+                    key={c.url}
+                    result={c}
+                    detail={`${delta ? ` · ${delta}` : ''}${c.score > 0 ? ` · ${Math.round(c.score * 100)}%` : ''}`}
+                    note={c.reasons?.join(' ')}
+                  >
+                    <button onClick={() => choose(c.url)} disabled={busy} aria-label="Use this recording"
+                      className="p-2 rounded-lg bg-crimson-600 hover:bg-crimson-500 text-white disabled:opacity-40">
+                      <Check className="w-4 h-4" />
+                    </button>
+                  </SearchResult>
+                );
+              })}
             </ul>
           )}
         </div>
