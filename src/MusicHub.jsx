@@ -1,13 +1,15 @@
-// The Music hub: the member's imported playlists, the Spotify connection, and
-// the ways to add more. Deny by default like Lumi, so a member without the
+// The Music hub: the member's playlists, the Spotify connection, and the ways
+// to add more. Deny by default like Lumi, so a member without the
 // grant sees why instead of an empty page.
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CircleAlert, Music, Play } from 'lucide-react';
+import { CircleAlert, Music, Play, Plus } from 'lucide-react';
 
 import { HubShell } from './hubKit';
 import { useMusicPlaylists, useMusicStatus } from './hooks';
 import { Cover } from './music/Cover';
 import ImportPanel from './music/ImportPanel';
+import NewPlaylistDialog from './music/NewPlaylistDialog';
 import SpotifyCard from './music/SpotifyCard';
 
 function Blocked({ error }) {
@@ -55,9 +57,26 @@ function PlaylistTile({ playlist }) {
   );
 }
 
+function NewPlaylistTile({ onClick }) {
+  return (
+    <button onClick={onClick} className="group space-y-3 text-left">
+      <span className="w-full aspect-square rounded-2xl border-2 border-dashed border-crimson-900/60 group-hover:border-crimson-500 bg-crimson-950/30 flex items-center justify-center transition-colors">
+        <span className="w-12 h-12 rounded-full bg-crimson-600 group-hover:bg-crimson-500 text-white flex items-center justify-center shadow-lg">
+          <Plus className="w-6 h-6" />
+        </span>
+      </span>
+      <span className="block min-w-0">
+        <span className="block text-sm font-bold text-crimson-50 group-hover:text-crimson-300">New playlist</span>
+        <span className="block text-[11px] text-crimson-600 truncate">Your own, filled by search</span>
+      </span>
+    </button>
+  );
+}
+
 export default function MusicHub() {
   const status = useMusicStatus();
   const { playlists, reload } = useMusicPlaylists();
+  const [creating, setCreating] = useState(false);
 
   if (status.loading) {
     return <div className="py-32 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Tuning the strings...</div>;
@@ -81,16 +100,17 @@ export default function MusicHub() {
         {s.provider && !s.share_ready && <Notice>The music share is not reachable right now. Downloads resume once it is back.</Notice>}
       </div>
 
-      {playlists.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
-          {playlists.map((p) => <PlaylistTile key={p.id} playlist={p} />)}
-        </div>
-      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+        <NewPlaylistTile onClick={() => setCreating(true)} />
+        {playlists.map((p) => <PlaylistTile key={p.id} playlist={p} />)}
+      </div>
 
       <div className="grid lg:grid-cols-2 gap-6 items-start">
         <SpotifyCard status={s} onChanged={refresh} />
         <ImportPanel connected={s.spotify.connected} />
       </div>
+
+      {creating && <NewPlaylistDialog onClose={() => setCreating(false)} />}
     </HubShell>
   );
 }

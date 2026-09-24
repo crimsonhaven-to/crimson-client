@@ -918,11 +918,10 @@ function App() {
   }
 
   // Content-first navigation: Home is the search + discovery launchpad, then one
-  // entry per media kind (each opens that kind's own browse hub). Favorites +
-  // History stay for signed-in viewers. The informational pages (Support, Mortals,
-  // About) moved into the account dropdown + footer to de-clutter the bar; Local
-  // only appears on operator builds with a source, Admin only for admins.
-  const navLinks = [
+  // entry per media kind (each opens that kind's own browse hub). The personal
+  // pages sit apart as icons, and the informational pages and Admin live in the
+  // account dropdown, because a label for everything no longer fits one bar.
+  const browseLinks = [
     { to: "/", label: "Home", icon: <Sparkles className="w-4 h-4" /> },
     { to: "/anime", label: "Anime", icon: <Flame className="w-4 h-4" /> },
     { to: "/shows", label: "Shows", icon: <Tv className="w-4 h-4" /> },
@@ -931,14 +930,18 @@ function App() {
     { to: "/live", label: "Live TV", icon: <Radio className="w-4 h-4" />, live: true },
     { to: "/local", label: "Local", icon: <HardDrive className="w-4 h-4" />, local: true },
     { to: "/music", label: "Music", icon: <Music className="w-4 h-4" />, music: true },
-    { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
-    { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
-    { to: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" />, auth: true },
-    // Profile/account + the informational pages live in the top-right dropdown.
-    { to: "/admin", label: "Admin", icon: <Shield className="w-4 h-4" />, admin: true },
+  ].filter(l => (!l.local || localEnabled) && (!l.live || liveTvEnabled) && (!l.music || musicEnabled));
+  const personalLinks = [
+    { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" /> },
+    { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" /> },
+    { to: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
   ];
-  const visibleLinks = navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin)
-    && (!l.local || localEnabled) && (!l.live || liveTvEnabled) && (!l.music || musicEnabled));
+  const isCurrent = (to) => (to === '/' ? location.pathname === '/' : location.pathname.startsWith(to));
+  const navLinkClass = (to) => `flex items-center gap-1.5 rounded-xl px-2.5 py-2 transition-all ${
+    isCurrent(to)
+      ? 'text-crimson-500 bg-crimson-500/10'
+      : 'text-crimson-200/50 hover:text-crimson-400 hover:bg-crimson-900/30'
+  }`;
 
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
@@ -967,23 +970,17 @@ function App() {
             </span>
           </Link>
 
-          {/* Desktop Navigation — icon-only on medium screens, icons + labels on large (xl) up */}
-          <div className="hidden md:flex gap-1 lg:gap-2 xl:gap-6 text-[11px] font-black uppercase tracking-widest items-center">
-            {visibleLinks.map(link => (
-              <Link
-                key={link.to}
-                to={link.to}
-                title={link.label}
-                aria-label={link.label}
-                className={`flex items-center gap-1.5 rounded-xl px-2.5 py-2 xl:px-0 xl:py-0 xl:rounded-none transition-all ${
-                  location.pathname === link.to
-                    ? 'text-crimson-500 bg-crimson-500/10 xl:bg-transparent'
-                    : link.highlight
-                      ? 'text-crimson-50 bg-crimson-500/20 border border-crimson-500/30 hover:bg-crimson-500/40 xl:px-3 xl:py-1 xl:rounded-full'
-                      : 'text-crimson-200/50 hover:text-crimson-400 hover:bg-crimson-900/30 xl:hover:bg-transparent'
-                }`}
-              >
+          {/* Desktop Navigation: icons on medium screens, labels for the media kinds from xl up */}
+          <div className="hidden md:flex gap-1 text-[11px] font-black uppercase tracking-wider items-center">
+            {browseLinks.map(link => (
+              <Link key={link.to} to={link.to} title={link.label} aria-label={link.label} className={navLinkClass(link.to)}>
                 {link.icon} <span className="hidden xl:inline">{link.label}</span>
+              </Link>
+            ))}
+            <span className="w-px h-5 mx-1 lg:mx-2 bg-crimson-900/60" />
+            {personalLinks.map(link => (
+              <Link key={link.to} to={link.to} title={link.label} aria-label={link.label} className={navLinkClass(link.to)}>
+                {link.icon}
               </Link>
             ))}
           </div>
@@ -991,7 +988,7 @@ function App() {
           {/* Right cluster: backend status pill, account dropdown, mobile menu toggle */}
           <div className="flex items-center gap-3">
             {health && (
-              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl">
+              <div className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl">
                 <div className={`w-2 h-2 rounded-full ${health?.status === 'ok' ? 'bg-green-500' : 'bg-crimson-600'} animate-pulse`}></div>
                 <span className="text-[10px] font-black text-crimson-700 uppercase tracking-widest">{health?.mode || 'ONLINE'}</span>
               </div>
@@ -1081,12 +1078,12 @@ function App() {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
             <div className="flex flex-col p-4 space-y-4">
-              {visibleLinks.map(link => (
+              {[...browseLinks, ...personalLinks].map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
                   className={`flex items-center gap-3 p-3 rounded-xl transition-all font-black uppercase tracking-widest text-sm ${
-                    location.pathname === link.to ? 'bg-crimson-500/20 text-crimson-500' : 'text-crimson-100 hover:bg-crimson-900/40'
+                    isCurrent(link.to) ? 'bg-crimson-500/20 text-crimson-500' : 'text-crimson-100 hover:bg-crimson-900/40'
                   }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
