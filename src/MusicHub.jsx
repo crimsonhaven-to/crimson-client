@@ -71,6 +71,7 @@ export default function MusicHub() {
     `${counts.ready || 0} songs on the share`,
     (counts.pending || 0) + (counts.working || 0) > 0 && `${(counts.pending || 0) + (counts.working || 0)} queued`,
     counts.review > 0 && `${counts.review} waiting for you`,
+    s.cdn && `${counts.mirrored || 0} backed up`,
   ].filter(Boolean).join(' · ');
 
   return (
