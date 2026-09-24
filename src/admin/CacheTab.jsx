@@ -7,15 +7,8 @@ import {
 } from 'lucide-react';
 
 import { adminApi } from '../adminApi';
+import { formatBytes } from './format';
 import { StatCard } from './ui';
-
-const formatBytes = (n) => {
-  if (n == null) return '—';
-  if (n === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
-  return `${(n / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-};
 
 // Map a cache target's filesystem probe into a one-line status with a colour cue.
 const cacheTargetStatus = (st) => {
