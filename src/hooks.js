@@ -36,3 +36,4 @@ export * from './hooks/lumi';
 export * from './hooks/airing';
 export * from './hooks/security';
 export * from './hooks/wrapped';
+export * from './hooks/music';

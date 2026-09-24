@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Routes, Route, Link, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
-import { Search, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Wallet, Puzzle, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays } from 'lucide-react';
+import { Search, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Wallet, Puzzle, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays, Music } from 'lucide-react';
 import MeshBackground from './MeshBackground';
 // Shared browse-hub kit — the per-kind badge + the poster tile now live here so
 // the home rows and the browse hubs render the exact same card (see hubKit.jsx).
@@ -14,6 +14,9 @@ import WatchView from './WatchView';
 // Lumi's chat drawer. Eager, but it self-suppresses: it renders nothing until
 // /chat/status says this account has been granted access, which is deny-by-default.
 import Lumi from './Lumi';
+// The music player's bottom bar. Eager and tiny: it renders nothing until a
+// queue exists, and it must outlive every route change for playback to.
+import MiniPlayer from './music/MiniPlayer';
 import NotFound from './NotFound';
 // Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
 // in the main bundle avoids a chunk round-trip on the critical path.
@@ -65,6 +68,11 @@ const LocalWatch = lazy(() => import('./LocalWatch'));
 const LiveTvHub = lazy(() => import('./LiveTvHub'));
 const LiveTvWatch = lazy(() => import('./LiveTvWatch'));
 const LumiSecret = lazy(() => import('./LumiSecret'));
+// Music: the hub, one playlist, the full player, and Spotify's redirect target.
+const MusicHub = lazy(() => import('./MusicHub'));
+const MusicPlaylist = lazy(() => import('./MusicPlaylist'));
+const MusicNowPlaying = lazy(() => import('./MusicNowPlaying'));
+const MusicConnect = lazy(() => import('./MusicConnect'));
 // Companion-extension download page — lazy; only reached from the home banner /
 // footer link, and only meaningful to viewers who don't already have it.
 const DownloadExtensionPage = lazy(() => import('./DownloadExtension'));
@@ -866,7 +874,9 @@ function App() {
   // Gates the Local hub nav entry + route — the on-disk library only exists on
   // operator builds that configured a source (mirrors the old Catalogue toggle).
   // live_tv_enabled gates the Live TV entry the same way (IPTV_ENABLED backend-side).
-  const { local_library_enabled: localEnabled, live_tv_enabled: liveTvEnabled } = usePublicConfig();
+  const { local_library_enabled: localEnabled, live_tv_enabled: liveTvEnabled, music_enabled: musicServer } = usePublicConfig();
+  // Music needs both the server's library and this account's grant.
+  const musicEnabled = !!musicServer && !!profile?.music_enabled;
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -920,12 +930,15 @@ function App() {
     { to: "/manga", label: "Manga", icon: <BookOpen className="w-4 h-4" /> },
     { to: "/live", label: "Live TV", icon: <Radio className="w-4 h-4" />, live: true },
     { to: "/local", label: "Local", icon: <HardDrive className="w-4 h-4" />, local: true },
+    { to: "/music", label: "Music", icon: <Music className="w-4 h-4" />, music: true },
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" />, auth: true },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" />, auth: true },
     { to: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" />, auth: true },
     // Profile/account + the informational pages live in the top-right dropdown.
     { to: "/admin", label: "Admin", icon: <Shield className="w-4 h-4" />, admin: true },
   ];
+  const visibleLinks = navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin)
+    && (!l.local || localEnabled) && (!l.live || liveTvEnabled) && (!l.music || musicEnabled));
 
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
@@ -956,7 +969,7 @@ function App() {
 
           {/* Desktop Navigation — icon-only on medium screens, icons + labels on large (xl) up */}
           <div className="hidden md:flex gap-1 lg:gap-2 xl:gap-6 text-[11px] font-black uppercase tracking-widest items-center">
-            {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin) && (!l.local || localEnabled) && (!l.live || liveTvEnabled)).map(link => (
+            {visibleLinks.map(link => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -1068,7 +1081,7 @@ function App() {
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
             <div className="flex flex-col p-4 space-y-4">
-              {navLinks.filter(l => (!l.auth || isAuthenticated) && (!l.admin || isAdmin) && (!l.local || localEnabled) && (!l.live || liveTvEnabled)).map(link => (
+              {visibleLinks.map(link => (
                 <Link
                   key={link.to}
                   to={link.to}
@@ -1103,6 +1116,10 @@ function App() {
           <Route path="/manga" element={<MangaHub />} />
           <Route path="/live" element={<LiveTvHub />} />
           <Route path="/local" element={<LocalHub />} />
+          <Route path="/music" element={<MusicHub />} />
+          <Route path="/music/playlist/:id" element={<MusicPlaylist />} />
+          <Route path="/music/now" element={<MusicNowPlaying />} />
+          <Route path="/music/connect" element={<MusicConnect />} />
           {/* Legacy path — the Catalogue was anime + local; send it to the Anime hub. */}
           <Route path="/catalogue" element={<Navigate to="/anime" replace />} />
           <Route path="/account" element={<AccountPage />} />
@@ -1207,6 +1224,8 @@ function App() {
           </div>
         </div>
       </footer>
+
+      <MiniPlayer />
     </div>
   );
 }

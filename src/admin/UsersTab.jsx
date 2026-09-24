@@ -1,9 +1,9 @@
 // Admin › Users tab. Member search plus per-user actions (grant/revoke admin,
-// grant/revoke Lumi chat access, mark verified, revoke sessions, delete), plus
+// the feature grants, mark verified, revoke sessions, delete), plus
 // the E-Mail sender (broadcast a plaintext message to every member who signed up
 // with an email address).
 import { useCallback, useEffect, useState } from 'react';
-import { Bot, BotOff, LogOut, Mail, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
+import { Bot, LogOut, Mail, Music, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 
 import { useProfile } from '../hooks';
 import { adminApi } from '../adminApi';
@@ -134,6 +134,38 @@ function EmailSender({ notify }) {
   );
 }
 
+// Per-member feature grants. Each costs the operator something (Lumi spends
+// tokens, Music spends disk and bandwidth), so each is deny by default and
+// granted here, one member at a time, in one place.
+const GRANTS = [
+  { key: 'chat_enabled', label: 'Lumi', icon: Bot, on: 'bg-violet-500/15 border-violet-500/50 text-violet-300' },
+  { key: 'music_enabled', label: 'Music', icon: Music, on: 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300' },
+];
+
+function AccessToggles({ user, disabled, onToggle }) {
+  return (
+    <div className="flex items-center rounded-xl border border-crimson-900/60 bg-crimson-950/60 p-0.5" role="group" aria-label="Feature access">
+      {GRANTS.map(({ key, label, icon: Icon, on }) => {
+        const granted = !!user[key];
+        return (
+          <button
+            key={key}
+            disabled={disabled}
+            aria-pressed={granted}
+            title={`${granted ? 'Revoke' : 'Grant'} ${label} access`}
+            onClick={() => onToggle(key, label, !granted)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-40 ${
+              granted ? on : 'border-transparent text-crimson-700 hover:text-crimson-300'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" /> {label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function UsersTab({ notify }) {
   const profile = useProfile();
   const [search, setSearch] = useState('');
@@ -205,13 +237,21 @@ export default function UsersTab({ notify }) {
                       ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Verified</span>
                       : u.email ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-500">Unverified</span> : null}
                     {u.has_mnemonic && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/30 border border-crimson-800/50 text-crimson-400">Mnemonic</span>}
-                    {u.chat_enabled && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-violet-500/10 border border-violet-500/30 text-violet-300">Lumi</span>}
                   </div>
                   <p className="text-[10px] font-bold text-crimson-700 mt-1.5 tracking-wide">
                     #{u.user_id} · {u.favorites_count} favs · {u.progress_count} watched · {u.sessions_count} session{u.sessions_count === 1 ? '' : 's'} · joined {fmtDate(u.created_at)}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0 flex-wrap">
+                  <AccessToggles
+                    user={u}
+                    disabled={busyId === u.user_id}
+                    onToggle={(key, label, grant) => act(
+                      u.user_id,
+                      () => adminApi.updateUser(u.user_id, { [key]: grant }),
+                      `${label} access ${grant ? 'granted' : 'revoked'}`,
+                    )}
+                  />
                   <button
                     title={u.is_admin ? 'Revoke admin' : 'Grant admin'}
                     disabled={busyId === u.user_id}
@@ -219,18 +259,6 @@ export default function UsersTab({ notify }) {
                     className="p-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 text-amber-400 hover:border-amber-500/50 hover:bg-amber-500/10 transition-all disabled:opacity-40"
                   >
                     {u.is_admin ? <ShieldOff className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                  </button>
-                  {/* Chat access is a spending grant, so it gets its own explicit
-                      toggle rather than riding along with anything else. It is
-                      deny-by-default server-side; this is the only way to turn it
-                      on for someone. */}
-                  <button
-                    title={u.chat_enabled ? 'Revoke Lumi chat access' : 'Grant Lumi chat access'}
-                    disabled={busyId === u.user_id}
-                    onClick={() => act(u.user_id, () => adminApi.updateUser(u.user_id, { chat_enabled: !u.chat_enabled }), u.chat_enabled ? 'Lumi access revoked' : 'Lumi access granted')}
-                    className="p-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 text-violet-300 hover:border-violet-500/50 hover:bg-violet-500/10 transition-all disabled:opacity-40"
-                  >
-                    {u.chat_enabled ? <BotOff className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                   </button>
                   {u.email && !u.email_verified && (
                     <button
