@@ -132,7 +132,8 @@ export default function Lumi() {
         <button
           onClick={tucked ? () => setTucked(false) : summon}
           title={tucked ? 'Bring Lumi back' : 'Summon Lumi'}
-          className={`fixed bottom-6 right-6 z-[80] w-14 h-14 rounded-full bg-crimson-600 hover:bg-crimson-500 text-white shadow-[0_10px_30px_rgba(255,0,60,0.35)] flex items-center transition-all duration-500 ${
+          // --music-bar is the music player's height while it shows, so this sits above it.
+          className={`fixed bottom-[calc(1.5rem+var(--music-bar,0px))] right-6 z-[80] w-14 h-14 rounded-full bg-crimson-600 hover:bg-crimson-500 text-white shadow-[0_10px_30px_rgba(255,0,60,0.35)] flex items-center transition-all duration-500 ${
             tucked ? 'translate-x-14 opacity-70 justify-start pl-1.5' : 'justify-center hover:scale-105'
           }`}
         >
