@@ -1,10 +1,10 @@
 /*
  * The Companion download page (/extension).
  *
- * The companion now lives on the Chrome Web Store, so this page simply points
- * the viewer at the listing and lets Chrome handle install/updates. No more
- * zip packing, side-loading ritual, or same-origin /extension/ assets — the
- * store is the single source of truth for the build.
+ * The companion lives on the Chrome Web Store and on Firefox Add-ons, so this
+ * page points the viewer at the listing for their browser and lets the store
+ * handle installs and updates. The stores are the single source of the build,
+ * so nothing is side-loaded or served from /extension/.
  *
  * We still detect a live companion (window.CrimsonExtension, injected at
  * document_start) to show an "already bound" state and its version.
@@ -14,12 +14,27 @@ import { Link } from 'react-router-dom';
 import { Puzzle, Power, ShieldCheck, Sparkles, CheckCircle2, ExternalLink, ChevronRight } from 'lucide-react';
 import { useTitle } from './hooks';
 
-// The public listing. Chrome handles install + silent auto-updates from here.
-const STORE_URL = 'https://chromewebstore.google.com/detail/crimson-haven-companion/npfllfkcppdjimedcbaadpaidkjbgkki';
+const STORES = {
+  chrome: {
+    url: 'https://chromewebstore.google.com/detail/crimson-haven-companion/npfllfkcppdjimedcbaadpaidkjbgkki',
+    name: 'Chrome Web Store',
+    add: 'Add to Chrome',
+    confirm: 'Add extension',
+  },
+  firefox: {
+    url: 'https://addons.mozilla.org/en-US/firefox/addon/crimson-haven-companion/',
+    name: 'Firefox Add-ons',
+    add: 'Add to Firefox',
+    confirm: 'Add',
+  },
+};
+
+// Firefox visitors see their own store first; every other browser gets Chrome's.
+const isFirefox = () => typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
 
 // Reads window.CrimsonExtension synchronously and keeps it fresh: the companion
 // injects its MAIN-world API at document_start and fires a one-shot
-// `crimson-extension-ready` event, which can land before this component mounts —
+// `crimson-extension-ready` event, which can land before this component mounts,
 // so we seed from the global AND listen, racing a short re-check against the event.
 function useCompanionPresence() {
   const [present, setPresent] = useState(() => {
@@ -70,6 +85,7 @@ function Step({ index, icon, title, children }) {
 export default function DownloadExtension() {
   useTitle('Claim the Companion');
   const { present, version: liveVersion } = useCompanionPresence();
+  const [store, other] = isFirefox() ? [STORES.firefox, STORES.chrome] : [STORES.chrome, STORES.firefox];
 
   return (
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
@@ -84,8 +100,8 @@ export default function DownloadExtension() {
         </h2>
         <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed font-medium max-w-2xl">
           A featherlight browser familiar that lets the haven resolve and play your sources
-          <strong className="text-crimson-50 font-black"> straight from your own machine</strong> — no throne-room
-          relay in the path. One click from the Chrome Web Store and every supported source bends the knee locally.
+          <strong className="text-crimson-50 font-black"> straight from your own machine</strong>, with no throne-room
+          relay in the path. One click from your browser's store and every supported source bends the knee locally.
         </p>
       </div>
 
@@ -97,7 +113,7 @@ export default function DownloadExtension() {
             <p className="text-crimson-50 font-black tracking-tight">The companion is already bound to this browser, darling.</p>
             <p className="text-sm text-crimson-100/70 font-medium leading-relaxed">
               {liveVersion ? `Version ${liveVersion} is awake and listening. ` : 'It is awake and listening. '}
-              Just make sure its single red button is lit — then watch anything and your sources resolve in your own hands.
+              Just make sure its single red button is lit, then watch anything and your sources resolve in your own hands.
             </p>
           </div>
         </div>
@@ -117,23 +133,34 @@ export default function DownloadExtension() {
               </span>
             )}
             <span className="px-2.5 py-1 bg-crimson-950/60 border border-crimson-900/60 rounded-lg text-[10px] font-black uppercase tracking-widest text-crimson-500">
-              Chromium · MV3
+              Chromium &amp; Firefox · MV3
             </span>
           </div>
           <p className="text-sm text-crimson-100/70 font-medium leading-relaxed max-w-xl">
-            Built for Chromium-blooded browsers — Chrome 111+, Edge, Brave, Opera. Firefox &amp; Safari
-            speak a different dialect of the rites and aren't supported yet. Installed straight from the
-            Chrome Web Store, so it stays up to date on its own.
+            Built for Chrome 111+, Edge, Brave, Opera and Firefox 140+. Safari speaks a different dialect
+            of the rites and isn't supported yet. Installed straight from your browser's store, so it stays
+            up to date on its own.
           </p>
-          <a
-            href={STORE_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-7 py-4 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl transition-all shadow-lg font-black uppercase tracking-widest text-xs group"
-          >
-            <ExternalLink className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
-            Get it on the Chrome Web Store
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={store.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-7 py-4 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl transition-all shadow-lg font-black uppercase tracking-widest text-xs group"
+            >
+              <ExternalLink className="w-5 h-5 group-hover:translate-y-0.5 transition-transform" />
+              Get it on {store.name}
+            </a>
+            <a
+              href={other.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-5 py-4 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl transition-all font-black uppercase tracking-widest text-xs"
+            >
+              <ExternalLink className="w-4 h-4" />
+              {other.name}
+            </a>
+          </div>
         </div>
       </div>
 
@@ -146,19 +173,19 @@ export default function DownloadExtension() {
 
         <ol className="space-y-0">
           <Step index="1" icon={<ExternalLink className="w-4 h-4" />} title="Open the listing">
-            Follow the sigil above to the companion's page on the
-            <strong className="text-crimson-50 font-black"> Chrome Web Store</strong>. It opens in a new tab,
+            Follow the sigil above to the companion's page on
+            <strong className="text-crimson-50 font-black"> {store.name}</strong>. It opens in a new tab,
             leaving the haven undisturbed behind you.
           </Step>
-          <Step index="2" icon={<Puzzle className="w-4 h-4" />} title="Add to Chrome">
-            Press <strong className="text-crimson-50 font-black">Add to Chrome</strong>, then confirm with
-            <strong className="text-crimson-50 font-black"> Add extension</strong> when your browser asks. The crimson
-            blood-drop sigil joins your browser — and the store keeps it updated for you, forever.
+          <Step index="2" icon={<Puzzle className="w-4 h-4" />} title={store.add}>
+            Press <strong className="text-crimson-50 font-black">{store.add}</strong>, then confirm with
+            <strong className="text-crimson-50 font-black"> {store.confirm}</strong> when your browser asks. The crimson
+            blood-drop sigil joins your browser, and the store keeps it updated for you, forever.
           </Step>
-          <Step index="3" icon={<Power className="w-4 h-4" />} title="Kneel — one red button">
+          <Step index="3" icon={<Power className="w-4 h-4" />} title="Kneel: one red button">
             Pin the companion to your toolbar, click its sigil, and press the single red
-            <strong className="text-crimson-50 font-black"> "Use Extension"</strong> button. When it glows crimson, it's awake —
-            that's the whole configuration. Refresh crimsonhaven and your sources now answer to you directly.
+            <strong className="text-crimson-50 font-black"> "Use Extension"</strong> button. When it glows crimson, it's awake.
+            That's the whole configuration. Refresh crimsonhaven and your sources now answer to you directly.
           </Step>
         </ol>
       </div>
@@ -169,7 +196,7 @@ export default function DownloadExtension() {
         <p className="italic text-crimson-100/90 leading-relaxed text-lg tracking-tight">
           "Fear not, darling~ My little familiar scrapes nothing, hoards no secrets, and whispers to no one.
           It merely unshackles your own browser's requests so the sources answer to <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">you</span>,
-          directly — no relay, no middleman, no trace left at my door. A pure upgrade, as all my gifts are~"
+          directly: no relay, no middleman, no trace left at my door. A pure upgrade, as all my gifts are~"
         </p>
         <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
           <span className="block w-8 h-px bg-crimson-500/50" />
@@ -181,16 +208,17 @@ export default function DownloadExtension() {
       <div className="flex items-start gap-4 p-5 rounded-2xl bg-crimson-950/30 border border-crimson-900/40">
         <ShieldCheck className="w-6 h-6 text-crimson-500 shrink-0 mt-0.5" />
         <p className="text-sm text-crimson-100/70 font-medium leading-relaxed">
-          The companion is entirely optional — without it, the haven simply resolves your sources the old way,
+          The companion is entirely optional. Without it, the haven simply resolves your sources the old way,
           through the backend. Nothing breaks; you just hand the work back to me. It's published on the
-          Chrome Web Store, reviewed by Google, and removable any time from the same extensions page.
+          Chrome Web Store and Firefox Add-ons, reviewed by both, and removable any time from your browser's
+          extensions page.
         </p>
       </div>
 
       {/* Footer note */}
       <div className="flex items-center justify-between gap-4 pt-2">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 flex items-center gap-2">
-          <ShieldCheck className="w-3.5 h-3.5" /> Desktop Chromium only
+          <ShieldCheck className="w-3.5 h-3.5" /> Desktop Chromium &amp; Firefox
         </p>
         <Link
           to="/about"
