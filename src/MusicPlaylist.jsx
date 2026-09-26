@@ -2,15 +2,21 @@
 // playback. Tracks Spotify has dropped stay listed at the end, marked, because
 // keeping them is the point of this whole surface. A playlist of your own
 // (source 'local') is edited here instead: songs are added by search.
-import { useState } from 'react';
+//
+// Without a connection, a downloaded playlist opens from the device's own copy,
+// playable but not editable.
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, CircleAlert, Clock, Loader2, Pause, Play, Plus, RefreshCw, RotateCw, Search, Shuffle, Trash2, X,
+  ArrowLeft, ArrowDownToLine, CircleAlert, Clock, Loader2, Pause, Play, Plus, RefreshCw, RotateCw, Search, Shuffle,
+  Trash2, WifiOff, X,
 } from 'lucide-react';
 
 import { musicApi, useMusicPlaylist } from './hooks';
 import { Cover } from './music/Cover';
 import AddSongsDialog from './music/AddSongsDialog';
+import DownloadButton from './music/DownloadButton';
+import { refreshDownload, savedPlaylist, useDownloads } from './music/downloads';
 import ReviewDialog from './music/ReviewDialog';
 import { formatTime } from './music/queue';
 import { currentTrack, playTracks, toggle, useMusicPlayer } from './music/player';
@@ -47,7 +53,13 @@ export default function MusicPlaylist() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { playlist, tracks, loading, error, reload } = useMusicPlaylist(id);
+  const live = useMusicPlaylist(id);
+  const downloads = useDownloads();
+  // A request that never reached the server has no status: that is being offline.
+  const saved = live.error && !live.error.status ? savedPlaylist(id, downloads) : null;
+  const offline = !!saved;
+  const { playlist, tracks } = saved || live;
+  const { loading, error, reload } = live;
   const player = useMusicPlayer();
   const playing = currentTrack(player);
   const [reviewing, setReviewing] = useState(null);
@@ -56,10 +68,15 @@ export default function MusicPlaylist() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
 
+  // Every fresh listing keeps a downloaded copy in step with the server.
+  useEffect(() => {
+    if (live.playlist) refreshDownload(live.playlist, live.tracks);
+  }, [live.playlist, live.tracks]);
+
   if (loading) {
     return <div className="py-32 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Opening the playlist...</div>;
   }
-  if (error || !playlist) {
+  if ((error && !offline) || !playlist) {
     return (
       <div className="py-32 text-center space-y-4">
         <p className="text-crimson-400 text-sm font-bold">{error?.message || 'Playlist not found.'}</p>
@@ -68,11 +85,12 @@ export default function MusicPlaylist() {
     );
   }
 
-  const ready = tracks.filter((t) => t.status === 'ready');
+  const isPlayable = (t) => t.status === 'ready' && (!offline || downloads.stored.has(t.id));
+  const ready = tracks.filter(isPlayable);
   const source = { name: playlist.name, path: `/music/playlist/${playlist.id}` };
   const isThisPlaylist = player.source?.path === source.path;
   const totalMs = tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
-  const own = playlist.source === 'local';
+  const own = playlist.source === 'local' && !offline;
 
   // Dropping the flag keeps a reload or a step back from opening the search again.
   const closeAdding = () => {
@@ -118,6 +136,7 @@ export default function MusicPlaylist() {
           <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">{SOURCE_LABEL[playlist.source] || playlist.source}</p>
           <h1 className="text-3xl sm:text-5xl font-black text-crimson-50 tracking-tighter leading-none break-words">{playlist.name}</h1>
           <p className="text-xs font-bold text-crimson-400">
+            {offline && <span className="inline-flex items-center gap-1 text-amber-300 mr-2"><WifiOff className="w-3.5 h-3.5" /> Offline, from this device ·</span>}
             {ready.length} of {tracks.length} on the share · {formatTime(totalMs / 1000)}
             {playlist.last_error && <span className="text-amber-400"> · last sync failed: {playlist.last_error}</span>}
           </p>
@@ -143,7 +162,8 @@ export default function MusicPlaylist() {
                 <Plus className="w-4 h-4" /> Add songs
               </button>
             )}
-            {SYNCED_SOURCES.includes(playlist.source) && (
+            {!offline && <DownloadButton playlist={playlist} tracks={tracks} />}
+            {SYNCED_SOURCES.includes(playlist.source) && !offline && (
               <>
                 <button disabled={busy} onClick={() => run(() => musicApi.sync(playlist.id), 'Synced.')}
                   className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
@@ -156,10 +176,12 @@ export default function MusicPlaylist() {
                 </label>
               </>
             )}
-            <button disabled={busy} onClick={remove} aria-label="Remove playlist" title="Remove playlist"
-              className="p-3 rounded-2xl text-crimson-700 hover:text-crimson-400 hover:bg-crimson-900/30 disabled:opacity-40">
-              <Trash2 className="w-4 h-4" />
-            </button>
+            {!offline && (
+              <button disabled={busy} onClick={remove} aria-label="Remove playlist" title="Remove playlist"
+                className="p-3 rounded-2xl text-crimson-700 hover:text-crimson-400 hover:bg-crimson-900/30 disabled:opacity-40">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
           {notice && <p className="text-xs font-bold text-crimson-300">{notice}</p>}
         </div>
@@ -178,7 +200,7 @@ export default function MusicPlaylist() {
       <ol className="divide-y divide-crimson-900/30 border-t border-crimson-900/30">
         {tracks.map((track, index) => {
           const isCurrent = playing?.id === track.id;
-          const playable = track.status === 'ready';
+          const playable = isPlayable(track);
           return (
             <li key={track.id} className={`flex items-center gap-3 py-2.5 px-2 rounded-xl ${isCurrent ? 'bg-crimson-600/10' : ''} ${track.removed_upstream ? 'opacity-70' : ''}`}>
               <button
@@ -200,6 +222,9 @@ export default function MusicPlaylist() {
                     {track.removed_upstream && <span className="ml-2 text-[9px] font-black uppercase tracking-widest text-amber-400/80">Gone from Spotify</span>}
                   </span>
                 </span>
+                {downloads.stored.has(track.id) && (
+                  <span title="On this device" className="text-emerald-400/70 flex-shrink-0"><ArrowDownToLine className="w-3.5 h-3.5" /></span>
+                )}
               </button>
               <StatusCell
                 track={track}

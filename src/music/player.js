@@ -4,6 +4,9 @@
 // the background (screen off, car on Bluetooth) only while that one element
 // keeps playing. Swapping elements between tracks would drop the media session,
 // so tracks change by swapping the element's src.
+//
+// A song on the device (downloaded, or preloaded ahead of the queue) plays from
+// there, through an object URL, and only a song that is not streams.
 import { useSyncExternalStore } from 'react';
 
 import {
@@ -13,7 +16,10 @@ import {
   nextPosition,
   previousPosition,
   shuffledOrder,
+  upcomingPositions,
 } from './queue';
+import { preloadAhead, preloadCount } from './preload';
+import { localAudio } from './trackStore';
 import { bindMediaSession, clearMediaSession, showPlaying, showPosition, showTrack } from './mediaSession';
 
 const SAVED_KEY = 'crimson:music-queue';
@@ -39,6 +45,11 @@ let state = EMPTY;
 let audio = null;
 let failedInARow = 0;
 let lastSavedAt = 0;
+// The object URL of the device copy playing now, released when the next song loads.
+let objectUrl = null;
+// Counts loads, so a slow read from the device cannot start a song the member
+// has already skipped past.
+let loadCount = 0;
 const listeners = new Set();
 
 function emit(patch) {
@@ -116,6 +127,7 @@ function element() {
     failedInARow = 0;
     emit({ loading: false, playing: true, error: null });
     syncPosition();
+    preloadNext();
   });
   audio.addEventListener('loadedmetadata', () => {
     emit({ duration: audio.duration });
@@ -148,26 +160,49 @@ function syncPosition() {
   showPosition(audio.duration, audio.currentTime, audio.playbackRate);
 }
 
+function preloadNext() {
+  const upcoming = upcomingPositions(state.position, state.order.length, state.repeat, preloadCount())
+    .map((position) => state.tracks[state.order[position]]);
+  preloadAhead(currentTrack(), upcoming);
+}
+
+function setSource(src, local) {
+  const previous = objectUrl;
+  objectUrl = local ? src : null;
+  element().src = src;
+  if (previous) URL.revokeObjectURL(previous);
+}
+
 function onError() {
   const track = currentTrack();
+  // A broken copy on the device: the server still has the song.
+  if (objectUrl && track?.stream_url) {
+    setSource(track.stream_url, false);
+    play();
+    return;
+  }
   failedInARow += 1;
   emit({ loading: false, error: track ? `Could not play ${track.title}.` : 'Playback failed.' });
   if (failedInARow < MAX_SKIPS_ON_ERROR && state.tracks.length > 1) advance(true);
 }
 
-function load(position, autoplay, startAt = 0) {
+async function load(position, autoplay, startAt = 0) {
   const track = state.tracks[state.order[position]];
   if (!track) return;
   const el = element();
+  const thisLoad = ++loadCount;
   emit({ position, currentTime: startAt, duration: track.duration_ms / 1000, loading: autoplay, error: null });
   // The last song's position must not linger on the lock screen until this one's metadata loads.
   showPosition(0, 0);
-  el.src = track.stream_url;
+  showTrack(track);
+  save();
+  const copy = await localAudio(track.id).catch(() => null);
+  if (thisLoad !== loadCount) return;
+  if (copy) setSource(URL.createObjectURL(copy), true);
+  else setSource(track.stream_url, false);
   if (startAt > 0) {
     el.addEventListener('loadedmetadata', () => { el.currentTime = startAt; }, { once: true });
   }
-  showTrack(track);
-  save();
   if (autoplay) play();
 }
 
@@ -256,11 +291,13 @@ export function toggleShuffle() {
     emit({ shuffle: true, order: shuffledOrder(state.tracks.length, current), position: 0 });
   }
   save();
+  preloadNext();
 }
 
 export function toggleRepeat() {
   emit({ repeat: cycleRepeat(state.repeat) });
   save();
+  preloadNext();
 }
 
 export function playAt(position) {
@@ -268,11 +305,14 @@ export function playAt(position) {
 }
 
 export function close() {
+  loadCount += 1;
   if (audio) {
     audio.pause();
     audio.removeAttribute('src');
     audio.load();
   }
+  if (objectUrl) URL.revokeObjectURL(objectUrl);
+  objectUrl = null;
   state = EMPTY;
   for (const listener of listeners) listener();
   clearMediaSession();

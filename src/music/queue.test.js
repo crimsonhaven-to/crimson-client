@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   REPEAT_ALL, REPEAT_OFF, REPEAT_ONE, cycleRepeat, formatTime, identityOrder, nextPosition,
-  previousPosition, shuffledOrder,
+  previousPosition, shuffledOrder, upcomingPositions,
 } from './queue';
 
 describe('nextPosition', () => {
@@ -61,5 +61,22 @@ describe('cycleRepeat and formatTime', () => {
     expect(formatTime(202.4)).toBe('3:22');
     expect(formatTime(3725)).toBe('1:02:05');
     expect(formatTime(NaN)).toBe('0:00');
+  });
+});
+
+describe('upcomingPositions', () => {
+  it('lists what plays next and stops at the end with repeat off', () => {
+    expect(upcomingPositions(0, 5, REPEAT_OFF, 3)).toEqual([1, 2, 3]);
+    expect(upcomingPositions(3, 5, REPEAT_OFF, 3)).toEqual([4]);
+  });
+
+  it('wraps with repeat, and never lists the current track again', () => {
+    expect(upcomingPositions(3, 5, REPEAT_ALL, 3)).toEqual([4, 0, 1]);
+    expect(upcomingPositions(1, 3, REPEAT_ONE, 10)).toEqual([2, 0]);
+  });
+
+  it('is empty for a count of zero or a single track', () => {
+    expect(upcomingPositions(0, 5, REPEAT_ALL, 0)).toEqual([]);
+    expect(upcomingPositions(0, 1, REPEAT_ALL, 3)).toEqual([]);
   });
 });

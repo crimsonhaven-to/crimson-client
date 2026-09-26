@@ -6,14 +6,23 @@
  * (e.g. https://dev-backend.crimsonhaven.to), so the guard below — "same-origin
  * GET only" — means every API/auth/stream request bypasses the worker entirely
  * and hits the network exactly as before. Non-GET requests are never touched.
+ *
+ * Music on the device is the one exception to "network first": songs and covers
+ * the page stored under /music-offline/ (src/music/trackStore.js) are served
+ * from their caches, which an update of this worker never deletes.
  */
 
-const VERSION = 'v3';
-const SHELL_CACHE = `crimson-shell-${VERSION}`;
+const VERSION = 'v4';
+// The build replaces BUILD_ID and BUILD_ASSETS (see swPrecache in vite.config.js),
+// so every deploy is a new worker that precaches that build's own chunks. Without
+// them, a page never opened online (say, Music) would not load offline.
+const BUILD_ID = 'dev';
+const BUILD_ASSETS = [];
+const SHELL_CACHE = `crimson-shell-${VERSION}-${BUILD_ID}`;
 const RUNTIME_CACHE = `crimson-runtime-${VERSION}`;
+const MUSIC_CACHE_PREFIX = 'crimson-music-';
+const MUSIC_COVER_PATH = '/music-offline/cover/';
 
-// Minimal app shell precache. Hashed JS/CSS bundles are cached at runtime
-// instead (their names change per build, so they can't be listed here).
 const SHELL_ASSETS = [
   '/',
   '/index.html',
@@ -28,7 +37,7 @@ self.addEventListener('install', (event) => {
     caches
       .open(SHELL_CACHE)
       // addAll is atomic; ignore individual misses so install never hard-fails.
-      .then((cache) => Promise.allSettled(SHELL_ASSETS.map((a) => cache.add(a))))
+      .then((cache) => Promise.allSettled([...SHELL_ASSETS, ...BUILD_ASSETS].map((a) => cache.add(a))))
       .then(() => self.skipWaiting())
   );
 });
@@ -40,7 +49,7 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((k) => k !== SHELL_CACHE && k !== RUNTIME_CACHE)
+            .filter((k) => k !== SHELL_CACHE && k !== RUNTIME_CACHE && !k.startsWith(MUSIC_CACHE_PREFIX))
             .map((k) => caches.delete(k))
         )
       )
@@ -61,6 +70,13 @@ self.addEventListener('fetch', (event) => {
   // API on another origin, POST/DELETE auth + progress calls, the NDJSON stream)
   // falls straight through to the network, untouched.
   if (request.method !== 'GET' || url.origin !== self.location.origin) {
+    return;
+  }
+
+  if (url.pathname.startsWith(MUSIC_COVER_PATH)) {
+    event.respondWith(
+      caches.match(url.pathname).then((r) => r || new Response('Not found', { status: 404 }))
+    );
     return;
   }
 
