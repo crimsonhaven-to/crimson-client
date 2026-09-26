@@ -1,13 +1,16 @@
 // The Music hub: the member's playlists, the Spotify connection, and the ways
 // to add more. Deny by default like Lumi, so a member without the
-// grant sees why instead of an empty page.
+// grant sees why instead of an empty page. Without a connection it shows the
+// playlists downloaded to this device instead.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CircleAlert, Music, Play, Plus } from 'lucide-react';
+import { ArrowDownToLine, CircleAlert, Music, Play, Plus, WifiOff } from 'lucide-react';
 
 import { HubShell } from './hubKit';
 import { useMusicPlaylists, useMusicStatus } from './hooks';
 import { Cover } from './music/Cover';
+import DeviceCard from './music/DeviceCard';
+import { isDownloaded, savedPlaylist, useDownloads } from './music/downloads';
 import ImportPanel from './music/ImportPanel';
 import NewPlaylistDialog from './music/NewPlaylistDialog';
 import SpotifyCard from './music/SpotifyCard';
@@ -34,7 +37,7 @@ function Notice({ children }) {
   );
 }
 
-function PlaylistTile({ playlist }) {
+function PlaylistTile({ playlist, downloaded }) {
   const total = playlist.track_count + playlist.removed_count;
   const pending = total - playlist.ready_count - playlist.review_count - playlist.problem_count;
   return (
@@ -44,6 +47,11 @@ function PlaylistTile({ playlist }) {
         <span className="absolute bottom-3 right-3 w-11 h-11 rounded-full bg-crimson-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
           <Play className="w-5 h-5 translate-x-px" fill="currentColor" />
         </span>
+        {downloaded && (
+          <span title="Downloaded to this device" className="absolute top-3 right-3 w-7 h-7 rounded-full bg-crimson-950/80 text-emerald-300 flex items-center justify-center">
+            <ArrowDownToLine className="w-4 h-4" />
+          </span>
+        )}
       </div>
       <div className="min-w-0">
         <p className="text-sm font-bold text-crimson-50 truncate group-hover:text-crimson-300">{playlist.name}</p>
@@ -73,14 +81,45 @@ function NewPlaylistTile({ onClick }) {
   );
 }
 
+function OfflineHub({ downloads }) {
+  const saved = Object.keys(downloads.saved).map((id) => savedPlaylist(id, downloads));
+  return (
+    <HubShell title="Your" accent="Music" icon={<Music className="w-4 h-4" />} subtitle="Offline: playing from this device">
+      <Notice>
+        <span className="inline-flex items-center gap-2"><WifiOff className="w-4 h-4" /> No connection to the server. Your downloads still play.</span>
+      </Notice>
+      {saved.length === 0 ? (
+        <p className="text-crimson-500 text-sm">Nothing is downloaded to this device yet. Once you are back online, open a playlist and press Download.</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+          {saved.map(({ playlist, tracks }) => (
+            <Link key={playlist.id} to={`/music/playlist/${playlist.id}`} className="group space-y-3">
+              <Cover src={playlist.cover_url} className="w-full aspect-square rounded-2xl shadow-xl group-hover:scale-[1.02] transition-transform" />
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-crimson-50 truncate group-hover:text-crimson-300">{playlist.name}</p>
+                <p className="text-[11px] text-crimson-600 truncate">
+                  {tracks.filter((t) => downloads.stored.has(t.id)).length} songs on this device
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </HubShell>
+  );
+}
+
 export default function MusicHub() {
   const status = useMusicStatus();
   const { playlists, reload } = useMusicPlaylists();
+  const downloads = useDownloads();
   const [creating, setCreating] = useState(false);
 
   if (status.loading) {
     return <div className="py-32 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Tuning the strings...</div>;
   }
+  // A request that never reached the server has no status: that is being offline.
+  if (status.error && !status.error.status) return <OfflineHub downloads={downloads} />;
   if (status.error) return <Blocked error={status.error} />;
 
   const s = status.data;
@@ -102,12 +141,13 @@ export default function MusicHub() {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
         <NewPlaylistTile onClick={() => setCreating(true)} />
-        {playlists.map((p) => <PlaylistTile key={p.id} playlist={p} />)}
+        {playlists.map((p) => <PlaylistTile key={p.id} playlist={p} downloaded={isDownloaded(p.id, downloads)} />)}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 items-start">
         <SpotifyCard status={s} onChanged={refresh} />
         <ImportPanel connected={s.spotify.connected} />
+        <DeviceCard />
       </div>
 
       {creating && <NewPlaylistDialog onClose={() => setCreating(false)} />}

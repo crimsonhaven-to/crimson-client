@@ -17,6 +17,8 @@ import Lumi from './Lumi';
 // The music player's bottom bar. Eager and tiny: it renders nothing until a
 // queue exists, and it must outlive every route change for playback to.
 import MiniPlayer from './music/MiniPlayer';
+import { forgetDownloads, hasDownloads, resumeDownloads } from './music/downloads';
+import { close as closeMusic } from './music/player';
 import NotFound from './NotFound';
 // Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
 // in the main bundle avoids a chunk round-trip on the critical path.
@@ -877,6 +879,8 @@ function App() {
   const { local_library_enabled: localEnabled, live_tv_enabled: liveTvEnabled, music_enabled: musicServer } = usePublicConfig();
   // Music needs both the server's library and this account's grant.
   const musicEnabled = !!musicServer && !!profile?.music_enabled;
+  // Offline the profile never loads, so downloads on this device keep Music reachable.
+  const showMusic = musicEnabled || hasDownloads();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -906,8 +910,16 @@ function App() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Picks up songs added to downloaded playlists since the app last ran.
+  useEffect(() => {
+    if (musicEnabled) resumeDownloads();
+  }, [musicEnabled]);
+
   const handleLogout = () => {
     setUserMenuOpen(false);
+    // Nothing of this account's music stays on a device someone else may use next.
+    closeMusic();
+    forgetDownloads();
     logout();
     navigate('/');
   };
@@ -930,7 +942,7 @@ function App() {
     { to: "/live", label: "Live TV", icon: <Radio className="w-4 h-4" />, live: true },
     { to: "/local", label: "Local", icon: <HardDrive className="w-4 h-4" />, local: true },
     { to: "/music", label: "Music", icon: <Music className="w-4 h-4" />, music: true },
-  ].filter(l => (!l.local || localEnabled) && (!l.live || liveTvEnabled) && (!l.music || musicEnabled));
+  ].filter(l => (!l.local || localEnabled) && (!l.live || liveTvEnabled) && (!l.music || showMusic));
   const personalLinks = [
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" /> },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" /> },

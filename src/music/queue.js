@@ -41,6 +41,19 @@ export function previousPosition(position, length, elapsedSeconds, repeat) {
   return repeat === REPEAT_ALL ? length - 1 : 0;
 }
 
+// The positions that will play after `position` if nothing is skipped, at most
+// `count`, for keeping them ready on the device. Repeat one still looks ahead
+// in the order, because the next song is one press away.
+export function upcomingPositions(position, length, repeat, count) {
+  const upcoming = [];
+  for (let step = 1; step <= count && step < length; step += 1) {
+    const next = position + step;
+    if (next < length) upcoming.push(next);
+    else if (repeat !== REPEAT_OFF) upcoming.push(next % length);
+  }
+  return upcoming;
+}
+
 export function cycleRepeat(repeat) {
   if (repeat === REPEAT_OFF) return REPEAT_ALL;
   if (repeat === REPEAT_ALL) return REPEAT_ONE;
