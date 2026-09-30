@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Bot, LogOut, Mail, Music, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 
 import { useProfile } from '../account/profile';
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { fmtDate } from './format';
 
 // Mnemonic accounts have no address and are skipped server-side.

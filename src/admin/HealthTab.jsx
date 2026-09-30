@@ -4,7 +4,7 @@ import {
   PowerOff, Radio, WifiOff,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { StatCard, StatusDot } from './ui';
 import { fmtDate, statusMeta } from './format';
 

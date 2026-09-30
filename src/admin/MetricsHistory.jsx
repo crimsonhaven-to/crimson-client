@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, LineChart, RefreshCw, Server } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import TimeChart from './TimeChart';
 import { parseDuration } from './chartFormat';
 

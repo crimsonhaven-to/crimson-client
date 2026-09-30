@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Check, Copy, ExternalLink, Loader2, Unplug } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { musicApi } from '../hooks/music';
+import { musicApi } from './hooks';
 import { Cover } from './Cover';
 import { beginAuthorization, isClientId, redirectUri } from './spotifyAuth';
 

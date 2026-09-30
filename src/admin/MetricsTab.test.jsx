@@ -12,7 +12,7 @@ const metrics = vi.fn();
 // Unmocked, the history half would crash instead of rendering its setup note, and
 // these tests would pass without exercising the snapshot.
 const metricsPanels = vi.fn();
-vi.mock('../adminApi', () => ({
+vi.mock('./api', () => ({
   adminApi: {
     metrics: (...a) => metrics(...a),
     metricsPanels: (...a) => metricsPanels(...a),

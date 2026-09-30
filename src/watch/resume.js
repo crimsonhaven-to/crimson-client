@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch, useSessionToken } from '../hooks/apiClient';
+import { apiFetch, useSessionToken } from '../api/client';
 
 // Rows come back newest-first, so the first match is the latest episode. Non-anime
 // shows also require a null anilist_id, mirroring the backend dedup key.

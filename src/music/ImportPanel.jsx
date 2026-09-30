@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { ExternalLink, FileUp, Link2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { musicApi } from '../hooks/music';
+import { musicApi } from './hooks';
 
 const EXPORTIFY = 'https://exportify.app';
 

@@ -23,7 +23,7 @@
 
 /* "Catgirl Lumi" light theme. A theme is one block that re-points the crimson
    variables, so every `crimson-*` utility and the mesh background re-skin with no
-   JSX changes. src/hooks/theme.js sets <html data-theme="catgirl">.
+   JSX changes. src/account/theme.js sets <html data-theme="catgirl">.
    The scale is remapped by role, not kept as a smooth ramp:
      950 to 800  light surfaces (page, cards, inputs)
      700         soft rose for dividers and secondary chrome

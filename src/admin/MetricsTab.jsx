@@ -7,7 +7,7 @@ import {
   Layers, LineChart, RefreshCw, Route, Zap,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import MetricsHistory from './MetricsHistory';
 import { StatCard } from './ui';
 import {

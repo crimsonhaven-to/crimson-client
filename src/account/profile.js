@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { apiFetch, extractError, useSessionToken } from '../hooks/apiClient';
-import { syncPlaybackPrefsFromAccount } from '../hooks/playbackPrefs';
+import { apiFetch, extractError, useSessionToken } from '../api/client';
+import { syncPlaybackPrefsFromAccount } from './playbackPrefs';
 
 // /account/me only, so the nav can check is_admin without the full useAccount
 // fan-out on every page.

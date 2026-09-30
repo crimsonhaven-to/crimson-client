@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Bot, Coins, KeyRound, RefreshCw, Save, Sparkles, Users } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { StatCard } from './ui';
 
 const PROVIDERS = [

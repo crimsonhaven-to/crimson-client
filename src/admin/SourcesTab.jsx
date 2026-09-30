@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Download, Film, FolderOpen, FolderSearch, HardDrive, Plus, Power, PowerOff, RefreshCw, Trash2 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 
 const formatBytes = (n) => {
   if (n == null) return '-';

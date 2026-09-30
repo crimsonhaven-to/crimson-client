@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Copy, Eye, EyeOff, KeyRound, Plug, Plus, RefreshCw, Trash2, X } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { fmtDate } from './format';
 
 export default function ApiKeysTab({ notify }) {

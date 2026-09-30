@@ -8,7 +8,7 @@
 // app online, fetches songs added since and lets go of songs removed.
 import { useSyncExternalStore } from 'react';
 
-import { musicApi } from '../hooks/music';
+import { musicApi } from './hooks';
 import {
   DOWNLOADS, coverKey, forget, forgetAll, storeAudio, storeCover, storedAudioIds, supported,
 } from './trackStore';

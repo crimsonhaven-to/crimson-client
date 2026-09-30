@@ -13,7 +13,7 @@ import tailwindcss from '@tailwindcss/vite'
 const realSources = fileURLToPath(
   new URL('./vendor/crimson-sources/src/index.ts', import.meta.url),
 )
-const stubSources = fileURLToPath(new URL('./src/sourcesStub.js', import.meta.url))
+const stubSources = fileURLToPath(new URL('./src/sources/stub.js', import.meta.url))
 const hasRealSources = existsSync(realSources)
 console.info(
   hasRealSources

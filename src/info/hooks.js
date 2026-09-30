@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../hooks/apiClient';
-import { memGet, memSet } from '../hooks/memCache';
+import { apiFetch } from '../api/client';
+import { memGet, memSet } from '../api/memCache';
 
 export function useSupporters() {
   const [supporters, setSupporters] = useState([]);

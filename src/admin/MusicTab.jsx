@@ -5,7 +5,7 @@ import {
   AlertCircle, Clock, Cloud, CloudOff, Disc3, HardDrive, Music, Pause, Play, RefreshCw, Search,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { Cover } from '../music/Cover';
 import { currentTrack, playTracks, toggle, useMusicPlayer } from '../music/player';
 import { formatTime } from '../music/queue';

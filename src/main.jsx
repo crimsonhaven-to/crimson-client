@@ -1,9 +1,9 @@
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import ErrorBoundary from './ErrorBoundary';
-import { summonLumiConsole } from './lumiConsole';
-import { applyThemeToDom, getTheme } from './hooks/theme';
+import ErrorBoundary from './shell/ErrorBoundary';
+import { summonLumiConsole } from './lumi/console';
+import { applyThemeToDom, getTheme } from './account/theme';
 import "./index.css";
 
 // index.html already set `data-theme` to avoid a flash; this also updates the

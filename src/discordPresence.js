@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getPlaybackPrefs } from './hooks/playbackPrefs';
+import { getPlaybackPrefs } from './account/playbackPrefs';
 import { currentTrack, getState as getPlayerState, subscribe as subscribeToPlayer } from './music/player';
 
 // Loopback is "potentially trustworthy", so an https page may open ws://127.0.0.1

@@ -4,7 +4,7 @@ import {
   Ticket, UserPlus, X,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { StatCard } from './ui';
 import { fmtDate } from './format';
 

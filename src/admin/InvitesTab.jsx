@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Copy, Plus, RefreshCw, Ticket, Trash2 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { fmtDate } from './format';
 
 export default function InvitesTab({ notify }) {

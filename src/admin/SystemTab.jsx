@@ -4,7 +4,7 @@ import {
   Power, Radio, RefreshCw, Shield, ShieldOff, Wifi, WifiOff, Zap,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { FlagBadge, StatCard } from './ui';
 import { fmtDate, statusMeta } from './format';
 

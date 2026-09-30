@@ -11,7 +11,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 const metricsPanels = vi.fn();
 const metricsSeries = vi.fn();
 const metricsTargets = vi.fn();
-vi.mock('../adminApi', () => ({
+vi.mock('./api', () => ({
   adminApi: {
     metricsPanels: (...a) => metricsPanels(...a),
     metricsSeries: (...a) => metricsSeries(...a),

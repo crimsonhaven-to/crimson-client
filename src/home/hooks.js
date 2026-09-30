@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiFetch, useSessionToken } from '../hooks/apiClient';
-import { memGet, memSet } from '../hooks/memCache';
+import { apiFetch, useSessionToken } from '../api/client';
+import { memGet, memSet } from '../api/memCache';
 
 export function useRecommendations(limit = 24) {
   const sessionToken = useSessionToken();

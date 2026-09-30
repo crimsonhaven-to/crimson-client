@@ -4,7 +4,7 @@ import {
   FolderSearch, HardDrive, Languages, Pencil, Plus, Power, PowerOff, RefreshCw, Trash2,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { formatBytes } from './format';
 import { StatCard } from './ui';
 
