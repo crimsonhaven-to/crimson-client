@@ -1,9 +1,3 @@
-// --- Live TV browse hub -------------------------------------------------------
-// The browse home for the Live TV surface: the iptv-org catalogue of free-to-air
-// broadcasts, served by the backend's iptv_engine. Channels aren't poster-shaped
-// (logos are landscape marks on transparent PNGs), so this hub renders its own
-// channel tile instead of PosterGrid — everything else (shell, chips, states)
-// comes from the shared hubKit so it reads as one surface with the others.
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tv, Radio, Globe2, Tag, ChevronDown } from 'lucide-react';
@@ -12,12 +6,10 @@ import {
   HubShell, ChipRow, Chip, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState,
 } from './hubKit';
 
-// How many countries get a chip before the row collapses behind "More Realms"
-// (the catalogue spans ~180 countries — the full row would swallow the page).
+// The catalogue spans ~180 countries; a full chip row would swallow the page.
 const COUNTRY_CHIP_LIMIT = 14;
 
-// One channel tile: the broadcaster's mark on a glass slab (logos are landscape
-// and often transparent, so object-contain on padding — never a cropped cover).
+// Logos are landscape and often transparent: object-contain on padding, never a cropped cover.
 function ChannelCard({ channel, onSelect }) {
   return (
     <button onClick={() => onSelect(channel)} className="group text-left flex flex-col gap-2.5 w-full focus:outline-none">
@@ -37,7 +29,6 @@ function ChannelCard({ channel, onSelect }) {
 
         <div className="absolute inset-0 bg-gradient-to-t from-crimson-950/80 via-transparent to-transparent opacity-60" />
 
-        {/* Live pulse — every tile here is a live broadcast. */}
         <span className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-crimson-950/70 backdrop-blur-sm border border-crimson-800/60">
           <span className="relative flex w-1.5 h-1.5">
             <span className="absolute inline-flex w-full h-full rounded-full bg-crimson-500 opacity-60 animate-ping" />
@@ -73,8 +64,7 @@ export default function LiveTvHub() {
   const [allCountries, setAllCountries] = useState(false);
   useTitle('Live TV');
 
-  // Search is server-side over the full catalogue — debounce the keystrokes so
-  // we query once per pause, not once per letter.
+  // Search is server-side over the full catalogue, so query once per pause, not per letter.
   const q = useDebouncedValue(searchTerm.trim(), 300);
 
   const { facets, error: facetsError } = useLiveTvBrowse();

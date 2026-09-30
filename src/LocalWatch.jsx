@@ -3,15 +3,9 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useLocalStreamer, useAccount, useAuth, useTitle, apiFetch } from './hooks';
 import WatchView from './WatchView';
 
-// Local media watch page (/watch-local/:token). The token is the opaque path token
-// of a single on-disk file (an episode, or a movie's feature file). It plays through
-// the shared <WatchView> in movie mode — no TMDB season/episode picker, since local
-// episode navigation lives on the LocalOverview page (each episode is its own token).
-//
-// Watch progress lives in the `local:` namespace: keyed by `localId` (the TITLE token,
-// so all episodes dedup as one show in history) + season/episode. Title, back link,
-// poster and that identity are carried as query params from the overview (a bare file
-// token has none of its own).
+// Movie mode with no season/episode picker: each local episode is its own file token,
+// and episode navigation lives on LocalOverview. A bare file token carries no title or
+// progress identity, so the overview passes them as query params.
 function LocalWatch() {
   const { token } = useParams();
   const [params] = useSearchParams();
@@ -38,9 +32,7 @@ function LocalWatch() {
     livePositionRef.current = position;
   }, []);
 
-  // Saved-position resume: find the matching row in the `local:` namespace (same
-  // local_id + season + episode). Movies have no season/episode, so match on
-  // local_id alone.
+  // Movies have no season/episode, so they match on local_id alone.
   const [resumeAt, setResumeAt] = useState(0);
   useEffect(() => {
     let cancelled = false;
@@ -71,7 +63,6 @@ function LocalWatch() {
 
   const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
 
-  // Periodic + on-exit progress save into the `local:` namespace.
   useEffect(() => {
     if (!isAuthenticated || !localId || !streamData) return undefined;
     playbackRef.current = null;

@@ -6,8 +6,6 @@ import {
 } from 'lucide-react';
 import { useAuth, useTitle, usePublicConfig } from './hooks';
 
-// Shared field shell — keeps every input on-theme without repeating the long
-// Tailwind class string at each call site.
 function Field({ icon: Icon, children }) {
   return (
     <div className="relative flex items-center">
@@ -36,8 +34,7 @@ const LoginWall = () => {
   } = useAuth();
   const navigate = useNavigate();
   useTitle('Enter the Haven');
-  // On a demo instance signup is open — the backend bypasses the invite gate, so the
-  // login page drops the invite field (and its required/disabled gating) entirely.
+  // Demo instances bypass the invite gate server-side, so the invite field goes entirely.
   const { demo_mode: demoMode } = usePublicConfig();
 
   const [mode, setMode] = useState('login');
@@ -46,11 +43,9 @@ const LoginWall = () => {
   const [confirm, setConfirm] = useState('');
   const [invite, setInvite] = useState('');
   const [showPw, setShowPw] = useState(false);
-  const [notice, setNotice] = useState(null);      // success / info banner
-  const [pending, setPending] = useState(false);   // local spinner (forgot flow)
+  const [notice, setNotice] = useState(null);
+  const [pending, setPending] = useState(false);
   const [awaitingVerify, setAwaitingVerify] = useState(false);
-  // Mnemonic tab: 'signin' shows the existing-account form; 'create' shows a
-  // freshly generated mnemonic + invite-code field (registration is invite-gated).
   const [mnemonic, setMnemonic] = useState('');
   const [genMnemonic, setGenMnemonic] = useState('');
   const [mnemonicView, setMnemonicView] = useState('signin');
@@ -64,7 +59,6 @@ const LoginWall = () => {
     setMode(next);
   };
 
-  // --- handlers -------------------------------------------------------------
   const handleLogin = async (e) => {
     e.preventDefault();
     const res = await emailLogin(email.trim(), password);
@@ -108,7 +102,6 @@ const LoginWall = () => {
     setNotice(res.message || 'Verification link sent.');
   };
 
-  // --- mnemonic handlers ----------------------------------------------------
   const handleMnemonicLogin = async (e) => {
     e.preventDefault();
     if (await login(mnemonic.trim())) navigate('/');
@@ -133,7 +126,6 @@ const LoginWall = () => {
 
   const busy = loading || pending;
 
-  // --- "check your inbox" interstitial -------------------------------------
   if (awaitingVerify) {
     return (
       <Shell subtitle="One step away from the dark network">
@@ -165,7 +157,6 @@ const LoginWall = () => {
     );
   }
 
-  // --- forgot password ------------------------------------------------------
   if (mode === 'forgot') {
     return (
       <Shell subtitle="Recover access to your sanctuary">
@@ -189,12 +180,10 @@ const LoginWall = () => {
     );
   }
 
-  // --- sign in / register / mnemonic (shared shell with a tab switch) -------
   const isRegister = mode === 'register';
   const isMnemonic = mode === 'mnemonic';
   return (
-    <Shell subtitle="Members only — sign in to descend">
-      {/* Tab switch */}
+    <Shell subtitle="Members only: sign in to descend">
       <div className="grid grid-cols-3 gap-2 p-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl mb-8">
         {[['login', 'Sign In'], ['register', 'Register'], ['mnemonic', 'Mnemonic']].map(([key, label]) => (
           <button key={key} onClick={() => switchMode(key)}
@@ -208,17 +197,16 @@ const LoginWall = () => {
 
       {demoMode && (
         <div className="mb-6">
-          <Banner kind="ok" text="Demo instance — open signup, no streaming sources, and all accounts reset nightly." />
+          <Banner kind="ok" text="Demo instance: open signup, no streaming sources, and all accounts reset nightly." />
         </div>
       )}
 
-      {/* Mnemonic tab: P-Stream-style key-based identity. Sign-in needs no invite;
-          creating a new identity is invite-gated, like email registration. */}
+      {/* Sign-in needs no invite; creating a new identity is invite-gated like email registration. */}
       {isMnemonic ? (
         mnemonicView === 'signin' ? (
           <form onSubmit={handleMnemonicLogin} className="space-y-5">
             <p className="text-xs text-crimson-300/60 leading-relaxed font-medium text-center">
-              Paste your 12-word mnemonic to sign in. No email, no password — your
+              Paste your 12-word mnemonic to sign in. No email, no password. Your
               key never leaves this device.
             </p>
             <textarea required placeholder="word1 word2 word3 …" value={mnemonic}
@@ -248,7 +236,7 @@ const LoginWall = () => {
                 {copied ? <><CheckCircle2 className="w-4 h-4 text-green-500" /> Copied</> : <><Copy className="w-4 h-4" /> Copy mnemonic</>}
               </button>
               <p className="text-[11px] text-crimson-300/60 leading-relaxed font-medium">
-                Save these 12 words somewhere safe — they are the <span className="text-crimson-400 font-bold">only</span> way
+                Save these 12 words somewhere safe. They are the <span className="text-crimson-400 font-bold">only</span> way
                 back into this account. We never store them; lose them and the account is gone forever.
               </p>
             </div>
@@ -317,7 +305,6 @@ const LoginWall = () => {
       </form>
       )}
 
-      {/* Footer links */}
       {mode === 'login' && (
         <div className="mt-8 text-center text-[10px] font-black uppercase tracking-[0.2em]">
           <button onClick={() => switchMode('forgot')} className="text-crimson-700 hover:text-crimson-500 transition-colors">
@@ -329,7 +316,6 @@ const LoginWall = () => {
   );
 };
 
-// --- presentational helpers -------------------------------------------------
 function Banner({ kind, text }) {
   const ok = kind === 'ok';
   return (
@@ -343,7 +329,6 @@ function Banner({ kind, text }) {
   );
 }
 
-// Centered card shell shared by every auth view.
 export function Shell({ subtitle, children }) {
   return (
     <div className="max-w-md w-full mx-auto px-6 py-16 sm:py-24 my-auto animate-in fade-in slide-in-from-bottom-6 duration-700">

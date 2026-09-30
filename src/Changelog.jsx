@@ -3,16 +3,9 @@ import { ScrollText, Tag, Calendar, ExternalLink, Sparkles, AlertCircle, Moon, A
 import { useChangelog, useTitle } from './hooks';
 import { formatReleaseDate } from './utils';
 
-// ---------------------------------------------------------------------------
-// Minimal, dependency-free Markdown renderer for GitHub release notes.
-//
-// The project ships no markdown library, and release `body` text is authored by
-// us — but to stay safe we build React elements directly (never
-// dangerouslySetInnerHTML), so nothing in a release note can inject markup.
-// It covers the subset release notes actually use: headings, bullet/numbered
-// lists, bold/italic/inline-code, links, and horizontal rules. Anything else
-// falls through as plain paragraph text.
-// ---------------------------------------------------------------------------
+// Release notes render as React elements, never dangerouslySetInnerHTML, so nothing
+// in a note can inject markup. Only the subset release notes use is supported;
+// anything else falls through as paragraph text.
 
 // Inline spans: **bold**, __bold__, *italic*, _italic_, `code`, [text](url).
 const INLINE_RE =
@@ -41,7 +34,7 @@ function renderInline(text, keyPrefix) {
         </code>
       );
     } else if (linkText != null) {
-      // Only allow http(s) hrefs — anything else renders as plain text.
+      // Only allow http(s) hrefs, anything else renders as plain text.
       const safe = /^https?:\/\//i.test(linkUrl);
       nodes.push(
         safe ? (
@@ -65,7 +58,6 @@ function renderInline(text, keyPrefix) {
   return nodes;
 }
 
-// Group lines into block-level elements (headings, lists, rules, paragraphs).
 function renderMarkdown(body) {
   if (!body || !body.trim()) {
     return <p className="italic text-crimson-300/40">No notes were left for this release.</p>;
@@ -148,7 +140,6 @@ function renderMarkdown(body) {
       continue;
     }
 
-    // Plain paragraph text
     flushList();
     para.push(trimmed);
   }
@@ -158,7 +149,6 @@ function renderMarkdown(body) {
   return <div className="space-y-4">{blocks}</div>;
 }
 
-// One release card.
 function ReleaseEntry({ entry, latest }) {
   return (
     <article className="relative bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 shadow-2xl overflow-hidden transition-colors hover:border-crimson-800/60">
@@ -219,7 +209,6 @@ export default function ChangelogPage() {
 
   return (
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      {/* Header */}
       <div className="border-b border-crimson-900/30 pb-8 space-y-3">
         <Link
           to="/about"
@@ -236,7 +225,6 @@ export default function ChangelogPage() {
         </p>
       </div>
 
-      {/* Queen's intro flavour */}
       <div className="relative bg-crimson-500/5 backdrop-blur-md border border-crimson-500/20 p-7 sm:p-8 rounded-[2.5rem] shadow-xl">
         <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
         <p className="italic text-crimson-100/90 leading-relaxed text-base sm:text-lg tracking-tight">
@@ -249,15 +237,13 @@ export default function ChangelogPage() {
         </p>
       </div>
 
-      {/* Stale notice — last-known notes when GitHub was unreachable. */}
       {meta?.stale && entries.length > 0 && (
         <div className="flex items-center gap-3 px-5 py-3 bg-crimson-900/20 border border-crimson-900/50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-500">
           <AlertCircle className="w-4 h-4 shrink-0" />
-          These are the last-known chronicles — the archive could not be refreshed just now.
+          These are the last-known chronicles. The archive could not be refreshed just now.
         </div>
       )}
 
-      {/* Loading */}
       {loading && (
         <div className="flex flex-col items-center justify-center py-20 gap-5">
           <div className="relative w-12 h-12">
@@ -268,19 +254,18 @@ export default function ChangelogPage() {
         </div>
       )}
 
-      {/* Not configured — the engine slumbers (backend has no GITHUB_TOKEN). */}
+      {/* The backend has no GITHUB_TOKEN. */}
       {!loading && notConfigured && (
         <div className="text-center py-16 space-y-5 bg-crimson-950/30 border border-crimson-900/40 rounded-[2.5rem] px-8">
           <Moon className="w-12 h-12 text-crimson-700 mx-auto" />
           <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight">The Chronicle Slumbers</h3>
           <p className="text-sm text-crimson-300/60 font-medium max-w-md mx-auto leading-relaxed italic">
-            "The archive is sealed for now, little mortal. My scribes have yet to be granted their quill —
-            return soon, and the chronicle shall awaken."
+            "The archive is sealed for now, little mortal. My scribes have yet to be granted their quill.
+            Return soon, and the chronicle shall awaken."
           </p>
         </div>
       )}
 
-      {/* Hard error (network, unexpected status) */}
       {!loading && !notConfigured && error && (
         <div className="text-center py-16 space-y-4 bg-crimson-500/5 border border-crimson-500/20 rounded-[2.5rem] px-8">
           <AlertCircle className="w-10 h-10 text-crimson-500 mx-auto" />
@@ -289,7 +274,6 @@ export default function ChangelogPage() {
         </div>
       )}
 
-      {/* Empty (configured, but no releases yet) */}
       {!loading && !notConfigured && !error && entries.length === 0 && (
         <div className="text-center py-16 space-y-4 bg-crimson-950/30 border border-crimson-900/40 rounded-[2.5rem] px-8">
           <ScrollText className="w-12 h-12 text-crimson-700 mx-auto" />
@@ -297,7 +281,6 @@ export default function ChangelogPage() {
         </div>
       )}
 
-      {/* The chronicle itself */}
       {!loading && entries.length > 0 && (
         <div className="space-y-8">
           {entries.map((entry, idx) => (

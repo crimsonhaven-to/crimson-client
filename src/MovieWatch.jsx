@@ -3,10 +3,6 @@ import { useParams } from 'react-router-dom';
 import { useMovieStreamer, useAccount, useAuth, useTitle, apiFetch } from './hooks';
 import WatchView from './WatchView';
 
-// General (non-anime) movie watch page (/watch-movie/:tmdbId). The movie twin of
-// ShowWatch: it owns the movie data source (useMovieStreamer) + the account wiring
-// (favorites + progress in the movie: namespace), then renders the shared
-// <WatchView> in movie mode (no season/episode UI). Anime/shows untouched.
 function MovieWatch() {
   const { tmdbId } = useParams();
 
@@ -60,7 +56,6 @@ function MovieWatch() {
 
   const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
 
-  // Periodic + on-exit progress save (movie namespace; no season/episode).
   useEffect(() => {
     if (!isAuthenticated || !streamData) return;
     playbackRef.current = null;

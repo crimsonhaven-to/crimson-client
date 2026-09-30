@@ -1,27 +1,14 @@
-// --- Live TV watch page ---------------------------------------------------------
-// Plays one live channel from the iptv-org catalogue. Live broadcasts don't fit
-// the /watch NDJSON pipeline (no episodes, no progress, no resume), so this page
-// feeds CrimsonPlayer directly in its `live` mode: seek/resume/download hidden, a
-// LIVE crest where the timestamps would be. Every feed the catalogue knows for
-// the channel becomes a source tile.
+// Live broadcasts don't fit the /watch NDJSON pipeline (no episodes, progress or
+// resume), so this page drives CrimsonPlayer's `live` mode directly.
 //
-// Playback climbs a ladder, cheapest-for-the-backend first, escalating on a fatal
-// player error. The goal: keep the segment bytes off the backend whenever we can.
-//
-//   1. direct     — https + no header demands. hls.js plays straight off the
-//                   broadcaster CDN. Zero backend, zero bridge. (~55-60% of feeds.)
-//   2. ext-rules  — companion present: inject the feed's Referer/User-Agent and
-//                   open CORS via declarative rules, then still play direct.
-//                   Zero-copy — fixes CORS-walled / header-gated https feeds.
-//   3. ext-fetch  — companion present: route every manifest/segment through the
-//                   companion's privileged fetch. Handles plain-http (mixed
-//                   content) and CORS-less sharded segments. Bytes flow through
-//                   the viewer's browser, never the backend.
-//   4. proxy      — last resort: the backend's signed /iptv_proxy (today's
-//                   behaviour), reached only when the companion can't serve.
-//
-// A feed with the companion installed therefore never touches the backend; without
-// it, direct feeds still play free and only the awkward ones fall to the proxy.
+// Playback climbs a ladder, cheapest for the backend first, escalating on a fatal
+// player error so segment bytes stay off the backend whenever possible:
+//   1. direct:    https with no header demands, hls.js plays off the broadcaster CDN.
+//   2. ext-rules: the companion injects Referer/User-Agent and opens CORS via
+//                 declarative rules, then playback is still direct.
+//   3. ext-fetch: every manifest/segment goes through the companion's privileged
+//                 fetch (plain-http mixed content, CORS-less segments).
+//   4. proxy:     the backend's signed /iptv_proxy, only when the companion can't serve.
 import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Tv, Radio, Globe2, AlertTriangle, SatelliteDish } from 'lucide-react';
@@ -33,10 +20,8 @@ import {
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
 
-// One catalogue feed → the ordered list of playback attempts for it. `ext` is
-// whether the companion is present AND switched on (its tiers are skipped when
-// not). Every consecutive pair differs in either src or loader, so escalating
-// always re-inits hls.js.
+// `ext` means the companion is present AND switched on. Consecutive steps always
+// differ in src or loader, so escalating always re-inits hls.js.
 function buildLadder(stream, ext) {
   const isHttps = (stream.url || '').startsWith('https://');
   const steps = [];
@@ -47,8 +32,6 @@ function buildLadder(stream, ext) {
   return steps;
 }
 
-// Realise one ladder step into { src, loader } for the player — installing or
-// clearing the companion's media rules / minting the signed proxy link as needed.
 // Throws when the step can't be prepared (e.g. the backend won't sign a proxy).
 async function prepareAttempt(step, stream, channelId) {
   switch (step) {
@@ -63,9 +46,8 @@ async function prepareAttempt(step, stream, channelId) {
       };
     case 'proxy': {
       await clearLiveRules();
-      // Backend-sourced feeds (the catalogue fallback path) already carry a signed
-      // proxy_path; client-catalogue feeds mint one lazily from the untouched
-      // /iptv/channel endpoint.
+      // Backend-sourced feeds already carry a signed proxy_path; client-catalogue
+      // feeds mint one lazily from the /iptv/channel endpoint.
       const proxied = stream.proxy_path
         ? `${API_BASE_URL}${stream.proxy_path}`
         : await resolveProxyUrl(channelId, stream.url);
@@ -79,8 +61,7 @@ async function prepareAttempt(step, stream, channelId) {
   }
 }
 
-// One catalogue feed → one player source tile label. Follows the sidebar's
-// "Provider · variant" language so the player cog groups it naturally.
+// Follows the sidebar's "Provider · variant" language so the player cog groups it naturally.
 function toSource(stream, channelName) {
   const variant = [stream.quality, stream.label].filter(Boolean).join(' · ') || 'Broadcast';
   return { source: `${channelName} · ${variant}`, type: 'hls' };
@@ -90,14 +71,11 @@ export default function LiveTvWatch() {
   const { channelId } = useParams();
   const { channel, loading, error } = useLiveTvChannel(channelId);
   const [activeIdx, setActiveIdx] = useState(0);
-  // How far up the ladder the active feed has climbed, the realised attempt, and
-  // a terminal prep failure (the backend refused to sign the proxy, etc.).
   const [attemptIdx, setAttemptIdx] = useState(0);
   const [prepared, setPrepared] = useState(null);
   const [prepError, setPrepError] = useState(null);
-  // Companion availability: null = still probing, then true/false. We hold the
-  // first attempt until it's known so a non-direct feed doesn't fall to the proxy
-  // before we learn the companion could have served it for free.
+  // null while probing. The first attempt waits for it so a non-direct feed doesn't
+  // fall to the proxy before we learn the companion could have served it for free.
   const [ext, setExt] = useState(null);
 
   useTitle(channel?.name || 'Live TV');
@@ -111,10 +89,8 @@ export default function LiveTvWatch() {
     return () => { cancelled = true; };
   }, []);
 
-  // Fresh channel / feed → back to the bottom of the ladder.
   useEffect(() => { setActiveIdx(0); }, [channelId]);
   useEffect(() => { setAttemptIdx(0); setPrepared(null); setPrepError(null); }, [channelId, activeIdx]);
-  // Tear the companion's media rules down when we leave the page.
   useEffect(() => () => { clearLiveRules(); }, []);
 
   const streams = channel?.streams || [];
@@ -130,8 +106,7 @@ export default function LiveTvWatch() {
     [activeStream, ext],
   );
 
-  // Realise the current attempt (async: rule install / proxy signing). Re-runs on
-  // escalation. A prep failure escalates too, or surfaces once the ladder's spent.
+  // A prep failure escalates too, or surfaces once the ladder is spent.
   useEffect(() => {
     if (!activeStream || ext === null || !ladder.length) return undefined;
     let cancelled = false;
@@ -150,9 +125,7 @@ export default function LiveTvWatch() {
     return () => { cancelled = true; };
   }, [activeStream, ext, ladder, attemptIdx, channelId]);
 
-  // The player's fatal-error interceptor: climb to the next ladder step if one
-  // remains (returning true keeps the error screen down while we re-tune), else
-  // let the player show its "couldn't play" screen.
+  // Returning true keeps the player's error screen down while we re-tune.
   const handleFatalError = useCallback(() => {
     if (attemptIdx + 1 < ladder.length) {
       setAttemptIdx((i) => i + 1);
@@ -173,7 +146,6 @@ export default function LiveTvWatch() {
         Back to the Airwaves
       </Link>
 
-      {/* The screen */}
       <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black border border-crimson-900/60 shadow-[0_30px_100px_rgba(0,0,0,0.8)]">
         {loading || preparing ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 p-6 text-center backdrop-blur-md">
@@ -211,7 +183,6 @@ export default function LiveTvWatch() {
         )}
       </div>
 
-      {/* Channel sigil + feed tiles */}
       {channel && (
         <div className="space-y-6">
           <div className="flex items-center gap-4 flex-wrap">
@@ -259,7 +230,7 @@ export default function LiveTvWatch() {
                 ))}
               </div>
               <p className="text-[10px] text-crimson-700 font-bold tracking-wide">
-                A feed refuses to manifest? Free-to-air broadcasts flicker — invoke another and Lumi shall re-tune. 🦇
+                A feed refuses to manifest? Free-to-air broadcasts flicker. Invoke another and Lumi shall re-tune. 🦇
               </p>
             </div>
           )}

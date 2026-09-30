@@ -10,28 +10,20 @@ import { setWatchlistActivity, clearActivity } from './discordPresence';
 
 const VIEW_KEY = 'crimson:watchlist-view';
 const SORT_KEY = 'crimson:watchlist-sort';
-const ORDER_KEY = 'crimson:watchlist-order'; // per-list manual order: { [listName]: [itemKey, ...] }
+const ORDER_KEY = 'crimson:watchlist-order'; // { [listName]: [itemKey, ...] }
 
-// A watchlist row is one of three kinds, inferred the same way the routing does:
-// an AniList id means anime, an explicit 'movie' media_type means a movie, and
-// everything else is a (TMDB-keyed) show. This is the axis we group + filter on —
-// the watchlist equivalent of the history page's time buckets.
-// Manga is checked first: a manga row also carries an AniList id, so it must be
-// distinguished by its explicit 'manga' media_type before the anilist_id⇒anime rule.
+// Mirrors the routing. Manga rows also carry an AniList id, so media_type 'manga' must be checked first.
 const kindOf = (it) =>
   it.media_type === 'manga' ? 'manga'
     : it.anilist_id != null ? 'anime'
       : it.media_type === 'movie' ? 'movie' : 'show';
 
-// Stable identity for a row — the same key scheme the backend de-dupes on
-// (manga namespaced, else AniList id preferred, else TMDB id namespaced by movie/show).
+// Same key scheme the backend de-dupes on.
 const itemKey = (it) =>
   it.media_type === 'manga' ? `g:${it.anilist_id}`
     : it.anilist_id != null ? `a:${it.anilist_id}`
       : (it.media_type === 'movie' ? `m:${it.tmdb_id}` : `t:${it.tmdb_id}`);
 
-// Per-kind label + icon, rendered as section headers and filter chips. Sections
-// always appear in this order; empty ones are skipped.
 const TYPE_META = {
   anime: { label: 'Anime', icon: Sparkles },
   show: { label: 'Shows', icon: Tv },
@@ -41,12 +33,11 @@ const TYPE_META = {
 const TYPE_ORDER = ['anime', 'show', 'movie', 'manga'];
 
 const SORTS = [
-  { key: 'added', label: 'Recent' },   // server order (added_at desc) — the default
-  { key: 'title', label: 'A–Z' },
-  { key: 'manual', label: 'Manual' },  // drag-to-reorder, persisted per list
+  { key: 'added', label: 'Recent' },   // server order (added_at desc)
+  { key: 'title', label: 'A-Z' },
+  { key: 'manual', label: 'Manual' },
 ];
 
-// Overview route for a show — the same target the grid's Play button uses.
 const overviewHref = (it) =>
   it.media_type === 'manga' ? `/manga/${it.anilist_id}`
     : it.anilist_id ? `/anime/${it.anilist_id}`
@@ -56,9 +47,6 @@ const loadOrders = () => {
   try { return JSON.parse(localStorage.getItem(ORDER_KEY)) || {}; } catch { return {}; }
 };
 
-// One watchlist entry, rendered as a tall poster card ('grid') or a dense,
-// scannable row ('list'). Handles selection (bulk mode) and manual drag-reorder
-// on top of the plain open/remove/lists actions.
 const ShowCard = ({
   item, view, removable, selectMode, selected, draggable, isDragOver,
   onOpen, onRemove, onLists, onToggleSelect, dragProps,
@@ -66,8 +54,6 @@ const ShowCard = ({
   const kind = kindOf(item);
   const { label: kindLabel, icon: KindIcon } = TYPE_META[kind];
   const stop = (fn) => (e) => { e.stopPropagation(); fn(item); };
-  // In bulk-select mode a click anywhere on the card toggles selection instead
-  // of navigating; otherwise the card opens the overview.
   const handleClick = selectMode ? () => onToggleSelect(item) : onOpen;
 
   const SelMark = selected ? CircleCheck : Circle;
@@ -145,27 +131,23 @@ const ShowCard = ({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/20 to-transparent opacity-80"></div>
 
-        {/* Kind badge — anime / show / movie at a glance */}
         <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-950/80 backdrop-blur-md border border-crimson-900/60 text-[8px] font-black uppercase tracking-[0.15em] text-crimson-400">
           <KindIcon className="w-2.5 h-2.5" />
           {kindLabel}
         </div>
 
-        {/* Drag handle (manual sort) */}
         {draggable && !selectMode && (
           <div className="absolute top-2.5 right-2.5 p-1 rounded-md bg-crimson-950/80 border border-crimson-900/60 text-crimson-500 cursor-grab active:cursor-grabbing">
             <GripVertical className="w-3.5 h-3.5" />
           </div>
         )}
 
-        {/* Selection indicator (bulk mode) */}
         {selectMode && (
           <div className="absolute top-2.5 right-2.5">
             <SelMark className={`w-6 h-6 drop-shadow ${selected ? 'text-crimson-400' : 'text-white/80'}`} />
           </div>
         )}
 
-        {/* Actions Overlay — suppressed in select mode (the card itself toggles) */}
         {!selectMode && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-crimson-950/40 backdrop-blur-[2px]">
             <button
@@ -205,9 +187,6 @@ const ShowCard = ({
   );
 };
 
-// Watchlists page (formerly "Favorites"). Lists run along the top as tabs; the
-// active list's shows render below, grouped by kind (anime / shows / movies),
-// sortable, bulk-editable, and switchable between a poster grid and a list view.
 const FavoritesPage = () => {
   const {
     items, lists, loading,
@@ -226,17 +205,15 @@ const FavoritesPage = () => {
   const [orders, setOrders] = useState(loadOrders);
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState('');
-  const [pendingDeleteList, setPendingDeleteList] = useState(null); // list name awaiting delete confirmation
+  const [pendingDeleteList, setPendingDeleteList] = useState(null);
   const [listModal, setListModal] = useState(null); // { mode:'item', item } | { mode:'bulk' }
   const [exporting, setExporting] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef(null);
 
-  // Bulk-select state
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
 
-  // Drag-reorder state (manual sort only)
   const [dragKey, setDragKey] = useState(null);
   const [overKey, setOverKey] = useState(null);
 
@@ -251,7 +228,6 @@ const FavoritesPage = () => {
   const setSortPersist = (s) => { setSort(s); localStorage.setItem(SORT_KEY, s); };
   const saveOrders = (o) => { setOrders(o); localStorage.setItem(ORDER_KEY, JSON.stringify(o)); };
 
-  // Close the export / import menus on any outside click.
   useEffect(() => {
     if (!exportOpen && !importOpen) return;
     const onClick = (e) => {
@@ -262,8 +238,7 @@ const FavoritesPage = () => {
     return () => document.removeEventListener('mousedown', onClick);
   }, [exportOpen, importOpen]);
 
-  // Broadcast a "combing the watchlists" Discord Rich Presence while this page is
-  // open (opt-in; see discordPresence.js), clearing back to browsing on unmount.
+  // Opt-in, see discordPresence.js.
   useEffect(() => {
     setWatchlistActivity();
     return () => clearActivity();
@@ -276,12 +251,11 @@ const FavoritesPage = () => {
     setExporting(false);
   };
 
-  // Pick an import mode, then open the file dialog. 'replace' wipes every list,
-  // so confirm before letting the user choose a file.
+  // 'replace' wipes every list, so confirm before the file dialog opens.
   const handlePickImport = (mode) => {
     setImportOpen(false);
     if (mode === 'replace' && !window.confirm(
-      'Replace ALL your watchlists with the contents of this file? Your current lists are deleted first — this cannot be undone.'
+      'Replace ALL your watchlists with the contents of this file? Your current lists are deleted first. This cannot be undone.'
     )) return;
     importModeRef.current = mode;
     setImportMsg(null);
@@ -304,7 +278,6 @@ const FavoritesPage = () => {
     }
   };
 
-  // The virtual "All" list: every show across every list, de-duplicated by item key.
   const allShows = useMemo(() => {
     const map = new Map();
     for (const it of items) {
@@ -314,7 +287,6 @@ const FavoritesPage = () => {
     return Array.from(map.values());
   }, [items]);
 
-  // First few posters per list, used for the collage backdrop on each tab.
   const collageByList = useMemo(() => {
     const m = {};
     for (const it of items) {
@@ -325,15 +297,12 @@ const FavoritesPage = () => {
     return m;
   }, [items, allShows]);
 
-  // Tabs rendered on the page: the read-only "All" aggregate first, then the
-  // real lists from the hook (which never includes ALL_LIST).
   const displayLists = useMemo(
     () => [{ name: ALL_LIST, count: allShows.length }, ...lists],
     [lists, allShows.length]
   );
 
-  // Derive the list actually shown: if the selected one vanished (e.g. it was just
-  // deleted) fall back to "All", without an extra effect/render.
+  // If the selected list vanished (e.g. just deleted), fall back to "All" without an extra effect.
   const effectiveList = displayLists.some(l => l.name === activeList) ? activeList : ALL_LIST;
 
   const shows = useMemo(
@@ -341,18 +310,15 @@ const FavoritesPage = () => {
     [items, effectiveList, allShows]
   );
 
-  // Which kinds actually appear in the active list — used to render only the
-  // relevant filter chips (no "Movies" chip on an all-anime list).
   const presentTypes = useMemo(() => {
     const set = new Set(shows.map(kindOf));
     return TYPE_ORDER.filter(k => set.has(k));
   }, [shows]);
 
   // A stale type filter (e.g. "Movies" after switching to an all-anime list)
-  // would silently hide everything — fall back to "all" when it no longer applies.
+  // would silently hide everything, so fall back to "all" when it no longer applies.
   const effectiveType = typeFilter === 'all' || presentTypes.includes(typeFilter) ? typeFilter : 'all';
 
-  // Narrow the visible shows by kind, then by the search query (title substring).
   const q = query.trim().toLowerCase();
   const filteredShows = useMemo(
     () => shows.filter(s =>
@@ -362,9 +328,7 @@ const FavoritesPage = () => {
     [shows, effectiveType, q]
   );
 
-  // Apply the chosen sort. 'added' keeps the server order; 'title' is alphabetical;
-  // 'manual' honours the drag-reordered key sequence stored for this list (items
-  // without a stored position sink to the end, preserving their added order).
+  // Items without a stored manual position sink to the end, keeping their added order.
   const sorted = useMemo(() => {
     const arr = [...filteredShows];
     if (sort === 'title') {
@@ -377,7 +341,6 @@ const FavoritesPage = () => {
     return arr;
   }, [filteredShows, sort, orders, effectiveList]);
 
-  // Group the sorted shows into kind sections, dropping any empty section.
   const grouped = useMemo(() => {
     const map = { anime: [], show: [], movie: [], manga: [] };
     for (const s of sorted) map[kindOf(s)].push(s);
@@ -391,8 +354,8 @@ const FavoritesPage = () => {
   const commitReorder = (from, to) => {
     if (!from || !to || from === to) return;
     const byKey = new Map(sorted.map(s => [itemKey(s), s]));
-    // Keep reorders within a single kind section — cross-kind drops would have no
-    // visible effect (sections render separately) and only muddy the order.
+  // Cross-kind drops would have no visible effect (sections render separately)
+  // and would only muddy the order.
     if (kindOf(byKey.get(from)) !== kindOf(byKey.get(to))) return;
     const seq = sorted.map(itemKey);
     const fi = seq.indexOf(from);
@@ -415,7 +378,6 @@ const FavoritesPage = () => {
     };
   };
 
-  // --- bulk-select helpers ---
   const toggleSelect = (item) => {
     setSelected(prev => {
       const next = new Set(prev);
@@ -436,7 +398,6 @@ const FavoritesPage = () => {
     for (const t of targets) await removeFromList(t, effectiveList);
   };
 
-  // --- list-membership modal (single item or the whole selection) ---
   const modalItems = listModal?.mode === 'bulk' ? selectedItems : (listModal?.item ? [listModal.item] : []);
   const handleToggleItemInList = (listName) => {
     if (listModal?.mode === 'item' && listModal.item) {
@@ -450,7 +411,7 @@ const FavoritesPage = () => {
     for (const t of targets) await addToList(t, listName);
   };
 
-  // Switch tabs, dropping any selection so it can't bleed across lists.
+  // Drop the selection so it can't bleed across lists.
   const switchList = (name) => { setActiveList(name); setSelected(new Set()); };
 
   const handleCreate = (e) => {
@@ -514,9 +475,7 @@ const FavoritesPage = () => {
             </p>
           </div>
 
-          {/* Import / export every list at once */}
           <div className="flex items-center gap-2.5 shrink-0">
-            {/* Import from a previously-exported CSV/JSON file */}
             <div ref={importRef} className="relative">
               <button
                 onClick={() => setImportOpen(o => !o)}
@@ -548,7 +507,6 @@ const FavoritesPage = () => {
               )}
             </div>
 
-            {/* Export every list at once (CSV for spreadsheets, JSON for a backup) */}
             <div ref={exportRef} className="relative">
               <button
                 onClick={() => setExportOpen(o => !o)}
@@ -581,7 +539,6 @@ const FavoritesPage = () => {
             </div>
           </div>
 
-          {/* Hidden file input that the Import menu triggers. */}
           <input
             ref={fileRef}
             type="file"
@@ -591,7 +548,6 @@ const FavoritesPage = () => {
           />
         </div>
 
-        {/* Import result banner */}
         {importMsg && (
           <div
             className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-xs font-bold ${
@@ -608,7 +564,6 @@ const FavoritesPage = () => {
           </div>
         )}
 
-        {/* List tabs — each carries a faint collage of its first few posters */}
         <div className="flex flex-wrap items-center gap-2.5">
           {displayLists.map((l) => {
             const active = l.name === effectiveList;
@@ -623,7 +578,6 @@ const FavoritesPage = () => {
                     : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600'
                 }`}
               >
-                {/* Poster collage backdrop */}
                 {posters.length > 0 && (
                   <span aria-hidden="true" className="absolute inset-0 flex pointer-events-none">
                     {posters.map((p, i) => (
@@ -642,7 +596,6 @@ const FavoritesPage = () => {
             );
           })}
 
-          {/* Create new list */}
           {creating ? (
             <form onSubmit={handleCreate} className="inline-flex items-center gap-2">
               <div className="relative">
@@ -672,7 +625,6 @@ const FavoritesPage = () => {
             </button>
           )}
 
-          {/* Delete the active custom list (never the default or the virtual "All") */}
           {effectiveList !== DEFAULT_LIST && effectiveList !== ALL_LIST && (
             <button
               onClick={() => setPendingDeleteList(effectiveList)}
@@ -685,11 +637,8 @@ const FavoritesPage = () => {
         </div>
       </div>
 
-      {/* Toolbar: search + type filter + sort + select + view toggle. Sticks beneath
-          the nav so it stays reachable while scrolling a long list. */}
       {shows.length > 0 && (
         <div className="sticky top-16 z-30 flex flex-col lg:flex-row lg:items-center gap-3 p-3 rounded-2xl border border-crimson-900/60 bg-crimson-950/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.4)]">
-          {/* Search within the active list */}
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700 pointer-events-none" />
             <input
@@ -710,7 +659,6 @@ const FavoritesPage = () => {
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            {/* Type filter chips — only when the list mixes more than one kind */}
             {presentTypes.length > 1 && (
               <div className="flex items-center gap-1.5 p-1 rounded-xl bg-crimson-950/40 border border-crimson-900/60 shrink-0">
                 {['all', ...presentTypes].map((key) => {
@@ -731,7 +679,6 @@ const FavoritesPage = () => {
               </div>
             )}
 
-            {/* Sort control */}
             <div className="flex items-center gap-1.5 p-1 rounded-xl bg-crimson-950/40 border border-crimson-900/60 shrink-0">
               <ArrowDownUp className="w-3.5 h-3.5 text-crimson-700 ml-1.5" />
               {SORTS.map((s) => {
@@ -750,7 +697,6 @@ const FavoritesPage = () => {
               })}
             </div>
 
-            {/* Bulk-select toggle */}
             <button
               onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
               aria-pressed={selectMode}
@@ -764,7 +710,6 @@ const FavoritesPage = () => {
               <span className="hidden sm:inline">{selectMode ? 'Done' : 'Select'}</span>
             </button>
 
-            {/* Grid / list view toggle */}
             <div className="flex items-center gap-1.5 p-1 rounded-xl bg-crimson-950/40 border border-crimson-900/60 shrink-0">
               {[
                 { key: 'grid', icon: LayoutGrid, label: 'Grid view' },
@@ -790,7 +735,6 @@ const FavoritesPage = () => {
         </div>
       )}
 
-      {/* Manual-sort hint when a filter would make a drag ambiguous */}
       {sort === 'manual' && !selectMode && shows.length > 1 && !canDrag && effectiveList !== ALL_LIST && (
         <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-700">
           Clear the search & type filter to drag items into a custom order.
@@ -798,7 +742,7 @@ const FavoritesPage = () => {
       )}
       {sort === 'manual' && effectiveList === ALL_LIST && shows.length > 1 && (
         <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-700">
-          Manual ordering is saved per list — pick a specific list to rearrange it.
+          Manual ordering is saved per list. Pick a specific list to rearrange it.
         </p>
       )}
 
@@ -888,7 +832,6 @@ const FavoritesPage = () => {
         </div>
       )}
 
-      {/* Bulk action bar — floats at the bottom while selecting */}
       {selectMode && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl animate-in slide-in-from-bottom-4 duration-200">
           <div className="flex items-center gap-3 p-2.5 pl-4 rounded-2xl border border-crimson-700/50 bg-crimson-950/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
@@ -933,7 +876,6 @@ const FavoritesPage = () => {
         </div>
       )}
 
-      {/* List-membership modal — add/remove one item, or add the selection in bulk */}
       {listModal && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
@@ -995,7 +937,6 @@ const FavoritesPage = () => {
         </div>
       )}
 
-      {/* Delete-list confirmation */}
       {pendingDeleteList && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"

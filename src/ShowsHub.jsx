@@ -1,14 +1,11 @@
-// The Shows browse hub — every non-anime TV show we've cached, as a filterable
-// poster grid. A thin wrapper over the shared PosterBrowseHub (see hubKit); the
-// data comes from /catalogue/shows (local TMDB tables), items route to the
-// TMDB-keyed show pages. Shows carry no rating column, so no "Top Rated" sort.
+// Shows carry no rating column, so there's no "Top Rated" sort.
 import { Tv } from 'lucide-react';
 import { PosterBrowseHub } from './hubKit';
 import { useShowsCatalogue } from './hooks';
 
 const SORTS = [
   { value: 'popular', label: 'Popular' },
-  { value: 'title', label: 'A–Z' },
+  { value: 'title', label: 'A-Z' },
   { value: 'year', label: 'Newest' },
 ];
 

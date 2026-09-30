@@ -57,8 +57,8 @@ const DisclaimerPage = () => {
         <p>
           We may automatically gather certain non-personally identifiable information about your use of crimsonhaven and
           store it in log files. This information may include internet protocol (IP) addresses, browser type, internet
-          service provider (ISP), referring and exit pages, operating system, and date/time stamps. We use this data — which
-          does not identify individual users — solely to monitor the health of our nodes and improve the quality of the
+          service provider (ISP), referring and exit pages, operating system, and date/time stamps. We use this data (which
+          does not identify individual users) solely to monitor the health of our nodes and improve the quality of the
           service. Out of respect for your privacy, we do not link this automatically-collected data to any personally
           identifiable information.
         </p>
@@ -68,8 +68,8 @@ const DisclaimerPage = () => {
         <p>
           A cookie is a small text file stored on your device for record-keeping purposes. crimsonhaven keeps its footprint
           light: we use a session identifier so you can stay logged in and so the site can remember your preferences while
-          you browse. You are free to decline cookies, but by doing so some features — such as your account, favorites, and
-          watch history — may not function correctly. We do not link the information stored in cookies to any personally
+          you browse. You are free to decline cookies, but by doing so some features (such as your account, favorites, and
+          watch history) may not function correctly. We do not link the information stored in cookies to any personally
           identifiable information you submit while using crimsonhaven.
         </p>
       </Section>

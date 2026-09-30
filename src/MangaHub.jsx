@@ -1,6 +1,4 @@
-// The Manga browse hub — live + paginated (the public backend keeps no manga
-// table, so /catalogue/manga hits AniList per page). A thin wrapper over the
-// shared PaginatedBrowseHub; items route to the AniList-keyed manga pages.
+// The public backend keeps no manga table, so /catalogue/manga hits AniList per page.
 import { BookOpen } from 'lucide-react';
 import { PaginatedBrowseHub } from './hubKit';
 import { useMangaCatalogue, CATALOGUE_SORTS } from './hooks';

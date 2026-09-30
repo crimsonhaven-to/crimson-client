@@ -2,9 +2,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useShowOverview, useShowResume, useTitle } from './hooks';
 import OverviewView from './OverviewView';
 
-// Non-anime show overview page (/show/:tmdbId). The TMDB-keyed twin of
-// AnimeOverview: same shared <OverviewView>, but sourced from useShowOverview and
-// navigating into the TMDB-keyed /watch-show route. Shows carry no extras.
 const ShowOverview = () => {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
@@ -16,13 +13,10 @@ const ShowOverview = () => {
 
   useTitle(overview?.title || 'Overview');
 
-  // Watchlists — shows are keyed by tmdb_id. The minimal identity is handed to the
-  // <WatchlistButton> inside the view, which owns the add/remove/create UI.
   const watchlistItem = overview
     ? { tmdb_id: Number(tmdbId), title: overview.title, poster: overview.poster }
     : undefined;
 
-  // "Pick up where you left off" — latest tracked episode for this show (or null).
   const resume = useShowResume({ tmdbId: Number(tmdbId) });
 
   const goToEpisode = (season, episodeNumber) =>

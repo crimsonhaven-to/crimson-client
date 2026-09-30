@@ -21,56 +21,39 @@
   --color-crimson-50: #fff5f6;
 }
 
-/* ============================================================================
-   THEME: "Catgirl Lumi" — a LIGHT theme that keeps crimson accents.
-   ----------------------------------------------------------------------------
-   Every theme is just this: one block that re-points the SAME crimson variables.
-   Because the whole app draws from these vars, all ~1,200 `crimson-*` utilities
-   and the mesh background re-skin with no JSX changes. Activated by
-   src/hooks/theme.js stamping <html data-theme="catgirl">.
-
-   The scale is remapped by ROLE rather than kept as a smooth ramp:
-     950 → 800  become light SURFACES (page → cards → inputs),
-     700          a soft rose for dividers / secondary chrome,
-     600 / 500    stay VIVID CRIMSON — the accents/buttons/brand highlights,
-     400 → 50   become progressively darker INK for readable text on light.
-   Adding another theme later = copy this block, swap the values.
-   ============================================================================ */
+/* "Catgirl Lumi" light theme. A theme is one block that re-points the crimson
+   variables, so every `crimson-*` utility and the mesh background re-skin with no
+   JSX changes. src/hooks/theme.js sets <html data-theme="catgirl">.
+   The scale is remapped by role, not kept as a smooth ramp:
+     950 to 800  light surfaces (page, cards, inputs)
+     700         soft rose for dividers and secondary chrome
+     600, 500    vivid crimson accents and buttons
+     400 to 50   progressively darker ink for text on light */
 :root[data-theme="catgirl"] {
-  /* Light surfaces (were the darkest backgrounds) */
   --color-crimson-950: #fff5f7; /* page canvas */
   --color-crimson-900: #ffe9ef; /* raised cards / nav */
   --color-crimson-800: #ffd7e0; /* inputs / overlays */
 
-  /* Mid — soft rose chrome (dividers, muted fills) */
   --color-crimson-700: #f0a9ba;
 
-  /* Accents — kept vivid so "light but still crimson" holds. White button
-     labels stay readable on these (they remain deep reds), so button text is
-     intentionally left as-is by the text sweep. */
+  /* Still deep reds, so white button labels stay readable. */
   --color-crimson-600: #d1093a; /* primary button fill */
   --color-crimson-500: #ff003c; /* piercing accent / brand highlight */
 
-  /* Ink (was the pale pink/near-white text end) — now darker toward the text,
-     so muted labels and body copy read on a light canvas. */
   --color-crimson-400: #c11d43; /* small muted labels (text-crimson-400) */
   --color-crimson-300: #a52141; /* secondary muted text */
   --color-crimson-200: #7c1a34; /* deeper muted text */
   --color-crimson-100: #4a0d1c; /* primary body text (root default) */
-  --color-crimson-50:  #2a0510; /* headings / emphasis (see text sweep) */
+  --color-crimson-50:  #2a0510; /* headings / emphasis */
 }
 
-/* Tone the foreground-art boost down for the light theme — the dark-theme
-   brightness/saturation lift blows out on a pale canvas. */
+/* The dark-theme brightness/saturation lift blows out on a pale canvas. */
 :root[data-theme="catgirl"] .wallpaper-img {
   filter: saturate(1.03);
 }
 
-/* Paint the document canvas itself the app's darkest crimson. Without this the
-   browser's default white shows through wherever the React tree doesn't cover the
-   viewport — most visibly as the brief white seam between the sticky nav and the
-   content during the overscroll "rubber band" when you fling back to the very top
-   (the pinned nav stays put while the content bounces down, exposing the canvas). */
+/* Without this the browser's white canvas shows through the overscroll bounce,
+   as a seam between the sticky nav and the content. */
 html,
 body {
   background-color: var(--color-crimson-950);
@@ -81,15 +64,8 @@ body {
   filter: brightness(1.25) saturate(1.08);
 }
 
-/* ============================================================================
-   Animated crimson mesh gradient (see MeshBackground.jsx)
-   ----------------------------------------------------------------------------
-   A dark crimson canvas with a handful of soft, blurred radial "blobs" that
-   slowly drift and breathe. They blend additively (screen) so where the glows
-   overlap they bloom into brighter crimson — luminous but restrained, the
-   regal vampire mood. Motion is transform-only (GPU compositor), so it's far
-   cheaper than a WebGL shader and won't fight video playback for resources.
-   ============================================================================ */
+/* Mesh background (MeshBackground.jsx). Transform/opacity-only motion stays on the
+   GPU compositor: far cheaper than a WebGL shader, and no contention with video. */
 .mesh-bg {
   position: absolute;
   inset: 0;
@@ -108,22 +84,14 @@ body {
   width: 75vmax;
   height: 75vmax;
   border-radius: 50%;
-  /* The glow now lives entirely in the radial gradients below — each fades to
-     transparent at ~80–84%, so the blob is *already* a soft, wide cloud. We
-     dropped the old `mix-blend-mode: screen`: blend modes break the compositor
-     fast-path, forcing the GPU to read back and re-blend the whole backdrop every
-     frame for every layer — the real cost of the old background. With the wider
-     gradient falloff doing the softening, only a light blur is needed to smooth
-     the last banding (blur cost scales with area × radius, and these layers are
-     huge), so it drops from 44px to 14px. */
+  /* No mix-blend-mode: blend modes break the compositor fast path and force a
+     backdrop re-blend every frame. The wide gradient falloff does the softening,
+     so the blur only smooths banding (blur cost scales with area × radius). */
   filter: blur(14px);
-  /* Only transform + opacity animate, and both are compositor properties — the
-     rasterized texture is just moved/faded, never re-blurred. (We never animate
-     scale(): scaling a blurred layer forces a full re-rasterization every frame.) */
+  /* Never animate scale(): scaling a blurred layer re-rasterizes it every frame. */
   will-change: transform, opacity;
 }
 
-/* Deep primary crimson — the dominant, slow-moving glow (top-left). Animated. */
 .mesh-blob-1 {
   top: -22vmax;
   left: -15vmax;
@@ -132,7 +100,6 @@ body {
   animation: mesh-drift-1 26s ease-in-out infinite;
 }
 
-/* Dark wine — anchors the bottom-right with depth. The second animated layer. */
 .mesh-blob-2 {
   bottom: -25vmax;
   right: -18vmax;
@@ -141,9 +108,7 @@ body {
   animation: mesh-drift-2 32s ease-in-out infinite;
 }
 
-/* Piercing neon accent — a regal spark of brightness. STATIC: only the two
-   dominant blobs drift now, halving the per-frame compositing while the eye still
-   reads constant, slow motion across the field. */
+/* Static: only two blobs drift, halving per-frame compositing. */
 .mesh-blob-3 {
   top: 25%;
   right: 5%;
@@ -153,7 +118,6 @@ body {
   opacity: 0.4;
 }
 
-/* Muted rose mid-tone — softens the lower-left so it isn't all hard reds. Static. */
 .mesh-blob-4 {
   bottom: 5%;
   left: -10vmax;
@@ -173,12 +137,8 @@ body {
     linear-gradient(to bottom, transparent 55%, var(--color-crimson-950) 100%);
 }
 
-/* The drift paths translate only; the old per-keyframe scale() (the "breathe")
-   is gone because scaling a blurred layer re-rasterizes it every frame. The
-   breathing lives in opacity — a compositor-cheap fade that reads as the same
-   swelling/receding glow against the dark base. Each blob's opacity here brackets
-   its static base opacity (.mesh-blob-N) above and below. Only the two animated
-   blobs keep keyframes now (blob-3/4 are static), so drift-3/4 are gone. */
+/* Breathing lives in opacity, not scale() (see .mesh-blob). Each blob's keyframe
+   opacity brackets its static base opacity. */
 @keyframes mesh-drift-1 {
   0%, 100% { transform: translate(0, 0);          opacity: 0.60; }
   33%      { transform: translate(10vmax, 7vmax);  opacity: 0.80; }
@@ -190,55 +150,41 @@ body {
   70%      { transform: translate(-4vmax, -11vmax);  opacity: 0.78; }
 }
 
-/* Accessibility: stop the drift for motion-sensitive users — the gradient stays. */
+/* The gradient stays, only the drift stops. */
 @media (prefers-reduced-motion: reduce) {
   .mesh-blob {
     animation: none !important;
   }
 }
 
-/* Lite background (opt-in, per device — see useLiteBackground / Preferences).
-   The cheapest possible render: no drift, no blur, and no promoted compositor
-   layers (will-change cleared frees the GPU textures). The wide gradient falloff
-   keeps it smooth and on-mood even without the blur. */
+/* Lite background (useLiteBackground). Clearing will-change frees the GPU textures;
+   the wide gradient falloff keeps it smooth without the blur. */
 .mesh-bg.is-lite .mesh-blob {
   animation: none;
   filter: none;
   will-change: auto;
 }
 
-/* ============================================================================
-   CrimsonPlayer flourishes (see CrimsonPlayer.jsx)
-   ----------------------------------------------------------------------------
-   Small, purely-cosmetic animations for the player chrome. The app has no
-   tailwindcss-animate plugin, so the `animate-in`/`fade-in` utilities sprinkled
-   around the tree are silent no-ops — these hand-rolled keyframes are what
-   actually move. All are transform/opacity/background-position only (compositor
-   friendly) so they never contend with video decode, and every one is disabled
-   under prefers-reduced-motion below.
-   ============================================================================ */
-
-/* Concentric ring behind the centre play crest — a slow, dashed halo rotation. */
+/* CrimsonPlayer flourishes. The app has no tailwindcss-animate plugin, so the
+   `animate-in`/`fade-in` utilities around the tree are silent no-ops and these
+   keyframes are what actually move. Transform/opacity only, so they never contend
+   with video decode. */
 @keyframes cp-ring-rot { to { transform: rotate(360deg); } }
 .cp-ring { animation: cp-ring-rot 14s linear infinite; }
 .cp-ring-rev { animation: cp-ring-rot 9s linear infinite reverse; }
 
-/* Breathing bloom for the idle crest / sigils — a soft swell of the glow. */
 @keyframes cp-breathe {
   0%, 100% { opacity: 0.45; transform: scale(1); }
   50%      { opacity: 0.9;  transform: scale(1.08); }
 }
 .cp-breathe { animation: cp-breathe 3.4s ease-in-out infinite; }
 
-/* Entrance for floating cards (Up Next, Skip crests, settings, tooltip) — a
-   small rise + fade so they materialise rather than snap in. */
 @keyframes cp-rise {
   from { opacity: 0; transform: translateY(10px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0)    scale(1); }
 }
 .cp-rise { animation: cp-rise 0.32s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
-/* Tiny pop for the seek hover timestamp bubble. */
 @keyframes cp-pop {
   from { opacity: 0; transform: translate(-50%, 4px) scale(0.9); }
   to   { opacity: 1; transform: translate(-50%, 0)   scale(1); }

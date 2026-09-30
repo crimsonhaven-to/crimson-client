@@ -6,21 +6,9 @@ import {
 } from 'lucide-react';
 import { useMangaReader, useMangaResume, useAccount, useAuth, useTitle } from './hooks';
 
-// Manga reader — the reading twin of CrimsonPlayer. Launches inline (nav visible,
-// not browser-fullscreen) with a full set of controls, and can go true fullscreen
-// via the Fullscreen API. Two modes: a webtoon-style vertical long-strip (default)
-// and a single-page "paged" mode with right-to-left support (manga reads RTL).
-//
-// Chrome (top bar + bottom control bar) auto-hides after a few seconds of reading
-// and re-reveals on mouse-move or scroll-up — and in fullscreen a small exit button
-// is ALWAYS present so you can never get stuck. Reading progress reuses
-// /account/progress (media_type:'manga'): the chapter ordinal rides in
-// episode_number, the page in position_seconds — so "continue reading" works with no
-// schema change. Prefs persist in localStorage.
-//
-// Two routes hit this component:
-//   /read/:anilistId/:chapterId  — read a specific chapter
-//   /read/:anilistId             — RESUME: resolve the saved chapter and redirect
+// Reading progress reuses /account/progress (media_type 'manga'): the chapter ordinal
+// rides in episode_number and the page in position_seconds, so "continue reading"
+// needs no schema change. /read/:anilistId (no chapter id) resumes the saved chapter.
 const MODE_KEY = 'crimson:manga:mode';
 const RTL_KEY = 'crimson:manga:rtl';
 const loadPref = (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } };
@@ -42,7 +30,7 @@ const MangaReader = () => {
 
   const [mode, setMode] = useState(() => (loadPref(MODE_KEY, 'vertical') === 'paged' ? 'paged' : 'vertical'));
   const [rtl, setRtl] = useState(() => loadPref(RTL_KEY, '0') === '1');
-  const [page, setPage] = useState(1);           // 1-based current page
+  const [page, setPage] = useState(1);
   const [chromeVisible, setChromeVisible] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -50,16 +38,12 @@ const MangaReader = () => {
   const total = pages.length;
   const chapterOrdinal = currentIndex >= 0 ? currentIndex + 1 : null;
   const title = overview?.title || 'Manga';
-  useTitle(currentChapter ? `${title} — Ch. ${currentChapter.chapter ?? chapterOrdinal}` : title);
+  useTitle(currentChapter ? `${title} (Ch. ${currentChapter.chapter ?? chapterOrdinal})` : title);
 
-  // --- resume route (/read/:anilistId, no chapter id) --------------------------
-  // Map the saved progress ordinal → chapter id and redirect into the reader so
-  // "Continue Reading" from history/overview reads immediately. Falls back to the
-  // first chapter (fresh start) and, if the title never maps, to the overview.
+  // Falls back to the first chapter and, if the title never maps, to the overview.
   useEffect(() => {
     if (chapterId) return;
     if (!chapters.length) {
-      // Overview finished loading but produced no chapters -> nothing to resume into.
       if (overview) navigate(`/manga/${anilistId}`, { replace: true });
       return;
     }
@@ -68,23 +52,19 @@ const MangaReader = () => {
     if (target) navigate(`/read/${anilistId}/${encodeURIComponent(target.id)}`, { replace: true });
   }, [chapterId, chapters, overview, resume, anilistId, navigate]);
 
-  // Refs for each page (vertical mode) so an IntersectionObserver can tell us which
-  // page is currently on screen (drives the counter + progress + scrubber).
+  // Per-page refs let an IntersectionObserver report which page is on screen.
   const pageRefs = useRef([]);
   pageRefs.current = [];
   const registerPage = (el) => { if (el) pageRefs.current.push(el); };
 
-  // --- chrome auto-hide (reveal on activity, hide while reading) ----------------
   const hideTimer = useRef(null);
   const revealChrome = useCallback(() => {
     setChromeVisible(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
     hideTimer.current = setTimeout(() => setChromeVisible(false), 3200);
   }, []);
-  // Reveal on mount + whenever the chapter changes, then let it settle.
   useEffect(() => { revealChrome(); }, [chapterId, revealChrome]);
-  // Mouse-move reveals; scroll direction reveals (up) / hides (down). Bind to both
-  // window (inline) and the container (which is the scroller in fullscreen).
+  // Bind to both window (inline) and the container (the scroller in fullscreen).
   useEffect(() => {
     const onMove = () => revealChrome();
     const lastY = { v: 0 };
@@ -106,7 +86,6 @@ const MangaReader = () => {
     };
   }, [revealChrome, isFullscreen]);
 
-  // --- fullscreen (real Fullscreen API on the reader container) -----------------
   const toggleFullscreen = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -119,7 +98,6 @@ const MangaReader = () => {
     return () => document.removeEventListener('fullscreenchange', onFs);
   }, []);
 
-  // --- resume: jump to the saved page when this is the resumed chapter ----------
   const appliedResumeRef = useRef(false);
   useEffect(() => { appliedResumeRef.current = false; }, [chapterId]);
   useEffect(() => {
@@ -140,7 +118,6 @@ const MangaReader = () => {
     }
   }, [pagesLoading, total, resume, chapterOrdinal, mode]);
 
-  // --- vertical mode: track the on-screen page via IntersectionObserver --------
   useEffect(() => {
     if (mode !== 'vertical' || total === 0) return;
     const els = pageRefs.current;
@@ -163,7 +140,6 @@ const MangaReader = () => {
     return () => observer.disconnect();
   }, [mode, total, chapterId, isFullscreen]);
 
-  // --- progress: save (debounced) as the page changes, and on unmount ----------
   const saveProgress = useCallback((pageNum) => {
     if (!isAuthenticated || !overview || chapterOrdinal == null || !total) return;
     updateProgress({
@@ -184,15 +160,12 @@ const MangaReader = () => {
     const t = setTimeout(() => saveProgress(pageRef.current), 1200);
     return () => clearTimeout(t);
   }, [page, pagesLoading, total, saveProgress]);
-  // Flush on unmount / chapter change so we never lose the last position.
   useEffect(() => () => saveProgress(pageRef.current), [saveProgress]);
 
-  // --- navigation --------------------------------------------------------------
   const goToChapter = useCallback((ch) => {
     if (ch) navigate(`/read/${anilistId}/${encodeURIComponent(ch.id)}`);
   }, [anilistId, navigate]);
 
-  // Jump to a page (scrubber / paging). Scrolls it into view in vertical mode.
   const goToPage = useCallback((n) => {
     const clamped = Math.min(Math.max(1, n), total || 1);
     setPage(clamped);
@@ -212,8 +185,7 @@ const MangaReader = () => {
     else if (prevChapter) goToChapter(prevChapter);
   }, [page, prevChapter, goToChapter, goToPage]);
 
-  // Keyboard: arrows page (RTL swaps their meaning); F toggles fullscreen; Esc exits
-  // (fullscreen first — the browser handles that — else back to the overview).
+  // Esc: the browser exits fullscreen itself, otherwise we go back to the overview.
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') { if (document.fullscreenElement) return; navigate(`/manga/${anilistId}`); return; }
@@ -225,7 +197,6 @@ const MangaReader = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [mode, rtl, flipNext, flipPrev, navigate, anilistId, toggleFullscreen]);
 
-  // Preload the neighbouring pages in paged mode for instant flips.
   useEffect(() => {
     if (mode !== 'paged' || !total) return;
     [page, page + 1].forEach((n) => {
@@ -239,10 +210,8 @@ const MangaReader = () => {
 
   const chapterLabel = (ch) => (ch?.chapter != null ? `Ch. ${ch.chapter}` : 'Oneshot') + (ch?.title ? ` · ${ch.title}` : '');
 
-  // While the resume route resolves (no chapterId yet) show a clean spinner.
   const resolvingResume = !chapterId;
 
-  // --- chrome (top bar + bottom control bar) -----------------------------------
   const iconBtn = 'p-2 rounded-lg border transition-all shrink-0';
   const header = (
     <div className={`sticky top-0 z-40 transition-transform duration-300 ${chromeVisible ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -257,7 +226,6 @@ const MangaReader = () => {
           </p>
         </div>
 
-        {/* Chapter picker */}
         {chapters.length > 0 && (
           <select
             value={chapterId || ''}
@@ -281,7 +249,6 @@ const MangaReader = () => {
   const controlBar = total > 0 && !resolvingResume && (
     <div className={`fixed inset-x-0 bottom-0 z-40 transition-transform duration-300 ${chromeVisible ? 'translate-y-0' : 'translate-y-full'}`}>
       <div className="mx-auto max-w-4xl m-3 rounded-2xl border border-crimson-900/60 bg-crimson-950/95 backdrop-blur-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] px-3 sm:px-4 py-2.5 space-y-2">
-        {/* Page scrubber */}
         <div className="flex items-center gap-3">
           <button onClick={flipPrev} disabled={page <= 1 && !prevChapter} className="p-1.5 rounded-lg text-crimson-400 hover:text-white hover:bg-crimson-900/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all shrink-0" aria-label="Previous page">
             <ChevronLeft className="w-5 h-5" />
@@ -303,7 +270,6 @@ const MangaReader = () => {
           </button>
         </div>
 
-        {/* Secondary controls: chapter hop + reading options */}
         <div className="flex items-center gap-2">
           <button onClick={() => goToChapter(prevChapter)} disabled={!prevChapter} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-900/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
             <ChevronLeft className="w-3.5 h-3.5" /> Prev Ch.
@@ -327,10 +293,9 @@ const MangaReader = () => {
     </div>
   );
 
-  // Root: the fullscreen target. In fullscreen it becomes the scroll container.
   const rootClass = `relative bg-crimson-950 ${isFullscreen ? 'h-screen overflow-y-auto' : 'min-h-screen'}`;
 
-  // Small always-present exit while fullscreen with chrome hidden — never get stuck.
+  // Always-present exit while fullscreen with chrome hidden, so you can never get stuck.
   const fsExit = isFullscreen && !chromeVisible && (
     <button onClick={toggleFullscreen} className="fixed top-3 right-3 z-50 p-2 rounded-full bg-crimson-950/80 border border-crimson-900/70 text-crimson-300 hover:text-white hover:border-crimson-600 shadow-lg transition-all" aria-label="Exit fullscreen">
       <Minimize2 className="w-4 h-4" />
@@ -367,7 +332,6 @@ const MangaReader = () => {
           </p>
         </div>
       ) : mode === 'vertical' ? (
-        // --- Webtoon long-strip ---------------------------------------------
         <div className="max-w-3xl mx-auto pb-28" onClick={() => setChromeVisible((v) => !v)}>
           {pages.map((url, i) => (
             <img
@@ -384,13 +348,11 @@ const MangaReader = () => {
           <ChapterFooter prevChapter={prevChapter} nextChapter={nextChapter} onGo={goToChapter} chapterLabel={chapterLabel} />
         </div>
       ) : (
-        // --- Paged (single page, RTL-aware) ---------------------------------
         <div className="relative max-w-3xl mx-auto min-h-screen flex items-center justify-center px-2 select-none">
           {pages[page - 1] && (
             <img src={pages[page - 1]} alt={`Page ${page}`} className="max-h-[calc(100vh-2rem)] w-auto mx-auto" draggable={false} />
           )}
 
-          {/* Tap zones: outer thirds flip pages (respecting RTL); centre toggles chrome. */}
           <button className="absolute inset-y-0 left-0 w-1/3 cursor-pointer focus:outline-none" onClick={rtl ? flipNext : flipPrev} aria-label={rtl ? 'Next page' : 'Previous page'} />
           <button className="absolute inset-y-0 left-1/3 w-1/3 cursor-pointer focus:outline-none" onClick={() => setChromeVisible((v) => !v)} aria-label="Toggle controls" />
           <button className="absolute inset-y-0 right-0 w-1/3 cursor-pointer focus:outline-none" onClick={rtl ? flipPrev : flipNext} aria-label={rtl ? 'Previous page' : 'Next page'} />
@@ -402,7 +364,6 @@ const MangaReader = () => {
   );
 };
 
-// End-of-chapter card (vertical mode): jump to the neighbouring chapters.
 function ChapterFooter({ prevChapter, nextChapter, onGo, chapterLabel }) {
   if (!prevChapter && !nextChapter) {
     return (

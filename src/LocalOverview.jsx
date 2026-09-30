@@ -4,17 +4,11 @@ import { ArrowLeft, Play, Film, Tv, HardDrive, Calendar, Hash, ListVideo, AlertT
 import { useLocalOverview, useTitle, API_BASE_URL } from './hooks';
 import { stripHtml } from './utils';
 
-// Absolutize a poster path: local artwork comes back as a relative, signed
-// /local_art path (served by the backend); a TMDB-enriched poster is already
-// absolute. Everything else (null) falls through to a placeholder.
+// Local artwork comes back as a relative, signed /local_art path; TMDB posters are
+// already absolute.
 const posterSrc = (poster) =>
   poster ? (poster.startsWith('/') ? `${API_BASE_URL}${poster}` : poster) : null;
 
-// Local media overview page (/local/:token). Renders one on-disk title from the
-// backend's filesystem index: a movie (single Play) or a show (its episodes,
-// grouped by season). Each playable file carries its own token, which the watch
-// page (/watch-local/:fileToken) plays through the shared player. Unlike the anime/
-// show overviews there is no TMDB waterfall — the whole payload arrives at once.
 function LocalOverview() {
   const { token } = useParams();
   const navigate = useNavigate();
@@ -32,10 +26,8 @@ function LocalOverview() {
   const backUrl = `/local/${token}`;
   const poster = posterSrc(overview?.poster);
 
-  // Build a watch link for a file token, carrying the display title, a back link,
-  // and the progress identity: `localId` is the TITLE token (so every episode dedups
-  // as one show in history), plus the season/episode this file is. The watch page
-  // needs all three to save + resume progress in the `local:` namespace.
+  // `localId` is the TITLE token so every episode dedups as one show in history. The
+  // watch page needs it plus season/episode to save and resume in the `local:` namespace.
   const watchLink = (fileToken, label, season, episode) => {
     let url = `/watch-local/${fileToken}?title=${encodeURIComponent(label)}` +
       `&back=${encodeURIComponent(backUrl)}&localId=${encodeURIComponent(token)}`;
@@ -81,7 +73,6 @@ function LocalOverview() {
         <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" /> Back
       </button>
 
-      {/* Header */}
       <div className="flex flex-col sm:flex-row gap-8">
         <div className="w-40 sm:w-56 shrink-0 mx-auto sm:mx-0">
           <div className="aspect-[2/3] rounded-3xl overflow-hidden bg-crimson-900/20 border border-crimson-900/50 shadow-2xl">
@@ -153,7 +144,6 @@ function LocalOverview() {
         </div>
       </div>
 
-      {/* Episodes (shows) */}
       {!isMovie && seasons.length > 0 && (
         <div className="space-y-6">
           {seasons.length > 1 && (

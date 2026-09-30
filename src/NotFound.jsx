@@ -6,10 +6,8 @@ const NotFound = () => {
   const lumi404 = useThemedAsset('lumi_404');
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-20 flex flex-col md:flex-row items-center justify-between gap-16 my-auto relative min-h-[80vh] overflow-hidden animate-in fade-in duration-1000">
-      {/* Background Decorative Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-crimson-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
-      {/* Text Content */}
       <div className="flex-1 space-y-10 text-center md:text-left z-10 animate-in slide-in-from-left-12 duration-1000 max-w-2xl relative">
         <div className="space-y-4">
           <div className="inline-flex items-center gap-2 px-4 py-1 bg-crimson-500/10 border border-crimson-500/20 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 mb-2">
@@ -37,7 +35,7 @@ const NotFound = () => {
           </h2>
           <p className="text-crimson-200/70 leading-relaxed text-sm sm:text-lg font-medium">
             Either my royal librarians misplaced a link, or you tried to sneak into a room that doesn’t exist. 
-            <span className="block mt-2 italic text-crimson-500/60 text-xs sm:text-sm">(Don’t worry — I do that sometimes too.)</span>
+            <span className="block mt-2 italic text-crimson-500/60 text-xs sm:text-sm">(Don’t worry, I do that sometimes too.)</span>
           </p>
         </div>
 
@@ -77,10 +75,8 @@ const NotFound = () => {
         </div>
       </div>
 
-      {/* Mascot Image - Dynamically Anchored */}
       <div className="md:absolute md:bottom-0 md:right-0 md:translate-y-20 lg:translate-y-0 w-full md:w-auto flex justify-center md:block animate-in fade-in zoom-in duration-1000 pointer-events-none opacity-30 md:opacity-100 z-0">
         <div className="relative group max-w-[280px] sm:max-w-[340px] md:max-w-[400px] lg:max-w-[500px]">
-          {/* Ambient Glows */}
           <div className="absolute -inset-20 bg-crimson-500/10 rounded-full blur-[120px] group-hover:bg-crimson-500/20 transition-all duration-1000 animate-pulse" />
           
           <img

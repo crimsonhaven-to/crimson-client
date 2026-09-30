@@ -5,10 +5,8 @@ import PrefToggle from './PrefToggle';
 import CrossfadeCard from './music/CrossfadeCard';
 import { hasDownloads } from './music/downloads';
 
-// The little local bridge that carries presence from the haven to your Discord
-// client (see rpc-helper/). The binaries are cross-compiled into the site image
-// and served from /helper — same origin — so they download straight from
-// Crimson Haven (the repo is private, so GitHub Releases wouldn't be reachable).
+// Served same-origin from /helper because the repo is private, so GitHub Releases
+// wouldn't be reachable.
 const HELPER_DIR = '/helper';
 const HELPER_BUILDS = [
   { key: 'windows-amd64', label: 'Windows x64',         file: 'crimson-presence-helper-windows-amd64.exe' },
@@ -20,10 +18,8 @@ const HELPER_BUILDS = [
 ];
 const helperHref = (file) => `${HELPER_DIR}/${file}`;
 
-// Best one-click guess for the visitor's machine. We pick the amd64 build per OS
-// because it runs everywhere — natively on x64, and via Rosetta / Windows-on-ARM
-// emulation otherwise — so a single tap "just works" for nearly everyone; the
-// keen can still grab a native ARM build from the full list.
+// amd64 runs everywhere (natively on x64, via Rosetta / Windows-on-ARM emulation
+// otherwise), so one tap works for nearly everyone.
 function guessHelper() {
   const probe =
     typeof navigator !== 'undefined'
@@ -37,9 +33,6 @@ function guessHelper() {
   return HELPER_BUILDS.find((b) => b.key === want);
 }
 
-// A reusable pill: the "Any" choice is the empty string, every other choice is a
-// language ("German") or a type ("Dub"). Selecting the active pill again clears it
-// back to "Any", so a single tap toggles a preference off.
 const PrefPill = ({ label, active, onClick }) => (
   <button
     onClick={onClick}
@@ -53,9 +46,6 @@ const PrefPill = ({ label, active, onClick }) => (
   </button>
 );
 
-// Display-name card: the cosmetic name Luminas greets you by ("Recommended for
-// you, {name}"). Saved server-side (PUT /account/username) so it follows the user
-// across devices; clearing it falls back to a generic greeting.
 const DisplayNameCard = () => {
   const profile = useProfile();
   const MAX = 20;
@@ -64,8 +54,6 @@ const DisplayNameCard = () => {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState(null);
 
-  // Seed the field once the profile loads (and whenever the stored name changes,
-  // e.g. after a successful save the profile refetches with the same value).
   useEffect(() => { setName(profile?.username || ''); }, [profile?.username]);
 
   const dirty = (profile?.username || '') !== name.trim();
@@ -94,7 +82,7 @@ const DisplayNameCard = () => {
         </div>
         <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
           What shall Luminas call you, darling? She'll whisper it when she lays your
-          curated cravings before you — <span className="text-crimson-300">"Recommended for you, {name.trim() || 'mortal'}"</span>.
+          curated cravings before you: <span className="text-crimson-300">"Recommended for you, {name.trim() || 'mortal'}"</span>.
           Leave it empty to stay a nameless wanderer of the haven.
         </p>
       </div>
@@ -146,8 +134,6 @@ const UserSettings = () => {
   const setType = (value) => setPrefs({ ...prefs, type: prefs.type === value ? '' : value });
   const toggleDiscord = () => setPrefs({ ...prefs, discordPresence: !prefs.discordPresence });
 
-  // Subtitle languages are a multi-select (any number on at once). Tapping a pill
-  // adds/removes its code from the list the watch page fetches from OpenSubtitles.
   const subLangs = prefs.subtitleLanguages || [];
   const toggleSubtitleLang = (code) =>
     setPrefs({
@@ -161,12 +147,10 @@ const UserSettings = () => {
   // Offline the profile never loads, so downloads on this device keep the setting reachable.
   const showMusic = useMusicAccess() || hasDownloads();
 
-  // One-click helper download tailored to the visitor's OS.
   const helper = guessHelper();
 
-  // Human description of the resulting auto-select behaviour.
   const summary = !prefs.language && !prefs.type
-    ? 'No language preference — the first source to load plays by default.'
+    ? 'No language preference. The first source to load plays by default.'
     : `Sources tagged ${[prefs.language, prefs.type].filter(Boolean).join(' ')} auto-play whenever one is available; otherwise the first source to load plays.`;
 
   return (
@@ -179,13 +163,11 @@ const UserSettings = () => {
         <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Tune how the haven picks your stream</p>
       </div>
 
-      {/* Display name — how Luminas greets you across the haven. */}
       <DisplayNameCard />
 
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
 
-        {/* Preferred language */}
         <div className="space-y-5 relative z-10">
           <div className="flex items-center gap-3 text-crimson-500">
             <Languages className="w-6 h-6" />
@@ -202,7 +184,6 @@ const UserSettings = () => {
           </div>
         </div>
 
-        {/* Preferred dub / sub */}
         <div className="space-y-5 relative z-10">
           <div className="flex items-center gap-3 text-crimson-500">
             <Mic className="w-6 h-6" />
@@ -224,15 +205,13 @@ const UserSettings = () => {
           </div>
         </div>
 
-        {/* Subtitle languages — external OpenSubtitles tracks shown in the player's
-            CC menu. Multi-select; empty = off (no extra tracks fetched). */}
         <div className="space-y-5 relative z-10">
           <div className="flex items-center gap-3 text-crimson-500">
             <Subtitles className="w-6 h-6" />
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Subtitle Languages</h3>
           </div>
           <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
-            Pull matching subtitles from OpenSubtitles into the player's caption menu —
+            Pull matching subtitles from OpenSubtitles into the player's caption menu,
             handy when a source ships none. Pick any number; leave all off to skip them.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -247,7 +226,6 @@ const UserSettings = () => {
           </div>
         </div>
 
-        {/* Live summary of the effective behaviour */}
         <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-500/5 border border-crimson-500/20 rounded-3xl">
           <div className="p-2.5 rounded-2xl bg-crimson-900/20 shrink-0">
             {prefs.type === 'Sub' ? <Subtitles className="w-5 h-5 text-crimson-500" /> : <Info className="w-5 h-5 text-crimson-500" />}
@@ -261,7 +239,6 @@ const UserSettings = () => {
         </div>
       </div>
 
-      {/* Discord Rich Presence */}
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
 
@@ -272,16 +249,15 @@ const UserSettings = () => {
               <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Discord Presence</h3>
             </div>
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
-              Let Luminas whisper to Discord what you're watching or listening to — a little rich-presence
-              card on your profile. Nothing leaves your machine, and you can banish it anytime.
+              Let Luminas whisper to Discord what you're watching or listening to (a little rich-presence
+              card on your profile). Nothing leaves your machine, and you can banish it anytime.
               Because Discord only trusts its own site, this needs a tiny local bridge of
-              Luminas' own making, summoned just below. No bridge, no presence — nothing breaks.
+              Luminas' own making, summoned just below. No bridge, no presence. Nothing breaks.
             </p>
           </div>
           <PrefToggle active={prefs.discordPresence} onClick={toggleDiscord} label="Toggle Discord Rich Presence" />
         </div>
 
-        {/* The helper bridge is required for presence to actually reach Discord. */}
         <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-900/20 border border-crimson-700/30 rounded-3xl">
           <div className="p-2.5 rounded-2xl bg-crimson-900/30 shrink-0">
             <Download className="w-5 h-5 text-crimson-400" />
@@ -300,7 +276,7 @@ const UserSettings = () => {
               >
                 here
               </a>{' '}
-              ({helper.label}) and let it dwell in your taskbar beside Discord — without it, the
+              ({helper.label}) and let it dwell in your taskbar beside Discord. Without it, the
               toggle stirs but your profile stays silent.
             </p>
             <p className="text-[11px] text-crimson-400/70 leading-relaxed font-medium">
@@ -332,7 +308,7 @@ const UserSettings = () => {
             <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
               {prefs.discordPresence
                 ? 'Your Discord now flaunts "Watching …" while you stream, "Listening to …" while music plays, and "Browsing the archives…" while you wander.'
-                : 'Your viewing stays unseen — no presence is broadcast to Discord.'}
+                : 'Your viewing stays unseen. No presence is broadcast to Discord.'}
             </p>
           </div>
         </div>
@@ -340,8 +316,7 @@ const UserSettings = () => {
 
       {showMusic && <CrossfadeCard />}
 
-      {/* Theme — a per-device visual theme (not account-synced). Adding a theme
-          to src/hooks/theme.js makes it appear here automatically. */}
+      {/* Themes added to src/hooks/theme.js appear here automatically. */}
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
 
@@ -351,7 +326,7 @@ const UserSettings = () => {
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Theme</h3>
           </div>
           <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
-            Dress the haven to your taste. The choice lives on this device alone —
+            Dress the haven to your taste. The choice lives on this device alone:
             it never leaves it, and never touches your account.
           </p>
         </div>
@@ -406,7 +381,6 @@ const UserSettings = () => {
         </div>
       </div>
 
-      {/* Lite background — a per-device performance toggle (not account-synced). */}
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
 
@@ -418,7 +392,7 @@ const UserSettings = () => {
             </div>
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
               The living crimson mist is beautiful but hungry on weaker machines. Still it,
-              and Luminas lets the glow rest as a calm, static gradient — gentler on the GPU
+              and Luminas lets the glow rest as a calm, static gradient, gentler on the GPU
               and your battery. This choice stays on this device alone.
             </p>
           </div>
@@ -435,8 +409,8 @@ const UserSettings = () => {
             </p>
             <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
               {lite
-                ? 'The mist lies still — a calm crimson gradient, lightest on your hardware.'
-                : "The crimson mist drifts as Luminas intended — full, living, and aglow."}
+                ? 'The mist lies still: a calm crimson gradient, lightest on your hardware.'
+                : "The crimson mist drifts as Luminas intended: full, living, and aglow."}
             </p>
           </div>
         </div>

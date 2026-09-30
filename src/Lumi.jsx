@@ -1,10 +1,5 @@
-// Lumi's chat drawer: a floating summon button plus a slide-out panel, mounted
-// once at the app root so she is reachable from any page.
-//
-// It renders nothing at all unless the backend says this viewer may chat
-// (feature switched on, a provider key configured, and this account granted
-// access on the Admin › Users tab). Chat access is deny-by-default, so for most
-// accounts this component is invisible and costs one small request on mount.
+// Mounted once at the app root. Renders nothing unless the backend grants this
+// viewer chat (deny-by-default), so for most accounts it costs one small request.
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Bot, ChevronLeft, Play, RotateCcw, Send, Sparkles, X } from 'lucide-react';
@@ -78,10 +73,8 @@ export default function Lumi() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
-  // The greeting is picked when the drawer is summoned rather than during render:
-  // Math.random() is impure, and calling it in a render path is both a lint error
-  // and a correctness trap under concurrent rendering. Picking it here also means
-  // a fresh line every time she is summoned, which is what you want anyway.
+  // Picked on summon, not during render: Math.random() is impure, and calling it in
+  // a render path is a lint error and a trap under concurrent rendering.
   const summon = () => {
     const pool = status?.greetings || [];
     if (pool.length) setGreeting(pool[Math.floor(Math.random() * pool.length)]);

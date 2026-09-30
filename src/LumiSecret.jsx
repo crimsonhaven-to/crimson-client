@@ -2,11 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch, themedAsset, useTheme } from './hooks';
 
-// --- The secret shrine -----------------------------------------------------
-// Revealed by the Konami code (see useKonami.js). Lumi art that the viewer can
-// click to cycle, plus a blessing pulled live from the backend /lumi endpoint
-// (with a local fallback so it's never empty). The art is resolved per theme,
-// so a "Catgirl Lumi" shrine swaps in her catgirl forms once that art exists.
+// Revealed by the Konami code (see useKonami.js).
 const LUMI_ART_KEYS = [
   'secret_peace',
   'secret_mascot',
@@ -21,11 +17,11 @@ export default function LumiSecret() {
   const [art, setArt] = useState(0);
   const [blessing, setBlessing] = useState(FALLBACK_BLESSING);
   const [title, setTitle] = useState('Eternal Empress of the Crimson Archives');
-  // Resolve the gallery for the active theme (length is stable across themes).
+  // Gallery length is stable across themes, which nextArt's empty deps rely on.
   const theme = useTheme();
   const LUMI_ART = LUMI_ART_KEYS.map((k) => themedAsset(k, theme));
 
-  // Pull a fresh blessing from the backend (public endpoint). Best-effort.
+  // Public endpoint, best-effort: FALLBACK_BLESSING stays on failure.
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -41,7 +37,6 @@ export default function LumiSecret() {
     return () => { alive = false; };
   }, []);
 
-  // Slowly drift through the gallery; clicking advances it immediately.
   useEffect(() => {
     const t = setInterval(() => setArt((i) => (i + 1) % LUMI_ART.length), 6000);
     return () => clearInterval(t);
@@ -50,13 +45,9 @@ export default function LumiSecret() {
   const nextArt = useCallback(() => setArt((i) => (i + 1) % LUMI_ART.length), []);
 
   return (
-    // In-flow (not fixed) full-bleed shrine: `min-h-screen` keeps the immersive
-    // viewport-filling feel, but because it lives in the normal document flow the
-    // footer sits BELOW it rather than overlapping, and any overflow scrolls the
-    // page instead of being clipped. (A `fixed` overlay gets trapped by the
-    // transformed/blurred app shell, which previously cut off the bottom lines.)
+    // In flow, not `fixed`: a fixed overlay gets trapped by the transformed/blurred
+    // app shell and loses its bottom lines. In flow, the footer sits below it.
     <div className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-black via-crimson-950 to-black px-6 py-24 text-center">
-      {/* Soft crimson glow behind the empress */}
       <div className="pointer-events-none absolute h-[60vmin] w-[60vmin] rounded-full bg-crimson-600/20 blur-3xl" />
 
       <p className="z-10 mb-6 text-xs font-black uppercase tracking-[0.4em] text-crimson-500/80 animate-pulse">
@@ -98,7 +89,7 @@ export default function LumiSecret() {
       </div>
 
       <p className="z-10 mt-6 text-[0.65rem] uppercase tracking-[0.3em] text-crimson-700">
-        (click the empress — she enjoys the attention)
+        (click the empress: she enjoys the attention)
       </p>
     </div>
   );

@@ -52,7 +52,6 @@ const AccountPage = () => {
 
         <div className="grid grid-cols-1 gap-8">
           <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-8 shadow-2xl relative overflow-hidden">
-            {/* Decorative background glow */}
             <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
 
             <div className="flex items-center gap-4 text-crimson-500 relative z-10">
@@ -66,7 +65,7 @@ const AccountPage = () => {
                   {profile?.email ? 'Email (Account ID)' : 'Public Signature (Account ID)'}
                 </p>
                 <div className="p-5 bg-crimson-950/80 border border-crimson-900/60 rounded-2xl text-crimson-400 break-all select-all font-mono shadow-inner">
-                  {profile?.email || publicKey || '—'}
+                  {profile?.email || publicKey || '-'}
                 </div>
               </div>
 
@@ -91,7 +90,7 @@ const AccountPage = () => {
               <h4 className="text-sm font-black text-crimson-100 uppercase tracking-widest">Security Notice</h4>
               <p className="text-xs text-crimson-300/60 leading-relaxed font-medium">
                 {profile?.email
-                  ? 'Your account is secured with your email and password. Keep them safe — use the reset link if you ever forget your password.'
+                  ? 'Your account is secured with your email and password. Keep them safe, and use the reset link if you ever forget your password.'
                   : 'Your account is bound to your 12-word mnemonic. We do not store your private keys. If you lose your mnemonic, your data is lost forever in the void.'}
               </p>
             </div>
@@ -160,7 +159,6 @@ const AccountPage = () => {
       ) : (
         <div className="space-y-8 animate-in zoom-in-95 duration-700">
           <div className="p-8 sm:p-10 bg-crimson-950/40 backdrop-blur-xl border border-crimson-500/30 border-dashed rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
-             {/* Decorative background glow */}
              <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/10 blur-[80px] rounded-full"></div>
 
             <div className="flex items-center gap-4 text-crimson-500 relative z-10">

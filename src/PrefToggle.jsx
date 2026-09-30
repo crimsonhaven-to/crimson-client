@@ -1,4 +1,3 @@
-// A simple on/off switch styled to match the crimson pills.
 const PrefToggle = ({ active, onClick, label }) => (
   <button
     onClick={onClick}

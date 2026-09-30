@@ -1,10 +1,7 @@
 import { useEffect, useRef } from 'react';
 
-// ↑ ↑ ↓ ↓ ← → ← → B A — the old incantation. useKonamiCode watches global
-// keydowns and fires `onUnlock` when the full sequence is entered in order; a
-// wrong key resets progress (but a key that is itself the first key restarts it).
-// Lives in its own tiny module so App can mount the hook eagerly at the root while
-// the secret page it reveals stays lazily code-split.
+// A wrong key resets progress, unless it is itself the first key, which restarts it.
+// Own module so App can mount the hook eagerly while the secret page stays code-split.
 const KONAMI = [
   'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
   'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a',

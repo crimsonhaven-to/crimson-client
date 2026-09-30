@@ -2,14 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Heart, Check, Plus, ListPlus } from 'lucide-react';
 import { useWatchlists, listLabel, DEFAULT_LIST, useSessionToken } from './hooks';
 
-// Per-show "add to list(s)" control used on the overview and watch pages. Opens a
-// popover of every watchlist with a check next to the ones this show belongs to;
-// toggling a row adds/removes it, and a footer input creates a brand-new list and
-// drops the show straight into it.
-//
-// `item` is the minimal show identity ({ tmdb_id?, anilist_id?, title, poster }).
-// `variant` ('overview' | 'watch') only tunes the trigger styling and which side
-// the popover anchors to, so it sits naturally in either layout.
+// `item`: { tmdb_id?, anilist_id?, title, poster }. `variant` ('overview' | 'watch')
+// only tunes the trigger styling and which side the popover anchors to.
 const WatchlistButton = ({ item, variant = 'overview' }) => {
   const sessionToken = useSessionToken();
   const { lists, listsForItem, toggleInList, createList, addToList } = useWatchlists();
@@ -17,7 +11,6 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
   const [newName, setNewName] = useState('');
   const rootRef = useRef(null);
 
-  // Close on outside click / Escape.
   useEffect(() => {
     if (!open) return;
     const onDown = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
@@ -30,8 +23,7 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
     };
   }, [open]);
 
-  // Saving requires a linked account; without one the control is hidden so the
-  // overview/watch layouts simply omit it (matching the old behaviour).
+  // Saving requires a linked account, so without one the control is hidden.
   if (!item || !sessionToken) return null;
 
   const current = listsForItem(item);

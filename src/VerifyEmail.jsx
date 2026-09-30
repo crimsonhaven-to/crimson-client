@@ -4,9 +4,7 @@ import { CheckCircle2, AlertCircle, RefreshCw, LogIn } from 'lucide-react';
 import { useAuth, useTitle } from './hooks';
 import { Shell } from './Login';
 
-// Landing page for the verification link emailed on registration. Consumes the
-// ?token=, and on success the backend hands back a session — so a verified user
-// lands straight inside the app.
+// On success the backend hands back a session, so a verified user lands straight in the app.
 const VerifyEmail = () => {
   const [params] = useSearchParams();
   const token = params.get('token');

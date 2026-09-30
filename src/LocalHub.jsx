@@ -1,8 +1,3 @@
-// The Local browse hub — the operator's on-disk library. Promoted out of the old
-// Catalogue "Local" tab. Two modes: Library (identified poster tiles, grouped by
-// source root) and Browse (raw folder navigation for media that never resolved to
-// a title). Shown only when a local source is configured (App gates the route via
-// usePublicConfig / the library payload's own `enabled`).
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -15,9 +10,7 @@ import {
 import { posterSrc } from './hubHelpers';
 import { useLocalLibrary, useLocalBrowse, useTitle } from './hooks';
 
-// Folder-navigation view — the fallback surface for media that never resolved to
-// a title. Keeps its own breadcrumb trail; identified folders render as tiles
-// (→ overview), containers drill in, loose files play directly.
+// The fallback surface for media that never resolved to a title.
 function LocalBrowseView({ searchTerm, navigate }) {
   const [trail, setTrail] = useState([]);
   const currentToken = trail.length ? trail[trail.length - 1].token : null;

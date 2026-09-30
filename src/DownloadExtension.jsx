@@ -1,14 +1,5 @@
-/*
- * The Companion download page (/extension).
- *
- * The companion lives on the Chrome Web Store and on Firefox Add-ons, so this
- * page points the viewer at the listing for their browser and lets the store
- * handle installs and updates. The stores are the single source of the build,
- * so nothing is side-loaded or served from /extension/.
- *
- * We still detect a live companion (window.CrimsonExtension, injected at
- * document_start) to show an "already bound" state and its version.
- */
+// The stores are the single source of the build, so nothing is side-loaded or
+// served from /extension/.
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Puzzle, Power, ShieldCheck, Sparkles, CheckCircle2, ExternalLink, ChevronRight } from 'lucide-react';
@@ -29,13 +20,10 @@ const STORES = {
   },
 };
 
-// Firefox visitors see their own store first; every other browser gets Chrome's.
 const isFirefox = () => typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
 
-// Reads window.CrimsonExtension synchronously and keeps it fresh: the companion
-// injects its MAIN-world API at document_start and fires a one-shot
-// `crimson-extension-ready` event, which can land before this component mounts,
-// so we seed from the global AND listen, racing a short re-check against the event.
+// The companion fires a one-shot `crimson-extension-ready` at document_start, which
+// can land before mount, so seed from the global AND listen, racing a short re-check.
 function useCompanionPresence() {
   const [present, setPresent] = useState(() => {
     try { return Boolean(window.CrimsonExtension?.available); } catch { return false; }
@@ -89,7 +77,6 @@ export default function DownloadExtension() {
 
   return (
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      {/* Header */}
       <div className="border-b border-crimson-900/30 pb-8 space-y-3">
         <div className="flex items-center gap-3 text-crimson-500">
           <Puzzle className="w-6 h-6" />
@@ -105,7 +92,6 @@ export default function DownloadExtension() {
         </p>
       </div>
 
-      {/* Already-installed success state */}
       {present && (
         <div className="flex items-start gap-4 p-5 rounded-2xl bg-green-500/5 border border-green-500/25 shadow-xl">
           <CheckCircle2 className="w-6 h-6 text-green-400 shrink-0 mt-0.5" />
@@ -119,7 +105,6 @@ export default function DownloadExtension() {
         </div>
       )}
 
-      {/* Store CTA */}
       <div className="relative bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 p-8 rounded-[2rem] shadow-2xl overflow-hidden">
         <div className="absolute top-0 right-0 p-6 opacity-[0.07] pointer-events-none">
           <Puzzle className="w-24 h-24 text-crimson-500" />
@@ -164,7 +149,6 @@ export default function DownloadExtension() {
         </div>
       </div>
 
-      {/* Install ritual */}
       <div className="space-y-6">
         <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
           <Sparkles className="w-4 h-4" /> The Binding Ritual
@@ -190,7 +174,6 @@ export default function DownloadExtension() {
         </ol>
       </div>
 
-      {/* Privacy / what-it-does decree */}
       <div className="relative bg-crimson-500/5 backdrop-blur-md border border-crimson-500/20 p-8 rounded-[2.5rem] shadow-xl">
         <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
         <p className="italic text-crimson-100/90 leading-relaxed text-lg tracking-tight">
@@ -204,7 +187,6 @@ export default function DownloadExtension() {
         </p>
       </div>
 
-      {/* Reassurance + safety */}
       <div className="flex items-start gap-4 p-5 rounded-2xl bg-crimson-950/30 border border-crimson-900/40">
         <ShieldCheck className="w-6 h-6 text-crimson-500 shrink-0 mt-0.5" />
         <p className="text-sm text-crimson-100/70 font-medium leading-relaxed">
@@ -215,7 +197,6 @@ export default function DownloadExtension() {
         </p>
       </div>
 
-      {/* Footer note */}
       <div className="flex items-center justify-between gap-4 pt-2">
         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 flex items-center gap-2">
           <ShieldCheck className="w-3.5 h-3.5" /> Desktop Chromium &amp; Firefox

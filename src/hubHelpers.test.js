@@ -27,7 +27,7 @@ describe('applyBrowse', () => {
       .toEqual(['Chernobyl']);
   });
 
-  it('sorts by title A–Z without mutating the input', () => {
+  it('sorts by title A-Z without mutating the input', () => {
     const before = items.map(i => i.title);
     expect(applyBrowse(items, { sort: 'title' }).map(i => i.title))
       .toEqual(['Breaking Bad', 'Chernobyl', 'The Office']);

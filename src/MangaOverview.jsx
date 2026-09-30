@@ -5,16 +5,13 @@ import { useMangaOverview, useMangaResume, useTitle } from './hooks';
 import { stripHtml } from './utils';
 import WatchlistButton from './WatchlistButton';
 
-// Manga overview page (/manga/:anilistId). The reading twin of ShowOverview, but
-// with its own flat layout (a manga is one ordered run of chapters, no seasons),
-// so it renders directly instead of reusing the video <OverviewView>. Chapters link
-// into the reader (/read/:anilistId/:chapterId).
+// A manga is one ordered run of chapters with no seasons, so this doesn't reuse the
+// video <OverviewView>.
 const STATUS_LABEL = {
   RELEASING: 'Ongoing', FINISHED: 'Completed', NOT_YET_RELEASED: 'Unreleased',
   CANCELLED: 'Cancelled', HIATUS: 'On Hiatus',
 };
 
-// Short "May 15, 2026" for sources that give a date but no page count (WeebCentral).
 function shortDate(iso) {
   if (!iso) return null;
   const d = new Date(iso);
@@ -62,16 +59,14 @@ const MangaOverview = () => {
 
   const synopsis = useMemo(() => stripHtml(overview?.description || ''), [overview]);
 
-  // Multi-source (client-resolved): each source has its own chapter list. Let the
-  // reader pick; default to the first source (backend-provider builds have no
-  // `manga_sources`, so `chapters` falls back to the single backend list).
+  // Backend-provider builds have no `manga_sources`, so `chapters` falls back to the
+  // single backend list.
   const sources = overview?.manga_sources || null;
   const [activeSourceId, setActiveSourceId] = useState(null);
   const activeSource = sources?.find(s => s.sourceId === activeSourceId) || sources?.[0] || null;
   const chapters = activeSource ? activeSource.chapters : (overview?.chapters || []);
 
-  // Resume points at a chapter ordinal (episode_number). Map it back to a chapter
-  // id so "continue reading" jumps straight into the right chapter.
+  // Resume stores the chapter ordinal in episode_number.
   const resumeChapter = resume && resume.episode_number
     ? chapters[resume.episode_number - 1] : null;
   const firstChapter = chapters[0];
@@ -106,7 +101,6 @@ const MangaOverview = () => {
 
   return (
     <div className="relative min-h-screen animate-in fade-in duration-700">
-      {/* Banner */}
       {overview.banner && (
         <div className="absolute inset-x-0 top-0 h-72 sm:h-96 overflow-hidden -z-0">
           <img src={overview.banner} alt="" className="w-full h-full object-cover opacity-30" />
@@ -123,7 +117,6 @@ const MangaOverview = () => {
         </button>
 
         <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
-          {/* Cover */}
           <div className="shrink-0 mx-auto sm:mx-0">
             {overview.poster ? (
               <img src={overview.poster} alt={`${overview.title} cover`} className="w-44 sm:w-52 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-crimson-900/50" />
@@ -132,7 +125,6 @@ const MangaOverview = () => {
             )}
           </div>
 
-          {/* Meta */}
           <div className="min-w-0 flex-grow space-y-4">
             <div>
               <span className="inline-block text-[9px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-md bg-crimson-500/10 border border-crimson-500/25 text-crimson-400 mb-3">
@@ -171,7 +163,6 @@ const MangaOverview = () => {
               </div>
             )}
 
-            {/* Actions */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               {resumeChapter ? (
                 <Link
@@ -194,7 +185,6 @@ const MangaOverview = () => {
           </div>
         </div>
 
-        {/* Synopsis */}
         {synopsis && (
           <div className="mt-10 max-w-3xl">
             <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 mb-3">Synopsis</h2>
@@ -202,7 +192,6 @@ const MangaOverview = () => {
           </div>
         )}
 
-        {/* Chapters */}
         <div className="mt-12">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-xl font-black tracking-tighter text-crimson-50 uppercase flex items-center gap-3">
@@ -213,7 +202,6 @@ const MangaOverview = () => {
             )}
           </div>
 
-          {/* Source picker — one pill per resolved source (client-resolved builds). */}
           {sources && sources.length > 1 && (
             <div className="flex flex-wrap gap-2 mb-5">
               {sources.map((s) => {

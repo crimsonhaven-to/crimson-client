@@ -7,7 +7,6 @@ const SupportersPage = () => {
 
   return (
     <div className="max-w-4xl w-full mx-auto px-6 py-20 space-y-16 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      {/* Header Section */}
       <div className="text-center space-y-6">
         <div className="inline-flex items-center justify-center p-4 bg-crimson-500/10 rounded-[2rem] border border-crimson-500/20 mb-4 shadow-[0_0_30px_rgba(255,0,60,0.1)]">
           <Sparkles className="w-10 h-10 text-crimson-500 animate-pulse" />
@@ -22,7 +21,6 @@ const SupportersPage = () => {
         </div>
       </div>
 
-      {/* Stats Overview */}
       {!loading && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/40 p-8 rounded-[2rem] text-center shadow-2xl group hover:border-crimson-500/30 transition-all">
@@ -38,7 +36,6 @@ const SupportersPage = () => {
         </div>
       )}
 
-      {/* Supporters List */}
       <div className="space-y-8">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-6">
@@ -109,13 +106,12 @@ const SupportersPage = () => {
         )}
       </div>
 
-      {/* Footer Note */}
       <div className="max-w-xl mx-auto text-center space-y-8 pt-10">
         <p className="text-sm sm:text-base text-crimson-100/50 italic leading-relaxed font-medium">
           "Your offerings fuel the sanctuary's fires and keep the dark network nodes humming. 
           Every mortal listed here has earned a special place in the Haven."
         </p>
-        {/* Temporarily hidden for legal reasons — link to the "Support Us" page
+        {/* Temporarily hidden for legal reasons: link to the "Support Us" page
         <div>
           <button
             onClick={() => navigate('/support')}

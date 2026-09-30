@@ -11,12 +11,11 @@ const STATUS_FILTERS = [
   { key: 'completed', label: 'Finished' },
 ];
 
-// Time buckets, rendered in this order — empty ones are skipped.
 const BUCKETS = ['Today', 'Yesterday', 'This Week', 'This Month', 'Earlier'];
 
 const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
 
-// Which bucket an updated_at timestamp falls into (calendar-day based).
+// Calendar-day based.
 const bucketOf = (iso) => {
   const t = iso ? new Date(iso) : null;
   if (!t || Number.isNaN(t.getTime())) return 'Earlier';
@@ -28,7 +27,6 @@ const bucketOf = (iso) => {
   return 'Earlier';
 };
 
-// Short "time ago" label for a card (e.g. "2h ago", "3d ago", or a date).
 const timeAgo = (iso) => {
   if (!iso) return '';
   const t = new Date(iso).getTime();
@@ -45,7 +43,7 @@ const timeAgo = (iso) => {
   return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Whether an ISO date ('YYYY-MM-DD') is strictly in the future (calendar-day).
+// Calendar-day based: an air date of today is not in the future.
 const isFutureDate = (iso) => {
   if (!iso) return false;
   const t = new Date(`${iso}T00:00:00`);
@@ -53,20 +51,13 @@ const isFutureDate = (iso) => {
   return startOfDay(t) > startOfDay(new Date());
 };
 
-// Resume target for an item. In-progress items resume into themselves (the watch
-// page seeks to the saved spot). A finished episode normally resumes into the
-// *next* one — but only when that next episode actually exists (no phantom "E13"
-// after a 12-episode finale) and has already aired. The backend annotates rows
-// with next_episode_exists / next_episode_air_date / season_episode_count; when
-// those are absent (older payloads) we fall back to the season episode count, then
-// finally to the original always-advance behaviour.
+// A finished episode resumes into the next one only when it exists (no phantom "E13"
+// after a 12-episode finale) and has aired. Older payloads lack next_episode_exists,
+// so fall back to season_episode_count, then to always advancing.
 const resumeInfo = (item) => {
   const finished = item.status === 'completed';
-  // Manga: chapter ordinal in episode_number, page in position_seconds. Resume goes
-  // straight into the reader via the resume route (/read/:anilistId with no chapter
-  // id): the reader loads the chapter list, maps the saved ordinal → chapter id and
-  // opens it — so "Continue Reading" reads immediately instead of stopping at the
-  // overview (history rows don't carry the MangaDex chapter id themselves).
+  // The resume route (/read/:anilistId, no chapter id) maps the saved ordinal to a
+  // chapter id itself, since history rows don't carry the MangaDex chapter id.
   if (item.media_type === 'manga') {
     const percent = item.duration_seconds
       ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
@@ -78,9 +69,7 @@ const resumeInfo = (item) => {
       nextAirDate: null,
     };
   }
-  // Local media has no tmdb/anilist id — route back to its on-disk overview
-  // (/local/{local_id}), where the viewer resumes the exact file. One card per
-  // title (episodes dedup on local_id server-side), so no next-episode logic here.
+  // Episodes dedup on local_id server-side (one card per title), so no next-episode logic.
   if (item.media_type === 'local') {
     const percent = item.duration_seconds
       ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
@@ -92,7 +81,6 @@ const resumeInfo = (item) => {
       nextAirDate: null,
     };
   }
-  // Movies are a single feature — no next-episode logic, just resume / rewatch.
   if (item.media_type === 'movie') {
     const percent = item.duration_seconds
       ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
@@ -123,11 +111,8 @@ const resumeInfo = (item) => {
     ? Math.min(100, Math.round((item.position_seconds / item.duration_seconds) * 100))
     : 0;
 
-  // What the card's action communicates:
-  //   'resume'   — partway through, jump back in
-  //   'next'     — finished, the next episode is ready to watch
-  //   'upcoming' — finished all that's aired; the next episode hasn't dropped yet
-  //   'rewatch'  — finished the finale (no further episodes); offer a re-watch
+  // 'upcoming': finished everything aired, the next episode hasn't dropped yet.
+  // 'rewatch': finished the finale, no further episodes.
   let mode = 'resume';
   if (finished) mode = advance ? 'next' : (nextExists ? 'upcoming' : 'rewatch');
   const actionLabel = {
@@ -140,7 +125,6 @@ const resumeInfo = (item) => {
   return { finished, ep, href, percent, mode, actionLabel, nextAirDate: item.next_episode_air_date };
 };
 
-// Readable day label for an air date ('YYYY-MM-DD'), e.g. "Jul 1, 2026".
 const airDateLabel = (iso) => {
   if (!iso) return '';
   const t = new Date(`${iso}T00:00:00`);
@@ -148,7 +132,6 @@ const airDateLabel = (iso) => {
   return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// One history entry, rendered as a tall poster card ('grid') or a dense row ('list').
 const HistoryCard = ({ item, view, onOpen, onRemove }) => {
   const { mode, actionLabel, percent, nextAirDate } = resumeInfo(item);
   const ago = timeAgo(item.updated_at);
@@ -198,10 +181,8 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
       onClick={onOpen}
       className="group relative flex gap-5 p-4 bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 rounded-3xl hover:border-crimson-500/50 hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] transition-[border-color,box-shadow] duration-300 cursor-pointer overflow-hidden"
     >
-      {/* Subtle background glow on hover */}
       <div className="absolute -inset-24 bg-crimson-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none transform-gpu"></div>
 
-      {/* Remove from history (hover) */}
       <button
         onClick={handleRemove}
         aria-label="Remove from history"
@@ -214,7 +195,6 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
         <img src={item.poster} alt={item.title} className="w-full h-full object-cover transform-gpu group-hover:scale-110 transition-transform duration-700" />
         <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-transparent to-transparent opacity-60"></div>
 
-        {/* Progress Bar (Integrated) */}
         <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-crimson-900/80">
           <div
             className="h-full bg-crimson-500 shadow-[0_0_12px_rgba(255,0,60,0.8)] transition-all duration-1000"
@@ -269,14 +249,13 @@ const RecentlyWatchedPage = () => {
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [view, setView] = useState(() => (localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid'));
-  const [pendingRemove, setPendingRemove] = useState(null); // the item awaiting delete confirmation
+  const [pendingRemove, setPendingRemove] = useState(null);
 
   const setViewPersist = (v) => { setView(v); localStorage.setItem(VIEW_KEY, v); };
 
   const q = query.trim().toLowerCase();
 
-  // Apply the status filter, then the title search. Order is preserved (the
-  // server already returns newest-first), so buckets stay chronological.
+  // The server returns newest-first and filtering keeps order, so buckets stay chronological.
   const filtered = useMemo(() => {
     return recentlyWatched.filter((item) => {
       if (statusFilter !== 'all' && item.status !== statusFilter) return false;
@@ -285,7 +264,6 @@ const RecentlyWatchedPage = () => {
     });
   }, [recentlyWatched, statusFilter, q]);
 
-  // Group the filtered rows into time buckets, dropping any empty bucket.
   const grouped = useMemo(() => {
     const map = new Map(BUCKETS.map((b) => [b, []]));
     for (const item of filtered) map.get(bucketOf(item.updated_at)).push(item);
@@ -346,7 +324,6 @@ const RecentlyWatchedPage = () => {
 
       {hasHistory && (
         <div className="sticky top-16 z-30 flex flex-col lg:flex-row lg:items-center gap-3 p-3 rounded-2xl border border-crimson-900/60 bg-crimson-950/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.4)]">
-          {/* Search */}
           <div className="relative flex-1 min-w-0">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700 pointer-events-none" />
             <input
@@ -366,7 +343,6 @@ const RecentlyWatchedPage = () => {
             )}
           </div>
 
-          {/* Status filter chips */}
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-crimson-950/40 border border-crimson-900/60 shrink-0">
             {STATUS_FILTERS.map((f) => {
               const active = statusFilter === f.key;
@@ -384,7 +360,6 @@ const RecentlyWatchedPage = () => {
             })}
           </div>
 
-          {/* Grid / list view toggle */}
           <div className="flex items-center gap-1.5 p-1 rounded-xl bg-crimson-950/40 border border-crimson-900/60 shrink-0">
             {[
               { key: 'grid', icon: LayoutGrid, label: 'Grid view' },
@@ -468,7 +443,6 @@ const RecentlyWatchedPage = () => {
         </div>
       )}
 
-      {/* Remove-from-history confirmation */}
       {pendingRemove && (
         <div
           className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"

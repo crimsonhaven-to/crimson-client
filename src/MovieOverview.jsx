@@ -2,9 +2,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMovieOverview, useShowResume, useTitle } from './hooks';
 import OverviewView from './OverviewView';
 
-// General (non-anime) movie overview page (/movie/:tmdbId). The movie twin of
-// ShowOverview: same shared <OverviewView> in movie mode (no seasons/episodes),
-// with a single Start Watching that jumps to /watch-movie. Anime/shows untouched.
 const MovieOverview = () => {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
@@ -12,13 +9,12 @@ const MovieOverview = () => {
 
   useTitle(overview?.title || 'Overview');
 
-  // Watchlists — movies are keyed by tmdb_id in the dedicated movie: namespace, so
-  // the identity carries media_type:'movie' (see useWatchlists / the backend key).
+  // Movies are keyed by tmdb_id in the movie: namespace, so the identity carries
+  // media_type 'movie'.
   const watchlistItem = overview
     ? { tmdb_id: Number(tmdbId), media_type: 'movie', title: overview.title, poster: overview.poster }
     : undefined;
 
-  // "Pick up where you left off" — the movie's tracked progress row (movie ns).
   const resume = useShowResume({ tmdbId: Number(tmdbId), mediaType: 'movie' });
 
   const play = () => navigate(`/watch-movie/${tmdbId}`);

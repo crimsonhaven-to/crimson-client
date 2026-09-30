@@ -1,15 +1,9 @@
-// Pure (non-component) helpers for the browse hubs. Kept in a JS module separate
-// from hubKit.jsx so that file can export only components (React Fast Refresh
-// requires component-only modules). Shared by the hubs, the home rows and search.
+// Kept apart from hubKit.jsx because React Fast Refresh needs component-only modules.
 import { API_BASE_URL } from './hooks';
 
-// Absolutize a local poster path (relative signed /local_art) vs an absolute TMDB
-// / AniList poster; null falls through to a placeholder tile.
 export const posterSrc = (poster) =>
   poster ? (poster.startsWith('/') ? `${API_BASE_URL}${poster}` : poster) : null;
 
-// Per-kind tag: a label + a distinct tint so anime / show / movie / manga / local
-// are separable at a glance. Shared by every card badge (home rows + search).
 export const KIND_STYLE = {
   anime: { label: 'Anime', badge: 'bg-crimson-500/15 border-crimson-500/40 text-crimson-300' },
   show:  { label: 'Show',  badge: 'bg-sky-500/15 border-sky-400/40 text-sky-300' },
@@ -19,9 +13,6 @@ export const KIND_STYLE = {
 };
 export const kindStyle = (kind) => KIND_STYLE[kind] || KIND_STYLE.anime;
 
-// Pure browse transform shared by the local-list hubs (Shows/Movies): case-
-// insensitive title search, exact genre match, and a sort key. Exported (not
-// inlined) so it can be unit-tested like the other pure hook helpers.
 export function applyBrowse(items, { searchTerm = '', genre = null, sort = null } = {}) {
   let out = items;
   if (searchTerm) {

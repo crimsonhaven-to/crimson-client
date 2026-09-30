@@ -1,18 +1,10 @@
-// --- Shared browse-hub kit --------------------------------------------------
-// The presentational vocabulary shared by every per-type browse hub (Anime,
-// Shows, Movies, Manga, Local) and the home rows. Lifted out of Catalogue.jsx /
-// App.jsx so the hubs render identically and App.jsx stays lean. Nothing here is
-// type-specific: a hub feeds in its items + facets and gets the same chrome.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Play, Star, ChevronRight, ChevronDown, Filter, Hash, SlidersHorizontal, Tag, AlertTriangle } from 'lucide-react';
 import { useTitle } from './hooks';
-// Pure helpers live in hubHelpers.js so this module stays component-only (React
-// Fast Refresh needs component-only modules). Consumers import posterSrc /
-// kindStyle / applyBrowse straight from './hubHelpers'.
+// Pure helpers live in hubHelpers.js because React Fast Refresh needs component-only modules.
 import { kindStyle, applyBrowse } from './hubHelpers';
 
-// A single filter chip (shared by the genre/sort/category rows across every hub).
 export const Chip = ({ active, onClick, children, small = false }) => (
   <button
     onClick={onClick}
@@ -58,9 +50,6 @@ export const ArchiveError = ({ error }) => (
   </div>
 );
 
-// A soft inline banner shown when a hub is serving a degraded/fallback source
-// (e.g. Anime Discover riding the local archive while AniList is down). The
-// wording is passed in by the caller so this stays type-agnostic.
 export const FallbackBanner = ({ children }) => (
   <div className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 shadow-lg backdrop-blur-sm">
     <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
@@ -79,10 +68,7 @@ export const EmptyState = ({ label = 'No manifestation matches your search ritua
   </div>
 );
 
-// A single poster tile — the artwork-forward card shared by the home rows and the
-// browse-hub grids (P-Stream / movie-web style). Lifted from App.jsx so the home
-// and the hubs render the exact same tile. `poster` is used as-is (absolute URLs);
-// pass a posterSrc()-resolved value for relative local art.
+// `poster` is used as-is (absolute URLs); pass a posterSrc()-resolved value for relative local art.
 export function PosterCard({ item, onSelect, showKind = true }) {
   const rating = typeof item.vote_average === 'number' && item.vote_average > 0
     ? item.vote_average.toFixed(1) : null;
@@ -135,8 +121,7 @@ export function PosterCard({ item, onSelect, showKind = true }) {
   );
 }
 
-// Responsive poster grid used by the browse hubs. Inside a single-kind hub the
-// per-tile kind badge is redundant noise, so it's off by default here.
+// Inside a single-kind hub the per-tile kind badge is redundant noise, so it's off by default.
 export function PosterGrid({ items, onSelect, showKind = false }) {
   return (
     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-4 sm:gap-6">
@@ -152,8 +137,7 @@ export function PosterGrid({ items, onSelect, showKind = false }) {
   );
 }
 
-// A titled row of filter chips (genres or sorts). `options` is a list of
-// { value, label, count? }; `all` prepends an "All" chip that clears the filter.
+// `options`: [{ value, label, count? }]. `all` prepends an "All" chip that clears the filter.
 export function ChipRow({ icon, label, options, value, onChange, all = true, allLabel = 'All' }) {
   if (!options || options.length === 0) return null;
   return (
@@ -181,12 +165,6 @@ export function ChipRow({ icon, label, options, value, onChange, all = true, all
   );
 }
 
-// (applyBrowse lives in hubHelpers.js and is imported above.)
-
-// The page shell shared by every browse hub: the big title + subtitle, an
-// optional client-side search box, an optional right-hand slot (sort / mode
-// toggle), and the hub body. Matches the old Catalogue page header so the hubs
-// feel like the surface they replaced.
 export function HubShell({
   title, accent, icon, subtitle,
   search, onSearch, searchPlaceholder = 'Search...',
@@ -231,11 +209,8 @@ export function HubShell({
   );
 }
 
-// Generic browse hub for a LIVE, PAGINATED AniList catalogue (Manga, Anime
-// "Discover"): server-side genre + sort (each re-queries page 1) and a "load
-// more" that appends pages. No free-text search (partial/live corpus — the home
-// search covers that). `useData` is the paginated hook (useAnimeCatalogue /
-// useMangaCatalogue); `extraControls` lets a caller inject e.g. a view toggle.
+// For a live, paginated AniList catalogue. No free-text search: the corpus is partial
+// and live, and the home search covers that.
 export function PaginatedBrowseHub({
   useData, title, accent, icon, unit = 'shown', routeFor,
   sortOptions, defaultSort = 'trending', subtitle,
@@ -250,9 +225,7 @@ export function PaginatedBrowseHub({
   const { items, genres, total, hasNext, loading, loadingMore, error, loadMore, fallback } =
     useData({ genre, sort });
 
-  // Let a caller react to the live source being unavailable (e.g. the Anime hub
-  // auto-falls back to its local Archive when AniList is down). Fires on the
-  // first-page error only — not on a failed "load more" of an already-shown page.
+  // Fires on the first-page error only, not on a failed "load more" of an already-shown page.
   useEffect(() => {
     if (error && items.length === 0 && onUnavailable) onUnavailable();
   }, [error, items.length, onUnavailable]);
@@ -316,8 +289,7 @@ export function PaginatedBrowseHub({
   );
 }
 
-// A compact segmented view toggle (e.g. the Anime hub's Discover / Archive switch,
-// the Local hub's Library / Browse switch). `options` is [{ value, label, icon }].
+// `options`: [{ value, label, icon }].
 export function ViewToggle({ options, value, onChange }) {
   return (
     <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-crimson-950/40 border border-crimson-900/50 backdrop-blur-md">
@@ -336,7 +308,6 @@ export function ViewToggle({ options, value, onChange }) {
   );
 }
 
-// The chevron "See all" affordance reused by home-row CTAs → hub deep-links.
 export const SeeAll = ({ children }) => (
   <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 hover:text-crimson-400 transition-colors shrink-0">
     {children}
@@ -344,10 +315,6 @@ export const SeeAll = ({ children }) => (
   </span>
 );
 
-// Generic browse hub for a fully-loaded local list (Shows, Movies): title +
-// client-side search, genre chips (from the server facet), a sort control, and a
-// poster grid. Shows and Movies differ only in the data hook, the per-item route,
-// the page title, and the available sorts — everything else is shared here.
 export function PosterBrowseHub({
   useData, title, accent, icon, unit, routeFor,
   sortOptions, defaultSort = 'popular', searchPlaceholder = 'Search titles...',
@@ -358,10 +325,8 @@ export function PosterBrowseHub({
   const [searchTerm, setSearchTerm] = useState('');
   const [genre, setGenre] = useState(null);
   const [sort, setSort] = useState(defaultSort);
-  // The full list is loaded + filtered client-side (instant scoped search), but
-  // rendering thousands of poster tiles at once is the real jank — so only a
-  // window of `visible` tiles is mounted. "Reveal More" grows it; any change to
-  // the search/genre/sort resets back to the first page.
+  // Rendering thousands of poster tiles at once is the real jank, so only a window
+  // of `visible` tiles is mounted.
   const [visible, setVisible] = useState(pageSize);
   useTitle(title);
 
@@ -369,9 +334,7 @@ export function PosterBrowseHub({
     () => applyBrowse(items, { searchTerm, genre, sort }),
     [items, searchTerm, genre, sort],
   );
-  // Reset the render window to the first page whenever the search/genre/sort
-  // changes. Done during render (the React-blessed "adjust state on prop change"
-  // pattern) rather than in an effect, so there's no extra render pass.
+  // Adjusting state during render (not in an effect) avoids an extra render pass.
   const filterSig = `${searchTerm} ${genre} ${sort} ${pageSize}`;
   const [prevSig, setPrevSig] = useState(filterSig);
   if (filterSig !== prevSig) {

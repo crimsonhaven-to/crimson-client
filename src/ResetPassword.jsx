@@ -4,9 +4,7 @@ import { Lock, KeyRound, RefreshCw, AlertCircle, CheckCircle2, Eye, EyeOff, LogI
 import { useAuth, useTitle } from './hooks';
 import { Shell } from './Login';
 
-// Landing page for the password-reset link. Sets a new password against the
-// emailed ?token=; on success the backend revokes old sessions, so the user is
-// sent back to sign in fresh.
+// On success the backend revokes old sessions, so the user signs in fresh.
 const ResetPassword = () => {
   const [params] = useSearchParams();
   const token = params.get('token');

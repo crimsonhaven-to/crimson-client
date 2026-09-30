@@ -3,13 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Crown, Search, Heart, History, SlidersHorizontal, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { HOSTED_IN, useThemedAsset } from './hooks';
 
-// Luminas Crimsonveil's welcome ritual — a stepped, themed introduction to the
-// haven's features, shown once per login (see the trigger in App.jsx). Self-
-// contained: owns its own step state and calls onClose when the dweller skips,
-// closes, or finishes. Written in the Queen's voice to match the site's flavour.
-//
-// `isNew` marks the freshest feature (the language preference) with a little badge
-// so returning mortals can spot what's changed.
+// Shown once per login; the trigger lives in App.jsx.
 const STEPS = [
   {
     icon: Crown,
@@ -17,7 +11,7 @@ const STEPS = [
     body: (
       <>
         Ahh… a fresh pulse graces my sanctuary. I am <strong className="text-crimson-50">Luminas Crimsonveil</strong>,
-        eternal curator of this place. Lean close, darling~ — let me unveil the little delights woven into your
+        eternal curator of this place. Lean close, darling~. Let me unveil the little delights woven into your
         <span className="text-crimson-400 font-bold"> crimsonhaven</span> before you lose yourself in the dark.
       </>
     ),
@@ -27,7 +21,7 @@ const STEPS = [
     title: 'Summon Anything',
     body: (
       <>
-        Whisper a name into the search and I shall conjure it — anime, mortal shows, and cinema alike. Crave a grander
+        Whisper a name into the search and I shall conjure it: anime, mortal shows, and cinema alike. Crave a grander
         hunt? The <strong className="text-crimson-50">Catalogue</strong> lays my entire archive bare for your wandering eyes.
       </>
     ),
@@ -37,8 +31,8 @@ const STEPS = [
     title: 'Curate Your Collections',
     body: (
       <>
-        Claim what calls to you. Build as many <strong className="text-crimson-50">Watchlists</strong> as your heart desires —
-        "Devouring", "For Later", "Forsaken" — and a single jewel may rest in many at once. Export them, import them;
+        Claim what calls to you. Build as many <strong className="text-crimson-50">Watchlists</strong> as your heart desires
+        ("Devouring", "For Later", "Forsaken"), and a single jewel may rest in many at once. Export them, import them;
         they are forever yours.
       </>
     ),
@@ -60,7 +54,7 @@ const STEPS = [
     isNew: true,
     body: (
       <>
-        Each tale is drawn from many sources, and I always serve the swiftest first. And now — my newest gift — slip into
+        Each tale is drawn from many sources, and I always serve the swiftest first. And now, my newest gift: slip into
         <strong className="text-crimson-50"> Preferences</strong> and name your tongue: German or English,{' '}
         <strong className="text-crimson-50">Dubbed</strong> or <strong className="text-crimson-50">Subbed</strong>. I shall favour
         your chosen language ever after, across every device you haunt.
@@ -74,7 +68,7 @@ const STEPS = [
     body: (
       <>
         Enough secrets for one evening, darling~. Everything waits behind the little crimson crest in the corner whenever
-        you wish to wander back. Now — go. Lose yourself beautifully. And do rest easy: your data slumbers safely in
+        you wish to wander back. Now, go. Lose yourself beautifully. And do rest easy: your data slumbers safely in
         {' '}{HOSTED_IN}.
       </>
     ),
@@ -125,11 +119,9 @@ const WelcomeTour = ({ onClose }) => {
         className="relative w-full max-w-lg bg-crimson-950/95 border border-crimson-900 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Decorative glow */}
         <div className="absolute -top-24 -right-24 w-56 h-56 bg-crimson-500/10 blur-[90px] rounded-full pointer-events-none" />
         <div className="absolute -bottom-28 -left-20 w-56 h-56 bg-crimson-600/5 blur-[90px] rounded-full pointer-events-none" />
 
-        {/* Close */}
         <button
           onClick={close}
           aria-label="Close"
@@ -139,7 +131,6 @@ const WelcomeTour = ({ onClose }) => {
         </button>
 
         <div className="relative z-[1] p-8 sm:p-10 space-y-7">
-          {/* Chat header — Lumi's avatar carries her identity */}
           <div className="flex items-center gap-4">
             <div className="relative shrink-0">
               <img
@@ -147,7 +138,6 @@ const WelcomeTour = ({ onClose }) => {
                 alt="Luminas Crimsonveil"
                 className="w-16 h-16 rounded-full object-cover border-2 border-crimson-500/40 shadow-[0_0_30px_rgba(255,0,60,0.25)]"
               />
-              {/* online pulse — she's always watching, darling~ */}
               <span className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full bg-crimson-500 border-2 border-crimson-950 shadow-[0_0_10px_rgba(255,0,60,0.7)]" />
             </div>
             <div className="min-w-0">
@@ -166,7 +156,6 @@ const WelcomeTour = ({ onClose }) => {
             )}
           </div>
 
-          {/* Chat bubble — her message, with a little tail toward the avatar */}
           <div className="relative pl-1">
             <div className="absolute -top-1.5 left-6 w-3.5 h-3.5 rotate-45 bg-crimson-900/40 border-l border-t border-crimson-800/70" />
             <div className="relative rounded-[1.75rem] rounded-tl-lg bg-crimson-900/30 border border-crimson-800/70 p-5 sm:p-6 space-y-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
@@ -192,7 +181,6 @@ const WelcomeTour = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Progress dots */}
           <div className="flex items-center justify-center gap-2 pt-1">
             {STEPS.map((_, i) => (
               <button
@@ -206,7 +194,6 @@ const WelcomeTour = ({ onClose }) => {
             ))}
           </div>
 
-          {/* Navigation */}
           <div className="flex items-center justify-between gap-4 pt-1">
             <button
               onClick={() => (isFirst ? close() : setStep((s) => s - 1))}

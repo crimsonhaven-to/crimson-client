@@ -147,7 +147,7 @@ const ActivityCard = () => {
               {eventLabel(e.event_type)}
             </span>
             <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-700">
-              {e.ip || '—'}
+              {e.ip || '-'}
             </span>
             <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-600 tabular-nums">
               {when(e.ts)}

@@ -10,7 +10,6 @@ const WALLETS = [
   { symbol: 'XRP', name: 'Ripple', address: 'rDk8eR7srxFB6QetHgKJWPHGyabHefgxXH' },
 ];
 
-// A single wallet row: coin label + monospace address + tap-to-copy button.
 const WalletRow = ({ symbol, name, address }) => {
   const [copied, setCopied] = useState(false);
 
@@ -20,7 +19,7 @@ const WalletRow = ({ symbol, name, address }) => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard API unavailable (insecure context / old browser) — fail quietly.
+      // Clipboard API unavailable (insecure context / old browser), so fail quietly.
     }
   };
 

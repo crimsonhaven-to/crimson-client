@@ -3,11 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useShowStreamer, useAccount, useAuth, useTitle, apiFetch, startsFresh } from './hooks';
 import WatchView from './WatchView';
 
-// Non-anime show watch page (/watch-show/:tmdbId/:season?/:episode?). The
-// TMDB-keyed twin of the anime WatchPage: it owns the show data source
-// (useShowStreamer) and the account wiring (favorites + progress, which the
-// backend already keys by tmdb_id when there's no anilist_id), then renders the
-// shared <WatchView>. Anime's WatchPage is untouched.
+// The backend keys favorites and progress by tmdb_id when there's no anilist_id.
 function ShowWatch() {
   const { tmdbId, season = '1', episode = '1' } = useParams();
   const navigate = useNavigate();
@@ -39,9 +35,8 @@ function ShowWatch() {
     livePositionRef.current = position;
   }, []);
 
-  // Sequential-advance "start fresh" stamp — same policy as the anime WatchPage:
-  // finishing an episode and rolling into the next one starts it at 0, ignoring
-  // any position saved on an earlier watch-through. Direct navigation resumes.
+  // Rolling into the next episode starts it at 0, ignoring a position saved on an
+  // earlier watch-through. Direct navigation still resumes.
   const startFreshKeyRef = useRef(null);
   const markEpisodeAdvance = (nextSeason, nextEpisode) => {
     if (startsFresh(playbackRef.current, currentSeason, currentEpisode, nextSeason, nextEpisode)) {
@@ -49,8 +44,7 @@ function ShowWatch() {
     }
   };
 
-  // Saved-position resume, keyed by tmdb_id (shows have no anilist_id). Mirrors
-  // the anime page's resume but matches progress rows on tmdb_id.
+  // Shows have no anilist_id, so progress rows match on tmdb_id.
   const [resumeAt, setResumeAt] = useState(0);
   useEffect(() => {
     let cancelled = false;
@@ -84,7 +78,6 @@ function ShowWatch() {
 
   const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
 
-  // Periodic + on-exit progress save (tmdb-keyed; anilist_id omitted).
   useEffect(() => {
     if (!isAuthenticated || !metadata) return;
     playbackRef.current = null;
@@ -115,7 +108,6 @@ function ShowWatch() {
     markEpisodeAdvance(currentSeason, newEpisode);
     navigate(`/watch-show/${tmdbId}/${currentSeason}/${newEpisode}`);
   };
-  // Cross-season jump for the in-player picker: season + episode in one hop.
   const onSelectEpisode = (newSeason, newEpisode) => {
     markEpisodeAdvance(newSeason, newEpisode);
     navigate(`/watch-show/${tmdbId}/${newSeason}/${newEpisode}`);
