@@ -1,6 +1,5 @@
-// The listening half of Crimson Wrapped. Every number here was counted as it
-// happened (a song counts after 30 seconds of real playing), so unlike the
-// watching half none of it is ever an estimate.
+// Every number here was counted as it happened, so unlike the watching half none of
+// it is ever an estimate.
 import { CalendarHeart, Headphones, Mic2, Music, Play } from 'lucide-react';
 
 import { Cover } from '../music/Cover';

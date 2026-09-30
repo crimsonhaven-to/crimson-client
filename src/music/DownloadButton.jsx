@@ -1,5 +1,3 @@
-// Download a playlist for offline listening, or remove it from the device.
-// Shows how much a download takes before it starts, and its progress after.
 import { CircleCheck, Download, Loader2 } from 'lucide-react';
 
 import { formatBytes } from '../admin/format';

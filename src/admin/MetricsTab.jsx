@@ -1,23 +1,6 @@
-// Admin › Metrics tab. Two halves, which answer different questions and must not
-// be confused for one another:
-//
-//   History  (MetricsHistory.jsx, Phase 1) reads a private Prometheus through
-//            /admin/metrics/*. Fleet-wide, survives restarts, rates over time.
-//            Absent unless PROMETHEUS_URL is set, and says so.
-//
-//   Snapshot (this file, Phase 0) reads the backend's Prometheus exposition
-//            (GET /metrics, see core/observability.py) with the admin bearer the
-//            dashboard already holds and parses it in the browser. Always
-//            available, needs no extra infrastructure, and carries two caveats
-//            the operator has to be told rather than left to discover:
-//
-//              1. Counters here are TOTALS SINCE THAT REPLICA STARTED.
-//              2. Each refresh lands on whichever replica answered, so counters
-//                 jump around. Gauges (pool, queues) read correctly either way.
-//
-// The snapshot is kept rather than replaced by the history, because it is the
-// only half that works with nothing but the backend deployed, and because a
-// gauge read directly is the ground truth a scrape is only ever approximating.
+// The live snapshot is kept alongside the Prometheus history because it is the only
+// half that works with nothing but the backend deployed, and a gauge read directly is
+// the ground truth a scrape only approximates.
 import { useCallback, useEffect, useState } from 'react';
 import {
   Activity, AlertTriangle, Boxes, Clock, Cpu, Database, Gauge, HardDrive,
@@ -32,8 +15,6 @@ import {
   histogramQuantile, histogramCount, outcomeRatio,
 } from './promParse';
 
-// Local formatters, matching the per-tab convention already used by CacheTab,
-// DownloadsTab and SourcesTab.
 const formatBytes = (n) => {
   if (!n || n < 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -45,8 +26,7 @@ const formatBytes = (n) => {
 
 const fmtInt = (n) => (n == null ? null : Math.round(n).toLocaleString());
 
-// null means "no observations", Infinity means the quantile landed in the
-// open-ended top bucket (see histogramQuantile) and interpolating would be a lie.
+// Infinity means the quantile landed in the open-ended +Inf bucket.
 const fmtSeconds = (s) => {
   if (s == null) return null;
   if (!Number.isFinite(s)) return 'off the scale';
@@ -65,8 +45,6 @@ const fmtUptime = (startedUnix) => {
   return `${Math.floor(secs / 86400)}d ${Math.floor((secs % 86400) / 3600)}h`;
 };
 
-// Colour a ratio the way the Health tab colours a status: green good, amber
-// wobbling, crimson dead.
 const ratioTone = (r) => {
   if (r == null) return 'text-crimson-600';
   if (r >= 0.9) return 'text-green-300';
@@ -80,8 +58,6 @@ const barTone = (r) => {
   if (r >= 0.6) return 'bg-amber-500';
   return 'bg-crimson-500';
 };
-
-// ---------- small presentational pieces ----------
 
 const Section = ({ icon: Icon, title, note, children }) => (
   <div className="space-y-4">
@@ -100,8 +76,8 @@ const Empty = ({ children }) => (
   </div>
 );
 
-// A labelled proportion bar. `ratio` null renders an inert track, which is how a
-// source nobody has attempted yet is distinguished from one failing every time.
+// A null `ratio` renders an inert track, so a source nobody has tried differs from one
+// failing every time.
 const RatioRow = ({ label, ratio, right, sub }) => (
   <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-2xl px-4 py-3 hover:border-crimson-500/30 transition-all">
     <div className="flex items-center justify-between gap-3 mb-2">
@@ -117,7 +93,6 @@ const RatioRow = ({ label, ratio, right, sub }) => (
   </div>
 );
 
-// A compact key/value strip for the flat gauges (pool, workers, process).
 const Facts = ({ rows }) => (
   <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-2xl divide-y divide-crimson-900/40">
     {rows.map(([label, value]) => (
@@ -128,8 +103,6 @@ const Facts = ({ rows }) => (
     ))}
   </div>
 );
-
-// ---------- the tab ----------
 
 export default function MetricsTab({ notify }) {
   return (
@@ -146,8 +119,6 @@ export default function MetricsTab({ notify }) {
     </div>
   );
 }
-
-// ---------- the live snapshot (Phase 0) ----------
 
 function LiveSnapshot({ notify }) {
   const [parsed, setParsed] = useState(null);
@@ -198,7 +169,6 @@ function LiveSnapshot({ notify }) {
 
   if (!parsed) return <Empty>Nothing came back from the metrics endpoint.</Empty>;
 
-  // --- HTTP -----------------------------------------------------------------
   const httpTotal = sumOf(parsed, 'crimson_http_requests_total');
   const inFlight = sumOf(parsed, 'crimson_http_requests_in_progress');
   const byStatus = groupSum(parsed, 'crimson_http_requests_total', 'status');
@@ -213,7 +183,6 @@ function LiveSnapshot({ notify }) {
       p95: histogramQuantile(parsed, 'crimson_http_request_duration_seconds', 0.95, { route: r.key }),
     }));
 
-  // --- watch pipeline -------------------------------------------------------
   const watchOutcomes = groupSum(parsed, 'crimson_watch_requests_total', 'outcome');
   const watchTotal = watchOutcomes.reduce((a, r) => a + r.value, 0);
   const watchStreams = sumOf(parsed, 'crimson_watch_streams_total');
@@ -222,11 +191,8 @@ function LiveSnapshot({ notify }) {
   const firstStreamN = histogramCount(parsed, 'crimson_watch_first_stream_seconds');
   const streamsPerWatch = watchTotal ? watchStreams / watchTotal : null;
 
-  // --- sources --------------------------------------------------------------
-  // Two independent views of the same question. resolve/scraper counters are what
-  // THIS replica did since boot; source_success_ratio is the 14-day client beacon
-  // aggregate out of the database, so it survives restarts and covers the
-  // client-side resolves the backend never sees.
+  // source_success_ratio comes from the database, so unlike the per-replica counters it
+  // survives restarts and covers client-side resolves the backend never sees.
   const resolveSources = groupSum(parsed, 'crimson_resolve_total', 'source').map((r) => ({
     ...r,
     ratio: outcomeRatio(parsed, 'crimson_resolve_total', 'source', r.key, ['ok']),
@@ -244,7 +210,6 @@ function LiveSnapshot({ notify }) {
     }))
     .sort((a, b) => b.events - a.events);
 
-  // --- infrastructure -------------------------------------------------------
   const poolSize = valueOf(parsed, 'crimson_db_pool_size');
   const poolMax = valueOf(parsed, 'crimson_db_pool_max_size');
   const poolInUse = valueOf(parsed, 'crimson_db_pool_in_use');
@@ -262,9 +227,7 @@ function LiveSnapshot({ notify }) {
   const schemaVersion = valueOf(parsed, 'crimson_schema_version');
   const schemaDrift = valueOf(parsed, 'crimson_schema_drift');
 
-  // process_* comes from prometheus_client's ProcessCollector, which reads /proc.
-  // Present in the Linux container, absent on a non-Linux dev host, so every one
-  // of these has to render as "n/a" without complaint.
+  // process_* reads /proc, so it is absent on a non-Linux dev host.
   const rss = valueOf(parsed, 'process_resident_memory_bytes');
   const cpu = valueOf(parsed, 'process_cpu_seconds_total');
   const fds = valueOf(parsed, 'process_open_fds');
@@ -272,7 +235,6 @@ function LiveSnapshot({ notify }) {
 
   return (
     <div className="space-y-10">
-      {/* The two caveats that make Phase 0 numbers easy to misread. */}
       <div className="bg-amber-950/20 border border-amber-800/40 rounded-2xl px-5 py-4 flex gap-3.5">
         <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <div className="space-y-1.5">
@@ -423,7 +385,6 @@ function LiveSnapshot({ notify }) {
   );
 }
 
-// Hit ratio for one tier of the two-tier response cache.
 function outcomeCacheRatio(parsed, tier) {
   const hit = sumOf(parsed, 'crimson_response_cache_total', { tier, result: 'hit' });
   const miss = sumOf(parsed, 'crimson_response_cache_total', { tier, result: 'miss' });

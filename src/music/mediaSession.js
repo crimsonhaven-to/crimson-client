@@ -1,7 +1,5 @@
-// The Media Session API: what Android shows on the lock screen and in the
-// notification shade, and what a car receives over Bluetooth (title, artist,
-// cover, and the play, pause, skip and seek buttons). Every call is guarded,
-// because a browser without it must still play.
+// Feeds the lock screen, notification shade and Bluetooth car controls. Every call is
+// guarded, because a browser without the Media Session API must still play.
 
 const supported = () => typeof navigator !== 'undefined' && 'mediaSession' in navigator;
 

@@ -1,11 +1,5 @@
-// Admin › Lumi tab. Operator control for the chatbot: the master switch, which
-// provider and model answers, spend guards, and what it has actually cost.
-//
-// Deliberately NOT here: API keys (they live in the backend's environment so a
-// database dump never carries billable credentials, and this tab is told only
-// whether each one is present) and per-user access grants (those sit on the
-// Users tab next to the admin flag, because granting a person access is a
-// user-management action).
+// API keys stay in the backend's environment so a database dump never carries billable
+// credentials; this tab only learns whether each is present.
 import { useCallback, useEffect, useState } from 'react';
 import { Bot, Coins, KeyRound, RefreshCw, Save, Sparkles, Users } from 'lucide-react';
 
@@ -17,8 +11,7 @@ const PROVIDERS = [
   { id: 'gemini', label: 'Google AI Studio', hint: 'Gemini. Cheapest per token; Flash-Lite is the budget floor.' },
 ];
 
-// Costs are stored as USD millionths so the ledger never touches a float. Both
-// helpers round for display only.
+// Costs are stored as USD millionths so the ledger never touches a float.
 const usd = (micros) => `$${((micros || 0) / 1_000_000).toFixed(2)}`;
 const compactTokens = (n) => {
   const v = Number(n || 0);
@@ -41,9 +34,9 @@ const inputCls =
   'w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all disabled:opacity-40';
 
 export default function LumiTab({ notify }) {
-  const [data, setData] = useState(null); // GET /admin/chat/settings payload
+  const [data, setData] = useState(null);
   const [usage, setUsage] = useState(null);
-  const [draft, setDraft] = useState(null); // local edits, committed on Save
+  const [draft, setDraft] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -103,8 +96,7 @@ export default function LumiTab({ notify }) {
 
   return (
     <div className="space-y-6">
-      {/* Spend at a glance. The estimate caveat matters: these are computed from
-          published rates at call time, not pulled from a vendor invoice. */}
+      {/* Estimated from published rates at call time, not pulled from a vendor invoice. */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Month to date" value={usd(usage?.month_to_date_cost_micros)} sub="estimated" icon={Coins} accent="text-amber-400" />
         <StatCard label="Last 30 days" value={usd(usage?.totals?.cost_micros)} sub={`${usage?.totals?.calls || 0} calls`} icon={Sparkles} accent="text-crimson-400" />
@@ -125,8 +117,7 @@ export default function LumiTab({ notify }) {
           </button>
         </div>
 
-        {/* Key presence is an environment fact, so it is reported rather than
-            edited. Saying which env var to set turns a dead end into a fix. */}
+        {/* Keys live in the environment, so naming the env var turns a dead end into a fix. */}
         <div className="grid sm:grid-cols-2 gap-3">
           {PROVIDERS.map((p) => (
             <div
@@ -245,7 +236,6 @@ export default function LumiTab({ notify }) {
         </button>
       </div>
 
-      {/* Per-member spend, so an unusual bill has a name attached to it. */}
       <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl p-4 sm:p-5 space-y-3">
         <div className="flex items-center gap-2">
           <Coins className="w-4 h-4 text-crimson-500" />

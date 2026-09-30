@@ -1,6 +1,4 @@
-// Picking the recording for a track the matcher would not decide by itself.
-// Shows what it found with its reasons, lets the member search again, or paste
-// a link. A pick is remembered on the server and never second-guessed.
+// A pick is remembered on the server and never second-guessed by the matcher.
 import { useEffect, useState } from 'react';
 import { Check, Link2, Loader2, Search, X } from 'lucide-react';
 

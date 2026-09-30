@@ -1,7 +1,5 @@
-// Shared presentational atoms for the Admin dashboard, so every tab component
-// draws from one set of building blocks. The non-component helpers (statusMeta,
-// fmtDate, STATUS_META) live in ./format so this file only exports components —
-// Vite fast-refresh requires that. Lifted verbatim from the Admin.jsx monolith.
+// Components only: Vite fast-refresh breaks on files that also export helpers, which
+// is why those live in ./format.
 import { AlertCircle, CheckCircle2, Wifi, WifiOff, X } from 'lucide-react';
 
 import { statusMeta } from './format';
@@ -11,7 +9,6 @@ export const StatusDot = ({ status }) => {
   return <span className={`inline-block w-2.5 h-2.5 rounded-full ${m.dot} ${m.glow} ${status === 'active' || status === 'ok' ? 'animate-pulse' : ''}`} />;
 };
 
-// A small on/off capability badge (used in the System flags grid).
 export const FlagBadge = ({ on, label, onIcon: OnIcon = Wifi, offIcon: OffIcon = WifiOff }) => (
   <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest ${
     on ? 'bg-green-950/30 border-green-800/40 text-green-300' : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-700'
@@ -21,7 +18,6 @@ export const FlagBadge = ({ on, label, onIcon: OnIcon = Wifi, offIcon: OffIcon =
   </div>
 );
 
-// ---------- small presentational helpers ----------
 export const StatCard = ({ label, value, sub, icon: Icon, accent }) => (
   <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden group hover:border-crimson-500/30 transition-all">
     <div className="absolute -top-10 -right-10 w-32 h-32 bg-crimson-500/5 blur-3xl rounded-full" />
@@ -29,7 +25,7 @@ export const StatCard = ({ label, value, sub, icon: Icon, accent }) => (
       <p className="text-[9px] font-black uppercase tracking-[0.25em] text-crimson-600 group-hover:text-crimson-500 transition-colors">{label}</p>
       {Icon && <Icon className={`w-4 h-4 ${accent || 'text-crimson-700'}`} />}
     </div>
-    <p className="text-3xl sm:text-4xl font-black text-crimson-50 tracking-tighter relative z-10">{value ?? '—'}</p>
+    <p className="text-3xl sm:text-4xl font-black text-crimson-50 tracking-tighter relative z-10">{value ?? '-'}</p>
     {sub && <p className="text-[10px] font-bold text-crimson-500/70 mt-1.5 relative z-10">{sub}</p>}
   </div>
 );

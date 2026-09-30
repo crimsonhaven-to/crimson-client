@@ -1,11 +1,3 @@
-/*
- * Admin dashboard API client.
- *
- * Thin wrappers over the gated /admin endpoints (require an admin session; the
- * bearer token is attached by apiFetch). Each returns the parsed JSON body.
- * Extracted out of the hooks.js god-module — it's a self-contained leaf that only
- * needs apiFetch, so it lives on its own and is imported directly by Admin.jsx.
- */
 import { apiFetch } from './hooks';
 
 const _json = (res) => res.json();
@@ -17,42 +9,26 @@ const _qs = (params) =>
 export const adminApi = {
   stats: () => apiFetch('/admin/stats').then(_json),
   health: () => apiFetch('/health').then(_json),
-  // Rich runtime snapshot (version/uptime, registry sizes, flags, DB pool, cache).
   system: () => apiFetch('/admin/system').then(_json),
-  // Prometheus text exposition from the replica that answers (see the backend's
-  // core/observability.py). The odd one out here: the body is text/plain rather
-  // than JSON, and a build without prometheus-client answers 503 with a JSON error
-  // body instead. So this returns a small envelope rather than a bare string, and
-  // the Metrics tab renders each case on its own.
-  //
-  // /metrics is whitelisted on the login wall but is NOT public: the route itself
-  // requires either the admin session bearer apiFetch attaches, or a METRICS_TOKEN
-  // (which is the path a real Prometheus scrape uses).
+  // text/plain, not JSON, and a build without prometheus-client answers 503, so this
+  // returns an envelope. The route still requires the admin bearer or a METRICS_TOKEN
+  // even though it is whitelisted on the login wall.
   metrics: async () => {
     const res = await apiFetch('/metrics');
     if (res.status === 503) return { ok: false, unavailable: true };
     if (!res.ok) return { ok: false, status: res.status };
     return { ok: true, text: await res.text() };
   },
-  // History, from a private Prometheus that scrapes every replica (see the
-  // backend's core/prom_query.py + deploy/prometheus/README.md). Unlike /metrics
-  // above these are ordinary JSON admin endpoints.
-  //
-  // `panels` answers `available: false` on a deploy with no Prometheus, which is
-  // a normal environment fact rather than an error, and the tab then shows only
-  // the live snapshot. The panel and range ids come FROM that response and are
-  // sent straight back: the browser never composes a query, it picks a name off a
-  // server-owned list.
+  // Panel and range ids come from the panels response and are sent straight back: the
+  // browser never composes a PromQL query, it picks a name off a server-owned list.
   metricsPanels: () => apiFetch('/admin/metrics/panels').then(_json),
   metricsSeries: (panel, range) =>
     apiFetch(`/admin/metrics/series?${_qs({ panel, range })}`).then(_json),
   metricsTargets: () => apiFetch('/admin/metrics/targets').then(_json),
-  // Per-source health probe. force=true bypasses the backend's short result cache.
+  // force=true bypasses the backend's short result cache.
   sourceHealth: (force = false) => apiFetch(`/admin/source-health${force ? '?force=true' : ''}`).then(_json),
-  // Real per-source resolve success rates from anonymous client beacons (the
-  // client+extension path source_health can't see). days = aggregation window.
+  // From anonymous client beacons: the client and extension path source_health cannot see.
   sourceStats: (days = 14) => apiFetch(`/admin/source-stats?days=${days}`).then(_json),
-  // Security event ledger (auth denials, rate-limit trips, admin actions).
   securityStats: (days = 14) => apiFetch(`/admin/security/stats?days=${days}`).then(_json),
   securityEvents: (params) => apiFetch(`/admin/security/events?${_qs(params)}`).then(_json),
   listUsers: (params) => apiFetch(`/admin/users?${_qs(params)}`).then(_json),
@@ -63,9 +39,6 @@ export const adminApi = {
       body: JSON.stringify(body),
     }).then(_json),
   deleteUser: (id) => apiFetch(`/admin/users/${id}`, { method: 'DELETE' }).then(_json),
-  // Broadcast email (Users tab's "E-Mail sender"): status carries whether SMTP is
-  // configured, the reachable-recipient counts and live send progress; send fans
-  // the plaintext message out to every email account in the background.
   broadcastEmailStatus: () => apiFetch('/admin/broadcast-email').then(_json),
   sendBroadcastEmail: (body) =>
     apiFetch('/admin/broadcast-email', {
@@ -75,11 +48,7 @@ export const adminApi = {
     }).then(_json),
   revokeUserSessions: (id) =>
     apiFetch(`/admin/users/${id}/revoke-sessions`, { method: 'POST' }).then(_json),
-  // Lumi's chatbot. Settings carries the operator config plus two environment
-  // facts the dashboard can't otherwise know: which provider API keys are present
-  // (presence only, never the values, which stay server-side) and whether the
-  // optional Anthropic SDK is installed in this build. Per-user chat grants are
-  // NOT here; they ride on updateUser alongside the admin flag.
+  // Per-user chat grants are not here: they ride on updateUser alongside the admin flag.
   chatSettings: () => apiFetch('/admin/chat/settings').then(_json),
   updateChatSettings: (body) =>
     apiFetch('/admin/chat/settings', {
@@ -88,7 +57,6 @@ export const adminApi = {
       body: JSON.stringify(body),
     }).then(_json),
   chatUsage: (days = 30) => apiFetch(`/admin/chat/usage?days=${days}`).then(_json),
-  // Every song on the music share, newest first; q, status, limit, offset.
   musicLibrary: (params) => apiFetch(`/admin/music/library?${_qs(params)}`).then(_json),
   listInvites: (params) => apiFetch(`/admin/invites?${_qs(params)}`).then(_json),
   createInvites: (body) =>
@@ -101,7 +69,6 @@ export const adminApi = {
     apiFetch(`/admin/invites/${encodeURIComponent(code)}`, { method: 'DELETE' }).then(_json),
   resync: () => apiFetch('/admin/resync', { method: 'POST' }).then(_json),
   resyncStatus: () => apiFetch('/admin/resync/status').then(_json),
-  // Non-anime catalogue backfill (pages TMDB discover into tmdb_shows/tmdb_movies).
   backfill: (body) =>
     apiFetch('/admin/backfill', {
       method: 'POST',
@@ -109,7 +76,6 @@ export const adminApi = {
       body: JSON.stringify(body || {}),
     }).then(_json),
   backfillStatus: () => apiFetch('/admin/backfill/status').then(_json),
-  // Local media sources (the "Local" direct-play source: NAS / Docker-mounted dirs).
   listLocalSources: () => apiFetch('/admin/local-sources').then(_json),
   discoverLocalSources: () => apiFetch('/admin/local-sources/discover').then(_json),
   addLocalSource: (body) =>
@@ -125,8 +91,6 @@ export const adminApi = {
       body: JSON.stringify(body),
     }).then(_json),
   deleteLocalSource: (id) => apiFetch(`/admin/local-sources/${id}`, { method: 'DELETE' }).then(_json),
-  // Server-side video cache (downloads played episodes to a NAS target, replays
-  // them as a named source).
   cacheOverview: () => apiFetch('/admin/cache').then(_json),
   setCacheEnabled: (enabled) =>
     apiFetch('/admin/cache/settings', {
@@ -151,9 +115,7 @@ export const adminApi = {
   deleteCacheTarget: (id) => apiFetch(`/admin/cache-targets/${id}`, { method: 'DELETE' }).then(_json),
   listCachedEpisodes: (params) => apiFetch(`/admin/cached-episodes?${_qs(params)}`).then(_json),
   deleteCachedEpisode: (id) => apiFetch(`/admin/cached-episodes/${id}`, { method: 'DELETE' }).then(_json),
-  // Background downloader (aria2): submit an http/magnet link that lands under a
-  // download-enabled local source's crimson-downloads/ dir. updateLocalSource above
-  // carries the per-source `download_enabled` toggle (generic PATCH body).
+  // The per-source `download_enabled` toggle goes through updateLocalSource.
   downloadsOverview: () => apiFetch('/admin/downloads').then(_json),
   listDownloadJobs: (params) => apiFetch(`/admin/download-jobs?${_qs(params)}`).then(_json),
   createDownload: (body) =>
@@ -166,9 +128,7 @@ export const adminApi = {
   resumeDownload: (id) => apiFetch(`/admin/download-jobs/${id}/resume`, { method: 'POST' }).then(_json),
   retryDownload: (id) => apiFetch(`/admin/download-jobs/${id}/retry`, { method: 'POST' }).then(_json),
   deleteDownload: (id) => apiFetch(`/admin/download-jobs/${id}`, { method: 'DELETE' }).then(_json),
-  // movie-web bridge API keys (machine credentials for the /mw endpoints, baked
-  // into the movie-web fork's proxy). The raw key is only ever in the create
-  // response — list/revoke deal in the non-secret key id (its hash).
+  // The raw key only ever appears in the create response; list and revoke use its hash.
   listApiKeys: (params) => apiFetch(`/admin/api-keys?${_qs(params)}`).then(_json),
   createApiKey: (body) =>
     apiFetch('/admin/api-keys', {

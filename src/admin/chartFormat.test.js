@@ -6,10 +6,8 @@ import {
 } from './chartFormat';
 
 describe('alignSeries', () => {
-  // The trap this exists for: Prometheus emits NO sample for a step where a
-  // labelled series had nothing, so a "500" line genuinely has fewer points than
-  // the "200" line beside it. Zipping them by array index would slide one of them
-  // sideways in time and quietly misattribute every spike.
+  // Prometheus emits no sample for a step where a labelled series had nothing, so
+  // zipping by array index would slide a sparse series sideways in time.
   const grid = { start: 1000, end: 1060, step: 15 }; // 5 columns
 
   it('places samples by timestamp, not by position', () => {
@@ -50,8 +48,7 @@ describe('domainOf', () => {
   const rows = (...sets) => sets.map((values, i) => ({ label: `s${i}`, values }));
 
   it('pins ratios to 0..1 instead of autoscaling', () => {
-    // A success rate wobbling between 97% and 99% stretched to fill the box reads
-    // as a catastrophe. Showing it pressed against the top is the whole point.
+    // A success rate between 97% and 99% stretched to fill the box reads as a catastrophe.
     expect(domainOf(rows([0.97, 0.99]), { unit: 'ratio' })).toEqual({ min: 0, max: 1 });
   });
 
@@ -103,8 +100,7 @@ describe('stackRows', () => {
   });
 
   it('counts a null as a real zero', () => {
-    // In a stacked RATE panel a missing sample means "this outcome did not occur",
-    // which is zero. Leaving a hole would tear the band apart for no reason.
+    // In a stacked rate panel a missing sample means "did not occur", which is zero.
     const out = stackRows([
       { label: 'a', values: [null, 2] },
       { label: 'b', values: [5, null] },
@@ -122,16 +118,14 @@ describe('toLinePath', () => {
   });
 
   it('breaks the line at a gap rather than bridging it', () => {
-    // Bridging invents data across an outage, and on a latency chart that is
-    // exactly the interval you opened the chart to look at. Both survivors here
-    // are stranded, so each becomes its own dot (see the isolated case below).
+    // Bridging would invent data across an outage. Both survivors are stranded, so each
+    // becomes its own dot.
     expect(toLinePath([10, null, 10], domain)).toBe('M0,0L0,0M100,0L100,0');
     expect(toLinePath([10, 10, null, 10], domain)).toBe('M0,0L33.33,0M100,0L100,0');
   });
 
   it('emits a zero-length segment for an isolated sample so a dot renders', () => {
-    // A lone M with no L draws literally nothing, so a single surviving sample in
-    // a sea of gaps would silently vanish from the chart.
+    // A lone M with no L draws nothing, so the sample would vanish.
     expect(toLinePath([null, 5, null], domain)).toBe('M50,50L50,50');
   });
 
@@ -184,9 +178,7 @@ describe('formatValue', () => {
     expect(formatValue('seconds', 2.5)).toBe('2.50 s');
     expect(formatValue('bytes', 1536)).toBe('1.5 KB');
     expect(formatValue('rps', 12.5)).toBe('12.5/s');
-    // Grouped by the viewer's locale, exactly like fmtInt in MetricsTab. Asserted
-    // against toLocaleString rather than a literal "1,200": this machine renders
-    // that as 1'200, and hard-coding either one breaks on the other's CI runner.
+    // Not a literal "1,200": some locales render 1'200, which would break on another CI runner.
     expect(formatValue('count', 1200)).toBe((1200).toLocaleString());
   });
 

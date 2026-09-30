@@ -1,5 +1,3 @@
-// The crossfade setting on the Preferences page. Per device, like the rest of
-// what the player keeps (see crossfade.js).
 import { useState } from 'react';
 import { Blend, Check, Info } from 'lucide-react';
 

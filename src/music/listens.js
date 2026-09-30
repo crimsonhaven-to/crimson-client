@@ -42,7 +42,6 @@ export function toReport(listen) {
   return { track_id: listen.track_id, listened_at: listen.listened_at, seconds: Math.round(listen.seconds * 10) / 10 };
 }
 
-// Seconds heard between two time updates.
 export function heardBetween(last, now) {
   if (last === null || !Number.isFinite(now)) return 0;
   const step = now - last;

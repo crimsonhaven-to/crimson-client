@@ -1,10 +1,5 @@
-// One playlist: its tracks in order, what state each is in on the server, and
-// playback. Tracks Spotify has dropped stay listed at the end, marked, because
-// keeping them is the point of this whole surface. A playlist of your own
-// (source 'local') is edited here instead: songs are added by search.
-//
-// Without a connection, a downloaded playlist opens from the device's own copy,
-// playable but not editable.
+// Tracks Spotify has dropped stay listed at the end, marked, because keeping them is
+// the point of this whole surface.
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {

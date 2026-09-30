@@ -1,7 +1,3 @@
-// Admin › System tab — the runtime/capabilities/DB-pool/CORS-proxy snapshot plus
-// the metadata resync + non-anime catalogue backfill controls (each with its own
-// background-job poller). Lifted verbatim from Admin.jsx; RuntimeSection and
-// ProxiesSection live here because only this tab renders them.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Activity, Boxes, Clock, Cpu, Database, DownloadCloud, Film, Gauge, HardDrive,
@@ -12,12 +8,8 @@ import { adminApi } from '../adminApi';
 import { FlagBadge, StatCard } from './ui';
 import { fmtDate, statusMeta } from './format';
 
-const fmtPct = (n, d) => (d ? `${Math.round((n / d) * 100)}%` : '—');
+const fmtPct = (n, d) => (d ? `${Math.round((n / d) * 100)}%` : '-');
 
-// The external CORS proxies (crimson-proxy on Netlify / Cloudflare) that Phase-1
-// sources route their HLS segments through. Lists each configured host with a
-// live up/down ping and which sources prefer them; falls back to a dormant note
-// when CRIMSON_PROXY_BASE / PROXY_SECRET aren't set (sources self-proxy then).
 function ProxiesSection({ proxies }) {
   const hosts = proxies?.hosts || [];
   const routed = proxies?.routed_sources || [];
@@ -29,8 +21,8 @@ function ProxiesSection({ proxies }) {
       {!proxies?.enabled ? (
         <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
           {proxies && !proxies.secret_set
-            ? 'Disabled — PROXY_SECRET not set. Sources proxy their own segments.'
-            : 'Not configured — set CRIMSON_PROXY_BASE to offload segments. Sources proxy their own.'}
+            ? 'Disabled: PROXY_SECRET not set. Sources proxy their own segments.'
+            : 'Not configured: set CRIMSON_PROXY_BASE to offload segments. Sources proxy their own.'}
         </p>
       ) : (
         <>
@@ -50,7 +42,7 @@ function ProxiesSection({ proxies }) {
             })}
           </div>
           <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
-            Routing: <span className="text-crimson-400 normal-case">{routed.length ? routed.join(', ') : '—'}</span>
+            Routing: <span className="text-crimson-400 normal-case">{routed.length ? routed.join(', ') : '-'}</span>
             {hosts.length > 1 && <span className="text-crimson-600"> · round-robin across {hosts.length} hosts</span>}
           </p>
         </>
@@ -59,7 +51,6 @@ function ProxiesSection({ proxies }) {
   );
 }
 
-// The runtime snapshot (version/uptime/registry, capability flags, DB pool, proxies).
 function RuntimeSection({ system }) {
   if (!system) {
     return <div className="py-10 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Reading the runes…</div>;
@@ -80,7 +71,7 @@ function RuntimeSection({ system }) {
           <StatCard label="Python" value={system.python_version} sub={system.hostname} icon={Cpu} />
         </div>
         <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
-          Node: <span className="text-crimson-400 normal-case font-mono">{system.platform || '—'}</span>
+          Node: <span className="text-crimson-400 normal-case font-mono">{system.platform || '-'}</span>
         </p>
       </section>
 
@@ -100,7 +91,7 @@ function RuntimeSection({ system }) {
           <FlagBadge on={f.crimson_proxy_enabled} label="CORS Proxy" onIcon={Radio} offIcon={Radio} />
         </div>
         <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
-          Rate-limit store: <span className="text-crimson-400 normal-case font-mono">{f.rate_limit_storage || '—'}</span>
+          Rate-limit store: <span className="text-crimson-400 normal-case font-mono">{f.rate_limit_storage || '-'}</span>
         </p>
       </section>
 
@@ -117,7 +108,7 @@ function RuntimeSection({ system }) {
               <StatCard label="Requests" value={p.requests_total} sub={`${p.requests_errors ?? 0} errors`} icon={Zap} accent={p.requests_errors > 0 ? 'text-crimson-500' : undefined} />
             </div>
             <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
-              Bounds: <span className="text-crimson-400">{p.min_size} … {p.max_size}</span> · Total connections opened: <span className="text-crimson-400">{p.connections_total ?? '—'}</span>
+              Bounds: <span className="text-crimson-400">{p.min_size} … {p.max_size}</span> · Total connections opened: <span className="text-crimson-400">{p.connections_total ?? '-'}</span>
             </p>
           </>
         ) : (
@@ -135,7 +126,6 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
   const [triggering, setTriggering] = useState(false);
   const pollRef = useRef(null);
 
-  // Backfill (non-anime catalogue seed) — its own state + poller, same shape.
   const [backfill, setBackfill] = useState(null);
   const [backfillPages, setBackfillPages] = useState('');
   const [backfilling, setBackfilling] = useState(false);
@@ -166,15 +156,14 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
         const res = await adminApi.backfillStatus();
         if (res.success) {
           setBackfill(res.backfill);
-          // Keep polling while queued (waiting for api-sync) or running; stop only
-          // once the job reaches a terminal state.
+          // Queued means waiting for api-sync, which is not terminal.
           if (res.backfill && !res.backfill.running && !res.backfill.queued) {
             clearInterval(backfillPollRef.current);
             backfillPollRef.current = null;
             notify(
               res.backfill.ok === false
                 ? `Backfill failed: ${res.backfill.error}`
-                : `Backfill done — ${res.backfill.shows ?? 0} shows, ${res.backfill.movies ?? 0} movies seeded`,
+                : `Backfill done: ${res.backfill.shows ?? 0} shows, ${res.backfill.movies ?? 0} movies seeded`,
               res.backfill.ok !== false,
             );
             refreshStats();
@@ -184,7 +173,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
     }, 3000);
   }, [notify, refreshStats]);
 
-  // Pick up an in-progress backfill on mount (survives a tab switch / reload).
+  // Survives a tab switch or reload.
   useEffect(() => {
     let cancelled = false;
     adminApi.backfillStatus().then((res) => {
@@ -219,8 +208,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
       const body = backfillPages ? { pages: Number(backfillPages) } : {};
       const res = await adminApi.backfill(body);
       if (res.backfill) setBackfill(res.backfill);
-      // Poll on success (queued) and also when it reports an already-active job, so
-      // the UI tracks the existing run instead of going stale.
+      // An already-active job is tracked too, instead of going stale.
       if ((res.backfill?.queued || res.backfill?.running) && !backfillPollRef.current) pollBackfill();
       notify(res.success ? 'Backfill queued' : (res.message || 'Could not queue backfill'), res.success);
     } catch { notify('Could not queue backfill', false); }
@@ -276,7 +264,6 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
         </div>
       </div>
 
-      {/* Non-anime catalogue backfill */}
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-8 space-y-6 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-crimson-500/5 blur-3xl rounded-full" />
         <div className="flex items-center gap-3 relative z-10">
@@ -288,12 +275,12 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
         </div>
 
         <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-2xl">
-          The <span className="text-crimson-400 font-bold">{c.tmdb_shows ?? '—'}</span> shows and <span className="text-crimson-400 font-bold">{c.tmdb_movies ?? '—'}</span> movies in the metadata tables are normally filled lazily as titles get opened or surface in search. This pages TMDB's popularity-ranked discover lists (anime excluded) and caches each one ahead of time. The job is handed to the <span className="text-crimson-400 font-bold">sync node</span> (so only it churns the metadata) and paced to stay gentle on TMDB and the database — it can take a minute to start and runs in the background. Each page is ~20 titles.
+          The <span className="text-crimson-400 font-bold">{c.tmdb_shows ?? '-'}</span> shows and <span className="text-crimson-400 font-bold">{c.tmdb_movies ?? '-'}</span> movies in the metadata tables are normally filled lazily as titles get opened or surface in search. This pages TMDB's popularity-ranked discover lists (anime excluded) and caches each one ahead of time. The job is handed to the <span className="text-crimson-400 font-bold">sync node</span> (so only it churns the metadata) and paced to stay gentle on TMDB and the database. It can take a minute to start and runs in the background. Each page is ~20 titles.
         </p>
 
         <div className="flex flex-col sm:flex-row sm:items-end gap-4 relative z-10">
           <div className="space-y-2 sm:w-56">
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">Pages per kind (1–500)</label>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">Pages per kind (1 to 500)</label>
             <input
               type="number" min="1" max="500" value={backfillPages}
               onChange={(e) => setBackfillPages(e.target.value)}
@@ -342,7 +329,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
           <StatCard label="Cache Rows" value={c.api_cache} icon={Database} />
         </div>
         <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
-          ETag: <span className="text-crimson-400 font-mono normal-case">{c.mapping_etag || '—'}</span> · Last sync: <span className="text-crimson-400">{fmtDate(c.last_synced)}</span>
+          ETag: <span className="text-crimson-400 font-mono normal-case">{c.mapping_etag || '-'}</span> · Last sync: <span className="text-crimson-400">{fmtDate(c.last_synced)}</span>
         </p>
       </section>
     </div>

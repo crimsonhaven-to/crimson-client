@@ -1,5 +1,4 @@
-// Now Playing: the full player, a route of its own so Android's back gesture
-// closes it the way it closes any other page.
+// A route of its own so Android's back gesture closes it like any other page.
 import { Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, ListMusic, Loader2, Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lucide-react';
 

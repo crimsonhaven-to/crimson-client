@@ -1,8 +1,3 @@
-// Admin › Downloads tab — the aria2-backed background downloader: submit an
-// http/https URL or a magnet link, watch it download, and pause/resume/retry/cancel
-// jobs. Finished media lands under a download-enabled Local source's
-// crimson-downloads/ dir and then surfaces in the Local library on its own. Mirrors
-// the shape of CacheTab.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   AlertCircle, CheckCircle2, Download, HardDrive, Link2, Magnet, Pause, Play,
@@ -21,7 +16,6 @@ const STATUS_STYLES = {
   failed: 'bg-red-500/10 border-red-500/30 text-red-400',
 };
 
-// A job that's still moving should refresh often; a quiet ledger can idle.
 const isLive = (jobs) => jobs.some((j) => j.status === 'active' || j.status === 'pending');
 
 export default function DownloadsTab({ notify }) {
@@ -50,8 +44,6 @@ export default function DownloadsTab({ notify }) {
 
   useEffect(() => { load(); }, [load]);
 
-  // Light auto-refresh while anything is in flight, so progress bars move without a
-  // manual reload. Cleared when idle to avoid needless polling.
   useEffect(() => {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
     if (isLive(jobs)) {
@@ -96,7 +88,6 @@ export default function DownloadsTab({ notify }) {
 
   return (
     <div className="space-y-8">
-      {/* header + submit */}
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-5 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-crimson-500/5 blur-3xl rounded-full" />
         <div className="flex items-center gap-3 relative z-10">
@@ -107,12 +98,12 @@ export default function DownloadsTab({ notify }) {
           </div>
         </div>
         <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-3xl">
-          Paste a direct <span className="text-crimson-400 font-bold">http(s)</span> file URL or a <span className="text-crimson-400 font-bold">magnet</span> link. It downloads in the background to the first <span className="text-crimson-400 font-bold">download-enabled</span> Local source with free space (turn a source on under <span className="text-crimson-400 font-bold">Sources</span>), landing under its <code className="font-mono text-crimson-400">/crimson-downloads</code> folder — where the Local library then surfaces it automatically. An optional name becomes the destination folder and helps identify the title.
+          Paste a direct <span className="text-crimson-400 font-bold">http(s)</span> file URL or a <span className="text-crimson-400 font-bold">magnet</span> link. It downloads in the background to the first <span className="text-crimson-400 font-bold">download-enabled</span> Local source with free space (turn a source on under <span className="text-crimson-400 font-bold">Sources</span>), landing under its <code className="font-mono text-crimson-400">/crimson-downloads</code> folder, where the Local library then surfaces it automatically. An optional name becomes the destination folder and helps identify the title.
         </p>
 
         {overview && !overview.aria2_available && (
           <div className="relative z-10 flex items-center gap-2 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-bold">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" /> The aria2 sidecar is unreachable — downloads stay pending until it's up. Check the <code className="font-mono">aria2</code> service and <code className="font-mono">ARIA2_RPC_SECRET</code>.
+            <AlertCircle className="w-4 h-4 flex-shrink-0" /> The aria2 sidecar is unreachable: downloads stay pending until it's up. Check the <code className="font-mono">aria2</code> service and <code className="font-mono">ARIA2_RPC_SECRET</code>.
           </div>
         )}
         {overview && targets.length === 0 && (
@@ -150,7 +141,6 @@ export default function DownloadsTab({ notify }) {
         )}
       </div>
 
-      {/* download targets (informational) */}
       {targets.length > 0 && (
         <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-4 relative overflow-hidden">
           <div className="flex items-center gap-3 relative z-10">
@@ -173,7 +163,6 @@ export default function DownloadsTab({ notify }) {
         </div>
       )}
 
-      {/* jobs ledger */}
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-5 relative overflow-hidden">
         <div className="flex items-center gap-3 relative z-10 flex-wrap">
           <Download className="w-6 h-6 text-crimson-500" />
@@ -239,7 +228,6 @@ export default function DownloadsTab({ notify }) {
                       </button>
                     </div>
                   </div>
-                  {/* progress bar for anything in flight */}
                   {(j.status === 'active' || j.status === 'paused') && (
                     <div className="h-1.5 rounded-full bg-crimson-950/80 overflow-hidden">
                       <div className={`h-full rounded-full transition-all ${j.status === 'paused' ? 'bg-sky-500/60' : 'bg-crimson-500'}`}

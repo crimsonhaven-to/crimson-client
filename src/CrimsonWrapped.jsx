@@ -7,13 +7,8 @@ import { useWrapped, useMusicWrapped, useMusicAccess, useSessionToken, useTitle 
 import MusicYear from './wrapped/MusicYear';
 import StatCard from './wrapped/StatCard';
 
-// A year of watching, as the backend counted it.
-//
-// The one thing this page must not do is present a reconstruction as a
-// measurement. The payload carries `approximate` whenever part of the year
-// predates the history table, and that is surfaced prominently rather than
-// tucked into a tooltip: the first Wrapped covers a year that mostly happened
-// before anything was recorded day by day.
+// The page must not present a reconstruction as a measurement: `approximate` is set
+// whenever part of the year predates the history table, and is shown prominently.
 
 const THIS_YEAR = new Date().getFullYear();
 // Matches the backend's floor; older years have no exact source left.
@@ -109,8 +104,8 @@ const CrimsonWrapped = () => {
         </div>
       )}
 
-      {/* Not a footnote. A number reconstructed from when a row was last touched
-          is not the same kind of fact as one counted on the day. */}
+      {/* Not a footnote: a number reconstructed from when a row was last touched is
+          not the same kind of fact as one counted on the day. */}
       {data?.approximate && (
         <div className="flex items-start gap-4 p-6 rounded-3xl border border-amber-500/30 bg-amber-500/5">
           <div className="p-2.5 rounded-2xl bg-amber-900/20 shrink-0">

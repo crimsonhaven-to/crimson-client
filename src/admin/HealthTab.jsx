@@ -1,6 +1,3 @@
-// Admin › Health tab — the source-vitals probe sweep (library + streaming sources)
-// plus the anonymous client-resolve success-rate table. Lifted verbatim from
-// Admin.jsx; SourceRow lives here as its only consumer.
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle, CheckCircle2, ExternalLink, Gauge, HardDrive, HeartPulse,
@@ -63,8 +60,7 @@ export default function HealthTab({ notify }) {
 
   useEffect(() => { load(false); }, [load]);
 
-  // Real client-side resolve success rates (anonymous beacons). Best-effort: an
-  // empty table just means no client/extension resolves have been reported yet.
+  // Best effort: an empty table just means no client resolves have been reported yet.
   useEffect(() => {
     let alive = true;
     adminApi.sourceStats(14)
@@ -84,7 +80,6 @@ export default function HealthTab({ notify }) {
 
   return (
     <div className="space-y-10">
-      {/* Summary + re-probe */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-2.5">
@@ -108,7 +103,7 @@ export default function HealthTab({ notify }) {
         <StatCard label="Empty / Idle" value={(summary.empty || 0) + (summary.idle || 0)} icon={AlertCircle} accent="text-amber-400" />
         <StatCard label="Down" value={summary.error || 0} icon={WifiOff} accent="text-crimson-500" />
         <StatCard label="Dormant" value={summary.disabled || 0} icon={PowerOff} accent="text-crimson-700" />
-        <StatCard label="Avg Latency" value={summary.avg_latency_ms != null ? `${summary.avg_latency_ms} ms` : '—'} sub={summary.slowest_ms != null ? `slowest ${summary.slowest_ms} ms` : null} icon={Gauge} />
+        <StatCard label="Avg Latency" value={summary.avg_latency_ms != null ? `${summary.avg_latency_ms} ms` : '-'} sub={summary.slowest_ms != null ? `slowest ${summary.slowest_ms} ms` : null} icon={Gauge} />
       </div>
 
       {library.length > 0 && (
@@ -142,7 +137,7 @@ export default function HealthTab({ notify }) {
                   <div className="hidden sm:block w-40 h-1.5 bg-crimson-950 rounded-full overflow-hidden">
                     <div className={`h-full ${rate == null ? '' : rate >= 70 ? 'bg-green-400' : rate >= 30 ? 'bg-amber-300' : 'bg-crimson-500'}`} style={{ width: `${rate ?? 0}%` }} />
                   </div>
-                  <span className={`text-sm font-black tabular-nums w-12 text-right ${accent}`}>{rate == null ? '—' : `${rate}%`}</span>
+                  <span className={`text-sm font-black tabular-nums w-12 text-right ${accent}`}>{rate == null ? '-' : `${rate}%`}</span>
                   <span className="text-[10px] font-bold text-crimson-700 tabular-nums w-24 text-right">{s.ok}✓ / {s.fail}✗</span>
                 </div>
               );

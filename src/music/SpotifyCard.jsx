@@ -1,6 +1,5 @@
-// Connecting a member's own Spotify app, and picking which of their playlists
-// to import once connected. There is no server-wide Spotify setting: each
-// member registers an app (or is added to someone's) and pastes its client ID.
+// There is no server-wide Spotify setting: each member registers an app (or is added
+// to someone's) and pastes its client ID.
 import { useState } from 'react';
 import { Check, Copy, ExternalLink, Loader2, Unplug } from 'lucide-react';
 import { Link } from 'react-router-dom';

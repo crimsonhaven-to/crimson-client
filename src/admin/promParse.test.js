@@ -5,10 +5,8 @@ import {
   histogramQuantile, histogramMean, histogramCount, outcomeRatio,
 } from './promParse';
 
-// The fixture is trimmed from a REAL /metrics response off the backend, so the
-// awkward bits are the genuine ones rather than invented: the `_created` twin
-// prometheus_client emits alongside every counter, "+Inf" as a bucket bound,
-// scientific notation, and a route-template label full of braces.
+// Trimmed from a real /metrics response, so the awkward bits are genuine: `_created`
+// twins, "+Inf" bucket bounds, scientific notation, and route labels full of braces.
 const SAMPLE = `# HELP crimson_http_requests_total HTTP requests completed, by route template, method and status class.
 # TYPE crimson_http_requests_total counter
 crimson_http_requests_total{method="GET",route="/watch/{tmdb_id}/{season_number}/{episode_number}",status="200"} 40.0
@@ -46,8 +44,7 @@ const parsed = parseMetrics(SAMPLE);
 
 describe('parseMetrics', () => {
   it('keeps a counter and its _created twin as separate names', () => {
-    // The trap this guards: _created holds a unix timestamp, not a count. Folding
-    // it into the counter would add ~1.8 billion to every total on the dashboard.
+    // _created holds a unix timestamp: folding it in would add ~1.8 billion to every total.
     expect(sumOf(parsed, 'crimson_http_requests_total')).toBe(170);
     expect(samplesOf(parsed, 'crimson_http_requests_created')).toHaveLength(1);
   });
@@ -130,8 +127,7 @@ describe('histogramQuantile', () => {
   });
 
   it('reports Infinity rather than inventing a number beyond the top bucket', () => {
-    // Every observation sits inside a finite bucket here, so nothing lands in +Inf.
-    // Build one that does: the count exceeds the last finite bucket.
+    // The count exceeds the last finite bucket, so the quantile lands in +Inf.
     const p = parseMetrics(
       'h_bucket{le="1.0"} 1.0\nh_bucket{le="+Inf"} 10.0\nh_count 10.0\nh_sum 500.0\n',
     );
@@ -163,8 +159,7 @@ describe('outcomeRatio', () => {
   });
 
   it('distinguishes "never tried" from "failed every time"', () => {
-    // 0 and null must not render the same way: one is a dead source, the other is
-    // a source nobody has asked for yet.
+    // 0 is a dead source; null is a source nobody has asked for yet.
     expect(outcomeRatio(parsed, 'crimson_resolve_total', 'source', 'Nonexistent', ['ok'])).toBeNull();
   });
 });

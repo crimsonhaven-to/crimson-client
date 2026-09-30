@@ -1,6 +1,3 @@
-// Spotify's redirect lands here with a code (or an error). The code goes to the
-// backend once, with the verifier this tab kept, and the member is sent back
-// to the Music hub.
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';

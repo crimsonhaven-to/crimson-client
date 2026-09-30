@@ -1,5 +1,4 @@
-// Naming a playlist of your own. It opens straight into the song search, since
-// an empty playlist is only a first step.
+// Opens straight into the song search, since an empty playlist is only a first step.
 import { useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';

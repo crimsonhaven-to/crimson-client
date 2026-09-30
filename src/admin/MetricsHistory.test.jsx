@@ -1,6 +1,5 @@
-// Mounts the REAL history section (and through it the real TimeChart) against
-// payloads shaped exactly like the backend's /admin/metrics/* responses, so a
-// change to either side surfaces here rather than as an empty card in the sanctum.
+// Payloads shaped like the backend's /admin/metrics/* responses, rendered through the
+// real TimeChart, so a change on either side fails here instead of as an empty card.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -48,9 +47,7 @@ const SERIES = {
   truncated: 0,
   series: [
     { label: '200', points: [[1000, 12], [1060, 14], [1120, 13], [1180, 15]] },
-    // Deliberately sparse: Prometheus emits nothing for a step where a labelled
-    // series had no samples, and this is what proves the alignment is by
-    // timestamp rather than by array position.
+    // Deliberately sparse, like Prometheus output, to prove alignment is by timestamp.
     { label: '500', points: [[1120, 2]] },
   ],
 };
@@ -89,8 +86,7 @@ describe('MetricsHistory', () => {
     metricsPanels.mockResolvedValue(PANELS);
     await mount();
 
-    // Only the Traffic group is fetched. Loading all twenty panels at once would
-    // fire twenty query_range calls at Prometheus to fill one screen.
+    // Loading every panel would fire twenty query_range calls to fill one screen.
     expect(metricsSeries.mock.calls.map((c) => c[0])).toEqual(['http_rate', 'http_latency']);
     expect(metricsSeries.mock.calls.every((c) => c[1] === '6h')).toBe(true);
 
@@ -128,9 +124,8 @@ describe('MetricsHistory', () => {
     metricsPanels.mockResolvedValue(PANELS);
     await mount();
 
-    // The "500" line has one sample at t=1120, which is column 2 of 4 (x = 66.67
-    // in the normalised box). If it were zipped by index it would land at column
-    // 0, and the whole series would be reported an hour earlier than it happened.
+    // The "500" sample at t=1120 is column 2 of 4 (x = 66.67). Zipped by index it
+    // would land at column 0.
     const drawn = paths().map((p) => p.getAttribute('d')).join(' ');
     expect(drawn).toContain('66.67');
     expect(drawn).not.toContain('NaN');
@@ -163,8 +158,7 @@ describe('MetricsHistory', () => {
   });
 
   it('names the replicas the scraper cannot reach', async () => {
-    // An empty chart because nothing happened and an empty chart because the
-    // scraper lost the fleet look identical without this.
+    // Otherwise "nothing happened" and "the scraper lost the fleet" look identical.
     metricsPanels.mockResolvedValue(PANELS);
     metricsTargets.mockResolvedValue({
       ok: true, up: 2, down: 1,

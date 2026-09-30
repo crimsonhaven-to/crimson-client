@@ -1,7 +1,3 @@
-// Admin › Users tab. Member search plus per-user actions (grant/revoke admin,
-// the feature grants, mark verified, revoke sessions, delete), plus
-// the E-Mail sender (broadcast a plaintext message to every member who signed up
-// with an email address).
 import { useCallback, useEffect, useState } from 'react';
 import { Bot, LogOut, Mail, Music, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 
@@ -9,12 +5,9 @@ import { useProfile } from '../hooks';
 import { adminApi } from '../adminApi';
 import { fmtDate } from './format';
 
-// Broadcast a plaintext email to every email-based account (mnemonic accounts
-// have no address and are skipped server-side; each mail greets the member by
-// their display name when they've set one). Greys out when the backend reports
-// SMTP isn't configured, and polls live progress while a send is running.
+// Mnemonic accounts have no address and are skipped server-side.
 function EmailSender({ notify }) {
-  const [status, setStatus] = useState(null); // GET /admin/broadcast-email payload
+  const [status, setStatus] = useState(null);
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [verifiedOnly, setVerifiedOnly] = useState(true);
@@ -76,7 +69,7 @@ function EmailSender({ notify }) {
 
       {status && !configured && (
         <p className="text-xs font-bold text-crimson-600 leading-relaxed">
-          SMTP isn&apos;t configured on the backend — set <code className="text-crimson-400">SMTP_HOST</code> (and friends) to enable member emails.
+          SMTP isn&apos;t configured on the backend. Set <code className="text-crimson-400">SMTP_HOST</code> (and friends) to enable member emails.
         </p>
       )}
 
@@ -103,7 +96,7 @@ function EmailSender({ notify }) {
         <textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Write your message in plaintext — every member gets it with their own greeting…"
+          placeholder="Write your message in plaintext: every member gets it with their own greeting…"
           rows={5}
           maxLength={20000}
           disabled={disabled}
@@ -134,9 +127,8 @@ function EmailSender({ notify }) {
   );
 }
 
-// Per-member feature grants. Each costs the operator something (Lumi spends
-// tokens, Music spends disk and bandwidth), so each is deny by default and
-// granted here, one member at a time, in one place.
+// Each grant costs the operator something (Lumi spends tokens, Music spends disk and
+// bandwidth), so each is deny by default and granted one member at a time.
 const GRANTS = [
   { key: 'chat_enabled', label: 'Lumi', icon: Bot, on: 'bg-violet-500/15 border-violet-500/50 text-violet-300' },
   { key: 'music_enabled', label: 'Music', icon: Music, on: 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300' },

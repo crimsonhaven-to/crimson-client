@@ -1,5 +1,3 @@
-// Admin › Overview tab — the at-a-glance stat grids (runtime, members, catalogue)
-// plus the raw node-health dump. Lifted verbatim from Admin.jsx.
 import {
   Activity, Boxes, CheckCircle2, Crown, Database, DownloadCloud,
   Film, Gauge, Mail, Server, Shield, Ticket, Users, Zap,
@@ -22,7 +20,7 @@ export default function OverviewTab({ stats, health, system }) {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Version" value={`v${system.version}`} sub={`up ${system.uptime_human}`} icon={Shield} accent="text-crimson-500" />
             <StatCard label="Sources" value={system.registry?.scrapers} sub={`${system.registry?.resolvers ?? 0} resolvers`} icon={Boxes} accent="text-green-400" />
-            <StatCard label="DB Pool" value={p.available ? `${p.in_use}/${p.max_size}` : '—'} sub={p.available ? `${p.idle ?? 0} idle · ${p.waiting ?? 0} waiting` : 'pool closed'} icon={Gauge} accent={p.waiting > 0 ? 'text-amber-400' : undefined} />
+            <StatCard label="DB Pool" value={p.available ? `${p.in_use}/${p.max_size}` : '-'} sub={p.available ? `${p.idle ?? 0} idle · ${p.waiting ?? 0} waiting` : 'pool closed'} icon={Gauge} accent={p.waiting > 0 ? 'text-amber-400' : undefined} />
             <StatCard label="Video Cache" value={system.cache?.enabled ? (system.cache?.ready ?? 0) : 'Off'} sub={system.cache?.enabled ? `${system.cache?.pending ?? 0} pending · ${system.cache?.targets_enabled ?? 0} targets` : 'caching disabled'} icon={DownloadCloud} accent={system.cache?.enabled ? 'text-green-400' : 'text-crimson-700'} />
           </div>
         </section>

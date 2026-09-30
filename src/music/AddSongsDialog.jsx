@@ -1,5 +1,3 @@
-// Filling one of your own playlists: search, then add as many results as you
-// like. The dialog stays open, so a whole playlist can be built in one go.
 import { useState } from 'react';
 import { Check, Loader2, Plus, Search, X } from 'lucide-react';
 

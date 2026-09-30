@@ -1,9 +1,3 @@
-// Admin dashboard shell.
-//
-// This file used to be one ~1,700-line module holding every tab's markup + logic.
-// The tabs now live in src/admin/ (one file each) with their shared presentational
-// atoms in src/admin/ui.jsx; this file is just the page frame: the access guard,
-// the top-level stats/health/system fetch, the tab bar, and the toast host.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Activity, Bot, Download, DownloadCloud, HardDrive, HeartPulse, KeyRound, LineChart, Music,
@@ -46,8 +40,7 @@ const AdminPage = () => {
 
   const loadStats = useCallback(async () => {
     try {
-      // Source health is deliberately left out — it probes 11 upstreams, so it
-      // loads lazily inside its own tab rather than on every dashboard refresh.
+      // Source health probes 11 upstreams, so it loads lazily in its own tab instead.
       const [s, h, sys] = await Promise.all([adminApi.stats(), adminApi.health(), adminApi.system()]);
       if (s.success) setStats(s);
       setHealth(h);
@@ -58,8 +51,7 @@ const AdminPage = () => {
 
   useEffect(() => { loadStats(); }, [loadStats]);
 
-  // Access guard. profile === undefined/null while loading; once resolved, a
-  // non-admin sees a refusal (the API would 403 anyway, this is just nicer).
+  // The API would 403 anyway; this is just nicer.
   if (profile && !profile.is_admin) {
     return (
       <div className="max-w-md w-full mx-auto px-6 py-32 text-center space-y-6 animate-in fade-in duration-700">

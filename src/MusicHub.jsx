@@ -1,7 +1,5 @@
-// The Music hub: the member's playlists, the Spotify connection, and the ways
-// to add more. Deny by default like Lumi, so a member without the
-// grant sees why instead of an empty page. Without a connection it shows the
-// playlists downloaded to this device instead.
+// Deny by default like Lumi, so a member without the grant sees why instead of an
+// empty page.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowDownToLine, CircleAlert, Music, Play, Plus, WifiOff } from 'lucide-react';
