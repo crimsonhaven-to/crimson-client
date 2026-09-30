@@ -1,6 +1,6 @@
 import { Sparkles, User, ShieldCheck, Crown } from 'lucide-react';
 import { useSupporters } from './hooks';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 
 const SupportersPage = () => {
   const { supporters, stats, loading, error } = useSupporters();

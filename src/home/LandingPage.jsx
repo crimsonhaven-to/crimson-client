@@ -9,7 +9,7 @@ import { useTrendingMovies } from '../movies/hooks';
 import { useTrendingManga } from '../manga/hooks';
 import { useUnifiedSearch, useRecommendations } from './hooks';
 import { useProfile } from '../account/profile';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import ContentRow from './ContentRow';
 import { useCompanionNudge } from '../sources/companion';
 

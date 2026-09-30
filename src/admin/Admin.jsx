@@ -4,7 +4,7 @@ import {
   RefreshCw, Server, Shield, ShieldAlert, ShieldOff, Ticket, Users,
 } from 'lucide-react';
 
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { useProfile } from '../account/profile';
 import { adminApi } from './api';
 import { TabButton, Toast } from './ui';

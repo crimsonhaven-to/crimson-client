@@ -5,7 +5,7 @@ import { API_BASE_URL } from '../api/config';
 import { apiFetch } from '../api/client';
 import { fetchSubtitles, fetchSkipTimes } from './media';
 import { usePlaybackPrefs } from '../account/playbackPrefs';
-import { setWatchActivity, clearWatchActivity } from '../discordPresence';
+import { setWatchActivity, clearWatchActivity } from '../presence/discordPresence';
 import { stripHtml } from '../stripHtml';
 import { formatAirDate } from '../formatAirDate';
 import WatchlistButton from '../library/WatchlistButton';

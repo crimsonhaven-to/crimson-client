@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { HelpCircle, Menu, X, Heart, History, User, Sparkles, LogOut, Shield, SlidersHorizontal, Flame, Tv, Wallet, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays, Music } from 'lucide-react';
-import { useHealthStatus } from './useHealthStatus';
+import { useHealthStatus } from '../api/useHealthStatus';
 import { useAuth } from '../account/useAuth';
 import { useProfile } from '../account/profile';
 import { usePublicConfig } from '../api/client';

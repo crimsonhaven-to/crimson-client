@@ -2,7 +2,7 @@
 // Presence reach Discord.
 //
 // The site dials a Discord RPC WebSocket on the loopback port range
-// (src/discordPresence.js), but Discord and arRPC reject it because our origin is
+// (src/presence/discordPresence.js), but Discord and arRPC reject it because our origin is
 // not on their hardcoded allowlist. This helper speaks the same protocol, trusts
 // our origin, and relays to Discord's local IPC pipe. It listens only on
 // 127.0.0.1, so nothing leaves the machine.

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, Film, Tv, HardDrive, Calendar, Hash, ListVideo, AlertTriangle } from 'lucide-react';
 import { useLocalOverview } from './hooks';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { API_BASE_URL } from '../api/config';
 import { stripHtml } from '../stripHtml';
 

@@ -5,7 +5,7 @@ import {
   CheckCircle2, MailCheck, ArrowLeft, Ticket, Eye, EyeOff, Key, Copy,
 } from 'lucide-react';
 import { useAuth } from './useAuth';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { usePublicConfig } from '../api/client';
 
 function Field({ icon: Icon, children }) {

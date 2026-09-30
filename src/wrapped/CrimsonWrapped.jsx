@@ -6,7 +6,7 @@ import {
 import { useWrapped, useMusicWrapped } from './hooks';
 import { useMusicAccess } from '../music/hooks';
 import { useSessionToken } from '../api/client';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import MusicYear from './MusicYear';
 import StatCard from './StatCard';
 

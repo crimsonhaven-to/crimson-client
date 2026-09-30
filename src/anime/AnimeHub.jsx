@@ -7,7 +7,7 @@ import {
 } from '../browse/hubKit';
 import { useCatalogue } from './hooks';
 import { useAnimeCatalogue, CATALOGUE_SORTS } from '../browse/catalogues';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 
 // Where an Archive card goes. Anime films that TMDB tracks as movies in their own
 // right have no show to sit under (no tmdb_id, no season), so /anime/:id has

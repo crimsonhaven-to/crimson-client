@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../api/client';
+import { apiFetch } from './client';
 
 export function useHealthStatus() {
   const [health, setHealth] = useState(null);

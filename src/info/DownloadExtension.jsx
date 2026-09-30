@@ -2,7 +2,7 @@
 // served from /extension/.
 import { Link } from 'react-router-dom';
 import { Puzzle, Power, ShieldCheck, Sparkles, CheckCircle2, ExternalLink, ChevronRight } from 'lucide-react';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { useCompanionPresence } from '../sources/companion';
 
 const STORES = {

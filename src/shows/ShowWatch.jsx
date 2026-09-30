@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useShowStreamer } from './hooks';
 import { useAccount } from '../account/useAccount';
 import { useAuth } from '../account/useAuth';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { apiFetch } from '../api/client';
 import { startsFresh } from '../watch/resumeRules';
 import WatchView from '../watch/WatchView';

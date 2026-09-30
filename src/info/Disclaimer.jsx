@@ -1,5 +1,5 @@
 import { Scale, Shield, Eye, Cookie, FileText, RefreshCw } from 'lucide-react';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { DMCA_MAIL } from '../api/config';
 
 const Section = ({ icon, title, children }) => (

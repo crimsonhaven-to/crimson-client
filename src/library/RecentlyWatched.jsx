@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { History, Search, X, LayoutGrid, List, Trash2, AlertTriangle } from 'lucide-react';
 import { useAccount } from '../account/useAccount';
 import { useAuth } from '../account/useAuth';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { BUCKETS, bucketOf } from './historyDates';
 import { resumeInfo } from './historyResume';
 import HistoryCard from './HistoryCard';

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useMovieStreamer } from './hooks';
 import { useAccount } from '../account/useAccount';
 import { useAuth } from '../account/useAuth';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { apiFetch } from '../api/client';
 import WatchView from '../watch/WatchView';
 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CalendarDays, Bell, BellRing, BellOff, Mail, MailWarning, Loader2, Clock } from 'lucide-react';
 import { useAiringCalendar, useSubscriptions } from './airing';
 import { useSessionToken } from '../api/client';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { dayLabel, timeLabel, hasAired } from './airingFormat';
 
 // The week's broadcast schedule, with the titles this viewer follows lit up.

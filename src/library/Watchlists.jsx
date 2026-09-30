@@ -13,8 +13,8 @@ import SelectionBar from './SelectionBar';
 import ListPickerDialog from './ListPickerDialog';
 import DeleteListDialog from './DeleteListDialog';
 import { useAuth } from '../account/useAuth';
-import { useTitle } from '../shell/useTitle';
-import { setWatchlistActivity, clearActivity } from '../discordPresence';
+import { useTitle } from '../useTitle';
+import { setWatchlistActivity, clearActivity } from '../presence/discordPresence';
 
 const VIEW_KEY = 'crimson:watchlist-view';
 const SORT_KEY = 'crimson:watchlist-sort';
@@ -50,7 +50,7 @@ const WatchlistsPage = () => {
   const setViewPersist = (v) => { setView(v); localStorage.setItem(VIEW_KEY, v); };
   const setSortPersist = (s) => { setSort(s); localStorage.setItem(SORT_KEY, s); };
 
-  // Opt-in, see src/discordPresence.js.
+  // Opt-in, see src/presence/discordPresence.js.
   useEffect(() => {
     setWatchlistActivity();
     return () => clearActivity();

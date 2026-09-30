@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Star, Layers, PlayCircle, AlertTriangle, ChevronRight } from 'lucide-react';
 import { useMangaOverview, useMangaResume } from './hooks';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { stripHtml } from '../stripHtml';
 import WatchlistButton from '../library/WatchlistButton';
 

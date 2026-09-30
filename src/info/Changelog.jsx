@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ScrollText, Tag, Calendar, ExternalLink, Sparkles, AlertCircle, Moon, ArrowLeft, FlaskConical } from 'lucide-react';
 import { useChangelog } from './hooks';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { formatReleaseDate } from './changelogFormat';
 
 // Release notes render as React elements, never dangerouslySetInnerHTML, so nothing

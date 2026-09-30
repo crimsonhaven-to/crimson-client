@@ -13,7 +13,7 @@ import (
 )
 
 // Discord binds the first free port here and the page probes them in order
-// (src/discordPresence.js). With Discord on 6463 rejecting our origin, the page
+// (src/presence/discordPresence.js). With Discord on 6463 rejecting our origin, the page
 // moves on and lands on us one port over.
 var rpcPorts = []int{6463, 6464, 6465, 6466, 6467, 6468, 6469, 6470, 6471, 6472}
 

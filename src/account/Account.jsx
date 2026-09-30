@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Key, User, LogOut, Copy, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck, Info } from 'lucide-react';
 import { useAuth } from './useAuth';
 import { useAccount } from './useAccount';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import AccountSecurity from './AccountSecurity';
 
 const AccountPage = () => {

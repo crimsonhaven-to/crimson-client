@@ -9,7 +9,7 @@ import {
 } from '../browse/hubKit';
 import { posterSrc } from '../browse/hubHelpers';
 import { useLocalLibrary, useLocalBrowse } from './hooks';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 
 // The fallback surface for media that never resolved to a title.
 function LocalBrowseView({ searchTerm, navigate }) {

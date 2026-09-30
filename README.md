@@ -57,21 +57,25 @@ per-source logs) and `crimson:clientLiveTv` (`0` for the backend).
 ## Layout
 
 Each domain folder owns its pages, its components and its data hooks (`hooks.js`).
-Pages import hooks, hooks import `api/`, and nothing imports upward.
+Dependencies point one way: `App.jsx` and `shell/` compose the domains, domains use
+`api/` and the shared modules at the root of `src/`, and no two folders import each
+other.
 
 | Folder | Owns |
 | --- | --- |
 | `App.jsx`, `main.jsx` | App assembly: the login wall switch, the layout and the route table |
-| `api/` | Build-time config, the API client and session token, the in-memory cache, the NDJSON reader |
-| `shell/` | Navigation, footer, the auth gate, error boundary, background, 404, the welcome tour, page titles |
-| `account/` | Sign-in (mnemonic and email), account, security, settings, playback preferences, themes |
+| `useTitle.js`, `stripHtml.js`, `formatBytes.js`, `formatAirDate.js` | Small shared modules every domain may use |
+| `api/` | Build-time config, the API client and session token, the in-memory cache, the NDJSON reader, backend health |
+| `shell/` | Navigation, footer, the auth gate, error boundary, background, 404, the welcome tour |
+| `account/` | Sign-in (mnemonic and email), account, security, profile, playback preferences, themes |
+| `settings/` | The preferences page: playback, theme, music and Discord helper downloads |
 | `home/`, `browse/` | The landing page with search and recommendations; the shared hub layout and catalogues |
 | `anime/`, `shows/`, `movies/`, `manga/`, `livetv/`, `local/`, `music/` | One folder per kind of media: hub, overview, watch or read page, and data hooks |
 | `watch/` | The watch page, the hls.js player, stream ranking, merging and downloads, resume rules |
 | `sources/` | The bridge to `crimson-sources` and the backend grants it needs, and the no-op stub |
 | `library/` | Watchlists, history, the airing calendar, follow and watchlist buttons |
 | `admin/`, `wrapped/`, `lumi/`, `info/` | The admin dashboard, Crimson Wrapped, the Lumi chat, and the About, changelog, support and legal pages |
-| `discordPresence.js`, `rpc-helper/` | Discord Rich Presence and its desktop helper (see [`rpc-helper/README.md`](rpc-helper/README.md)) |
+| `presence/`, `rpc-helper/` | Discord Rich Presence and its desktop helper (see [`rpc-helper/README.md`](rpc-helper/README.md)) |
 | `public/sw.js` | The service worker: installable app, offline shell and offline music |
 | `vendor/crimson-sources` | The private source engine, a git submodule |
 

@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAnimeOverview } from './hooks';
 import { useShowResume } from '../watch/resume';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import OverviewView from '../watch/OverviewView';
 
 const AnimeOverview = () => {

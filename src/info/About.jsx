@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertCircle, ChevronRight, Server, RefreshCw, ScrollText, Tag } from 'lucide-react';
-import { useHealthStatus } from '../shell/useHealthStatus';
-import { useTitle } from '../shell/useTitle';
+import { useHealthStatus } from '../api/useHealthStatus';
+import { useTitle } from '../useTitle';
 import { useChangelog } from './hooks';
 import { apiFetch } from '../api/client';
 import { CLIENT_VERSION, HOSTED_IN } from '../api/config';

@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle, Gauge, Palette } from 'lucide-react';
-import { usePlaybackPrefs, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './playbackPrefs';
-import { useLiteBackground, setLiteBackground } from './liteBackground';
-import { useTheme, setTheme, THEME_LIST } from './theme';
-import { useTitle } from '../shell/useTitle';
-import { useProfile, updateUsername } from './profile';
+import { usePlaybackPrefs, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from '../account/playbackPrefs';
+import { useLiteBackground, setLiteBackground } from '../account/liteBackground';
+import { useTheme, setTheme, THEME_LIST } from '../account/theme';
+import { useTitle } from '../useTitle';
+import { useProfile, updateUsername } from '../account/profile';
 import { useMusicAccess } from '../music/hooks';
-import PrefToggle from './PrefToggle';
+import PrefToggle from '../account/PrefToggle';
 import CrossfadeCard from '../music/CrossfadeCard';
 import { hasDownloads } from '../music/downloads';
 
@@ -131,7 +131,7 @@ const UserSettings = () => {
   const [prefs, setPrefs] = usePlaybackPrefs();
   // Client-only, per-device perf preference (not part of the synced prefs blob).
   const lite = useLiteBackground();
-  // Client-only, per-device visual theme (also not synced). See account/theme.js.
+  // Client-only, per-device visual theme (also not synced). See src/account/theme.js.
   const theme = useTheme();
 
   // Toggle semantics: tapping the active value clears it back to "Any".
@@ -321,7 +321,7 @@ const UserSettings = () => {
 
       {showMusic && <CrossfadeCard />}
 
-      {/* Themes added to account/theme.js appear here automatically. */}
+      {/* Themes added to src/account/theme.js appear here automatically. */}
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
 

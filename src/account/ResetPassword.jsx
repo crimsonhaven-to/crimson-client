@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Lock, KeyRound, RefreshCw, AlertCircle, CheckCircle2, Eye, EyeOff, LogIn } from 'lucide-react';
 import { useAuth } from './useAuth';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 import { Shell } from './Login';
 
 // On success the backend revokes old sessions, so the user signs in fresh.

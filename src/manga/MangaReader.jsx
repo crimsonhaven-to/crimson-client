@@ -7,7 +7,7 @@ import {
 import { useMangaReader, useMangaResume } from './hooks';
 import { useAccount } from '../account/useAccount';
 import { useAuth } from '../account/useAuth';
-import { useTitle } from '../shell/useTitle';
+import { useTitle } from '../useTitle';
 
 // Reading progress reuses /account/progress (media_type 'manga'): the chapter ordinal
 // rides in episode_number and the page in position_seconds, so "continue reading"

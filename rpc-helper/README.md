@@ -3,7 +3,7 @@
 A local bridge that lets Crimson Haven's browser-based Discord Rich Presence reach
 the Discord desktop client.
 
-The site ([`src/discordPresence.js`](../src/discordPresence.js)) builds
+The site ([`src/presence/discordPresence.js`](../src/presence/discordPresence.js)) builds
 `SET_ACTIVITY` frames and dials a Discord RPC WebSocket on the loopback port range.
 Discord and arRPC reject that socket because `https://crimsonhaven.to` is not on
 their hardcoded origin allowlist. The helper speaks the same WebSocket RPC
