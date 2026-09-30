@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, Film, AlertTriangle, ChevronRight, X, Sparkles, Flame, Tv, Puzzle, BookOpen } from 'lucide-react';
 import { kindStyle } from '../browse/hubHelpers';
@@ -11,6 +11,7 @@ import { useUnifiedSearch, useRecommendations } from './hooks';
 import { useProfile } from '../account/profile';
 import { useTitle } from '../shell/useTitle';
 import ContentRow from './ContentRow';
+import { useCompanionNudge } from '../sources/companion';
 
 const AnimeCard = ({ title, poster, kind, onSelect }) => (
 
@@ -37,34 +38,14 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
   </div>
 );
 
-const EXT_BANNER_DISMISS_KEY = 'crimson:extBanner:dismissed';
-
 function ExtensionBanner() {
-  const [hidden, setHidden] = useState(() => {
-    try {
-      if (window.CrimsonExtension?.available) return true;
-      return localStorage.getItem(EXT_BANNER_DISMISS_KEY) === '1';
-    } catch { return false; }
-  });
+  const { show, dismiss } = useCompanionNudge();
+  if (!show) return null;
 
-  useEffect(() => {
-    if (hidden) return;
-    const onReady = () => setHidden(true);
-    window.addEventListener('crimson-extension-ready', onReady, { once: true });
-    // Re-check shortly after mount: the global may have been set before our listener.
-    const t = setTimeout(() => {
-      try { if (window.CrimsonExtension?.available) setHidden(true); } catch { /* ignore */ }
-    }, 400);
-    return () => { window.removeEventListener('crimson-extension-ready', onReady); clearTimeout(t); };
-  }, [hidden]);
-
-  if (hidden) return null;
-
-  const dismiss = (e) => {
+  const onDismiss = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    try { localStorage.setItem(EXT_BANNER_DISMISS_KEY, '1'); } catch { /* ignore */ }
-    setHidden(true);
+    dismiss();
   };
 
   return (
@@ -89,7 +70,7 @@ function ExtensionBanner() {
       </span>
       <button
         type="button"
-        onClick={dismiss}
+        onClick={onDismiss}
         aria-label="Dismiss"
         className="p-1.5 rounded-lg text-crimson-600 hover:text-crimson-300 hover:bg-crimson-900/40 transition-all shrink-0"
       >

@@ -1,5 +1,6 @@
 import { Play, Clock, Trash2 } from 'lucide-react';
-import { timeAgo, airDateLabel } from './historyDates';
+import { timeAgo } from './historyDates';
+import { formatAirDate } from '../formatAirDate';
 import { resumeInfo } from './historyResume';
 
 const HistoryCard = ({ item, view, onOpen, onRemove }) => {
@@ -96,7 +97,7 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
             )}
           </div>
           <button
-            title={mode === 'upcoming' && nextAirDate ? `Next episode airs ${airDateLabel(nextAirDate)}` : undefined}
+            title={mode === 'upcoming' && nextAirDate ? `Next episode airs ${formatAirDate(nextAirDate)}` : undefined}
             className="flex items-center gap-2.5 text-[10px] font-black text-crimson-50 uppercase tracking-[0.2em] group-hover:translate-x-2 transition-all duration-300"
           >
             <span>{actionLabel}</span>

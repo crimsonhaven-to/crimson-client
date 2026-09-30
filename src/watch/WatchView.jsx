@@ -7,24 +7,18 @@ import { fetchSubtitles, fetchSkipTimes } from './media';
 import { usePlaybackPrefs } from '../account/playbackPrefs';
 import { setWatchActivity, clearWatchActivity } from '../discordPresence';
 import { stripHtml } from '../stripHtml';
+import { formatAirDate } from '../formatAirDate';
 import WatchlistButton from '../library/WatchlistButton';
 import { useEpisodePicker } from './useEpisodePicker';
 import EpisodePicker from './EpisodePicker';
 import SourcePicker from './SourcePicker';
+import { useCompanionNudge } from '../sources/companion';
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
 
 // Waiting this long before letting the backend cache a source keeps the fastest-resolving
 // source from being cached over the one the viewer actually settled on.
 const CACHE_CONFIRM_SECONDS = 10;
-
-// The T00:00:00 suffix parses as local time; a bare 'YYYY-MM-DD' is UTC and can show the previous day.
-const formatAirDate = (iso) => {
-  if (!iso) return '';
-  const t = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(t.getTime())) return iso;
-  return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-};
 
 const WatchView = ({
   streams = [], streamLoading, activeStreamIdx, onSelectStream, onReload,
@@ -128,28 +122,8 @@ const WatchView = ({
     if (streams.length > 1) handleSelectStream((idx + 1) % streams.length);
   }, [streams, handleSelectStream]);
 
-  // Shares the home banner's dismiss key so dismissing either hides both.
-  const EXT_DISMISS_KEY = 'crimson:extBanner:dismissed';
-  const [companionActive, setCompanionActive] = useState(() => {
-    try { return !!window.CrimsonExtension?.available; } catch { return false; }
-  });
-  const [nudgeDismissed, setNudgeDismissed] = useState(() => {
-    try { return localStorage.getItem(EXT_DISMISS_KEY) === '1'; } catch { return false; }
-  });
-  useEffect(() => {
-    if (companionActive) return undefined;
-    const onReady = () => setCompanionActive(true);
-    window.addEventListener('crimson-extension-ready', onReady, { once: true });
-    const t = setTimeout(() => {
-      try { if (window.CrimsonExtension?.available) setCompanionActive(true); } catch { /* ignore */ }
-    }, 500);
-    return () => { window.removeEventListener('crimson-extension-ready', onReady); clearTimeout(t); };
-  }, [companionActive]);
-  const dismissNudge = useCallback(() => {
-    try { localStorage.setItem(EXT_DISMISS_KEY, '1'); } catch { /* ignore */ }
-    setNudgeDismissed(true);
-  }, []);
-  const showCompanionNudge = !unaired && !streamLoading && !companionActive && !nudgeDismissed;
+  const { show: companionNudge, dismiss: dismissNudge } = useCompanionNudge();
+  const showCompanionNudge = !unaired && !streamLoading && companionNudge;
 
   // Explicit expand/collapse choices for stacked source groups, kept here so they
   // survive the source list unmounting while sources rescan.

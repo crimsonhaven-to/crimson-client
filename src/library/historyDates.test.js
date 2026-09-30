@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-import { bucketOf, timeAgo, isFutureDate, airDateLabel } from './historyDates';
+import { bucketOf, timeAgo, isFutureDate } from './historyDates';
 
 // Buckets are calendar days in the viewer's zone, so every instant here is built in local time.
 const now = new Date(2026, 5, 10, 12, 0);
@@ -52,13 +52,6 @@ describe('history dates', () => {
       expect(isFutureDate('2026-06-10')).toBe(false);
       expect(isFutureDate('2026-06-11')).toBe(true);
       expect(isFutureDate(null)).toBe(false);
-    });
-  });
-
-  describe('airDateLabel', () => {
-    it('passes an unparseable date through unchanged', () => {
-      expect(airDateLabel('soon')).toBe('soon');
-      expect(airDateLabel('')).toBe('');
     });
   });
 });

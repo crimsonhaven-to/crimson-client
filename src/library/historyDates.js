@@ -37,10 +37,3 @@ export const isFutureDate = (iso) => {
   if (Number.isNaN(t.getTime())) return false;
   return startOfDay(t) > startOfDay(new Date());
 };
-
-export const airDateLabel = (iso) => {
-  if (!iso) return '';
-  const t = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(t.getTime())) return iso;
-  return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-};

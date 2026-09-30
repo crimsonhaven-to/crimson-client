@@ -1,9 +1,9 @@
 // The stores are the single source of the build, so nothing is side-loaded or
 // served from /extension/.
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Puzzle, Power, ShieldCheck, Sparkles, CheckCircle2, ExternalLink, ChevronRight } from 'lucide-react';
 import { useTitle } from '../shell/useTitle';
+import { useCompanionPresence } from '../sources/companion';
 
 const STORES = {
   chrome: {
@@ -21,32 +21,6 @@ const STORES = {
 };
 
 const isFirefox = () => typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
-
-// The companion fires a one-shot `crimson-extension-ready` at document_start, which
-// can land before mount, so seed from the global AND listen, racing a short re-check.
-function useCompanionPresence() {
-  const [present, setPresent] = useState(() => {
-    try { return Boolean(window.CrimsonExtension?.available); } catch { return false; }
-  });
-  const [version, setVersion] = useState(() => {
-    try { return window.CrimsonExtension?.version || null; } catch { return null; }
-  });
-  useEffect(() => {
-    if (present) return;
-    const sync = () => {
-      try {
-        if (window.CrimsonExtension?.available) {
-          setPresent(true);
-          setVersion(window.CrimsonExtension.version || null);
-        }
-      } catch { /* ignore */ }
-    };
-    window.addEventListener('crimson-extension-ready', sync, { once: true });
-    const t = setTimeout(sync, 400);
-    return () => { window.removeEventListener('crimson-extension-ready', sync); clearTimeout(t); };
-  }, [present]);
-  return { present, version };
-}
 
 function Step({ index, icon, title, children }) {
   return (
