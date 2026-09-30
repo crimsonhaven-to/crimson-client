@@ -1,38 +1,23 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Heart, Play, Trash2, Plus, ListPlus, X, Download, Upload, ChevronDown, Check, AlertTriangle,
-  Search, Layers, LayoutGrid, List, Film, Tv, Sparkles, ArrowDownUp, GripVertical, ListChecks,
-  Circle, CircleCheck, FolderPlus, BookOpen,
+  Heart, X, Check, AlertTriangle, Search, LayoutGrid, List, ArrowDownUp, ListChecks,
 } from 'lucide-react';
 import { useWatchlists, listLabel, DEFAULT_LIST, ALL_LIST } from './watchlists';
+import { kindOf, itemKey, overviewHref, TYPE_META, TYPE_ORDER } from './watchlistItem';
+import { useManualOrder } from './useManualOrder';
+import WatchlistCard from './WatchlistCard';
+import WatchlistTransfer from './WatchlistTransfer';
+import WatchlistTabs from './WatchlistTabs';
+import SelectionBar from './SelectionBar';
+import ListPickerDialog from './ListPickerDialog';
+import DeleteListDialog from './DeleteListDialog';
 import { useAuth } from '../account/useAuth';
 import { useTitle } from '../shell/useTitle';
 import { setWatchlistActivity, clearActivity } from '../discordPresence';
 
 const VIEW_KEY = 'crimson:watchlist-view';
 const SORT_KEY = 'crimson:watchlist-sort';
-const ORDER_KEY = 'crimson:watchlist-order'; // { [listName]: [itemKey, ...] }
-
-// Mirrors the routing. Manga rows also carry an AniList id, so media_type 'manga' must be checked first.
-const kindOf = (it) =>
-  it.media_type === 'manga' ? 'manga'
-    : it.anilist_id != null ? 'anime'
-      : it.media_type === 'movie' ? 'movie' : 'show';
-
-// Same key scheme the backend de-dupes on.
-const itemKey = (it) =>
-  it.media_type === 'manga' ? `g:${it.anilist_id}`
-    : it.anilist_id != null ? `a:${it.anilist_id}`
-      : (it.media_type === 'movie' ? `m:${it.tmdb_id}` : `t:${it.tmdb_id}`);
-
-const TYPE_META = {
-  anime: { label: 'Anime', icon: Sparkles },
-  show: { label: 'Shows', icon: Tv },
-  movie: { label: 'Movies', icon: Film },
-  manga: { label: 'Manga', icon: BookOpen },
-};
-const TYPE_ORDER = ['anime', 'show', 'movie', 'manga'];
 
 const SORTS = [
   { key: 'added', label: 'Recent' },   // server order (added_at desc)
@@ -40,156 +25,7 @@ const SORTS = [
   { key: 'manual', label: 'Manual' },
 ];
 
-const overviewHref = (it) =>
-  it.media_type === 'manga' ? `/manga/${it.anilist_id}`
-    : it.anilist_id ? `/anime/${it.anilist_id}`
-      : it.media_type === 'movie' ? `/movie/${it.tmdb_id}` : `/show/${it.tmdb_id}`;
-
-const loadOrders = () => {
-  try { return JSON.parse(localStorage.getItem(ORDER_KEY)) || {}; } catch { return {}; }
-};
-
-const ShowCard = ({
-  item, view, removable, selectMode, selected, draggable, isDragOver,
-  onOpen, onRemove, onLists, onToggleSelect, dragProps,
-}) => {
-  const kind = kindOf(item);
-  const { label: kindLabel, icon: KindIcon } = TYPE_META[kind];
-  const stop = (fn) => (e) => { e.stopPropagation(); fn(item); };
-  const handleClick = selectMode ? () => onToggleSelect(item) : onOpen;
-
-  const SelMark = selected ? CircleCheck : Circle;
-  const ring = selected
-    ? 'border-crimson-500 shadow-[0_0_0_2px_rgba(255,0,60,0.5)]'
-    : isDragOver ? 'border-crimson-400' : 'border-crimson-900/40';
-
-  if (view === 'list') {
-    return (
-      <div
-        {...dragProps}
-        onClick={handleClick}
-        className={`group relative flex items-center gap-4 p-3 pr-4 bg-crimson-950/30 backdrop-blur-md border rounded-2xl hover:border-crimson-500/50 hover:shadow-[0_10px_25px_rgba(0,0,0,0.35)] transition-[border-color,box-shadow] duration-300 cursor-pointer ${ring} ${isDragOver ? 'ring-2 ring-crimson-500/40' : ''}`}
-      >
-        {draggable && (
-          <span className="shrink-0 -ml-1 text-crimson-700 cursor-grab active:cursor-grabbing" aria-hidden="true">
-            <GripVertical className="w-4 h-4" />
-          </span>
-        )}
-        {selectMode && (
-          <SelMark className={`shrink-0 w-5 h-5 ${selected ? 'text-crimson-400' : 'text-crimson-700'}`} />
-        )}
-
-        <div className="w-12 h-16 shrink-0 relative rounded-lg overflow-hidden border border-crimson-900/50">
-          <img src={item.poster} alt={item.title} className="w-full h-full object-cover" />
-        </div>
-
-        <div className="flex-grow min-w-0">
-          <h4 className="text-sm sm:text-base font-black text-crimson-50 truncate group-hover:text-crimson-400 transition-colors tracking-tight">
-            {item.title}
-          </h4>
-          <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-600">
-            <span className="flex items-center gap-1 text-crimson-400"><KindIcon className="w-3 h-3" />{kindLabel}</span>
-            <span className="text-crimson-700 normal-case tracking-normal">· Ref {item.anilist_id || item.tmdb_id}</span>
-          </div>
-        </div>
-
-        {!selectMode && (
-          <>
-            <button
-              onClick={stop(onLists)}
-              aria-label={`Add ${item.title} to a list`}
-              className="shrink-0 p-2 rounded-full text-crimson-700 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
-            >
-              <FolderPlus className="w-3.5 h-3.5" />
-            </button>
-            {removable && (
-              <button
-                onClick={stop(onRemove)}
-                aria-label={`Remove ${item.title}`}
-                className="shrink-0 p-2 rounded-full text-crimson-700 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-            <div className="shrink-0 p-2 rounded-full bg-crimson-500 text-white shadow-[0_0_10px_rgba(255,0,60,0.5)] group-hover:scale-110 transition-transform">
-              <Play className="w-3.5 h-3.5 fill-white" />
-            </div>
-          </>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div {...dragProps} className="group relative flex flex-col">
-      <div
-        onClick={handleClick}
-        className={`aspect-[2/3] relative overflow-hidden rounded-2xl border shadow-2xl cursor-pointer transition-[border-color,box-shadow,transform] duration-500 group-hover:border-crimson-500/50 group-hover:shadow-[0_0_30px_rgba(255,0,60,0.2)] ${ring} ${isDragOver ? 'ring-2 ring-crimson-500/50 scale-[0.97]' : ''}`}
-      >
-        <img
-          src={item.poster}
-          alt={item.title}
-          className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/20 to-transparent opacity-80"></div>
-
-        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-950/80 backdrop-blur-md border border-crimson-900/60 text-[8px] font-black uppercase tracking-[0.15em] text-crimson-400">
-          <KindIcon className="w-2.5 h-2.5" />
-          {kindLabel}
-        </div>
-
-        {draggable && !selectMode && (
-          <div className="absolute top-2.5 right-2.5 p-1 rounded-md bg-crimson-950/80 border border-crimson-900/60 text-crimson-500 cursor-grab active:cursor-grabbing">
-            <GripVertical className="w-3.5 h-3.5" />
-          </div>
-        )}
-
-        {selectMode && (
-          <div className="absolute top-2.5 right-2.5">
-            <SelMark className={`w-6 h-6 drop-shadow ${selected ? 'text-crimson-400' : 'text-white/80'}`} />
-          </div>
-        )}
-
-        {!selectMode && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-crimson-950/40 backdrop-blur-[2px]">
-            <button
-              onClick={stop(onOpen)}
-              aria-label={`Open ${item.title}`}
-              className="p-4 bg-crimson-500 text-white rounded-full hover:bg-crimson-400 transform hover:scale-110 transition-all shadow-[0_10px_20px_rgba(255,0,60,0.4)]"
-            >
-              <Play className="w-6 h-6 fill-current" />
-            </button>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={stop(onLists)}
-                className="flex items-center gap-2 px-3.5 py-1.5 bg-crimson-950/80 text-[10px] font-black uppercase tracking-widest text-crimson-400 rounded-full border border-crimson-900 hover:text-white hover:border-crimson-600 transition-all"
-              >
-                <FolderPlus className="w-3.5 h-3.5" />
-                <span>Lists</span>
-              </button>
-              {removable && (
-                <button
-                  onClick={stop(onRemove)}
-                  aria-label={`Remove ${item.title}`}
-                  className="p-2 bg-crimson-950/80 text-crimson-400 rounded-full border border-crimson-900 hover:text-white hover:border-crimson-600 transition-all"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="mt-4 px-1">
-        <h4 className="text-sm font-bold text-crimson-50 line-clamp-1 group-hover:text-crimson-400 transition-colors tracking-tight">
-          {item.title}
-        </h4>
-      </div>
-    </div>
-  );
-};
-
-const FavoritesPage = () => {
+const WatchlistsPage = () => {
   const {
     items, lists, loading,
     addToList, removeFromList, toggleInList, listsForItem,
@@ -204,81 +40,21 @@ const FavoritesPage = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [view, setView] = useState(() => (localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid'));
   const [sort, setSort] = useState(() => localStorage.getItem(SORT_KEY) || 'added');
-  const [orders, setOrders] = useState(loadOrders);
-  const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState('');
   const [pendingDeleteList, setPendingDeleteList] = useState(null);
   const [listModal, setListModal] = useState(null); // { mode:'item', item } | { mode:'bulk' }
-  const [exporting, setExporting] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
-  const exportRef = useRef(null);
+  const [importMsg, setImportMsg] = useState(null); // { ok, text }
 
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState(() => new Set());
 
-  const [dragKey, setDragKey] = useState(null);
-  const [overKey, setOverKey] = useState(null);
-
-  const [importing, setImporting] = useState(false);
-  const [importOpen, setImportOpen] = useState(false);
-  const [importMsg, setImportMsg] = useState(null); // { ok, text }
-  const importRef = useRef(null);
-  const fileRef = useRef(null);
-  const importModeRef = useRef('merge');
-
   const setViewPersist = (v) => { setView(v); localStorage.setItem(VIEW_KEY, v); };
   const setSortPersist = (s) => { setSort(s); localStorage.setItem(SORT_KEY, s); };
-  const saveOrders = (o) => { setOrders(o); localStorage.setItem(ORDER_KEY, JSON.stringify(o)); };
-
-  useEffect(() => {
-    if (!exportOpen && !importOpen) return;
-    const onClick = (e) => {
-      if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false);
-      if (importRef.current && !importRef.current.contains(e.target)) setImportOpen(false);
-    };
-    document.addEventListener('mousedown', onClick);
-    return () => document.removeEventListener('mousedown', onClick);
-  }, [exportOpen, importOpen]);
 
   // Opt-in, see src/discordPresence.js.
   useEffect(() => {
     setWatchlistActivity();
     return () => clearActivity();
   }, []);
-
-  const handleExport = async (format) => {
-    setExportOpen(false);
-    setExporting(true);
-    await exportWatchlists(format);
-    setExporting(false);
-  };
-
-  // 'replace' wipes every list, so confirm before the file dialog opens.
-  const handlePickImport = (mode) => {
-    setImportOpen(false);
-    if (mode === 'replace' && !window.confirm(
-      'Replace ALL your watchlists with the contents of this file? Your current lists are deleted first. This cannot be undone.'
-    )) return;
-    importModeRef.current = mode;
-    setImportMsg(null);
-    fileRef.current?.click();
-  };
-
-  const handleImportFile = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = ''; // reset so re-selecting the same file fires onChange again
-    if (!file) return;
-    setImporting(true);
-    const res = await importWatchlists(file, importModeRef.current);
-    setImporting(false);
-    if (res.ok) {
-      const parts = [`Imported ${res.imported} item${res.imported === 1 ? '' : 's'}`];
-      if (res.skipped) parts.push(`skipped ${res.skipped}`);
-      setImportMsg({ ok: true, text: `${parts.join(', ')}.` });
-    } else {
-      setImportMsg({ ok: false, text: res.error || 'Import failed.' });
-    }
-  };
 
   const allShows = useMemo(() => {
     const map = new Map();
@@ -306,6 +82,8 @@ const FavoritesPage = () => {
 
   // If the selected list vanished (e.g. just deleted), fall back to "All" without an extra effect.
   const effectiveList = displayLists.some(l => l.name === activeList) ? activeList : ALL_LIST;
+
+  const { order, dragPropsFor, isDragOver } = useManualOrder(effectiveList);
 
   const shows = useMemo(
     () => (effectiveList === ALL_LIST ? allShows : items.filter(i => i.list_name === effectiveList)),
@@ -336,12 +114,11 @@ const FavoritesPage = () => {
     if (sort === 'title') {
       arr.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
     } else if (sort === 'manual') {
-      const ord = orders[effectiveList] || [];
-      const idx = new Map(ord.map((k, i) => [k, i]));
+      const idx = new Map((order || []).map((k, i) => [k, i]));
       arr.sort((a, b) => (idx.get(itemKey(a)) ?? Infinity) - (idx.get(itemKey(b)) ?? Infinity));
     }
     return arr;
-  }, [filteredShows, sort, orders, effectiveList]);
+  }, [filteredShows, sort, order]);
 
   const grouped = useMemo(() => {
     const map = { anime: [], show: [], movie: [], manga: [] };
@@ -352,33 +129,6 @@ const FavoritesPage = () => {
   // Drag-reorder is only safe with the full list visible (no search/type filter),
   // so a reorder always describes the complete sequence we persist.
   const canDrag = sort === 'manual' && !selectMode && effectiveType === 'all' && !q && effectiveList !== ALL_LIST;
-
-  const commitReorder = (from, to) => {
-    if (!from || !to || from === to) return;
-    const byKey = new Map(sorted.map(s => [itemKey(s), s]));
-  // Cross-kind drops would have no visible effect (sections render separately)
-  // and would only muddy the order.
-    if (kindOf(byKey.get(from)) !== kindOf(byKey.get(to))) return;
-    const seq = sorted.map(itemKey);
-    const fi = seq.indexOf(from);
-    seq.splice(fi, 1);
-    const ti = seq.indexOf(to);
-    seq.splice(ti, 0, from);
-    saveOrders({ ...orders, [effectiveList]: seq });
-  };
-
-  const dragPropsFor = (item) => {
-    if (!canDrag) return {};
-    const k = itemKey(item);
-    return {
-      draggable: true,
-      onDragStart: (e) => { setDragKey(k); e.dataTransfer.effectAllowed = 'move'; },
-      onDragEnter: () => { if (dragKey && dragKey !== k) setOverKey(k); },
-      onDragOver: (e) => e.preventDefault(),
-      onDrop: (e) => { e.preventDefault(); commitReorder(dragKey, k); setDragKey(null); setOverKey(null); },
-      onDragEnd: () => { setDragKey(null); setOverKey(null); },
-    };
-  };
 
   const toggleSelect = (item) => {
     setSelected(prev => {
@@ -416,14 +166,9 @@ const FavoritesPage = () => {
   // Drop the selection so it can't bleed across lists.
   const switchList = (name) => { setActiveList(name); setSelected(new Set()); };
 
-  const handleCreate = (e) => {
-    e.preventDefault();
-    const name = newName.trim();
-    if (!name) return;
+  const createAndOpenList = (name) => {
     createList(name);
     switchList(name);
-    setNewName('');
-    setCreating(false);
   };
 
   const confirmDeleteList = async () => {
@@ -477,76 +222,11 @@ const FavoritesPage = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            <div ref={importRef} className="relative">
-              <button
-                onClick={() => setImportOpen(o => !o)}
-                disabled={importing}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-crimson-900/60 bg-crimson-950/40 text-crimson-300 text-xs font-black uppercase tracking-widest hover:text-white hover:border-crimson-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
-              >
-                <Upload className={`w-4 h-4 ${importing ? 'animate-pulse' : ''}`} />
-                <span>{importing ? 'Importing…' : 'Import'}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${importOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {importOpen && (
-                <div className="absolute right-0 mt-2 w-52 z-20 rounded-xl border border-crimson-900/60 bg-crimson-950 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
-                  <button
-                    onClick={() => handlePickImport('merge')}
-                    className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors"
-                  >
-                    <span>Merge</span>
-                    <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Add to lists</span>
-                  </button>
-                  <button
-                    onClick={() => handlePickImport('replace')}
-                    className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors border-t border-crimson-900/40"
-                  >
-                    <span>Replace</span>
-                    <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Wipe &amp; restore</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div ref={exportRef} className="relative">
-              <button
-                onClick={() => setExportOpen(o => !o)}
-                disabled={exporting || totalCount === 0}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-crimson-900/60 bg-crimson-950/40 text-crimson-300 text-xs font-black uppercase tracking-widest hover:text-white hover:border-crimson-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
-              >
-                <Download className={`w-4 h-4 ${exporting ? 'animate-pulse' : ''}`} />
-                <span>{exporting ? 'Exporting…' : 'Export'}</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${exportOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {exportOpen && (
-                <div className="absolute right-0 mt-2 w-44 z-20 rounded-xl border border-crimson-900/60 bg-crimson-950 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
-                  <button
-                    onClick={() => handleExport('csv')}
-                    className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors"
-                  >
-                    <span>CSV</span>
-                    <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Spreadsheet</span>
-                  </button>
-                  <button
-                    onClick={() => handleExport('json')}
-                    className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors border-t border-crimson-900/40"
-                  >
-                    <span>JSON</span>
-                    <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Backup</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".csv,.json,text/csv,application/json"
-            onChange={handleImportFile}
-            className="hidden"
+          <WatchlistTransfer
+            exportWatchlists={exportWatchlists}
+            importWatchlists={importWatchlists}
+            canExport={totalCount > 0}
+            onImportMessage={setImportMsg}
           />
         </div>
 
@@ -566,77 +246,14 @@ const FavoritesPage = () => {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {displayLists.map((l) => {
-            const active = l.name === effectiveList;
-            const posters = collageByList[l.name] || [];
-            return (
-              <button
-                key={l.name}
-                onClick={() => switchList(l.name)}
-                className={`group relative overflow-hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-black uppercase tracking-widest transition-all active:scale-95 ${
-                  active
-                    ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_8px_20px_rgba(255,0,60,0.25)]'
-                    : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600'
-                }`}
-              >
-                {posters.length > 0 && (
-                  <span aria-hidden="true" className="absolute inset-0 flex pointer-events-none">
-                    {posters.map((p, i) => (
-                      <span key={i} className="flex-1 bg-cover bg-center" style={{ backgroundImage: `url(${p})` }} />
-                    ))}
-                    <span className={`absolute inset-0 ${active ? 'bg-crimson-600/80' : 'bg-crimson-950/85 group-hover:bg-crimson-950/75'} transition-colors`} />
-                  </span>
-                )}
-                <span className="relative z-10 flex items-center gap-2">
-                  {l.name === ALL_LIST && <Layers className={`w-3.5 h-3.5 ${active ? 'text-crimson-50' : 'text-crimson-500'}`} />}
-                  {l.name === DEFAULT_LIST && <Heart className={`w-3.5 h-3.5 ${active ? 'fill-white' : 'fill-crimson-700 text-crimson-500'}`} />}
-                  <span>{listLabel(l.name)}</span>
-                  <span className={`text-[10px] tabular-nums ${active ? 'text-crimson-100/90' : 'text-crimson-600'}`}>{l.count}</span>
-                </span>
-              </button>
-            );
-          })}
-
-          {creating ? (
-            <form onSubmit={handleCreate} className="inline-flex items-center gap-2">
-              <div className="relative">
-                <ListPlus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-crimson-700 pointer-events-none" />
-                <input
-                  autoFocus
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  onBlur={() => { if (!newName.trim()) setCreating(false); }}
-                  maxLength={100}
-                  placeholder="List name…"
-                  className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
-                />
-              </div>
-              <button type="submit" disabled={!newName.trim()} aria-label="Create list"
-                className="p-2 rounded-xl bg-crimson-600 text-white hover:bg-crimson-500 disabled:opacity-40 transition-all active:scale-95">
-                <Plus className="w-4 h-4" strokeWidth={3} />
-              </button>
-            </form>
-          ) : (
-            <button
-              onClick={() => setCreating(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-crimson-800/70 text-crimson-500 text-xs font-black uppercase tracking-widest hover:text-white hover:border-crimson-600 transition-all active:scale-95"
-            >
-              <Plus className="w-3.5 h-3.5" strokeWidth={3} />
-              <span>New List</span>
-            </button>
-          )}
-
-          {effectiveList !== DEFAULT_LIST && effectiveList !== ALL_LIST && (
-            <button
-              onClick={() => setPendingDeleteList(effectiveList)}
-              className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-600 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 hover:bg-crimson-900/30 transition-all active:scale-95"
-            >
-              <X className="w-3.5 h-3.5" strokeWidth={3} />
-              <span>Delete "{listLabel(effectiveList)}"</span>
-            </button>
-          )}
-        </div>
+        <WatchlistTabs
+          lists={displayLists}
+          collageByList={collageByList}
+          activeList={effectiveList}
+          onSwitch={switchList}
+          onCreate={createAndOpenList}
+          onDelete={setPendingDeleteList}
+        />
       </div>
 
       {shows.length > 0 && (
@@ -810,7 +427,7 @@ const FavoritesPage = () => {
                   {group.items.map((item) => {
                     const k = itemKey(item);
                     return (
-                      <ShowCard
+                      <WatchlistCard
                         key={k}
                         item={item}
                         view={view}
@@ -818,8 +435,8 @@ const FavoritesPage = () => {
                         selectMode={selectMode}
                         selected={selected.has(k)}
                         draggable={canDrag}
-                        isDragOver={overKey === k && dragKey !== k}
-                        dragProps={dragPropsFor(item)}
+                        isDragOver={isDragOver(k)}
+                        dragProps={canDrag ? dragPropsFor(item, sorted) : {}}
                         onOpen={() => navigate(overviewHref(item))}
                         onRemove={() => removeFromList(item, effectiveList)}
                         onLists={() => setListModal({ mode: 'item', item })}
@@ -835,148 +452,37 @@ const FavoritesPage = () => {
       )}
 
       {selectMode && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl animate-in slide-in-from-bottom-4 duration-200">
-          <div className="flex items-center gap-3 p-2.5 pl-4 rounded-2xl border border-crimson-700/50 bg-crimson-950/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
-            <span className="text-xs font-black uppercase tracking-widest text-crimson-300 tabular-nums">
-              {selected.size} selected
-            </span>
-            <button
-              onClick={selected.size === sorted.length ? clearSelection : selectAllVisible}
-              className="text-[10px] font-black uppercase tracking-widest text-crimson-600 hover:text-crimson-300 transition-colors"
-            >
-              {selected.size === sorted.length ? 'Clear' : 'Select all'}
-            </button>
-
-            <div className="flex-1" />
-
-            <button
-              onClick={() => selected.size && setListModal({ mode: 'bulk' })}
-              disabled={!selected.size}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-crimson-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-crimson-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_8px_20px_rgba(255,0,60,0.3)] transition-all active:scale-95"
-            >
-              <FolderPlus className="w-4 h-4" />
-              <span>Add to list</span>
-            </button>
-            {effectiveList !== ALL_LIST && (
-              <button
-                onClick={bulkRemove}
-                disabled={!selected.size}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-300 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Remove</span>
-              </button>
-            )}
-            <button
-              onClick={exitSelectMode}
-              aria-label="Done selecting"
-              className="p-2 rounded-xl text-crimson-600 hover:text-white hover:bg-crimson-900/50 transition-all"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <SelectionBar
+          selectedCount={selected.size}
+          allSelected={selected.size === sorted.length}
+          onToggleAll={selected.size === sorted.length ? clearSelection : selectAllVisible}
+          onAddToList={() => setListModal({ mode: 'bulk' })}
+          onRemove={effectiveList !== ALL_LIST ? bulkRemove : undefined}
+          onDone={exitSelectMode}
+        />
       )}
 
       {listModal && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setListModal(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-crimson-950 border border-crimson-900/70 rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.7)] p-7 space-y-5 animate-in zoom-in-95 duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-crimson-500/10 border border-crimson-500/30">
-                <FolderPlus className="w-6 h-6 text-crimson-400" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight leading-tight">
-                  {listModal.mode === 'bulk' ? `Add ${modalItems.length} to a list` : 'Manage lists'}
-                </h3>
-                {listModal.mode === 'item' && (
-                  <p className="text-xs text-crimson-500 font-bold truncate">{listModal.item.title}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-1.5 max-h-72 overflow-y-auto -mx-1 px-1">
-              {lists.map((l) => {
-                const inList = listModal.mode === 'item' && listsForItem(listModal.item).includes(l.name);
-                return (
-                  <button
-                    key={l.name}
-                    onClick={() => (listModal.mode === 'bulk' ? handleBulkAddToList(l.name) : handleToggleItemInList(l.name))}
-                    className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-crimson-900/50 bg-crimson-950/40 text-left hover:border-crimson-600 hover:bg-crimson-900/30 transition-all active:scale-[0.98]"
-                  >
-                    <span className="flex items-center gap-2.5 min-w-0">
-                      {l.name === DEFAULT_LIST
-                        ? <Heart className="w-4 h-4 shrink-0 text-crimson-500 fill-crimson-700" />
-                        : <ListPlus className="w-4 h-4 shrink-0 text-crimson-600" />}
-                      <span className="font-black text-sm text-crimson-100 truncate">{listLabel(l.name)}</span>
-                      <span className="text-[10px] font-black text-crimson-700 tabular-nums">{l.count}</span>
-                    </span>
-                    {listModal.mode === 'item'
-                      ? (inList
-                          ? <CircleCheck className="w-5 h-5 shrink-0 text-crimson-400" />
-                          : <Circle className="w-5 h-5 shrink-0 text-crimson-800" />)
-                      : <Plus className="w-4 h-4 shrink-0 text-crimson-500" strokeWidth={3} />}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center justify-end pt-1">
-              <button
-                onClick={() => setListModal(null)}
-                className="px-5 py-2.5 rounded-xl bg-crimson-600 text-white text-xs font-black uppercase tracking-widest hover:bg-crimson-500 shadow-[0_8px_20px_rgba(255,0,60,0.3)] transition-all active:scale-95"
-              >
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
+        <ListPickerDialog
+          mode={listModal.mode}
+          item={listModal.item}
+          bulkCount={modalItems.length}
+          lists={lists}
+          listsForItem={listsForItem}
+          onPick={listModal.mode === 'bulk' ? handleBulkAddToList : handleToggleItemInList}
+          onClose={() => setListModal(null)}
+        />
       )}
 
       {pendingDeleteList && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setPendingDeleteList(null)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-crimson-950 border border-crimson-900/70 rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.7)] p-7 space-y-5 animate-in zoom-in-95 duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-crimson-500/10 border border-crimson-500/30">
-                <AlertTriangle className="w-6 h-6 text-crimson-400" />
-              </div>
-              <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight">Delete this list?</h3>
-            </div>
-            <p className="text-sm text-crimson-300 leading-relaxed">
-              The <span className="font-black text-crimson-100">"{listLabel(pendingDeleteList)}"</span> list will be removed and its shows unbound from it. The shows themselves stay in any other lists. This cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-1">
-              <button
-                onClick={() => setPendingDeleteList(null)}
-                className="px-5 py-2.5 rounded-xl border border-crimson-900/60 text-crimson-300 text-xs font-black uppercase tracking-widest hover:text-white hover:border-crimson-600 transition-all active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteList}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-crimson-600 text-white text-xs font-black uppercase tracking-widest hover:bg-crimson-500 shadow-[0_8px_20px_rgba(255,0,60,0.3)] transition-all active:scale-95"
-              >
-                <Trash2 className="w-4 h-4" />
-                Delete List
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteListDialog
+          name={pendingDeleteList}
+          onCancel={() => setPendingDeleteList(null)}
+          onConfirm={confirmDeleteList}
+        />
       )}
     </div>
   );
 };
 
-export default FavoritesPage;
+export default WatchlistsPage;

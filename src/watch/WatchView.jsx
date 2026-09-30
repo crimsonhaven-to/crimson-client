@@ -1,14 +1,16 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers, Puzzle, X, RefreshCw, Film, Calendar, Play, ListVideo } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CalendarClock, Puzzle, X, RefreshCw } from 'lucide-react';
 import { API_BASE_URL } from '../api/config';
 import { apiFetch } from '../api/client';
 import { fetchSubtitles, fetchSkipTimes } from './media';
 import { usePlaybackPrefs } from '../account/playbackPrefs';
-import { groupStreams, streamVariantLabel } from './streamUtils';
 import { setWatchActivity, clearWatchActivity } from '../discordPresence';
 import { stripHtml } from '../stripHtml';
 import WatchlistButton from '../library/WatchlistButton';
+import { useEpisodePicker } from './useEpisodePicker';
+import EpisodePicker from './EpisodePicker';
+import SourcePicker from './SourcePicker';
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
 
@@ -22,137 +24,6 @@ const formatAirDate = (iso) => {
   const t = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(t.getTime())) return iso;
   return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-};
-
-const StreamTile = ({ stream, label, active, nested = false, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full text-left rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
-      nested ? 'p-3' : 'p-4'
-    } ${
-      active
-        ? 'bg-crimson-600 text-white font-black border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
-        : 'bg-crimson-950/60 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-600'
-    }`}
-  >
-    <div className="flex flex-col min-w-0 pr-4">
-      <div className="flex items-center gap-2 mb-1.5 leading-none">
-        <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
-          active ? 'bg-white/20 border-white/20 text-crimson-50' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
-        }`}>
-          {stream.type}
-        </span>
-        {stream.language && (
-          <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md ${
-            active ? 'bg-crimson-950/40 text-crimson-50' : 'bg-crimson-900 text-crimson-400'
-          }`}>
-            {stream.language}
-          </span>
-        )}
-      </div>
-      <span className={`font-black tracking-wide text-crimson-50 truncate ${nested ? 'text-[11px]' : 'text-xs'}`}>
-        {label}
-      </span>
-    </div>
-    <ChevronRight className={`w-4 h-4 transition-transform duration-300 group-hover:translate-x-1 ${active ? 'text-crimson-50' : 'text-crimson-800'}`} />
-  </button>
-);
-
-const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle }) => {
-  const containsActive = group.items.some((it) => it.idx === activeStreamIdx);
-  const count = group.items.length;
-  return (
-    <div className={`relative ${!open ? 'mb-2' : ''}`}>
-      {!open && (
-        <>
-          <div className="absolute -bottom-1.5 inset-x-3 h-full rounded-2xl bg-crimson-950/40 border border-crimson-900/40" />
-          <div className="absolute -bottom-3 inset-x-6 h-full rounded-2xl bg-crimson-950/25 border border-crimson-900/30" />
-        </>
-      )}
-      <button
-        onClick={onToggle}
-        className={`relative w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${
-          containsActive
-            ? 'bg-crimson-600/90 text-crimson-50 border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
-            : 'bg-crimson-950/70 text-crimson-300 border-crimson-900/60 hover:bg-crimson-900/20 hover:border-crimson-600'
-        }`}
-      >
-        <div className="flex flex-col min-w-0 pr-4">
-          <div className="flex items-center gap-2 mb-1.5 leading-none">
-            <span className={`flex items-center gap-1 text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
-              containsActive ? 'bg-white/20 border-white/20 text-crimson-50' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
-            }`}>
-              <Layers className="w-2.5 h-2.5" /> {count} sources
-            </span>
-          </div>
-          <span className="text-xs font-black tracking-wide text-crimson-50 truncate">{group.label}</span>
-        </div>
-        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${containsActive ? 'text-crimson-50' : 'text-crimson-700'}`} />
-      </button>
-      {open && (
-        <div className="mt-2 pl-3 ml-1.5 border-l border-crimson-900/50 space-y-2 animate-in slide-in-from-top-1 fade-in duration-300">
-          {group.items.map(({ stream, idx }) => (
-            <StreamTile
-              key={idx}
-              stream={stream}
-              label={streamVariantLabel(stream)}
-              active={activeStreamIdx === idx}
-              nested
-              onClick={() => onSelectStream(idx)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-const PickerEpisodeCard = ({ ep, active, onSelect }) => {
-  const hasTitle = ep.title && ep.title !== `Episode ${ep.episode_number}`;
-  return (
-    <button
-      onClick={onSelect}
-      className={`group flex gap-3 sm:gap-4 text-left p-2.5 sm:p-3 rounded-2xl border transition-all duration-300 ${
-        active
-          ? 'bg-crimson-600/15 border-crimson-500/60 shadow-[0_0_25px_rgba(255,0,60,0.15)]'
-          : 'bg-crimson-950/30 border-crimson-900/40 hover:bg-crimson-900/20 hover:border-crimson-500/50 hover:shadow-[0_0_20px_rgba(255,0,60,0.1)]'
-      }`}
-    >
-      <div className="relative w-32 sm:w-44 aspect-video flex-shrink-0 rounded-xl overflow-hidden bg-crimson-900/40 shadow-inner">
-        {ep.thumbnail ? (
-          <img src={ep.thumbnail} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-crimson-800"><Film className="w-8 h-8 opacity-20" /></div>
-        )}
-        <div className="absolute inset-0 flex items-center justify-center bg-crimson-950/60 opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <div className="bg-crimson-500 p-2.5 rounded-full shadow-[0_0_15px_rgba(255,0,60,0.5)] transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-            <Play className="w-5 h-5 text-white fill-white" />
-          </div>
-        </div>
-        <span className="absolute top-2 left-2 bg-crimson-950/90 text-crimson-400 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border border-crimson-800/50 backdrop-blur-md">
-          E{ep.episode_number}
-        </span>
-        {active && (
-          <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-600 text-[8px] font-black uppercase tracking-widest text-white shadow-[0_0_10px_rgba(255,0,60,0.6)]">
-            <span className="w-1 h-1 rounded-full bg-white animate-pulse" /> Now
-          </span>
-        )}
-      </div>
-      <div className="flex flex-col min-w-0 py-1">
-        <h4 className={`text-sm sm:text-base font-bold transition-colors line-clamp-1 tracking-tight ${active ? 'text-crimson-300' : 'text-crimson-50 group-hover:text-crimson-400'}`}>
-          {hasTitle ? ep.title : `Episode ${ep.episode_number}`}
-        </h4>
-        {ep.air_date && (
-          <span className="flex items-center gap-1 text-[10px] text-crimson-600 font-black uppercase tracking-widest mt-1 opacity-80">
-            <Calendar className="w-3 h-3" /> {ep.air_date}
-          </span>
-        )}
-        {ep.overview && (
-          <p className="text-xs text-crimson-200/50 leading-relaxed line-clamp-2 mt-2 font-medium">{ep.overview}</p>
-        )}
-      </div>
-    </button>
-  );
 };
 
 const WatchView = ({
@@ -228,55 +99,10 @@ const WatchView = ({
   const playerStream = attachedPlay?.stream || null;
   const playerKey = attachedPlay?.key ?? null;
 
-  // Lives inside the player so episodes can be switched in fullscreen. Other seasons'
-  // episode lists are fetched lazily on first expand.
-  const [pickerSeason, setPickerSeason] = useState(currentSeason);
-  const [episodesBySeason, setEpisodesBySeason] = useState({});
-  const [pickerLoading, setPickerLoading] = useState(false);
-
-  useEffect(() => { setPickerSeason(currentSeason); }, [currentSeason]);
-
-  useEffect(() => {
-    if (episodesList.length) setEpisodesBySeason((m) => ({ ...m, [currentSeason]: episodesList }));
-  }, [currentSeason, episodesList]);
-
-  useEffect(() => {
-    if (isMovie || pickerSeason == null || episodesBySeason[pickerSeason]) return undefined;
-    const season = availableSeasons.find((s) => s.season_number === pickerSeason);
-    if (!season?.tmdb_id) return undefined;
-    let cancelled = false;
-    setPickerLoading(true);
-    apiFetch(`/info/${season.tmdb_id}?season=${season.tmdb_season}`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (cancelled || !data) return;
-        const list = Array.isArray(data.episodes_list) ? data.episodes_list : [];
-        setEpisodesBySeason((m) => ({ ...m, [pickerSeason]: list }));
-      })
-      .catch(() => { /* the panel shows an empty state on failure */ })
-      .finally(() => { if (!cancelled) setPickerLoading(false); });
-    return () => { cancelled = true; };
-  }, [isMovie, pickerSeason, availableSeasons, episodesBySeason]);
-
-  // Without onSelectEpisode, fall back to an in-season change so a click never dead-ends.
-  const handlePickEpisode = useCallback((seasonNumber, episodeNumber) => {
-    if (seasonNumber === currentSeason) onEpisodeChange?.(episodeNumber);
-    else if (onSelectEpisode) onSelectEpisode(seasonNumber, episodeNumber);
-    else onEpisodeChange?.(episodeNumber);
-  }, [currentSeason, onEpisodeChange, onSelectEpisode]);
-
-  const episodePicker = !isMovie && (availableSeasons.length > 0 || episodesList.length > 0)
-    ? {
-        seasons: availableSeasons,
-        currentSeason,
-        currentEpisode,
-        expandedSeason: pickerSeason,
-        onExpandSeason: setPickerSeason,
-        episodes: episodesBySeason[pickerSeason] || [],
-        episodesLoading: pickerLoading && !episodesBySeason[pickerSeason],
-        onSelectEpisode: handlePickEpisode,
-      }
-    : null;
+  const episodePicker = useEpisodePicker({
+    isMovie, currentSeason, currentEpisode, episodesList, availableSeasons,
+    onEpisodeChange, onSelectEpisode,
+  });
 
   const tmdbId = metadata?.tmdb_id;
 
@@ -325,8 +151,8 @@ const WatchView = ({
   }, []);
   const showCompanionNudge = !unaired && !streamLoading && !companionActive && !nudgeDismissed;
 
-  // Only explicit expand/collapse choices; unset groups are open iff they hold the active source.
-  const sourceGroups = useMemo(() => groupStreams(streams), [streams]);
+  // Explicit expand/collapse choices for stacked source groups, kept here so they
+  // survive the source list unmounting while sources rescan.
   const [openGroups, setOpenGroups] = useState({});
 
   // OpenSubtitles tracks are per title, not per source, so they're fetched here and
@@ -563,79 +389,7 @@ const WatchView = ({
           </div>
         </div>
 
-        {/* Season chips only browse; the episode card is what navigates. */}
-        {!isMovie && episodePicker && (
-        <div className="space-y-6">
-          {episodePicker.seasons.length > 1 && (
-            <div className="p-4 sm:p-5 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl flex items-center gap-4 overflow-x-auto no-scrollbar backdrop-blur-sm">
-              <span className="text-[10px] font-black uppercase text-crimson-700 tracking-[0.3em] whitespace-nowrap pl-2">Archives</span>
-              <div className="flex gap-2">
-                {episodePicker.seasons.map((season) => {
-                  const active = episodePicker.expandedSeason === season.season_number;
-                  const playing = episodePicker.currentSeason === season.season_number;
-                  return (
-                    <button
-                      key={season.season_number}
-                      onClick={() => episodePicker.onExpandSeason(season.season_number)}
-                      className={`px-5 py-2.5 rounded-xl text-[11px] font-black border transition-all duration-300 whitespace-nowrap uppercase tracking-widest ${
-                        active
-                          ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.2)]'
-                          : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-400 hover:border-crimson-600 hover:bg-crimson-900/30'
-                      }`}
-                    >
-                      Season {season.season_number}
-                      {playing && <span className="ml-2 inline-block w-1.5 h-1.5 rounded-full bg-crimson-300 shadow-[0_0_6px_#ff003c] align-middle" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="p-6 sm:p-10 bg-crimson-950/30 border border-crimson-900/30 rounded-[2.5rem] space-y-8 backdrop-blur-sm shadow-2xl">
-            <div className="flex items-center gap-4">
-              <h3 className="text-xl font-black text-crimson-50 flex items-center gap-3 uppercase tracking-tighter whitespace-nowrap">
-                <ListVideo className="w-6 h-6 text-crimson-500" /> Manifest Segments
-                {episodePicker.seasons.length > 1 && (
-                  <span className="text-[11px] font-black uppercase tracking-widest text-crimson-600 opacity-80">· Season {episodePicker.expandedSeason}</span>
-                )}
-              </h3>
-              <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
-              {!episodePicker.episodesLoading && episodePicker.episodes.length > 0 && (
-                <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-600 whitespace-nowrap opacity-80">
-                  <Film className="w-3 h-3" /> {episodePicker.episodes.length} segments
-                </span>
-              )}
-            </div>
-
-            {episodePicker.episodesLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <div key={n} className="h-28 bg-crimson-950/40 animate-pulse rounded-2xl border border-crimson-900/30" />
-                ))}
-              </div>
-            ) : episodePicker.episodes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {episodePicker.episodes.map((ep) => (
-                  <PickerEpisodeCard
-                    key={ep.episode_number}
-                    ep={ep}
-                    active={episodePicker.expandedSeason === episodePicker.currentSeason && ep.episode_number === episodePicker.currentEpisode}
-                    onSelect={() => episodePicker.onSelectEpisode(episodePicker.expandedSeason, ep.episode_number)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="py-16 text-center space-y-4">
-                <div className="w-12 h-12 mx-auto grid place-items-center rounded-full border-2 border-dashed border-crimson-900/50">
-                  <Film className="w-6 h-6 text-crimson-900" />
-                </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-crimson-700 italic">No segment data recorded for this season.</p>
-              </div>
-            )}
-          </div>
-        </div>
-        )}
+        {!isMovie && episodePicker && <EpisodePicker {...episodePicker} />}
       </div>
 
       <div className="lg:col-span-1 space-y-6">
@@ -683,32 +437,13 @@ const WatchView = ({
                 <div key={n} className="h-16 bg-crimson-950/40 animate-pulse rounded-2xl border border-crimson-900/30"></div>
               ))
             ) : streams.length > 0 ? (
-              sourceGroups.map((group) => {
-                if (!group.stacked) {
-                  const { stream, idx } = group.items[0];
-                  return (
-                    <StreamTile
-                      key={group.key}
-                      stream={stream}
-                      label={stream.source}
-                      active={activeStreamIdx === idx}
-                      onClick={() => handleSelectStream(idx)}
-                    />
-                  );
-                }
-                const containsActive = group.items.some((it) => it.idx === activeStreamIdx);
-                const open = group.key in openGroups ? openGroups[group.key] : containsActive;
-                return (
-                  <SourceGroup
-                    key={group.key}
-                    group={group}
-                    activeStreamIdx={activeStreamIdx}
-                    onSelectStream={handleSelectStream}
-                    open={open}
-                    onToggle={() => setOpenGroups((m) => ({ ...m, [group.key]: !open }))}
-                  />
-                );
-              })
+              <SourcePicker
+                streams={streams}
+                activeStreamIdx={activeStreamIdx}
+                onSelectStream={handleSelectStream}
+                openGroups={openGroups}
+                onOpenGroupsChange={setOpenGroups}
+              />
             ) : (
               <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-800 italic">Zero transport nodes active</p>
