@@ -1,18 +1,12 @@
-# Local / single-host run (use docker-stack.yml for Swarm deployments).
-#
-#   docker compose up --build
-#
+# One host. docker-stack.yml is the Swarm deployment.
 services:
   frontend:
     image: ${CRIMSON_IMAGE:-reallordraymond/crimson-client:latest}
     build:
       context: .
       args:
-        # Override the API base URL baked in at build time if needed.
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
-        # Origin for social-embed (Open Graph) URLs; empty = production default.
         VITE_SITE_URL: ${VITE_SITE_URL:-}
-        # Deployment-specific copy (see src/hooks.js); empty = client defaults.
         VITE_HOSTED_IN: ${VITE_HOSTED_IN:-}
         VITE_DMCA_MAIL: ${VITE_DMCA_MAIL:-}
     ports:

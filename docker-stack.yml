@@ -1,30 +1,17 @@
-# Docker Swarm stack for the Crimsonhaven client.
-#
-# Deployed by CI (.gitlab-ci.yml) on a v* tag via
-#   CRIMSON_IMAGE=registry.ramon.moe/crimsonhaven-to/crimson-client:<tag> \
-#   docker stack deploy --with-registry-auth -c docker-stack.yml crimson-client
-# (the image is PRIVATE; --with-registry-auth ships the manager's GHCR read
-# login to every node). The stack name MUST stay 'crimson-client'.
-#
-# Load balancing is handled by Swarm's ingress routing mesh: the published port
-# below is answered by any node and round-robined across healthy replicas.
-# Load balancing is handled by Swarm's ingress routing mesh: the published port
-# below is answered by any node and round-robined across healthy replicas.
+# Production Swarm stack, rolled by CI on release. The image is private, so it is
+# deployed with --with-registry-auth, and the stack name must stay crimson-client.
 version: "3.8"
 
 services:
   frontend:
     image: ${CRIMSON_IMAGE:-registry.ramon.moe/crimsonhaven-to/crimson-client:latest}
     ports:
-      # Ingress (routing mesh) => built-in L4 load balancing across replicas.
-      # Published port MUST match what the TLS reverse proxy forwards to (8800).
+      # Must match the port the TLS reverse proxy forwards to.
       - target: 80
         published: 8800
         protocol: tcp
         mode: ingress
 
-    # Container-level probe (mirrors the Dockerfile HEALTHCHECK) so Swarm only
-    # routes to and counts replicas that actually serve traffic.
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/healthz"]
       interval: 30s
@@ -38,14 +25,12 @@ services:
       mode: replicated
       replicas: 3
 
-      # Self-healing: Swarm reschedules replicas that exit or fail health checks.
       restart_policy:
         condition: any
         delay: 5s
         max_attempts: 0
         window: 30s
 
-      # Zero-downtime rolling updates; roll back automatically on failure.
       update_config:
         parallelism: 1
         delay: 10s
@@ -67,7 +52,6 @@ services:
           cpus: "0.05"
           memory: 32M
 
-      # Spread replicas across nodes for resilience (best-effort on single-node).
       placement:
         max_replicas_per_node: 2
 
