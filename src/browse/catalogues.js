@@ -58,7 +58,6 @@ export const CATALOGUE_SORTS = [
   { value: 'newest', label: 'Newest' },
   { value: 'title', label: 'A-Z' },
 ];
-export const MANGA_SORTS = CATALOGUE_SORTS;
 
 // The accumulated list is memCached so returning to the hub restores how far you
 // had scrolled.

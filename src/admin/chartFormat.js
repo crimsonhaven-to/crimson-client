@@ -17,7 +17,10 @@ export const SERIES_COLORS = [
 
 export const colorFor = (index) => SERIES_COLORS[index % SERIES_COLORS.length];
 
-export const formatBytes = (n) => {
+// Unlike the app-wide formatBytes: whole numbers from 100 up so tick labels stay
+// narrow, and anything missing or non-finite reads as 0 B because a chart axis has no
+// place for a '-'.
+export const formatBytesCompact = (n) => {
   if (n == null || !Number.isFinite(n) || n <= 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let v = n;
@@ -56,7 +59,7 @@ export const formatValue = (unit, v) => {
       return `${pct > 0 && pct < 10 ? pct.toFixed(1) : Math.round(pct)}%`;
     }
     case 'seconds': return formatSeconds(v);
-    case 'bytes': return formatBytes(v);
+    case 'bytes': return formatBytesCompact(v);
     case 'rps': return `${formatNumber(v)}/s`;
     default: return formatNumber(v);
   }

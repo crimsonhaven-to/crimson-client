@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 
 import { adminApi } from './api';
+import { formatBytesCompact, formatSeconds } from './chartFormat';
 import MetricsHistory from './MetricsHistory';
 import { StatCard } from './ui';
 import {
@@ -15,24 +16,13 @@ import {
   histogramQuantile, histogramCount, outcomeRatio,
 } from './promParse';
 
-const formatBytes = (n) => {
-  if (!n || n < 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let v = n;
-  let i = 0;
-  while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; }
-  return `${v.toFixed(v >= 100 || i === 0 ? 0 : 1)} ${units[i]}`;
-};
-
 const fmtInt = (n) => (n == null ? null : Math.round(n).toLocaleString());
 
 // Infinity means the quantile landed in the open-ended +Inf bucket.
 const fmtSeconds = (s) => {
   if (s == null) return null;
   if (!Number.isFinite(s)) return 'off the scale';
-  if (s < 1) return `${Math.round(s * 1000)} ms`;
-  if (s < 60) return `${s.toFixed(s < 10 ? 2 : 1)} s`;
-  return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
+  return formatSeconds(s);
 };
 
 const fmtPct = (r) => (r == null ? null : `${(r * 100).toFixed(r >= 0.995 || r === 0 ? 0 : 1)}%`);
@@ -376,7 +366,7 @@ function LiveSnapshot({ notify }) {
       <Section icon={Cpu} title="Replica process" note="from /proc, so absent outside Linux">
         <Facts rows={[
           ['Uptime', uptime],
-          ['Resident memory', rss != null ? formatBytes(rss) : null],
+          ['Resident memory', rss != null ? formatBytesCompact(rss) : null],
           ['CPU seconds', cpu != null ? cpu.toFixed(1) : null],
           ['Open file descriptors', fmtInt(fds)],
         ]} />

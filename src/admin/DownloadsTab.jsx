@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 
 import { adminApi } from './api';
-import { formatBytes } from './format';
+import { formatBytes } from '../formatBytes';
 import { StatCard } from './ui';
 
 const STATUS_STYLES = {

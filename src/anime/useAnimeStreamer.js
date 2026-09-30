@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../sources/clientSources';
 import { apiFetch } from '../api/client';
+import { streamWatchNdjson } from '../api/ndjson';
 import { getPlaybackPrefs } from '../account/playbackPrefs';
 import { mergeStreamLine, pickBestIdx } from '../watch/streamMerge';
 
@@ -260,30 +261,10 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
     const consumeStream = async () => {
       try {
-        const res = await apiFetch(`/watch/${anilistIdToUse}/${currentEpisode}`, {
+        await streamWatchNdjson(`/watch/${anilistIdToUse}/${currentEpisode}`, {
           signal: controller.signal,
-          headers: { Accept: 'application/x-ndjson' },
+          onLine: handleLine,
         });
-        if (!res.ok || !res.body) throw new Error('Could not resolve streaming sources.');
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buffer += decoder.decode(value, { stream: true });
-
-          let newlineIdx;
-          while ((newlineIdx = buffer.indexOf('\n')) !== -1) {
-            const line = buffer.slice(0, newlineIdx);
-            buffer = buffer.slice(newlineIdx + 1);
-            handleLine(line);
-          }
-        }
-        if (buffer.trim()) handleLine(buffer);
-
         setStreamLoading(false);
       } catch (err) {
         if (err.name === 'AbortError') return;

@@ -1,6 +1,6 @@
 import { CircleCheck, Download, Loader2 } from 'lucide-react';
 
-import { formatBytes } from '../admin/format';
+import { formatBytes } from '../formatBytes';
 import { downloadPlaylist, isDownloaded, removeDownload, useDownloads } from './downloads';
 import { supported } from './trackStore';
 

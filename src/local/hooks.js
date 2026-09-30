@@ -113,11 +113,6 @@ export function useLocalStreamer(token) {
   const [activeStreamIdx, setActiveStreamIdx] = useState(0);
 
   const streamsRef = useRef([]);
-  const userPickedRef = useRef(false);
-  const selectStream = useCallback((idx) => {
-    userPickedRef.current = true;
-    setActiveStreamIdx(idx);
-  }, []);
 
   const [reloadNonce, setReloadNonce] = useState(0);
   const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
@@ -129,7 +124,6 @@ export function useLocalStreamer(token) {
     setStreamData(null);
     setActiveStreamIdx(0);
     streamsRef.current = [];
-    userPickedRef.current = false;
 
     const handleLine = (line) => {
       const trimmed = line.trim();
@@ -165,5 +159,5 @@ export function useLocalStreamer(token) {
     return () => controller.abort();
   }, [token, reloadNonce]);
 
-  return { streamData, streamLoading, activeStreamIdx, selectStream, reloadStreams };
+  return { streamData, streamLoading, activeStreamIdx, selectStream: setActiveStreamIdx, reloadStreams };
 }

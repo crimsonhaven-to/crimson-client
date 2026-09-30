@@ -37,7 +37,7 @@ async function loadOverview(anilistId) {
   return data;
 }
 
-async function loadPages(anilistId, chapterId, clientResolved, dataSaver = false) {
+async function loadPages(anilistId, chapterId, clientResolved) {
   if (!clientResolved) {
     const res = await apiFetch(`/read/${anilistId}/${encodeURIComponent(chapterId)}`);
     if (res.ok) {
@@ -48,7 +48,7 @@ async function loadPages(anilistId, chapterId, clientResolved, dataSaver = false
     // 404 means no server-side provider, so resolve in the browser.
   }
   if (clientMangaEnabled()) {
-    const pages = await resolveMangaPages(chapterId, dataSaver);
+    const pages = await resolveMangaPages(chapterId);
     if (pages.length) return pages;
   }
   throw new Error('Chapter pages unavailable');

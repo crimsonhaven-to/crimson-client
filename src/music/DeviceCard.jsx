@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Smartphone } from 'lucide-react';
 
-import { formatBytes } from '../admin/format';
+import { formatBytes } from '../formatBytes';
 import { forgetDownloads, useDownloads } from './downloads';
 import { PRELOAD_CHOICES, preloadCount, setPreloadCount } from './preload';
 import { supported } from './trackStore';

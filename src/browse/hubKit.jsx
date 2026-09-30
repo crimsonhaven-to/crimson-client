@@ -335,7 +335,7 @@ export function PosterBrowseHub({
     [items, searchTerm, genre, sort],
   );
   // Adjusting state during render (not in an effect) avoids an extra render pass.
-  const filterSig = `${searchTerm} ${genre} ${sort} ${pageSize}`;
+  const filterSig = `${searchTerm}\u0000${genre}\u0000${sort}\u0000${pageSize}`;
   const [prevSig, setPrevSig] = useState(filterSig);
   if (filterSig !== prevSig) {
     setPrevSig(filterSig);
