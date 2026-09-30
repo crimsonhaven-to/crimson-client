@@ -1,7 +1,3 @@
-// The anime watch page's search + multi-season + progressive-stream state machine.
-// The anime surface is priority 1 and deliberately keeps its own inline NDJSON
-// reader (the show/movie streamers share ./ndjson instead). Lifted verbatim from
-// hooks.js.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../clientSources';
@@ -10,53 +6,41 @@ import { getPlaybackPrefs } from './playbackPrefs';
 import { mergeStreamLine, pickBestIdx } from './streamMerge';
 
 export function useAnimeStreamer(externalProps = {}) {
-  // Search & Autocomplete state
   const [queryName, setQueryName] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Trackers
   const [selectedAnilistId, setSelectedAnilistId] = useState(null);
   const [currentSeason, setCurrentSeason] = useState(1);
   const [currentEpisode, setCurrentEpisode] = useState(1);
   const [activeStreamIdx, setActiveStreamIdx] = useState(0);
 
-  // Mirror of the streams array (so we can pick the best source synchronously as
-  // each one arrives) + whether the user has manually chosen a source (so an
-  // auto-upgrade to a preferred source never overrides an explicit pick).
+  // streamsRef lets the best source be picked synchronously as each arrives;
+  // userPickedRef stops an auto-upgrade from overriding an explicit pick.
   const streamsRef = useRef([]);
   const userPickedRef = useRef(false);
 
-  // Manual source selection from the sidebar — pins the choice so later-arriving
-  // preferred sources don't yank it away.
   const selectStream = useCallback((idx) => {
     userPickedRef.current = true;
     setActiveStreamIdx(idx);
   }, []);
 
 
-  // Multi-season support
   const [availableSeasons, setAvailableSeasons] = useState([]);
   const [availableExtras, setAvailableExtras] = useState([]);
   const [seasonGroups, setSeasonGroups] = useState(null);
   const [currentSeasonAnilistId, setCurrentSeasonAnilistId] = useState(null);
 
-  // Dynamic state loaders
   const [animeMetadata, setAnimeMetadata] = useState(null);
   const [streamData, setStreamData] = useState(null);
   const [metaLoading, setMetaLoading] = useState(false);
   const [streamLoading, setStreamLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
-  // Set (to { airDate }) when the backend reports the episode hasn't aired yet, so
-  // the watch UI shows a "not yet aired" notice instead of resolving zero sources.
   const [unaired, setUnaired] = useState(null);
 
-  // Bumping this re-runs the stream-resolution effect (a manual "rescan sources"),
-  // re-resolving the current episode from scratch — for when every source is dead.
   const [reloadNonce, setReloadNonce] = useState(0);
   const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
 
-  // ---------- Helper: fetch search suggestions ----------
   const fetchSuggestions = useCallback(async (query) => {
     if (!query || query.trim().length < 3) return;
     try {
@@ -77,7 +61,6 @@ export function useAnimeStreamer(externalProps = {}) {
     }
   }, []);
 
-  // Debounce search input
   useEffect(() => {
     if (queryName.trim().length >= 3) {
       const delayDebounceFn = setTimeout(() => {
@@ -90,7 +73,6 @@ export function useAnimeStreamer(externalProps = {}) {
     }
   }, [queryName, fetchSuggestions]);
 
-  // ---------- Helper: fetch available seasons for an anime ----------
 const fetchAvailableSeasons = useCallback(async (anilistId) => {
     try {
         const res = await apiFetch(`/seasons/${anilistId}`);
@@ -99,13 +81,10 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
 
         if (data.success && data.seasons) {
             setAvailableSeasons(data.seasons);
-            // The specials/OVAs/films of the same show. Needed here (not just on
-            // the overview page) because a viewer can land on an extra's watch URL
-            // directly, and the discovery sources have to be told which item
-            // inside the show they are looking for. See extraTitle below.
+            // A viewer can land on an extra's watch URL directly, and the discovery
+            // sources need to know which extra to look for (see extraTitle below).
             setAvailableExtras(data.extras || []);
             let title = data.title;
-            // If title is missing or "Unknown Anime", try to get it from first season's metadata
             if ((!title || title === "Unknown Anime") && data.seasons.length > 0) {
                 const firstSeason = data.seasons[0];
                 const metaRes = await apiFetch(`/info/${firstSeason.tmdb_id}?season=${firstSeason.tmdb_season}`);
@@ -128,7 +107,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     }
 }, []);
 
-  // ---------- Core: initialise everything from anilistId, season, episode ----------
   const initializeFromIds = useCallback(async (anilistId, seasonNumber = 1, episodeNumber = 1) => {
     setMetaLoading(true);
     setApiError(null);
@@ -138,23 +116,17 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     setStreamData(null);
 
     try {
-      // 1. Fetch available seasons
       const seasons = await fetchAvailableSeasons(anilistId);
 
-      // 2. Find the requested season (or fallback to first)
       let targetSeason = seasons.find(s => s.season_number === seasonNumber);
       if (!targetSeason && seasons.length) targetSeason = seasons[0];
       if (!targetSeason) throw new Error('No season data found for this anime');
 
-      // An anilist_id that matches none of the numbered seasons is an extra
-      // (special/OVA/movie). Those have no TMDB season, so we stream them
-      // directly through the 2-segment /watch/{anilist_id}/{episode} route by
-      // pinning selectedAnilistId to the requested id (the show's numbered
-      // seasons are still shown for metadata/context).
+      // An id matching no numbered season is an extra (special/OVA/film). Extras
+      // have no TMDB season, so they stream by their own anilist_id.
       const requestedId = parseInt(anilistId);
       const isExtra = seasons.length > 0 && !seasons.some(s => s.anilist_id === requestedId);
 
-      // 3. Fetch metadata for that season using tmdb_id + tmdb_season
       const res = await apiFetch(`/info/${targetSeason.tmdb_id}?season=${targetSeason.tmdb_season}`);
       if (!res.ok) throw new Error(`Metadata fetch failed: ${res.status}`);
       const data = await res.json();
@@ -178,7 +150,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     }
   }, [fetchAvailableSeasons]);
 
-  // If external initial props are provided, run initialisation once on mount
   useEffect(() => {
     if (externalProps.initialAnilistId) {
       initializeFromIds(
@@ -188,9 +159,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // only on mount, externalProps changes are ignored intentionally
+  }, []); // later externalProps changes are ignored on purpose
 
-  // ---------- Handle selection from search or trending (router-aware) ----------
   const handleSelectSuggestion = async (suggestion, navigateCallback) => {
     const displayTitle = suggestion.title || suggestion.name || "Selected Anime";
     setQueryName(displayTitle);
@@ -213,7 +183,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     }
   };
 
-  // ---------- Update season manually (used by watch page) ----------
   const updateSeason = useCallback(async (seasonNumber) => {
     if (!availableSeasons.length) return;
 
@@ -242,16 +211,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     }
   }, [availableSeasons]);
 
-  // NOTE: metadata for a season is fetched by initializeFromIds (on mount / URL
-  // change) and by updateSeason (when the user switches season). A previous
-  // effect here re-fetched /info on every currentSeason change too, which simply
-  // duplicated those requests — removed so each season switch hits /info once.
-
-  // ---------- Stream sources progressively (NDJSON) when anilistId + episode changes ----------
-  // The backend now streams one JSON object per line: a `meta` line first, then a
-  // `stream` line the instant each scraper resolves, then a final `done` line.
-  // We read the body incrementally and append sources as they land instead of
-  // waiting for a single aggregated JSON blob.
   useEffect(() => {
     const anilistIdToUse = currentSeasonAnilistId || selectedAnilistId;
     if (!anilistIdToUse) return;
@@ -265,12 +224,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     streamsRef.current = [];
     userPickedRef.current = false;
 
-    // When the client engine is on, an anime source may resolve both locally and on
-    // the backend. Dedup by (source, language) and PREFER the local line: it streams
-    // straight from the CDN (token minted from the viewer's own ASN), so it
-    // supersedes a backend duplicate even if the backend arrived first. Guarded by
-    // clientSourcesEnabled() so default behavior is untouched when the engine is off.
-    //   key -> { idx, origin: 'local' | 'backend' }
     const dedup = new Map();
 
     const handleLine = (line, origin = 'backend') => {
@@ -285,19 +238,11 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       }
 
       if (msg.type === 'unaired') {
-        // Episode is dated in the future — no scraping happened server-side. Show
-        // the "coming soon" state instead of an empty sources list.
         setUnaired({ airDate: msg.air_date });
         setStreamLoading(false);
       } else if (msg.type === 'meta') {
-        // Initialise the container as soon as metadata flushes (before any scraper).
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        // Fold the resolved source into the list: prefer-local dedup + append (see
-        // ./streamMerge, pinned by streamMerge.test.js), then auto-select the most
-        // preferred source unless the user has already picked one manually. Ranking
-        // is purely the viewer's language/dub-sub preference; ties fall back to
-        // arrival order (see streamRank).
         const { streams, changed, appended } = mergeStreamLine(
           { streams: streamsRef.current, dedup }, msg, origin,
           { enabled: clientSourcesEnabled() },
@@ -307,7 +252,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
           setStreamData((prev) => ({ ...(prev || {}), streams }));
           if (!userPickedRef.current) setActiveStreamIdx(pickBestIdx(streams, getPlaybackPrefs()));
         }
-        // First playable source is in — drop the loading veil so it renders immediately.
         if (appended) setStreamLoading(false);
       } else if (msg.type === 'done') {
         setStreamLoading(false);
@@ -338,33 +282,24 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
             handleLine(line);
           }
         }
-        // Flush any trailing line that wasn't newline-terminated.
         if (buffer.trim()) handleLine(buffer);
 
         setStreamLoading(false);
       } catch (err) {
-        if (err.name === 'AbortError') return; // Superseded by a newer episode/season selection.
+        if (err.name === 'AbortError') return;
         console.error('Stream fetch error:', err);
         setStreamLoading(false);
         setApiError('Failed to load streaming sources');
       }
     };
 
-    // E3/E2 client-side resolution for anime (no-op unless opted in via the
-    // companion + flag). Runs alongside the backend stream and feeds the SAME
-    // handleLine, so a locally-resolved anime source (VOE/AniWorld/S.to, minted from
-    // the viewer's own ASN) supersedes the backend duplicate. The backend stays the
-    // floor (E0). The engine's discovery sources match by title + synonyms +
-    // anilistId; tmdbId/season let enrichMediaCtx pull the AniList title set from
-    // the backend /scrape-meta grant exactly as the backend scrapers do.
+    // tmdbId/season let enrichMediaCtx pull the AniList title set from the
+    // backend's /scrape-meta grant, exactly as the backend scrapers do.
     const seasonRec =
       availableSeasons.find((s) => s.anilist_id === anilistIdToUse) ||
       availableSeasons.find((s) => s.season_number === currentSeason);
-    // Watching an extra rather than a numbered season. The ctx deliberately keeps
-    // the *show's* titles (seasonRec fell back to a real season, so enrichMediaCtx
-    // still fetches the show's title bundle) because that is what finds the show
-    // on the target site, and carries the extra's own title separately, because
-    // that is what picks it out of the show's specials/films list once there.
+    // For an extra, the ctx keeps the show's titles (they find the show on the
+    // target site) and carries the extra's own title to pick it out once there.
     const extraRec = availableExtras.find((x) => x.anilist_id === anilistIdToUse);
     const mediaCtx = {
       tmdbId: seasonRec?.tmdb_id,
@@ -392,22 +327,18 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
   }, [currentSeasonAnilistId, selectedAnilistId, currentEpisode, reloadNonce]);
 
   return {
-    // search & suggestions
     queryName, setQueryName,
     searchResults, showSuggestions, setShowSuggestions,
     metaLoading, apiError, setApiError,
 
-    // season & episode
     currentSeason, setCurrentSeason: updateSeason,
     currentEpisode, setCurrentEpisode,
     activeStreamIdx, setActiveStreamIdx: selectStream,
 
-    // data
     animeMetadata, streamData, streamLoading,
     availableSeasons, seasonGroups,
     unaired,
 
-    // actions
     handleSelectSuggestion,
     initializeFromIds,
     reloadStreams,

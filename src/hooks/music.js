@@ -1,8 +1,5 @@
-// --- Music library ---------------------------------------------------------
-// The backend's /music API: the Spotify link, imported playlists, and the
-// tracks that need a person to pick a recording. Downloads happen on the
-// server's music worker, so while anything is queued the hooks poll to show
-// tracks turning ready.
+// Downloads happen on the server's music worker, so while anything is queued the
+// hooks poll to show tracks turning ready.
 import { useCallback, useEffect, useState } from 'react';
 
 import { apiFetch, extractError, usePublicConfig } from './apiClient';
@@ -53,9 +50,8 @@ export const musicApi = {
 
 const BUSY = ['pending', 'working'];
 
-// Loads `load(key)`, and polls while `isBusy(data)` says the worker still has
-// work for this view. `load` and `isBusy` are module-level functions, so the
-// data is named by `key` alone. `reload` is returned for after an action.
+// `load` and `isBusy` must be module-level functions: the data is keyed by `key`
+// alone.
 function usePolled(key, load, isBusy) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);

@@ -1,6 +1,3 @@
-// Assorted account/site hooks: supporters, changelog, the lightweight profile hook
-// (which also mirrors the account's playback prefs down), the display-name mutation,
-// and the personalized recommendations feed. Lifted verbatim from hooks.js.
 import { useEffect, useState } from 'react';
 
 import { apiFetch, extractError, useSessionToken } from './apiClient';
@@ -28,7 +25,6 @@ export function useSupporters() {
         const suppData = await suppRes.json();
         const statsData = await statsRes.json();
 
-        // Handle both array-only and {success, supporters} formats
         if (Array.isArray(suppData)) {
           setSupporters(suppData);
         } else if (suppData && Array.isArray(suppData.supporters)) {
@@ -50,14 +46,7 @@ export function useSupporters() {
   return { supporters, stats, loading, error };
 }
 
-// --- Changelog ---------------------------------------------------------------
-// Public view of the repo's GitHub Releases, surfaced by the backend's changelog
-// engine (GET /changelog → { changelog: [{tag, name, body(Markdown),
-// published_at, url, prerelease, author}], repo, count, stale }). The endpoint
-// 503s until the backend has a GITHUB_TOKEN configured — we treat that as a
-// distinct "slumbering" state rather than an error so the page can say so kindly.
-// Cached in the shared in-memory store (same TTL as trending/catalogue) so the
-// About-page preview and the full page don't double-fetch.
+// memCached so the About-page preview and the full page do not double-fetch.
 export function useChangelog() {
   const seed = memGet('changelog');
   const [entries, setEntries] = useState(() => seed?.entries || []);
@@ -67,13 +56,14 @@ export function useChangelog() {
   const [notConfigured, setNotConfigured] = useState(false);
 
   useEffect(() => {
-    if (memGet('changelog')) return; // already seeded from cache
+    if (memGet('changelog')) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
         const res = await apiFetch(`/changelog`);
-        // 503 == backend changelog engine has no GITHUB_TOKEN yet (not an error).
+        // 503 means the backend has no GITHUB_TOKEN yet: a state the page explains
+        // kindly, not an error.
         if (res.status === 503) {
           if (!cancelled) setNotConfigured(true);
           return;
@@ -98,9 +88,8 @@ export function useChangelog() {
   return { entries, meta, loading, error, notConfigured };
 }
 
-// Lightweight profile hook — fetches /account/me only (no favorites/progress).
-// Used by the nav to decide whether to surface the Admin link (profile.is_admin)
-// without paying for the full useAccount fan-out on every page.
+// /account/me only, so the nav can check is_admin without the full useAccount
+// fan-out on every page.
 export function useProfile() {
   const sessionToken = useSessionToken();
   const [profile, setProfile] = useState(null);
@@ -114,17 +103,14 @@ export function useProfile() {
         .then(data => {
           if (cancelled || !data) return;
           setProfile(data);
-          // Mirror the account's saved playback preference into the local cache the
-          // stream ranker reads, so it follows the user across devices even before
-          // they open the settings page. Best-effort and additive (see helper).
+          // Always mounted, so prefs follow the user to a new device before they ever
+          // open settings.
           syncPlaybackPrefsFromAccount(data.preferences);
         })
         .catch(() => {});
     };
     load();
-    // Refetch when the profile changes elsewhere (e.g. display name saved on the
-    // preferences page) so greetings like "Recommended for you, {username}" update
-    // live without a reload.
+    // A display name saved elsewhere updates greetings without a reload.
     window.addEventListener('crimson-profile', load);
     return () => { cancelled = true; window.removeEventListener('crimson-profile', load); };
   }, [sessionToken]);
@@ -132,8 +118,7 @@ export function useProfile() {
   return profile;
 }
 
-// Save (or clear, with '') the account's cosmetic display name, then broadcast so
-// every useProfile instance refetches. Returns the stored value (or null).
+// '' clears the display name. Returns the stored value or null.
 export async function updateUsername(username) {
   const res = await apiFetch('/account/username', {
     method: 'PUT',
@@ -149,13 +134,10 @@ export async function updateUsername(username) {
   return data.username ?? null;
 }
 
-// Personalized "watch next" feed (anime + shows + movies), ranked by the genres of
-// what you've saved and watched (see the backend recommend_engine). Cached briefly
-// in-memory so navigating back to the home page paints instantly.
 export function useRecommendations(limit = 24) {
   const sessionToken = useSessionToken();
-  // Cache key is per-session so switching accounts in one tab never shows the
-  // previous user's picks (recommendations are personal, unlike trending).
+  // Keyed per session so switching accounts in one tab never shows the previous
+  // user's picks.
   const key = sessionToken ? `recommendations:${sessionToken}` : null;
   const [recommendations, setRecommendations] = useState(() => (key && memGet(key)?.recs) || []);
   const [basedOn, setBasedOn] = useState(() => (key && memGet(key)?.basedOn) || null);

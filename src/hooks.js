@@ -1,15 +1,4 @@
-// Barrel for the app's hooks + data layer.
-//
-// This file used to be one ~2,400-line module holding config, the API client,
-// auth, watchlists, the account layer and the anime/show/movie streamers all at
-// once. It has been split by concern into the `src/hooks/` directory; this barrel
-// re-exports every public symbol so the ~30 existing `import { … } from './hooks'`
-// call sites keep working byte-for-byte. (There is deliberately no
-// `src/hooks/index.js`, so `./hooks` resolves unambiguously to THIS file.)
-//
-// Pure stream ranking/grouping lives in streamUtils.js; the grouping/label helpers
-// are re-exported here for the importers (WatchView, CrimsonPlayer) that pull them
-// from './hooks'. `streamRank` stays internal to the streamer hooks (as before).
+// There is deliberately no src/hooks/index.js, so './hooks' resolves to this barrel.
 export { groupStreams, streamVariantLabel, streamProviderLabel } from './streamUtils';
 
 export * from './hooks/config';

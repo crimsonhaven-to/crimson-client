@@ -1,19 +1,11 @@
-// Authentication: mnemonic (Ed25519 signed-challenge) + email/password flows.
-// Lifted verbatim from hooks.js. The lazy crypto loader (ed25519 + bip39) lives
-// here because useAuth is its only consumer — importing them on demand keeps ~tens
-// of KB of key-derivation code out of the eager main bundle.
 import { useEffect, useState } from 'react';
 
 import { API_BASE_URL } from './config';
 import { PUBKEY_KEY, extractError, setAuthStorage, useSessionToken } from './apiClient';
 import { toHex, deriveIdentity } from './identity';
 
-// --- Lazy crypto -----------------------------------------------------------
-// ed25519 + the bip39 wordlist are only ever needed when the viewer actually
-// signs in or mints a mnemonic identity — never for logged-out first paint or
-// for the rest of the app. Importing them on demand (memoized) keeps ~tens of KB
-// of key-derivation code out of the eager main bundle. Every consumer below is
-// already async, so awaiting the load adds no UX cost.
+// Only needed to sign in or mint an identity, so loading on demand keeps tens of
+// KB of key-derivation code out of the main bundle.
 let _cryptoPromise;
 const loadCrypto = () =>
   (_cryptoPromise ||= Promise.all([
@@ -28,13 +20,11 @@ const loadCrypto = () =>
   })));
 
 export function useAuth() {
-  // Reactive across all hook instances in the tab (see useSessionToken).
   const sessionToken = useSessionToken();
   const [publicKey, setPublicKey] = useState(() => localStorage.getItem(PUBKEY_KEY));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Keep publicKey in sync when auth changes in another hook instance / tab.
   useEffect(() => {
     const sync = () => setPublicKey(localStorage.getItem(PUBKEY_KEY));
     window.addEventListener('crimson-auth', sync);
@@ -49,16 +39,12 @@ export function useAuth() {
 
   const deriveKeypair = async (mnemonic) => {
     const { mnemonicToSeedSync, ed } = await loadCrypto();
-    // Pure derivation lives in ./identity (pinned by identity.test.js); the heavy
-    // libs stay lazy-loaded here and are injected in.
     return deriveIdentity(mnemonic, {
       mnemonicToSeedSync,
       getPublicKeyAsync: (seed) => ed.getPublicKeyAsync(seed),
     });
   };
 
-  // Get a one-time challenge for this key and sign it with the private seed —
-  // the shared first half of both mnemonic login and registration.
   const challengeAndSign = async (pubKey, seed) => {
     const { ed } = await loadCrypto();
     const challRes = await fetch(`${API_BASE_URL}/auth/challenge`, {
@@ -72,10 +58,8 @@ export function useAuth() {
     return { challenge, signature: toHex(signatureArr) };
   };
 
-  // Sign in to an EXISTING mnemonic account. No invite code: creating new
-  // accounts is a separate, invite-gated step (registerMnemonic) so a freshly
-  // generated mnemonic can't bypass the invite system. A 404 here means "no such
-  // account yet" — the UI steers the user to the create-identity flow.
+  // Existing accounts only: creation is the invite-gated registerMnemonic, so a
+  // freshly generated mnemonic cannot bypass the invite system.
   const login = async (mnemonic) => {
     setLoading(true);
     setError(null);
@@ -92,12 +76,10 @@ export function useAuth() {
         const data = await res.json().catch(() => ({}));
         throw new Error(extractError(
           data,
-          res.status === 404 ? 'No account for this mnemonic — create a new identity instead.' : 'Authentication failed',
+          res.status === 404 ? 'No account for this mnemonic. Create a new identity instead.' : 'Authentication failed',
         ));
       }
       const { session_token } = await res.json();
-      // Persist + broadcast: updates this hook (via the event) and every other
-      // useAuth / useAccount instance in the tab.
       setAuthStorage(session_token, pubKey);
       return true;
     } catch (err) {
@@ -108,18 +90,13 @@ export function useAuth() {
     }
   };
 
-  // Prove ownership of a mnemonic identity outside of signing in, for the one
-  // action that must not be reachable with a stolen session token alone:
-  // deleting the account. Same challenge-and-sign as login, so nothing new is
-  // invented for an identity that has no password to re-enter.
+  // Account deletion must not be reachable with a stolen session token alone, and a
+  // mnemonic identity has no password to re-enter, so it re-proves ownership.
   const signChallenge = async (mnemonic) => {
     const { seed, publicKey: pubKey } = await deriveKeypair(mnemonic);
     return challengeAndSign(pubKey, seed);
   };
 
-  // Create a NEW mnemonic account. Invite-gated exactly like email signup: the
-  // backend /auth/register now requires a valid invite_code, so this is the only
-  // way to mint a mnemonic account and it can't sidestep the invite gate.
   const registerMnemonic = async (mnemonic, inviteCode) => {
     setLoading(true);
     setError(null);
@@ -136,7 +113,7 @@ export function useAuth() {
         const data = await res.json().catch(() => ({}));
         throw new Error(extractError(
           data,
-          res.status === 409 ? 'This mnemonic is already registered — sign in instead.' : 'Registration failed',
+          res.status === 409 ? 'This mnemonic is already registered. Sign in instead.' : 'Registration failed',
         ));
       }
       const { session_token } = await res.json();
@@ -169,7 +146,6 @@ export function useAuth() {
     return generateMnemonic(wordlist);
   };
 
-  // --- email + password auth ------------------------------------------------
   const emailLogin = async (email, password) => {
     setLoading(true);
     setError(null);
@@ -183,7 +159,7 @@ export function useAuth() {
       if (!res.ok) {
         const err = extractError(data, 'Login failed');
         setError(err);
-        // 403 == account exists but email isn't verified yet.
+        // 403 means the account exists but the email is not verified yet.
         return { ok: false, error: err, needsVerification: res.status === 403 };
       }
       setAuthStorage(data.session_token, null);
@@ -211,8 +187,7 @@ export function useAuth() {
         setError(err);
         return { ok: false, error: err };
       }
-      // Demo instances auto-verify and return a session straight away — store it so
-      // the user is signed in without the email round-trip.
+      // Demo instances auto-verify and return a session straight away.
       if (data.session_token) setAuthStorage(data.session_token, null);
       return {
         ok: true,
@@ -228,8 +203,6 @@ export function useAuth() {
     }
   };
 
-  // Used by the /verify page: confirms the email and (server-side) returns a
-  // session so the user lands logged straight in.
   const verifyEmail = async (token) => {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/email/verify`, {

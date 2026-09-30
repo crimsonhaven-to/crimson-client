@@ -1,7 +1,5 @@
-// Profile + watch-history layer. Watchlists are intentionally NOT fetched here —
-// they live in useWatchlists() (used by the Watchlists page and the per-show
-// WatchlistButton), so watch/account pages don't pay for an unused fetch. Lifted
-// verbatim from hooks.js.
+// Watchlists are deliberately not fetched here (see useWatchlists), so watch and
+// account pages do not pay for an unused fetch.
 import { useCallback, useEffect, useState } from 'react';
 
 import { apiFetch, useSessionToken } from './apiClient';
@@ -12,7 +10,6 @@ export function useAccount() {
   const [recentlyWatched, setRecentlyWatched] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Reactive: re-runs the fetch effect when the user logs in/out (see useAuth).
   const sessionToken = useSessionToken();
 
   const fetchProfile = useCallback(async () => {
@@ -48,8 +45,7 @@ export function useAccount() {
     if (!sessionToken) return;
     setLoading(true);
     try {
-      // Pull the full history (server caps at 100) so the History page's search
-      // and filters operate over everything, not just the latest handful.
+      // The server caps at 100; the History page filters over all of it.
       const res = await apiFetch(`/account/recent?limit=100`);
       if (res.ok) {
         const data = await res.json();
@@ -62,11 +58,8 @@ export function useAccount() {
     }
   }, [sessionToken]);
 
-  // Remove a show from watch history entirely. The history is collapsed to one
-  // card per show, but a show can have many episode-level progress rows — so we
-  // fetch the full progress list and delete every row for this show, otherwise it
-  // would just reappear carrying an older episode. Optimistically drops it from
-  // the visible list first for a snappy feel.
+  // History shows one card per show but stores a row per episode. Every row must
+  // go, or the show reappears carrying an older episode.
   const removeFromHistory = useCallback(async (item) => {
     if (!sessionToken) return false;
     const matches = (r) => {
@@ -86,16 +79,14 @@ export function useAccount() {
       return true;
     } catch (e) {
       console.error("Remove from history error:", e);
-      // Re-sync so the optimistic removal doesn't desync from the server.
       fetchRecent();
       return false;
     }
   }, [sessionToken, fetchRecent]);
 
 
-  // useCallback so the reference is stable across renders: the watch page keys a
-  // periodic-save effect on this, and an unstable identity would re-run that
-  // effect every render (redundant POSTs + losing the tracked playback position).
+  // Must stay referentially stable: the watch page keys its periodic-save effect
+  // on it, and re-running that effect loses the tracked playback position.
   const updateProgress = useCallback(async (progressData) => {
     if (!sessionToken) return;
     try {
@@ -109,11 +100,8 @@ export function useAccount() {
     }
   }, [sessionToken]);
 
-  // Saved playback position for one specific episode, so the watch page can seek
-  // the player to where the user left off ("resume"). Returns the position in
-  // seconds, or null when there's nothing meaningful to resume to — no row, a
-  // finished episode, a position right at the start, or one within the last few
-  // seconds of the runtime (treat those as "done", start fresh).
+  // Null when there is nothing worth resuming: a finished episode, or a position
+  // in the first few or last few seconds.
   const fetchResumePosition = useCallback(async (anilistId, season, episode) => {
     if (!sessionToken) return null;
     try {

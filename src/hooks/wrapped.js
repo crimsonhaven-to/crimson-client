@@ -1,10 +1,5 @@
-// Crimson Wrapped (backend: account_engine/wrapped).
-//
-// The endpoint answers in whatever timezone it is asked for, because "busiest
-// day" and "longest streak" are the two stats that change meaning with where
-// the viewer is. getTimezoneOffset() returns minutes to ADD to local time to
-// reach UTC, which is the opposite sign of a UTC offset, so it is negated here
-// once rather than in every caller.
+// "Busiest day" and "longest streak" depend on the viewer's timezone.
+// getTimezoneOffset() has the opposite sign of a UTC offset, hence the negation.
 import { useEffect, useState } from 'react';
 
 import { apiFetch, useSessionToken } from './apiClient';

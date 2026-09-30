@@ -1,22 +1,9 @@
-// --- Theme (client-only visual preference) ---------------------------------
-// Per-DEVICE, localStorage-only — deliberately the exact same shape as the
-// lite-background toggle (see useLiteBackground): a weak phone and a desktop can
-// disagree, and it NEVER touches the account-synced /account/preferences
-// contract. Nothing here talks to the backend.
+// Per-device like the lite-background toggle, never synced to the account.
 //
-// HOW THEMING WORKS — and how to add a new theme
-// ----------------------------------------------------------------------------
-// Every colour in the app is a Tailwind v4 CSS variable (--color-crimson-950 …
-// --color-crimson-50), defined once in index.css. The DEFAULT theme (the
-// original "crimson" dark look) is simply that bare @theme block. Every OTHER
-// theme is ONE `:root[data-theme="<id>"]` block in index.css that re-points
-// those same variables — so all ~1,200 `crimson-*` utilities and the animated
-// mesh background re-skin for free, with no JSX changes.
-//
-// We switch themes by stamping `data-theme` on <html>. The default theme sets NO
-// attribute, so first paint / anyone without the pref sees the untouched dark
-// look with zero risk. Optional per-theme image swaps (e.g. the Catgirl-Lumi
-// art) are declared in THEMES below and resolved via themedAsset/useThemedAsset.
+// Every colour is a Tailwind v4 CSS variable (--color-crimson-*) from index.css.
+// The default theme is the bare @theme block and sets no `data-theme` attribute;
+// every other theme is one `:root[data-theme="<id>"]` block re-pointing those
+// variables, so all `crimson-*` utilities re-skin with no JSX changes.
 //
 // To add a theme:
 //   1. add an entry to THEMES (id + label + optional image overrides),
@@ -24,23 +11,19 @@
 //   3. (optional) add a mobile chrome colour to THEME_COLORS,
 //   4. drop any override art in /public and point the image keys at it.
 import { useEffect, useState } from 'react';
-// The welcome-tour avatar is a bundled asset (hashed by Vite), unlike the other
-// Lumi art which lives in /public. Import it so the crimson default resolves to
-// the exact same file it always used — the default theme stays pixel-identical.
+// Unlike the other Lumi art in /public, the welcome-tour avatar is a
+// Vite-hashed bundled asset.
 import lumiCuty from '../assets/lumi_cuty.png';
 
 export const DEFAULT_THEME = 'crimson';
 
-// Registry — the single source of truth for which themes exist. `images` maps a
-// logical key to a public URL; ANY key a theme omits transparently falls back to
-// the default theme's asset (see themedAsset), so a half-finished theme whose art
-// hasn't been drawn yet still renders correctly instead of showing broken images.
+// Any image key a theme omits falls back to the default theme's asset, so a theme
+// whose art is not drawn yet still renders.
 export const THEMES = {
   crimson: {
     id: 'crimson',
     label: 'Crimson',
     tagline: 'The original dark sanctuary.',
-    // The canonical Lumi art — also the fallback for every other theme.
     images: {
       lumi_404: '/lumi_404.png',
       lumi_nobackground: '/lumi_nobackground.png',
@@ -55,11 +38,7 @@ export const THEMES = {
   catgirl: {
     id: 'catgirl',
     label: 'Catgirl Lumi',
-    tagline: 'Light — with a mischievous crimson wink.',
-    // Colours live in index.css (:root[data-theme="catgirl"]). Her catgirl art
-    // lives in /public/catgirl/. Any key omitted here transparently falls back
-    // to the crimson art above — `secret_sideways` has no catgirl variant yet,
-    // so that one shrine pose intentionally shows the normal Lumi.
+    tagline: 'Light, with a mischievous crimson wink.',
     images: {
       lumi_404: '/catgirl/lumi_404_cat.png',
       lumi_nobackground: '/catgirl/lumi_nobackground_cat.png',
@@ -67,19 +46,17 @@ export const THEMES = {
       secret_peace: '/catgirl/lumi_secret_lumi_peace_cat.png',
       secret_mascot: '/catgirl/lumi_secret_nobackgroundmascot_cat.png',
       secret_cuty: '/catgirl/lumi_secret_lumi_cuty_cat.png',
-      // secret_sideways — no catgirl art yet; falls back to the crimson pose.
+      // secret_sideways has no catgirl art yet, so that shrine pose shows normal Lumi.
       secret_annoyed: '/catgirl/lumi_secret_annoyed_lumi_cat.png',
     },
   },
 };
 
-// Stable, render-friendly list for building the theme picker UI.
 export const THEME_LIST = Object.values(THEMES);
 
 const THEME_KEY = 'crimson:theme';
 
-// Mobile browser-chrome colour per theme (keeps the PWA status bar on-brand).
-// Falls back to the default theme's colour for anything unlisted.
+// Mobile browser-chrome colour, so the PWA status bar matches the theme.
 const THEME_COLORS = {
   crimson: '#1a0005',
   catgirl: '#fff5f7',
@@ -97,11 +74,7 @@ export function getTheme() {
   }
 }
 
-// Reflect the active theme into the DOM: `data-theme` on <html> (which drives
-// the CSS-variable overrides) plus the mobile theme-color meta. The default
-// theme CLEARS the attribute, so the untouched dark look needs no CSS override
-// to exist — it is the baseline. Kept as a plain function (no React) so the
-// boot path and the inline FOUC guard in index.html can both use the same logic.
+// index.html has an inline copy of this that runs before first paint.
 export function applyThemeToDom(id) {
   const theme = normalize(id);
   const root = document.documentElement;
@@ -116,11 +89,9 @@ export function setTheme(id) {
   try {
     localStorage.setItem(THEME_KEY, theme);
   } catch {
-    /* private mode / storage blocked — the live DOM update below still applies */
+    /* private mode or storage blocked: the live DOM update below still applies */
   }
   applyThemeToDom(theme);
-  // Same event/broadcast pattern as the lite-background toggle so every mounted
-  // useTheme() re-renders the instant the choice flips, in this tab and others.
   window.dispatchEvent(new Event('crimson-theme'));
 }
 
@@ -138,15 +109,11 @@ export function useTheme() {
   return theme;
 }
 
-// --- Themed images ---------------------------------------------------------
-// Resolve a logical image key to a URL for a given theme, falling back to the
-// default theme's asset when the theme hasn't overridden that key.
 export function themedAsset(key, themeId = getTheme()) {
   const theme = THEMES[normalize(themeId)];
   return (theme.images && theme.images[key]) || THEMES[DEFAULT_THEME].images[key];
 }
 
-// Hook form for function components — re-resolves when the theme changes.
 export function useThemedAsset(key) {
   const theme = useTheme();
   return themedAsset(key, theme);

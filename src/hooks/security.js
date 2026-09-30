@@ -1,15 +1,8 @@
-// The account's own security surface (backend: account_engine/security_routes).
-//
-// Sessions, the slice of the security ledger that belongs to you, a full export
-// and self-service deletion. Everything here is read-only except the two
-// destructive actions, both of which re-confirm rather than trusting the bearer
-// token already in hand.
+// Nothing here is decoded client-side: a session is addressed by the opaque id
+// the server derives, and the ledger arrives already filtered and stripped.
 import { useCallback, useEffect, useState } from 'react';
 
 import { apiFetch, extractError, setAuthStorage, useSessionToken } from './apiClient';
-
-// Nothing here is decoded client-side: a session is addressed by the opaque id
-// the server derives, and the ledger arrives already filtered and stripped.
 
 export function useSessions() {
   const sessionToken = useSessionToken();

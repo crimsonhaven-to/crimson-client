@@ -1,26 +1,16 @@
 /*
- * Client-side source engine integration (New System, Phase 1).
+ * The `crimson-sources` engine resolves some sources in the viewer's browser and
+ * emits the same `{"type":"stream"}` line as the backend /watch, so the hooks
+ * consume both alike. The backend still covers every source the client cannot run.
  *
- * Thin bridge between crimson-client and the `crimson-sources` engine (vendored
- * at vendor/crimson-sources). The engine resolves a subset of sources in the
- * viewer's own browser and emits the **exact same** `{"type":"stream", …}` line
- * the backend /watch produces, so the existing `handleLine` consumes it unchanged
- * and the backend stays the floor (E0) for everything else.
+ * Delivery tiers: the companion extension (E3), the signed crimson-proxy (E2), and
+ * the backend itself (E0).
  *
- * It is OFF by default. Prod behavior is byte-identical to today until a viewer
- * opts in (the companion extension + the flag below), so this is a safe,
- * non-regressing addition — exactly the "shift of who does what" the design calls
- * for. Turning the live swap on per-source is the next step ("go from there").
- *
- *   Auto:    nothing to flip. When the crimson-extension companion is installed
- *            (it announces itself via a `crimson-extension-ready` handshake), the
- *            engine engages on its own; whether it actually runs sources is then
- *            gated by the companion's own on/off switch (E3). No companion => the
- *            engine stays dark and the backend handles the title as always.
- *   Override: localStorage 'crimson:clientSources' = '1' forces it on (e.g. to
- *            test the no-extension E2 proxy path) or '0' pins it off;
- *            VITE_CLIENT_SOURCES=true forces on at build time.
- *   Debug:   localStorage 'crimson:clientSources:debug' = '1' for per-source logs.
+ *   Auto:     engages with the companion (subject to its own on/off switch), and
+ *             otherwise via the proxy unless /sign reported it unconfigured.
+ *   Override: localStorage 'crimson:clientSources' = '1' forces on, '0' pins off;
+ *             VITE_CLIENT_SOURCES=true forces on at build time.
+ *   Debug:    localStorage 'crimson:clientSources:debug' = '1' for per-source logs.
  */
 import { createEngine, waitForExtensionBridge } from 'crimson-sources';
 import { apiFetch } from './hooks';
@@ -32,24 +22,17 @@ const DEBUG = (() => {
 })();
 function dbg(...args) { if (DEBUG) console.info('[clientSources]', ...args); }
 
-/**
- * Explicit override of the auto-handshake:
- *   '1' (or VITE_CLIENT_SOURCES=true) => force client sources on,
- *   '0'                                => force off (pin to the backend),
- *   unset                              => auto (engage when the companion is present).
- * @returns {true|false|null} true/false to force, null for auto.
- */
+// null means auto.
 function flagOverride() {
   try {
     if (import.meta.env?.VITE_CLIENT_SOURCES === 'true') return true;
     const v = localStorage.getItem(FLAG_KEY);
     if (v === '1') return true;
     if (v === '0') return false;
-  } catch { /* no localStorage (SSR/sandbox) => fall through to auto */ }
+  } catch { /* no localStorage (SSR/sandbox): fall through to auto */ }
   return null;
 }
 
-/** Synchronous best-effort: is the companion's in-page API present right now? */
 function extensionPresent() {
   try {
     return Boolean(window.CrimsonExtension?.available);
@@ -58,15 +41,9 @@ function extensionPresent() {
   }
 }
 
-// Whether the client engine is in play, for the dedup decision in handleLine.
-// Sync, so it mirrors the async gate as closely as a sync read allows:
-//   • an explicit override wins;
-//   • the companion (E3) being present means yes;
-//   • otherwise the E2 crimson-proxy path auto-engages for every viewer — it's on
-//     unless we've *learned* the proxy is unconfigured (a /sign 503 latches
-//     `_proxyDisabled`), at which point there's no client path and we stay on E0.
-// Dedup keys on the specific (source, language) tile label, so leaving this on
-// when the engine ends up resolving nothing is harmless (no backend tile collides).
+// A sync approximation of the async gate in streamLocalSources, used for the
+// dedup decision. Being wrongly on is harmless: dedup keys on (source, language),
+// so if the engine resolves nothing no backend tile ever collides.
 export function clientSourcesEnabled() {
   const o = flagOverride();
   if (o !== null) return o;
@@ -74,28 +51,18 @@ export function clientSourcesEnabled() {
   return !_proxyDisabled;
 }
 
-// --- E2 proxy signing (New System §8a) -------------------------------------
-// The crimson-proxy edge relay only serves *signed* links, and PROXY_SECRET must
-// never ship to the browser. So when a source resolves client-side without the
-// extension (E2), the engine asks us to turn an upstream URL + the headers the CDN
-// wants injected into a signed proxy link — and we mint it via the backend's
-// login-gated `/sign` grant. This is what carries the *segment bytes* off the
-// backend (CDN → edge → viewer) for viewers who haven't installed the companion.
-//
-// Cheap and amortised: one tiny round-trip per distinct (url, headers) tuple
-// (deduped + cached below), NOT per segment — the proxy re-signs the HLS
-// sub-resources itself with the same secret. If `/sign` says the proxy isn't
-// configured (503), we latch it off so we stop trying and the engine simply omits
-// the E2 path (extension or backend still cover the source — never a regression).
+// The crimson-proxy only serves signed links and PROXY_SECRET must never reach the
+// browser, so links are minted by the backend's /sign grant. One round-trip per
+// (url, headers), not per segment: the proxy re-signs HLS sub-resources itself.
+// A 503 means the proxy is unconfigured and latches E2 off for the session.
 let _proxyDisabled = false;
-const _signCache = new Map(); // canonical key -> Promise<string>
+const _signCache = new Map();
 
 function _signKey(f) {
   return `${f.url}\n${f.referer || ''}\n${f.origin || ''}\n${f.userAgent || ''}`;
 }
 
 async function _signOnce(fields) {
-  // apiFetch attaches the session bearer token + the API base; /sign is login-gated.
   const res = await apiFetch('/sign', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -107,7 +74,7 @@ async function _signOnce(fields) {
     }),
   });
   if (res.status === 503) {
-    _proxyDisabled = true; // proxy not configured on the backend — stop asking
+    _proxyDisabled = true;
     throw new Error('crimson-proxy not configured');
   }
   if (!res.ok) throw new Error(`/sign failed: ${res.status}`);
@@ -117,19 +84,15 @@ async function _signOnce(fields) {
   return signed;
 }
 
-/**
- * The `signProxyUrl(fields) => Promise<string>` the engine threads into its E2
- * fetcher. Deduped + cached by canonical key so repeated fetches of the same host
- * don't re-round-trip. Rejections bubble up as a failed E2 attempt, which the
- * engine treats as "this source couldn't run client-side" → the backend covers it.
- */
+// A rejection tells the engine the source cannot run client-side, so the backend
+// covers it.
 export function signProxyUrl(fields) {
   if (_proxyDisabled) return Promise.reject(new Error('crimson-proxy disabled'));
   const key = _signKey(fields);
   let p = _signCache.get(key);
   if (!p) {
     p = _signOnce(fields).catch((err) => {
-      _signCache.delete(key); // don't cache a transient failure
+      _signCache.delete(key); // a transient failure must not stick
       throw err;
     });
     _signCache.set(key, p);
@@ -137,21 +100,13 @@ export function signProxyUrl(fields) {
   return p;
 }
 
-// --- Backend resolve grant (cookie/secret-bound sources) -------------------
-// Some sources can't run in the browser at all — Febbox's final hop needs the `ui`
-// cookie (a C5 secret that must stay server-side). But only the *resolve* needs the
-// secret; the URL it yields is a direct CDN file. So the engine asks us to run the
-// backend `/resolve` grant, which does the token-gated lookup and returns the **raw**
-// stream URL + headers — and the engine then delivers the bytes (extension E3 / signed
-// proxy E2), keeping the heavy mp4/HLS off the backend. This is the cookie-source twin
-// of signProxyUrl (and only the host has the session token + API base, hence here).
-//
-// Cached per (source, tmdb, season, episode) — one round-trip per episode, not per
-// segment. A 503 (source unconfigured, e.g. FEBBOX_UI_TOKEN unset) or 404 (unknown
-// source) latches that source off for the session, so we stop asking and it cleanly
-// falls back to the backend /watch line (never a regression).
-const _grantDisabled = new Set();    // source keys the backend can't serve
-const _grantCache = new Map();       // key -> Promise<GrantStream[]>
+// Some sources (Febbox) need a secret cookie that must stay server-side, but only
+// for the resolve step: the URL it yields is a plain CDN file. The backend's
+// /resolve does the secret lookup and returns the raw URL, and the engine still
+// delivers the bytes client-side. Cached per episode. A 503 (unconfigured) or
+// 404 (unknown source) latches that source off for the session.
+const _grantDisabled = new Set();
+const _grantCache = new Map();
 
 function _grantKey(req) {
   const c = req.ctx;
@@ -177,7 +132,7 @@ async function _resolveGrantOnce(req) {
     }),
   });
   if (res.status === 503 || res.status === 404) {
-    _grantDisabled.add(req.source); // unconfigured/unknown — stop asking this session
+    _grantDisabled.add(req.source);
     return [];
   }
   if (!res.ok) throw new Error(`/resolve failed: ${res.status}`);
@@ -185,11 +140,6 @@ async function _resolveGrantOnce(req) {
   return Array.isArray(data?.streams) ? data.streams : [];
 }
 
-/**
- * The `resolveGrant(req) => Promise<GrantStream[]>` the engine threads into its
- * backend-resolved sources (Febbox today). Deduped + cached per episode; a failure
- * bubbles up as "this source couldn't run client-side" → the backend covers it.
- */
 function resolveGrant(req) {
   if (_grantDisabled.has(req.source)) return Promise.resolve([]);
   const key = _grantKey(req);
@@ -204,19 +154,11 @@ function resolveGrant(req) {
   return p;
 }
 
-/**
- * Fetch the title bundle the discovery sources need (AniList variants + German
- * synonyms) from the backend `/scrape-meta` grant and fold it into `mediaCtx`. The
- * TMDB key that produces the German titles is server-held (C5), so the client can't
- * derive these itself — it asks the backend, keeping title matching identical to
- * the backend scrapers. Best-effort: on any failure the TMDB-keyed sources still
- * run; only the title-matching ones go quiet.
- */
+// The TMDB key behind the German synonyms, release year and IMDb id is
+// server-held, so the title-matching sources get them from /scrape-meta. On
+// failure the TMDB-keyed sources still run; only title matching goes quiet.
 async function enrichMediaCtx(mediaCtx) {
-  // TV needs a season (the grant is season-keyed); movies use the /movie variant.
-  // Both add title + release year + imdb id so the title/IMDb-keyed Western sources
-  // (hdrezka / lookmovie / insertunit) can match — the year + imdb come from the
-  // server-held TMDB key (C5), same reason the German synonyms do.
+  // The TV grant is season-keyed.
   const isMovie = mediaCtx.mediaType === 'movie';
   const isTv = mediaCtx.mediaType === 'tv' && mediaCtx.season != null;
   if (!isMovie && !isTv) return mediaCtx;
@@ -235,8 +177,7 @@ async function enrichMediaCtx(mediaCtx) {
       titleNative: m.title_native ?? null,
       synonyms: m.synonyms ?? null,
       anilistId: mediaCtx.anilistId ?? m.anilist_id ?? undefined,
-      // MAL id (AniList idMal) for the MAL-keyed source (kissanime.ing -> megaplay);
-      // null for movies / no-AniList shows, so that source just skips itself.
+      // Null for movies and non-AniList shows, so the MAL-keyed source skips itself.
       malId: mediaCtx.malId ?? m.mal_id ?? null,
       releaseYear: mediaCtx.releaseYear ?? m.release_year ?? null,
       imdbId: mediaCtx.imdbId ?? m.imdb_id ?? null,
@@ -246,12 +187,8 @@ async function enrichMediaCtx(mediaCtx) {
   }
 }
 
-/**
- * Fire-and-forget an anonymous resolve beacon (per-source ok/fail + env) to the
- * backend so the admin dashboard can show real client-side success rates. Strictly
- * aggregate — no title/user is sent. Best-effort: any failure is swallowed and
- * never touches playback.
- */
+// Feeds the admin dashboard's client-side success rates. Strictly aggregate: no
+// title or user is sent.
 function sendResolveBeacon(results) {
   try {
     const events = results.map((r) => ({ source: r.source, ok: !!r.ok, env: r.env }));
@@ -264,58 +201,42 @@ function sendResolveBeacon(results) {
   } catch { /* never let telemetry affect playback */ }
 }
 
-/**
- * Run the local engine for `mediaCtx`, invoking `onLine(jsonString)` for each
- * resolved source — same shape `streamWatchNdjson` feeds. Resolves immediately
- * (a no-op) when disabled or when nothing is runnable client-side, so callers can
- * always `await` it alongside the backend stream without branching.
- *
- * @returns {Promise<Set<string>>} the source labels emitted locally (for dedup).
- */
+// Resolves immediately when nothing can run client-side, so callers can always
+// await it alongside the backend stream. Returns the source labels emitted.
 export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   const emitted = new Set();
 
   const override = flagOverride();
   if (override === false) {
-    console.info('[clientSources] pinned OFF via flag — using the backend (E0).');
+    console.info('[clientSources] pinned OFF via flag, using the backend (E0).');
     return emitted;
   }
 
-  // The handshake: discover the companion, waiting briefly for its `…-ready` event
-  // in case we beat its async inject (the cold-load-onto-/watch race).
+  // Waits briefly for the ready event in case a cold load onto /watch beat the
+  // companion's async inject.
   const bridge = await waitForExtensionBridge();
-  // With the companion (E3) we run the full source set. WITHOUT it we still engage
-  // the E2 crimson-proxy path for the header-only sources (cinema.bz / PlayIMDb /
-  // ScreenScape / AnimeSuge) — the engine routes VOE/VidSrc/etc. to the backend on
-  // its own. We only bail when there's genuinely no client path: no companion AND
-  // the proxy is known-unconfigured (a prior /sign 503 latched `_proxyDisabled`).
-  // Unconditional (not dbg): one verdict line per watch so a "did it engage?"
-  // shakeout is always legible. If you see "companion absent" with the companion
-  // installed + toggled on, its in-page bridge isn't reaching the page (e.g. a page
-  // CSP blocking the inject) — check `window.CrimsonExtension` in the console.
+  // Without the companion, the proxy still covers the header-only sources.
+  // These verdict lines are unconditional (not dbg) so "did it engage?" is always
+  // answerable. "companion absent" with the companion installed and on means its
+  // bridge is not reaching the page (a page CSP blocking the inject, say): check
+  // `window.CrimsonExtension` in the console.
   if (!bridge && _proxyDisabled) {
-    console.info('[clientSources] no companion and crimson-proxy unconfigured — staying on the backend (E0).');
+    console.info('[clientSources] no companion and crimson-proxy unconfigured, staying on the backend (E0).');
     return emitted;
   }
   if (!bridge) {
-    console.info('[clientSources] companion absent — using the crimson-proxy (E2) for header-only sources.');
+    console.info('[clientSources] companion absent, using the crimson-proxy (E2) for header-only sources.');
   }
   if (signal?.aborted) return emitted;
 
   let engine;
   try {
-    // `debug` turns on the engine's verbose per-source/discovery trace; failures
-    // are surfaced by the engine regardless. The signed-proxy grant (signProxyUrl)
-    // lets the engine use the E2 path when the override forces it on without a
-    // companion present.
     engine = await createEngine({ extension: bridge, signProxyUrl, resolveGrant, debug: DEBUG });
   } catch (err) {
     console.warn('[clientSources] engine init failed:', err);
     return emitted;
   }
 
-  // One concise line so the shakeout is legible: did we see the companion, is it
-  // switched on, and which sources can run client-side for this title.
   const caps = engine.capabilities({ mediaType: mediaCtx.mediaType });
   console.info(
     `[clientSources] companion ${bridge ? 'detected' : 'absent'}, ` +
@@ -325,7 +246,7 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   if (!engine.canRunAny({ mediaType: mediaCtx.mediaType })) {
     if (bridge && !caps.extensionEnabled) {
       console.info(
-        '[clientSources] companion is installed but switched OFF — using the backend. ' +
+        '[clientSources] companion is installed but switched OFF, using the backend. ' +
         'Toggle it on (toolbar button) to resolve sources locally.',
       );
     }
@@ -333,17 +254,13 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
     return emitted;
   }
 
-  // Only the title-matching discovery sources need the grant; fetch it once the
-  // engine confirms something is runnable, then run with the enriched context.
+  // Only fetched once the engine confirms something is runnable.
   const enriched = await enrichMediaCtx(mediaCtx);
   if (signal?.aborted) {
     await engine.dispose();
     return emitted;
   }
 
-  // Collect each source's anonymous outcome (id + ok/fail + env) so we can send a
-  // single resolve beacon at the end — this is the source-success visibility the
-  // backend lost when resolving moved client-side (see telemetry_engine).
   const results = [];
   try {
     for await (const line of engine.streamEpisode(enriched, {
@@ -358,18 +275,12 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
   } catch (err) {
     if (err?.name !== 'AbortError') console.warn('[clientSources] stream error:', err);
   }
-  // Fire-and-forget the beacon (not when aborted — a superseded episode isn't a
-  // real resolve outcome). Never lets a telemetry failure affect playback.
+  // A superseded episode is not a real resolve outcome.
   if (!signal?.aborted && results.length) sendResolveBeacon(results);
-  // NB: intentionally NO engine.dispose() here. dispose() clears the companion's DNR
-  // media rules (the injected voe.sx Referer/UA the gated CDN needs), but the player
-  // keeps fetching segments for the WHOLE episode — long after the last source
-  // resolves. Disposing on completion tore those rules out mid-playback, which is
-  // exactly why VOE segments started 403ing a few seconds in (the first segments were
-  // 200 while the rule was live). The rules are cleared+reinstalled at the start of
-  // the next episode's streamEpisode(); leaving them up between episodes is harmless
-  // (host-scoped, and the player only hits those CDNs while actually playing). Doing
-  // it here would also race the next episode's install. They're torn down on a real
-  // page navigation/reload by the extension's own tab listener.
+  // Deliberately no engine.dispose(): it clears the companion's DNR rules (the
+  // Referer/UA gated CDNs need), but the player keeps fetching segments for the
+  // whole episode, so disposing here made VOE segments 403 mid-playback. The next
+  // episode's streamEpisode() reinstalls them, and the extension's tab listener
+  // clears them on navigation.
   return emitted;
 }

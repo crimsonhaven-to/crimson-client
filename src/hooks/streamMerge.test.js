@@ -2,13 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 import { streamFromMsg, mergeStreamLine, pickBestIdx } from './streamMerge';
 
-// mergeStreamLine is the prefer-local dedup that decides which source a viewer
-// actually gets when the client-side engine is on (a source can resolve both
-// locally and on the backend). It's shared verbatim by the anime/show/movie
-// streamers, so these tests pin the ONE copy the real hooks now call.
-
-// Build a `stream` NDJSON message. `url` encodes source+language+origin so a swap
-// is observable (the local line carries a different url than the backend one).
+// `url` encodes the origin so a local-over-backend swap is observable.
 const msg = (source, language, origin = 'backend', extra = {}) => ({
   type: 'stream',
   source,
@@ -18,9 +12,6 @@ const msg = (source, language, origin = 'backend', extra = {}) => ({
   ...extra,
 });
 
-// Drive a sequence of [msg, origin] lines through the reducer exactly as a hook
-// would: reassign `streams` from each result, carry the one `dedup` Map across all
-// lines. Returns the final list plus the per-line {changed, appended} flags.
 function run(lines, enabled) {
   const dedup = new Map();
   let streams = [];
@@ -53,11 +44,11 @@ describe('streamFromMsg', () => {
   });
 });
 
-describe('mergeStreamLine — engine OFF (default behaviour)', () => {
+describe('mergeStreamLine: engine OFF (default behaviour)', () => {
   it('appends every line without dedup, even exact duplicates', () => {
     const { streams, events } = run([
       [msg('VOE', 'German Dub'), 'backend'],
-      [msg('VOE', 'German Dub'), 'backend'], // same key — still appended when off
+      [msg('VOE', 'German Dub'), 'backend'],
     ], false);
     expect(streams).toHaveLength(2);
     expect(events).toEqual([
@@ -77,7 +68,7 @@ describe('mergeStreamLine — engine OFF (default behaviour)', () => {
   });
 });
 
-describe('mergeStreamLine — engine ON, prefer-local dedup', () => {
+describe('mergeStreamLine: engine ON, prefer-local dedup', () => {
   it('drops a same-origin duplicate (backend then backend)', () => {
     const { streams, events } = run([
       [msg('VOE', 'German Dub', 'backend'), 'backend'],
@@ -94,9 +85,9 @@ describe('mergeStreamLine — engine ON, prefer-local dedup', () => {
       [msg('VOE', 'German Dub', 'local'), 'local'],
     ], true);
     expect(streams).toHaveLength(1);
-    // Swap: the list changed, but it's not a NEW tile — loading was already cleared.
+    // A swap is not a new tile: loading was already cleared.
     expect(events[1]).toEqual({ changed: true, appended: false });
-    expect(streams[0].url).toContain('/local'); // local won
+    expect(streams[0].url).toContain('/local');
   });
 
   it('a backend line NEVER displaces a local one (local arrived first)', () => {
@@ -128,27 +119,25 @@ describe('mergeStreamLine — engine ON, prefer-local dedup', () => {
   });
 
   it('treats a missing language as its own dedup bucket (source|"")', () => {
-    // Two languageless lines of the same source collide; a languageless local one
-    // then replaces the backend one.
     const { streams, events } = run([
       [msg('VOE', undefined, 'backend'), 'backend'],
       [msg('VOE', undefined, 'backend'), 'backend'],
       [msg('VOE', undefined, 'local'), 'local'],
     ], true);
     expect(streams).toHaveLength(1);
-    expect(events[1]).toEqual({ changed: false, appended: false }); // dupe dropped
-    expect(events[2]).toEqual({ changed: true, appended: false });  // local swap
+    expect(events[1]).toEqual({ changed: false, appended: false });
+    expect(events[2]).toEqual({ changed: true, appended: false });
     expect(streams[0].url).toContain('/local');
   });
 
   it('preserves the original slot/order when a later local line swaps in', () => {
     const { streams } = run([
-      [msg('VOE', 'Sub', 'backend'), 'backend'],   // idx 0
-      [msg('Doodstream', 'Sub', 'backend'), 'backend'], // idx 1
-      [msg('VOE', 'Sub', 'local'), 'local'],       // swaps idx 0 in place
+      [msg('VOE', 'Sub', 'backend'), 'backend'],
+      [msg('Doodstream', 'Sub', 'backend'), 'backend'],
+      [msg('VOE', 'Sub', 'local'), 'local'],
     ], true);
     expect(streams.map((s) => s.source)).toEqual(['VOE', 'Doodstream']);
-    expect(streams[0].url).toContain('/local'); // VOE upgraded in its original slot
+    expect(streams[0].url).toContain('/local');
     expect(streams[1].url).toContain('/backend');
   });
 });

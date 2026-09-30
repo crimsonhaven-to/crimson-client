@@ -1,17 +1,10 @@
-// --- Per-type browse hubs ---------------------------------------------------
-// The data layer for the Shows / Movies / Manga browse hubs, the discovery twins
-// of useCatalogue (anime) and useLocalLibrary (local). Shows + movies are served
-// whole from the backend's local TMDB tables (/catalogue/shows|movies) and cached
-// like useCatalogue; manga is live + paginated (/catalogue/manga has no local
-// table), so useMangaCatalogue drives page/sort/genre and appends pages.
+// Shows and movies come whole from the backend's local TMDB tables. Manga and
+// anime Discover are live AniList queries with no local table, so they paginate.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { apiFetch, extractError } from './apiClient';
 import { memGet, memSet } from './memCache';
 
-// Shared shape for the two local (full-list) catalogues. `listKey` is the item
-// array field the endpoint returns ('shows' | 'movies'); `cacheKey` is its
-// memCache slot. Mirrors useCatalogue: seed from cache, skip the fetch when warm.
 function useLocalCatalogue(path, listKey, cacheKey) {
   const empty = { items: [], genres: [], total: 0 };
   const [data, setData] = useState(() => memGet(cacheKey) || empty);
@@ -19,7 +12,7 @@ function useLocalCatalogue(path, listKey, cacheKey) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (memGet(cacheKey)) return; // already seeded from cache
+    if (memGet(cacheKey)) return;
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -49,33 +42,26 @@ function useLocalCatalogue(path, listKey, cacheKey) {
   return { ...data, loading, error };
 }
 
-// Full non-anime TV-show catalogue → { items, genres, total, loading, error }.
 export function useShowsCatalogue() {
   return useLocalCatalogue('/catalogue/shows', 'shows', 'catalogue-shows');
 }
 
-// Full general-movie catalogue → { items, genres, total, loading, error }.
 export function useMoviesCatalogue() {
   return useLocalCatalogue('/catalogue/movies', 'movies', 'catalogue-movies');
 }
 
-// Shared sort control for the live AniList browse hubs (anime + manga). The
-// tokens map to AniList MediaSort enums on the backend (_MEDIA_SORTS).
+// Values map to AniList MediaSort enums on the backend (_MEDIA_SORTS).
 export const CATALOGUE_SORTS = [
   { value: 'trending', label: 'Trending' },
   { value: 'popular', label: 'Popular' },
   { value: 'score', label: 'Top Rated' },
   { value: 'newest', label: 'Newest' },
-  { value: 'title', label: 'A–Z' },
+  { value: 'title', label: 'A-Z' },
 ];
-// Back-compat alias for the earlier MangaHub import.
 export const MANGA_SORTS = CATALOGUE_SORTS;
 
-// Generic paginated browse over a live AniList catalogue endpoint. `path` is the
-// endpoint (/catalogue/anime | /catalogue/manga), `listKey` the item array field
-// it returns ('animes' | 'manga'). Re-fetches page 1 whenever genre/sort change;
-// `loadMore` appends the next page. The accumulated list (per path+genre+sort) is
-// memCached so returning to the hub restores what you'd scrolled.
+// The accumulated list is memCached so returning to the hub restores how far you
+// had scrolled.
 function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) {
   const cacheKey = `${path}:${genre || 'all'}:${sort}`;
   const seed = memGet(cacheKey);
@@ -84,18 +70,15 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
   const [total, setTotal] = useState(() => seed?.total || 0);
   const [page, setPage] = useState(() => seed?.page || 0);
   const [hasNext, setHasNext] = useState(() => seed?.hasNext ?? true);
-  // Whether the backend served a degraded/local fallback (e.g. Anime Discover
-  // riding the local archive while AniList is down) — drives the hub's notice.
+  // True when the backend served the local archive because AniList is down.
   const [fallback, setFallback] = useState(() => seed?.fallback || false);
   const [loading, setLoading] = useState(() => !seed);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-  // Guards against a stale in-flight response landing after a genre/sort switch.
+  // Drops a stale in-flight response that lands after a genre/sort switch.
   const reqRef = useRef(0);
-  // Latest accumulated list, read by the append path. fetchPage is keyed only by
-  // path/genre/sort (so loadMore doesn't rebuild every page and re-trigger the
-  // reset effect), so it can't close over the freshest `items` — the ref bridges
-  // that: appending to itemsRef.current instead of the (stale) closed-over items.
+  // fetchPage must not depend on `items` (every page would re-trigger the reset
+  // effect), so the append path reads the latest list from this ref.
   const itemsRef = useRef(seed?.items || []);
   const setList = useCallback((list) => { itemsRef.current = list; setItems(list); }, []);
 
@@ -108,14 +91,12 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
       if (genre) params.set('genre', genre);
       const res = await apiFetch(`${path}?${params.toString()}`);
       if (!res.ok) {
-        // Surface the backend's detail (e.g. the 503 "AniList temporarily
-        // unavailable" from an upstream outage) rather than a bare status code.
         let detail = `HTTP ${res.status}`;
         try { detail = extractError(await res.json(), detail); } catch { /* non-JSON body */ }
         throw new Error(detail);
       }
       const body = await res.json();
-      if (token !== reqRef.current) return; // superseded by a newer request
+      if (token !== reqRef.current) return;
       if (body.success) {
         const base = replace ? [] : itemsRef.current;
         const merged = [...base, ...(body[listKey] || [])];
@@ -137,7 +118,6 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
     }
   }, [path, listKey, genre, sort, cacheKey, setList]);
 
-  // (Re)load page 1 when genre/sort change — unless the cache already has it.
   useEffect(() => {
     const cached = memGet(cacheKey);
     if (cached) {
@@ -157,13 +137,10 @@ function usePaginatedBrowse({ path, listKey, genre = null, sort = 'trending' }) 
   return { items, genres, total, hasNext, loading, loadingMore, error, loadMore, fallback };
 }
 
-// Manga browse hub: live AniList, paginated (see usePaginatedBrowse).
 export function useMangaCatalogue({ genre = null, sort = 'trending' } = {}) {
   return usePaginatedBrowse({ path: '/catalogue/manga', listKey: 'manga', genre, sort });
 }
 
-// Anime "Discover" browse — the fast, paginated, poster-rich default view of the
-// Anime hub (the full local /catalogue archive stays a secondary view).
 export function useAnimeCatalogue({ genre = null, sort = 'trending' } = {}) {
   return usePaginatedBrowse({ path: '/catalogue/anime', listKey: 'animes', genre, sort });
 }

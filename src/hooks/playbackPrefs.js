@@ -1,36 +1,21 @@
-// --- User language / dub-sub preference -------------------------------------
-// A purely client-side preference (stored in localStorage) that decides which
-// source auto-plays. It is the ONLY auto-select key: streams whose `language` tag
-// matches the user's preferred language/type are ranked first, and there is no
-// source-quality/provider ranking underneath it — streams that tie (same language
-// match) fall back to arrival order, so the first to resolve plays. With no
-// preference set, every stream scores equal and pure arrival order decides.
-//
-// localStorage is the synchronous cache the ranker reads; the choice is also synced
-// to the account (see persistPlaybackPrefsRemote / syncPlaybackPrefsFromAccount) so
-// it follows the user across devices. The sync is best-effort — if the backend is
-// unreachable the local cache stays authoritative, so ranking never breaks.
+// The language/type preference is the only auto-select key: ties fall back to
+// arrival order, with no provider ranking underneath. localStorage is the
+// synchronous cache the ranker reads; the account sync is best-effort, so an
+// unreachable backend never breaks ranking.
 import { useCallback, useEffect, useState } from 'react';
 
 import { SESSION_KEY, apiFetch } from './apiClient';
 
 const PLAYBACK_PREFS_KEY = 'crimson:playback-prefs';
-// `discordPresence` opts the viewer into broadcasting a Discord Rich Presence
-// (see discordPresence.js). It rides in the same client-preferences blob as the
-// language/dub-sub choice so it persists locally AND syncs to the account exactly
-// like them — one PUT carries all three.
 const EMPTY_PLAYBACK_PREFS = { language: '', type: '', discordPresence: false, subtitleLanguages: [] };
 
-// The languages/types offered in the settings UI. `value` is matched as a
-// case-insensitive substring against the scraper's language tag ("German Dub",
-// "English Sub", …), so it stays robust to minor label variations.
+// Matched as case-insensitive substrings of the scraper's language tag
+// ("German Dub", "English Sub"), so minor label variations still match.
 export const PREF_LANGUAGES = ['German', 'English', 'Japanese', 'Spanish', 'French', 'Italian'];
 export const PREF_TYPES = ['Dub', 'Sub'];
 
-// Languages offered for OpenSubtitles external subtitle tracks (player CC menu).
-// `code` is the 2-letter code the backend passes to OpenSubtitles; `label` is what
-// the settings UI shows. Distinct from PREF_LANGUAGES (which biases SOURCE choice
-// by audio language) — these only pick which downloadable .vtt tracks to fetch.
+// Unlike PREF_LANGUAGES (which picks the source by audio), these only choose which
+// OpenSubtitles .vtt tracks to fetch. `code` is what the backend passes on.
 export const SUBTITLE_LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'de', label: 'German' },
@@ -47,9 +32,8 @@ export const SUBTITLE_LANGUAGES = [
 ];
 const SUBTITLE_LANGUAGE_CODES = new Set(SUBTITLE_LANGUAGES.map((l) => l.code));
 
-// Defensive sanitiser for the subtitle-language list: keep only known 2-letter
-// codes, de-duped, capped — the value is round-tripped through the synced prefs
-// blob and the URL, so we never trust it blindly.
+// The list round-trips through the synced prefs blob and the URL, so it is never
+// trusted as-is.
 export function cleanSubtitleLanguages(value) {
   if (!Array.isArray(value)) return [];
   const out = [];
@@ -83,15 +67,12 @@ export function setPlaybackPrefs(prefs) {
     subtitleLanguages: cleanSubtitleLanguages(prefs?.subtitleLanguages),
   };
   localStorage.setItem(PLAYBACK_PREFS_KEY, JSON.stringify(clean));
-  // Broadcast so any open watch page / other tab can pick up the change live.
   window.dispatchEvent(new Event('crimson-playback-prefs'));
   return clean;
 }
 
-// Durably persist the preference to the account so it follows the user across
-// devices. Fire-and-forget: the local cache (read by the ranker) is already
-// updated, so a failed/offline write never blocks the UI — the next change or the
-// next login re-syncs. Skipped when signed out (the PUT would just 401).
+// Fire-and-forget: the local cache is already updated, and the next change or
+// login re-syncs. Skipped when signed out because the PUT would just 401.
 function persistPlaybackPrefsRemote(prefs) {
   if (!localStorage.getItem(SESSION_KEY)) return;
   apiFetch('/account/preferences', {
@@ -101,16 +82,12 @@ function persistPlaybackPrefsRemote(prefs) {
   }).catch(() => {});
 }
 
-// Reconcile the account's server-side preference (from /account/me) with the local
-// cache the stream ranker reads. The server is authoritative when it has a value
-// (mirror it down so the choice follows the user to a fresh device); when it has
-// none yet, push any existing local choice up so it becomes the account default —
-// a one-time, silent migration for users who set a preference before this synced.
+// The server wins when it has a value. When it has none, the local choice is
+// pushed up once, migrating users who set a preference before syncing existed.
 export function syncPlaybackPrefsFromAccount(remote) {
   const r = remote && typeof remote === 'object' ? remote : {};
-  // The account holds a value once any preference has ever been saved — note a
-  // stored `discordPresence: false` still counts, so we don't clobber a deliberate
-  // opt-out by pushing a stale local default back up.
+  // A stored `discordPresence: false` counts, so a deliberate opt-out is not
+  // clobbered by a stale local default.
   const hasRemote = r.language || r.type || typeof r.discordPresence === 'boolean' || Array.isArray(r.subtitleLanguages);
   if (hasRemote) {
     const next = {
@@ -130,10 +107,8 @@ export function syncPlaybackPrefsFromAccount(remote) {
   }
 }
 
-// Reactive accessor for the settings page. Returns [prefs, update] where update
-// writes the local cache (read synchronously by the ranker), broadcasts to other
-// tabs, and persists to the account. Hydration from the account happens in
-// useProfile (always mounted), which broadcasts the same event this listens to.
+// Hydration from the account happens in useProfile, which is always mounted and
+// fires the same event this listens to.
 export function usePlaybackPrefs() {
   const [prefs, setPrefs] = useState(getPlaybackPrefs);
   useEffect(() => {
@@ -146,8 +121,8 @@ export function usePlaybackPrefs() {
     };
   }, []);
   const update = useCallback((next) => {
-    const clean = setPlaybackPrefs(next); // local cache + 'crimson-playback-prefs' event
-    persistPlaybackPrefsRemote(clean);    // durable, cross-device (best-effort)
+    const clean = setPlaybackPrefs(next);
+    persistPlaybackPrefsRemote(clean);
     return clean;
   }, []);
   return [prefs, update];

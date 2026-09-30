@@ -1,9 +1,5 @@
-// Lumi chat client: availability probe plus the NDJSON reply stream.
-//
-// The backend streams chat over NDJSON on a POST rather than SSE, because
-// EventSource cannot send an Authorization header or a request body. That is the
-// same transport /watch already uses, so this is the ndjson.js reader adapted to
-// a POST and a typed line protocol.
+// NDJSON on a POST rather than SSE, because EventSource cannot send an
+// Authorization header or a request body.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { apiFetch, extractError } from './apiClient';

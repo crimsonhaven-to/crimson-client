@@ -1,11 +1,6 @@
-// --- Core API client + reactive session token -------------------------------
-// The single choke point through which every backend request flows (apiFetch,
-// which attaches the login-wall bearer token), plus the reactive session-token
-// plumbing. The session token lives in localStorage, which isn't reactive, so a
-// login/logout in one hook instance wouldn't update the others without a remount.
-// We bridge them with a window event: auth mutations go through setAuthStorage
-// (which dispatches 'crimson-auth'), and every useSessionToken subscriber re-reads
-// — so all instances stay in sync within the tab (and across tabs via 'storage').
+// localStorage is not reactive, so auth changes go through setAuthStorage, which
+// fires 'crimson-auth' for useSessionToken subscribers in this tab ('storage'
+// covers other tabs).
 import { useEffect, useState } from 'react';
 
 import { API_BASE_URL } from './config';
@@ -21,17 +16,14 @@ export function setAuthStorage(sessionToken, publicKey) {
   window.dispatchEvent(new Event('crimson-auth'));
 }
 
-// Plain (non-hook) read of the current session token, for the few places that
-// can't use a React hook — notably hls.js's xhrSetup, which must attach the bearer
-// to login-walled media requests (the on-the-fly transcode at /local_hls) that a
-// <video>/hls.js request can't otherwise authenticate.
+// For places that cannot use a hook, notably hls.js's xhrSetup, which must attach
+// the bearer to login-walled /local_hls requests.
 export function getSessionToken() {
   try { return localStorage.getItem(SESSION_KEY); } catch { return null; }
 }
 
-// Public, unauthenticated deployment flags (GET /config) — fetched once at boot and
-// cached module-wide so every caller shares a single request. Read pre-login by the
-// login page to drop the invite-code requirement on a demo instance (demo_mode).
+// Unauthenticated, so the login page can read demo_mode before sign-in. Cached
+// module-wide so every caller shares one request.
 let _publicConfig = null;
 let _publicConfigPromise = null;
 export function usePublicConfig() {
@@ -53,16 +45,9 @@ export function usePublicConfig() {
   return config;
 }
 
-// Pull a human-readable message out of a backend error body.
-//
-// Two shapes reach us. FastAPI's own validation errors keep `detail`, which is a
-// string or an array of field errors on a 422. Everything the backend raises as
-// an HTTPException is rewritten by its handler into
-// {success, error, message}: `error` carries the real reason and `message` is
-// Lumi's voiced line for the banner. Reading only `detail` meant every raised
-// error showed the caller's generic fallback instead of what actually went
-// wrong, which matters most exactly where the reason is actionable ("Password is
-// incorrect", "This invite code has already been used").
+// FastAPI's own 422s carry `detail` (a string or field-error array). Every raised
+// HTTPException is rewritten by the backend into {success, error, message}, where
+// `error` is the real reason and `message` is Lumi's voiced banner line.
 export function extractError(data, fallback = 'Something went wrong') {
   const d = data?.detail;
   if (typeof d === 'string') return d;
@@ -71,12 +56,8 @@ export function extractError(data, fallback = 'Something went wrong') {
   return fallback;
 }
 
-// The backend now enforces a login wall: every content/account endpoint needs a
-// valid session bearer token. apiFetch is the single choke point that attaches
-// it. Pass a path ("/trending") or an absolute URL; the token is read live from
-// storage so it always reflects the current session. A 401 on a request we
-// *thought* was authed means the session expired/was revoked server-side, so we
-// clear it — which re-renders the app behind the login wall.
+// A 401 on a request that carried a token means the session was revoked or
+// expired server-side, so clearing it drops the app back behind the login wall.
 export async function apiFetch(path, options = {}) {
   const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
   const token = localStorage.getItem(SESSION_KEY);

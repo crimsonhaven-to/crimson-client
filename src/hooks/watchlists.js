@@ -1,22 +1,13 @@
-// Watchlists data layer (favorites + user-made lists). Lighter than useAccount (no
-// profile/history fetches), so it's cheap to mount inside the per-show "add to
-// list" button as well as the Watchlists page. Lifted verbatim from hooks.js.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { apiFetch, useSessionToken } from './apiClient';
 
-// The default list every account has (the original single "Favorites" tab). Any
-// other list_name is a user-made watchlist (e.g. "Todo", "Done", "Paused").
 export const DEFAULT_LIST = 'favorites';
-// A virtual, read-only list surfaced only on the Watchlists page: the
-// de-duplicated union of every list's shows. It is NOT a real list_name and is
-// never sent to the server — keep it out of the hook's `lists` so it can't show
-// up as an "add to list" target in WatchlistButton.
+// Virtual union of every list, shown only on the Watchlists page. Never sent to
+// the server and kept out of `lists` so it is not an "add to list" target.
 export const ALL_LIST = '__all__';
 const CUSTOM_LISTS_KEY = 'crimson:watchlists';
 
-// Human label for a list name — the default list reads as "Favorites", the
-// virtual aggregate reads as "All".
 export const listLabel = (name) =>
   name === DEFAULT_LIST ? 'Favorites' : name === ALL_LIST ? 'All' : name;
 
@@ -31,24 +22,20 @@ const loadCustomLists = () => {
 const saveCustomLists = (names) =>
   localStorage.setItem(CUSTOM_LISTS_KEY, JSON.stringify(names));
 
-// True when a stored favorite row refers to the same show as `item`. Mirrors the
-// backend dedup key (account_engine/routes.py:_favorite_item_key): AniList id is
-// preferred, otherwise it's a TMDB-only row.
+// Mirrors the backend dedup key (account_engine/routes.py:_favorite_item_key).
 const rowMatchesItem = (row, item) => {
   if (item.anilist_id != null) return row.anilist_id === item.anilist_id;
   if (item.tmdb_id != null) {
-    // Movies share the TMDB id space with shows, so a movie favorite must only
-    // match movie rows (and vice-versa) — mirrors the backend's movie: namespace.
+    // Movies share the TMDB id space with shows (the backend's movie: namespace).
     if (item.media_type === 'movie') return String(row.tmdb_id) === String(item.tmdb_id) && row.media_type === 'movie';
     return String(row.tmdb_id) === String(item.tmdb_id) && row.anilist_id == null && row.media_type !== 'movie';
   }
   return false;
 };
 
-// Query params identifying one show for the DELETE endpoint (AniList preferred).
-// media_type must be forwarded for the namespaced kinds (movie:, manga:) so the
-// backend rebuilds the SAME item_key it stored — otherwise an anilist_id-only
-// delete computes `anilist:{id}` and misses a manga row (`manga:{id}`) → 404.
+// media_type must be sent for the namespaced kinds (movie:, manga:) so the backend
+// rebuilds the same item_key; otherwise a manga delete computes `anilist:{id}`
+// and 404s.
 const itemQuery = (item, listName) => {
   const p = new URLSearchParams();
   if (item.anilist_id != null) {
@@ -62,14 +49,12 @@ const itemQuery = (item, listName) => {
   return p;
 };
 
-// Watchlists data layer. Lighter than useAccount (no profile/history fetches), so
-// it's cheap to mount inside the per-show "add to list" button as well as the
-// Watchlists page. Empty lists (created but not yet populated) live in
-// localStorage, since the server only knows a list once it has ≥1 item.
+// Cheap enough to mount inside every "add to list" button. Empty lists live in
+// localStorage because the server only knows a list once it has an item.
 export function useWatchlists() {
   const sessionToken = useSessionToken();
-  const [items, setItems] = useState([]);        // every favorite row, all lists
-  const [serverLists, setServerLists] = useState([]); // [{list_name, count}]
+  const [items, setItems] = useState([]);
+  const [serverLists, setServerLists] = useState([]);
   const [customLists, setCustomLists] = useState(loadCustomLists);
   const [loading, setLoading] = useState(false);
 
@@ -92,8 +77,6 @@ export function useWatchlists() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  // Union of the default list, server lists (with counts) and any empty
-  // client-side lists, ordered with "Favorites" first then alphabetical.
   const lists = useMemo(() => {
     const map = new Map();
     map.set(DEFAULT_LIST, { name: DEFAULT_LIST, count: 0 });
@@ -106,7 +89,6 @@ export function useWatchlists() {
     });
   }, [serverLists, customLists]);
 
-  // Names of the lists a given show currently belongs to.
   const listsForItem = useCallback(
     (item) => items.filter(r => rowMatchesItem(r, item)).map(r => r.list_name),
     [items]
@@ -152,7 +134,6 @@ export function useWatchlists() {
     return inList ? removeFromList(item, listName) : addToList(item, listName);
   }, [items, addToList, removeFromList]);
 
-  // Create an (initially empty) list. Persists client-side until it gets items.
   const createList = useCallback((name) => {
     const clean = (name || '').trim().slice(0, 100);
     if (!clean || clean === DEFAULT_LIST) return false;
@@ -165,8 +146,6 @@ export function useWatchlists() {
     return true;
   }, []);
 
-  // Remove a whole list: delete its server rows, then drop the client entry. The
-  // default list can be emptied but not removed.
   const deleteList = useCallback(async (name) => {
     if (name === DEFAULT_LIST) return false;
     const rows = items.filter(r => r.list_name === name);
@@ -182,17 +161,14 @@ export function useWatchlists() {
     return true;
   }, [items, refresh]);
 
-  // Download every watchlist as one file. `format` is 'csv' (spreadsheet-friendly,
-  // default) or 'json' (a round-trippable backup). The export is auth-gated, so we
-  // fetch it through apiFetch (which attaches the bearer token) and trigger the
-  // save from the resulting blob — a plain <a download> wouldn't carry the token.
+  // `format` is 'csv' or 'json'. A plain <a download> would not carry the bearer
+  // token, so the save is triggered from a fetched blob.
   const exportWatchlists = useCallback(async (format = 'csv') => {
     if (!sessionToken) return false;
     try {
       const res = await apiFetch(`/account/favorites/export?format=${format}`);
       if (!res.ok) return false;
       const blob = await res.blob();
-      // Honour the server's filename (Content-Disposition) when present.
       const disp = res.headers.get('Content-Disposition') || '';
       const match = disp.match(/filename="?([^"]+)"?/);
       const filename = match ? match[1] : `crimson-watchlists.${format}`;
@@ -211,11 +187,8 @@ export function useWatchlists() {
     }
   }, [sessionToken]);
 
-  // Restore watchlists from an exported CSV/JSON file. The file is sent as the
-  // raw request body (the backend sniffs CSV vs JSON from the content). `mode` is
-  // 'merge' (default — add to existing lists) or 'replace' (wipe all lists first).
-  // Resolves to the server's summary ({ imported, skipped, total, ... }) so the
-  // UI can report what happened; refreshes so imported lists/items show at once.
+  // `mode` is 'merge' or 'replace' (wipe all lists first). Resolves to the
+  // server's summary ({ imported, skipped, total, ... }).
   const importWatchlists = useCallback(async (file, mode = 'merge') => {
     if (!sessionToken) return { ok: false, error: 'You need to be signed in.' };
     if (!file) return { ok: false, error: 'No file selected.' };

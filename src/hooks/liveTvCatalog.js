@@ -1,21 +1,7 @@
-// --- Client-side Live TV catalogue (iptv-org) --------------------------------
-// The browsable catalogue used to be built and served by the backend's
-// iptv_engine (it fetched the iptv-org JSON index, joined it, and answered
-// /iptv/browse|channels|channel). This module moves that whole join into the
-// viewer's browser: the six iptv-org files are fetched straight from GitHub
-// Pages (which serves `Access-Control-Allow-Origin: *`, so no proxy is needed),
-// joined by a faithful port of the backend's build_catalog, and cached in
-// IndexedDB for 12h — so the catalogue never touches the backend at all, and a
-// return visit within the window pays zero bytes.
-//
-// Playback (the byte-heavy part) is handled separately in liveTvExt.js: a stream
-// plays direct off the CDN when it can, through the crimson-extension companion
-// when it can't (plain-http / no-CORS / Referer-gated), and only through the
-// backend's signed /iptv_proxy as a last resort. See src/LiveTvWatch.jsx.
-//
-// Nothing here is hosted by us; iptv-org curates a public, daily index of
-// free-to-air broadcasts. We honour their blocklist and drop NSFW by default,
-// exactly like the backend did.
+// Built in the browser so the catalogue never touches the backend: iptv-org's
+// GitHub Pages serves `Access-Control-Allow-Origin: *`, so no proxy is needed.
+// The join is a port of the backend's build_catalog and must stay in lockstep
+// with it. Their blocklist is honoured and NSFW is dropped by default.
 
 const IPTV_API_BASE = 'https://iptv-org.github.io/api';
 
@@ -25,9 +11,7 @@ const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 // A stream with no quality tag sorts below any tagged one but above nothing.
 const UNKNOWN_QUALITY = -1;
 
-// --- IndexedDB cache ---------------------------------------------------------
-// localStorage tops out around 5 MB; the built catalogue is several MB, so it
-// lives in IndexedDB. One store, one row (the built catalogue + a timestamp).
+// localStorage tops out around 5 MB and the built catalogue is several MB.
 const DB_NAME = 'crimson-livetv';
 const STORE = 'catalog';
 const CACHE_KEY = 'catalog-v1';
@@ -78,24 +62,16 @@ async function idbSet(key, value) {
   }
 }
 
-// --- Catalogue join (pure; a port of iptv_engine.service.build_catalog) -------
 function qualityRank(quality) {
   const n = parseInt(String(quality || '').toLowerCase().replace(/[pi]+$/, ''), 10);
   return Number.isNaN(n) ? UNKNOWN_QUALITY : n;
 }
 
-/**
- * Join the raw iptv-org API payloads into the servable catalogue. Only channels
- * that are alive (not closed/replaced), permitted (not blocklisted, not NSFW
- * unless opted in) and actually playable (≥1 stream) make it in.
- *
- * Returns { channels: {id -> record}, ordered: [id], categories: [...], countries: [...] }.
- */
+// Returns { channels: {id: record}, ordered: [id], categories, countries }.
 export function buildCatalog(channels, streams, categories, countries, logos, blocklist, includeNsfw = false) {
   const blocked = new Set((blocklist || []).map((b) => b && b.channel).filter(Boolean));
 
-  // Best logo per channel: in_use first, then channel-level over feed-level, then
-  // widest — mirrors the backend's score tuple (in_use, feed is None, width).
+  // Mirrors the backend's score tuple (in_use, feed is None, width).
   const logoByChannel = new Map();
   for (const lg of logos || []) {
     const ch = lg && lg.channel;
@@ -155,7 +131,7 @@ export function buildCatalog(channels, streams, categories, countries, logos, bl
       website: ch.website ?? null,
       logo: (logoByChannel.get(cid) || {}).url ?? null,
       streams: chStreams,
-      // Pre-lowered haystack so search doesn't re-lower every name per query.
+      // Pre-lowered so search does not re-lower every name per query.
       _search: [ch.name || '', ch.network || '', ...(ch.alt_names || [])].join(' ').toLowerCase(),
     });
     for (const c of cats) categoryCounts.set(c, (categoryCounts.get(c) || 0) + 1);
@@ -181,7 +157,6 @@ export function buildCatalog(channels, streams, categories, countries, logos, bl
   return { channels: Object.fromEntries(records), ordered, categories: catList, countries: countryList };
 }
 
-// Lexicographic compare of the [in_use, channelLevel, width] score tuples.
 function scoreGreater(a, b) {
   for (let i = 0; i < a.length; i += 1) {
     if (a[i] !== b[i]) return a[i] > b[i];
@@ -189,7 +164,6 @@ function scoreGreater(a, b) {
   return false;
 }
 
-// --- Read helpers (ports of browse_facets / list_channels / get_channel) ------
 export function browseFacets(catalog) {
   if (!catalog) return { categories: [], countries: [], total: 0 };
   return {
@@ -237,13 +211,8 @@ export function listChannels(catalog, { category = null, country = null, q = '',
   };
 }
 
-/**
- * Full channel detail for the watch page. Unlike the backend (which pre-signs a
- * proxy_path per stream), the client keeps the raw upstream fields — url plus the
- * Referer/User-Agent the feed demands — and computes `direct_ok`. The playback
- * layer decides per feed whether to go direct, through the extension, or (last
- * resort) mint a signed backend proxy link. See liveTvExt.js.
- */
+// Keeps the raw upstream url, Referer and User-Agent so liveTvExt.js can decide
+// per feed whether to go direct, through the extension, or via the backend proxy.
 export function getChannel(catalog, channelId) {
   if (!catalog) return null;
   const rec = catalog.channels[channelId];
@@ -262,15 +231,13 @@ export function getChannel(catalog, channelId) {
       url: s.url,
       referrer: s.referrer,
       user_agent: s.user_agent,
-      // Direct-eligible: an https page can only load https media, and the browser
-      // can't send a custom Referer/User-Agent. (CORS can't be known ahead of
-      // time — the player discovers it by trying, then escalates.)
+      // An https page can only load https media, and the browser cannot send a
+      // custom Referer/User-Agent. CORS is only discovered by trying.
       direct_ok: s.url.startsWith('https://') && !s.referrer && !s.user_agent,
     })),
   };
 }
 
-// --- Fetch + cache orchestration ---------------------------------------------
 async function fetchJson(name) {
   const res = await fetch(`${IPTV_API_BASE}/${name}.json`, { credentials: 'omit' });
   if (!res.ok) throw new Error(`iptv-org ${name}.json: HTTP ${res.status}`);
@@ -289,37 +256,31 @@ async function fetchAndBuild() {
   return buildCatalog(channels, streams, categories, countries, logos, blocklist);
 }
 
-// Session-scoped memo so navigating between the hub and watch pages doesn't even
-// re-read IndexedDB. Holds the in-flight promise too, so concurrent callers share
-// one build.
+// Holds the in-flight promise so concurrent callers share one build and page
+// navigation skips even the IndexedDB read.
 let _catalogPromise = null;
 
 async function loadCatalog() {
-  // Try the IndexedDB cache first; a fresh row skips the ~21 MB download entirely.
+  // A fresh row skips the ~21 MB download.
   try {
     const cached = await idbGet(CACHE_KEY);
     if (cached && cached.builtAt && (Date.now() - cached.builtAt) < CACHE_TTL_MS && cached.catalog) {
       return cached.catalog;
     }
   } catch {
-    /* IndexedDB unavailable (private mode / disabled) — fall through to a live fetch. */
+    /* IndexedDB unavailable (private mode or disabled): fetch live. */
   }
 
   const catalog = await fetchAndBuild();
   try {
     await idbSet(CACHE_KEY, { builtAt: Date.now(), catalog });
   } catch {
-    /* Cache write failed (quota/private mode) — playback still works, just uncached. */
+    /* Quota or private mode: works, just uncached. */
   }
   return catalog;
 }
 
-/**
- * The built catalogue, memoised for the page session. Rejects if the iptv-org
- * fetch fails and there's no usable cache — callers surface that as the hub's
- * error state (and may fall back to the backend). A rejected attempt is not
- * memoised, so a later retry can succeed.
- */
+// A rejected attempt is not memoised, so a later retry can succeed.
 export function getCatalog() {
   if (!_catalogPromise) {
     _catalogPromise = loadCatalog().catch((err) => {

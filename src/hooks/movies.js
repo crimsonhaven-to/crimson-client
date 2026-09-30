@@ -1,7 +1,3 @@
-// --- General (non-anime) movies (secondary surface) -------------------------
-// The movie twins of the show hooks. A movie has no seasons/episodes, so these
-// are simpler: one /movie-overview payload and a single /watch/movie stream. Anime
-// and shows are untouched. Lifted verbatim from hooks.js.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../clientSources';
@@ -11,7 +7,6 @@ import { getPlaybackPrefs } from './playbackPrefs';
 import { streamWatchNdjson } from './ndjson';
 import { mergeStreamLine, pickBestIdx } from './streamMerge';
 
-// Trending general movies for the landing page's secondary row.
 export function useTrendingMovies() {
   const [trendingMovies, setTrendingMovies] = useState(() => memGet('trending-movies') || []);
   const [trendLoading, setTrendLoading] = useState(() => !memGet('trending-movies'));
@@ -39,8 +34,6 @@ export function useTrendingMovies() {
   return { trendingMovies, trendLoading };
 }
 
-// Movie overview: fetches /movie-overview/{tmdbId}. No seasons/episodes — the page
-// renders a single "Start Watching" using the shared OverviewView in movie mode.
 export function useMovieOverview(tmdbId) {
   const [overview, setOverview] = useState(() => (tmdbId ? memGet(`movie-overview:${tmdbId}`) : null));
   const [loading, setLoading] = useState(() => !(tmdbId && memGet(`movie-overview:${tmdbId}`)));
@@ -73,8 +66,6 @@ export function useMovieOverview(tmdbId) {
   return { overview, loading, error };
 }
 
-// Movie streamer: loads the overview (title/poster) + streams sources via the
-// /watch/movie/{tmdbId} NDJSON route. No season/episode dimension.
 export function useMovieStreamer(tmdbId) {
   const [overview, setOverview] = useState(() => (tmdbId ? memGet(`movie-overview:${tmdbId}`) : null));
   const [streamData, setStreamData] = useState(null);
@@ -89,11 +80,9 @@ export function useMovieStreamer(tmdbId) {
     setActiveStreamIdx(idx);
   }, []);
 
-  // Manual "rescan sources" — bump to re-run the resolution effect from scratch.
   const [reloadNonce, setReloadNonce] = useState(0);
   const reloadStreams = useCallback(() => setReloadNonce((n) => n + 1), []);
 
-  // Movie metadata (title/poster) — reuses the overview payload / its cache.
   useEffect(() => {
     if (!tmdbId) return;
     const cached = memGet(`movie-overview:${tmdbId}`);
@@ -114,7 +103,6 @@ export function useMovieStreamer(tmdbId) {
     return () => { cancelled = true; };
   }, [tmdbId]);
 
-  // Progressive NDJSON source streaming via /watch/movie/{tmdbId}.
   useEffect(() => {
     if (!tmdbId) return;
     const controller = new AbortController();
@@ -125,8 +113,6 @@ export function useMovieStreamer(tmdbId) {
     streamsRef.current = [];
     userPickedRef.current = false;
 
-    //   key -> { idx, origin: 'local' | 'backend' }; prefer-local dedup, see the
-    //   show hook above for the rationale.
     const dedup = new Map();
 
     const handleLine = (line, origin = 'backend') => {
@@ -138,9 +124,6 @@ export function useMovieStreamer(tmdbId) {
       if (msg.type === 'meta') {
         setStreamData((prev) => ({ ...(prev || {}), ...msg, streams: prev?.streams || [] }));
       } else if (msg.type === 'stream') {
-        // Prefer local over a backend duplicate; distinct dub/sub variants stay
-        // separate. A local line supersedes backend even if backend arrived first.
-        // Then auto-select by preference. See ./streamMerge.
         const { streams, changed, appended } = mergeStreamLine(
           { streams: streamsRef.current, dedup }, msg, origin,
           { enabled: clientSourcesEnabled() },
@@ -158,7 +141,6 @@ export function useMovieStreamer(tmdbId) {
 
     (async () => {
       try {
-        // Client-side resolution (no-op unless opted in); backend stays the floor.
         const local = streamLocalSources(
           { tmdbId, mediaType: 'movie' },
           { signal: controller.signal, onLine: (s) => handleLine(s, 'local') },

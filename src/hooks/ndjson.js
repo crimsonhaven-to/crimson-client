@@ -1,6 +1,3 @@
-// Reads one /watch NDJSON stream, invoking onLine for each JSON line. Shared by
-// the show + movie streamers (the anime streamer keeps its own inline copy
-// unchanged). Lifted verbatim from hooks.js.
 import { apiFetch } from './apiClient';
 
 export async function streamWatchNdjson(path, { signal, onLine }) {
@@ -20,5 +17,5 @@ export async function streamWatchNdjson(path, { signal, onLine }) {
       onLine(line);
     }
   }
-  if (buffer.trim()) onLine(buffer); // trailing, non-newline-terminated line
+  if (buffer.trim()) onLine(buffer);
 }

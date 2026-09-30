@@ -1,10 +1,7 @@
-// --- Lightweight in-memory cache (per page session) -------------------------
-// Trending and the catalogue are global, slow-changing payloads. Without this,
-// navigating away and back re-downloads them on every mount (the catalogue can
-// be large). A short TTL keeps them fresh enough while removing the repeat
-// fetches. Lives in module scope so it persists across component remounts.
+// Trending and the catalogue are large, slow-changing payloads; module scope keeps
+// them across remounts so navigating back does not re-download them.
 const _memCache = new Map();
-const MEM_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const MEM_TTL_MS = 5 * 60 * 1000;
 
 export function memGet(key) {
   const hit = _memCache.get(key);

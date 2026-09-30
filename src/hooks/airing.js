@@ -1,14 +1,6 @@
-// Airing calendar and per-title follows (backend: notify_engine).
-//
-// Two separate concerns on purpose, because they are read in different places
-// and at different costs:
-//
-//   useAiringCalendar  the whole week's schedule, one request, calendar page only
-//   useSubscriptions   just your follows, cheap enough to mount inside the
-//                      per-title follow button as well as the settings list
-//
-// A follow is keyed by anilist_id alone: the schedule comes from AniList, so a
-// title with no AniList id has nothing to be notified about.
+// Kept as two hooks because useSubscriptions is cheap enough to mount inside every
+// follow button, while the calendar is one heavier request for one page.
+// Follows are keyed by anilist_id because the schedule comes from AniList.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { apiFetch, useSessionToken } from './apiClient';

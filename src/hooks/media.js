@@ -1,16 +1,11 @@
-// External player tracks: OpenSubtitles subtitles + AniSkip intro/outro times.
-// Both are best-effort backend reads that resolve to []/null on any error so
-// playback is never blocked by a missing extra. Lifted verbatim from hooks.js.
+// Both fetches are best-effort and resolve to []/null on any error, so playback is
+// never blocked by a missing extra.
 import { API_BASE_URL } from './config';
 import { apiFetch } from './apiClient';
 import { cleanSubtitleLanguages } from './playbackPrefs';
 
-// Fetch OpenSubtitles tracks for a title from the backend (GET /subtitles), as
-// `[{ url, lang, label }]` ready to merge into CrimsonPlayer's `subtitles` prop.
-// `url` is absolutised to API_BASE_URL because the player's <track> loads it
-// cross-origin (the backend is a separate origin). Best-effort: any error (incl.
-// the 503 when OpenSubtitles isn't configured) resolves to [] so playback is never
-// blocked by missing subtitles. Pass the SHOW's tmdb id for episodes.
+// Pass the SHOW's tmdb id for episodes. `url` is made absolute because the
+// player's <track> loads it from the backend's separate origin.
 export async function fetchSubtitles({ tmdbId, season = null, episode = null, isMovie = false, languages = [] } = {}) {
   const langs = cleanSubtitleLanguages(languages);
   if (!tmdbId || !langs.length) return [];
@@ -37,12 +32,8 @@ export async function fetchSubtitles({ tmdbId, season = null, episode = null, is
   }
 }
 
-// Fetch AniSkip intro/outro (OP/ED) skip timestamps for an anime episode from the
-// backend (GET /skiptimes), as `{ op:{start,end}, ed:{start,end} }` (either may be
-// null). AniList-keyed, so this is anime-only — non-anime titles have no
-// `anilist_id` and the caller simply won't invoke it. Best-effort: any error, or a
-// title/episode AniSkip has no submissions for, resolves to null so the player just
-// shows no skip affordances.
+// AniSkip is AniList-keyed, so this is anime-only. Returns
+// `{ op: {start, end} | null, ed: {start, end} | null }`, or null when unknown.
 export async function fetchSkipTimes({ anilistId, episode, episodeLength = 0 } = {}) {
   if (!anilistId || !episode) return null;
   const p = new URLSearchParams({ anilist_id: String(anilistId), episode: String(episode) });

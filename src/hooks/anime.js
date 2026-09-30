@@ -1,30 +1,20 @@
-// Anime discovery + overview hooks: the per-anime overview page, trending, the
-// health probe, the full catalogue, and the document-title helper. Lifted verbatim
-// from hooks.js.
 import { useEffect, useRef, useState } from 'react';
 
 import { apiFetch } from './apiClient';
 import { memGet, memSet } from './memCache';
 
-// --- Per-anime overview page -------------------------------------------------
-// Fetches the aggregated /overview payload (show metadata + season list + extras)
-// in one round-trip, then lazily loads the episode list for whichever season is
-// active via /info (so we don't pull every season's episodes up front). Episode
-// lists are memoised per (tmdb_id, season) so flipping back to a season is
-// instant. This is what powers the new Overview page that sits between picking a
-// show and actually watching an episode.
+// Episodes load lazily per active season rather than all up front, and are
+// memoised so flipping back to a season is instant.
 export function useAnimeOverview(anilistId) {
   const [overview, setOverview] = useState(() => (anilistId ? memGet(`overview:${anilistId}`) : null));
   const [loading, setLoading] = useState(() => !(anilistId && memGet(`overview:${anilistId}`)));
   const [error, setError] = useState(null);
 
-  // Active season + its episodes.
   const [activeSeason, setActiveSeason] = useState(null);
   const [episodes, setEpisodes] = useState([]);
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const episodeCache = useRef(new Map());
 
-  // Load the show overview shell.
   useEffect(() => {
     if (!anilistId) return;
     const cached = memGet(`overview:${anilistId}`);
@@ -55,7 +45,6 @@ export function useAnimeOverview(anilistId) {
     return () => { cancelled = true; };
   }, [anilistId]);
 
-  // Load episodes for the active season (lazily, cached per season).
   useEffect(() => {
     if (!overview || activeSeason == null) return;
     const season = overview.seasons?.find(s => s.season_number === activeSeason);
@@ -96,13 +85,11 @@ export function useAnimeOverview(anilistId) {
 }
 
 export function useTrendingAnime() {
-  // Seed from the in-memory cache so a remount within the TTL paints instantly
-  // and skips the fetch (no setState in the effect body).
   const [trendingAnimes, setTrendingAnimes] = useState(() => memGet('trending') || []);
   const [trendLoading, setTrendLoading] = useState(() => !memGet('trending'));
 
   useEffect(() => {
-    if (memGet('trending')) return; // already seeded from cache
+    if (memGet('trending')) return;
     const fetchTrending = async () => {
       setTrendLoading(true);
       try {
@@ -145,14 +132,12 @@ export function useHealthStatus() {
 }
 
 export function useCatalogue() {
-  // Seed from the in-memory cache so a remount within the TTL paints instantly
-  // and skips the fetch (no setState in the effect body).
   const [catalogue, setCatalogue] = useState(() => memGet('catalogue') || { animes: [], categories: [], genres: [], total: 0 });
   const [loading, setLoading] = useState(() => !memGet('catalogue'));
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (memGet('catalogue')) return; // already seeded from cache
+    if (memGet('catalogue')) return;
     const fetchCatalogue = async () => {
       setLoading(true);
       try {

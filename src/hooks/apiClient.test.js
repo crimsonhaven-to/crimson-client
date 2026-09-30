@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 
 import { extractError } from './apiClient';
 
-// extractError normalises a FastAPI error body into one human-readable string.
-// `detail` can be a plain string, or an array of validation errors on a 422.
 describe('extractError', () => {
   it('returns a string detail verbatim', () => {
     expect(extractError({ detail: 'Invite code required' })).toBe('Invite code required');
@@ -23,10 +21,8 @@ describe('extractError', () => {
     expect(extractError(null, 'Custom fallback')).toBe('Custom fallback');
   });
 
-  // The backend rewrites everything it raises as an HTTPException into
-  // {success, error, message} (api.py's http_exception_handler), so `detail` is
-  // only present on FastAPI's own 422s. Reading just `detail` meant every raised
-  // error reached the user as the generic fallback.
+  // api.py's http_exception_handler rewrites raised errors into
+  // {success, error, message}; `detail` only survives on FastAPI's own 422s.
   it('reads the raised-error shape the backend actually sends', () => {
     expect(extractError({ success: false, error: 'Password is incorrect', status_code: 401 }))
       .toBe('Password is incorrect');

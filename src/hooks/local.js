@@ -1,18 +1,11 @@
-// --- Local media library surface --------------------------------------------
-// The browsable/searchable/playable view over the operator's on-disk media, keyed
-// by the opaque path token the backend's local_engine uses. Mirrors the shape of
-// the anime/show/movie hooks (memCache-seeded list + overview + an NDJSON streamer)
-// so the Index's "Local" view and the local watch page reuse the shared UI. All of
-// these no-op cleanly when no local source is enabled (backend returns empty /
-// enabled:false), so importing them is always safe.
+// Keyed by the opaque path token the backend's local_engine uses. With no local
+// source enabled the backend answers empty, so these are always safe to mount.
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { apiFetch } from './apiClient';
 import { memGet, memSet } from './memCache';
 import { streamWatchNdjson } from './ndjson';
 
-// The full local library list for the Index's Local view. `enabled` is false when
-// no local source is configured (the caller then hides the view).
 export function useLocalLibrary() {
   const seed = memGet('local-library');
   const [library, setLibrary] = useState(() => seed || { items: [], kinds: [], genres: [], enabled: false, total: 0 });
@@ -50,12 +43,8 @@ export function useLocalLibrary() {
   return { library, loading, error };
 }
 
-// Folder-navigation view of the library: the children of one directory (or the
-// source roots when `token` is null). Powers the Local view's "Browse" mode, the
-// fallback for media that never resolved to a title. Each `entries[]` item is a
-// `title` (poster tile → /local/:id), a `folder` (drill in → browse its id), or a
-// `file` (loose media → /watch-local/:id). Not memCached — it's navigational and
-// the disk can change under us.
+// A null `token` lists the source roots. Not memCached because the disk can
+// change under us.
 export function useLocalBrowse(token) {
   const [view, setView] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -84,8 +73,6 @@ export function useLocalBrowse(token) {
   return { view, loading, error };
 }
 
-// One local title's detail (metadata + episodes for a show, or a play descriptor
-// for a movie). Keyed by the directory/file token from the list.
 export function useLocalOverview(token) {
   const key = token ? `local-overview:${token}` : null;
   const [overview, setOverview] = useState(() => (key ? memGet(key) : null));
@@ -119,9 +106,7 @@ export function useLocalOverview(token) {
   return { overview, loading, error };
 }
 
-// Progressive NDJSON streamer for one local file (the /watch-local route emits the
-// same contract as /watch, so the shared WatchView plays it). Local files resolve
-// to a single same-origin source; no client engine / dedup needed.
+// /watch-local speaks the same contract as /watch, so the shared WatchView plays it.
 export function useLocalStreamer(token) {
   const [streamData, setStreamData] = useState(null);
   const [streamLoading, setStreamLoading] = useState(false);

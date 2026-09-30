@@ -40,7 +40,7 @@ describe('getPlaybackPrefs / setPlaybackPrefs', () => {
       language: 'German',
       type: 'Dub',
       discordPresence: true,
-      subtitleLanguages: ['en', 'de', 'xx'], // xx is dropped by the sanitiser
+      subtitleLanguages: ['en', 'de', 'xx'],
     });
     expect(stored.subtitleLanguages).toEqual(['en', 'de']);
     expect(getPlaybackPrefs()).toEqual({

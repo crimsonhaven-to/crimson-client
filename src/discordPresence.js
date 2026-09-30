@@ -2,103 +2,76 @@ import { useEffect, useState } from 'react';
 import { getPlaybackPrefs } from './hooks';
 import { currentTrack, getState as getPlayerState, subscribe as subscribeToPlayer } from './music/player';
 
-// --- Discord Rich Presence (browser → loopback RPC, no backend) -------------
-// We connect a browser WebSocket to a Discord RPC server on the loopback port
-// range and push SET_ACTIVITY frames. Loopback is "potentially trustworthy", so
-// https→ws is allowed (not mixed content) once connect-src permits it.
+// Loopback is "potentially trustworthy", so an https page may open ws://127.0.0.1
+// (not mixed content) once connect-src permits it.
 //
-// IMPORTANT: the *real* Discord desktop client refuses RPC WebSockets whose Origin
-// isn't on its hardcoded allowlist (discord.com et al.), so a site like ours can't
-// talk to it directly — by design. The supported way to light this up is a small
-// local bridge such as arRPC (https://github.com/OpenAsar/arrpc), which speaks the
-// same RPC protocol WITHOUT the origin check and relays to Discord. So our client
-// code is unchanged; presence simply appears for viewers who run such a bridge.
-//
-// Fully opt-in via the Preferences page (`discordPresence` pref) and degrades
-// silently: with no bridge present we probe the ports once, find nothing, and stop
-// — no reconnect loop, so users without a bridge don't get recurring console noise.
+// The real Discord client rejects RPC WebSockets from origins off its hardcoded
+// allowlist, so presence only appears for viewers running a local bridge such as
+// arRPC (https://github.com/OpenAsar/arrpc), which skips the origin check. Without
+// one the ports are probed once and never again, to avoid recurring console noise.
 
-// The "CRIMSONHAVEN" application in the Discord Developer Portal. This id is
-// public by design — it only selects whose name + uploaded art the card shows.
+// Public by design: it only selects whose name and uploaded art the card shows.
 const DISCORD_CLIENT_ID = '1519351546297712792';
 
-// Art asset keys uploaded under the app's Rich Presence › Art Assets.
-const LARGE_IMAGE = 'crimson';    // Lumi's crimson sigil — the big tile
-const SMALL_IMAGE = 'lumi_cuty';  // her chibi — the little corner badge
+// Keys uploaded under the app's Rich Presence > Art Assets.
+const LARGE_IMAGE = 'crimson';
+const SMALL_IMAGE = 'lumi_cuty';
 const LARGE_TEXT = "Crimson Haven · Luminas' sanctuary";
 const SMALL_TEXT = 'Luminas Crimsonveil ( ^ . ^ )';
 
-// Up to two clickable buttons on the card (Discord's hard limit). Same pair on
-// every state, so it's defined once and shared by buildActivity.
+// Discord allows at most two buttons.
 const BUTTONS = [
   { label: 'Discord', url: 'https://discord.gg/6an7E8aKGj' },
   { label: 'GitLab', url: 'https://gitlab.ramon.moe/crimsonhaven-to' },
 ];
 
-// Discord's local RPC server binds the first free port in this range; the client
-// picks one at startup, so we probe them in order until one answers.
+// Discord's local RPC server binds the first free port in this range at startup.
 const RPC_PORTS = [6463, 6464, 6465, 6466, 6467, 6468, 6469, 6470, 6471, 6472];
 
-// Discord caps details/state at 128 chars; keep titles from tripping that.
+// Discord caps details/state at 128 chars.
 const clamp = (s) => (s && s.length > 128 ? `${s.slice(0, 127)}…` : s);
 
-// A pid is required by the RPC schema; the browser has none, so a stable random
-// stand-in is fine (Discord only uses it to auto-clear if the process vanishes).
+// The RPC schema requires a pid and the browser has none. Discord only uses it to
+// auto-clear when the process vanishes, so a stable random stand-in is fine.
 const PID = Math.floor(Math.random() * 1_000_000);
 const nonce = () =>
   (globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`);
 
-// --- Activity store ---------------------------------------------------------
-// `null` means "nowhere in particular" → the idle browsing presence. Otherwise it
-// holds a *scene*: a small tagged descriptor for what page the viewer is on, set
-// while that page is mounted and cleared on unmount (which drops them back to
-// browsing). A tiny pub/sub keeps it framework-light and matches the window-event
-// style used elsewhere in the app. The scene shapes buildActivity understands:
-//   • null                                          → browsing the archives
-//   • { kind:'watchlist' }                          → combing the watchlists
-//   • { kind:'overview', title, mediaKind }         → lingering on a title's page
-//   • { kind:'watch', title, isMovie, season,       → watching something
-//       episode, totalSeasons, startedAt }
-//   • { kind:'music', ... }                         → listening (see musicScene)
-// Every page is last-write-wins: navigating swaps one scene for the next, and the
-// debounced push in the controller collapses the clear+set of a navigation into a
-// single Discord update so the card never flickers between them.
+// The scene is set by the mounted page and cleared on unmount; null is idle
+// browsing. Shapes: { kind: 'watchlist' }, { kind: 'overview', title, mediaKind },
+// { kind: 'watch', title, isMovie, season, episode, totalSeasons, startedAt },
+// and { kind: 'music' } from musicScene. The debounced push collapses a
+// navigation's clear+set into one update so the card never flickers.
 //
-// Music is not a page scene. It plays across every route, so while a song is
-// playing it outranks whatever page is open, and pausing it hands the card back
-// to the page. A video starting pauses the music, so watching still wins.
+// Music is not a page scene: it plays across routes, so while a song plays it
+// outranks the page. A video starting pauses the music, so watching still wins.
 let _activity = null;
 const _listeners = new Set();
 
 const emit = () => _listeners.forEach((fn) => fn(_activity));
 
-/** Announce what the viewer is watching. `{ title, isMovie, season, episode,
- *  totalSeasons, startedAt }`. */
 export function setWatchActivity(watch) {
   _activity = { kind: 'watch', ...watch };
   emit();
 }
 
-/** Announce the viewer is tending their saved relics (the Watchlists page). */
 export function setWatchlistActivity() {
   _activity = { kind: 'watchlist' };
   emit();
 }
 
-/** Announce the viewer is lingering on a title's overview before the watch.
- *  `mediaKind` is 'anime' | 'show' | 'movie' and only tints the flavour line. */
+// `mediaKind` ('anime' | 'show' | 'movie') only tints the flavour line.
 export function setOverviewActivity({ title, mediaKind }) {
-  if (!title) return;            // overview not loaded yet — stay on the prior scene
+  if (!title) return; // overview not loaded yet, keep the prior scene
   _activity = { kind: 'overview', title, mediaKind };
   emit();
 }
 
-/** Drop back to the idle "browsing the archives" presence. */
 export function clearActivity() {
   _activity = null;
   emit();
 }
-// Kept as a named alias so the watch page reads symmetrically (set…/clear…).
+// Lets the watch page read symmetrically with setWatchActivity.
 export const clearWatchActivity = clearActivity;
 
 function subscribe(fn) {
@@ -106,9 +79,8 @@ function subscribe(fn) {
   return () => _listeners.delete(fn);
 }
 
-// The playing song as a scene, or null while nothing plays. `startedAt` is when
-// the song would have started had it played straight through, which is what
-// Discord's progress bar counts from.
+// `startedAt` is when the song would have started had it played straight
+// through, which is what Discord's progress bar counts from.
 export function musicScene(player, now = Date.now()) {
   const track = currentTrack(player);
   if (!track || !player.playing) return null;
@@ -141,14 +113,10 @@ export function sameMusic(a, b) {
 // blob, an overlong signed link) falls back to the uploaded art.
 const coverImage = (url) => (url && url.startsWith('https://') && url.length <= 256 ? url : null);
 
-// Turn the current scene (or null) into a Discord activity payload, phrased in
-// Luminas' voice. `type: 3` is "Watching" — newer clients honour it so the profile
-// line reads "Watching CRIMSONHAVEN"; older ones ignore it and fall back to
-// "Playing", which is why the verb is repeated in `details` to guarantee the
-// wording the card shows either way.
+// `type: 3` is "Watching", but older clients ignore it and show "Playing", so the
+// verb is repeated in `details`.
 export function buildActivity(scene) {
-  // Listening to a song: `type: 2` makes the profile read "Listening to
-  // CRIMSONHAVEN", and start plus end give Discord its progress bar.
+  // `type: 2` is "Listening to"; start plus end give Discord its progress bar.
   if (scene?.kind === 'music') {
     const start = scene.startedAt;
     return {
@@ -176,17 +144,14 @@ export function buildActivity(scene) {
   };
   const base = { type: 3, assets, buttons: BUTTONS };
 
-  // Idle — drifting the Haven with nothing in particular open.
   if (!scene || (scene.kind === 'watch' && !scene.title)) {
     return { ...base, details: 'Browsing the archives…', state: "Beneath Luminas' crimson gaze" };
   }
 
-  // Tending saved relics on the Watchlists page.
   if (scene.kind === 'watchlist') {
     return { ...base, details: 'Combing the watchlists', state: 'Tending her crimson reliquary' };
   }
 
-  // Lingering on a title's overview, weighing whether to descend into it.
   if (scene.kind === 'overview') {
     const state =
       scene.mediaKind === 'movie' ? 'Weighing a crimson feature'
@@ -195,7 +160,6 @@ export function buildActivity(scene) {
     return { ...base, details: clamp(`Beholding ${scene.title}`), state: clamp(state) };
   }
 
-  // Watching something — the richest scene, with an elapsed timer.
   let state;
   if (scene.isMovie) {
     state = 'A crimson feature in the moonlight';
@@ -209,25 +173,22 @@ export function buildActivity(scene) {
     ...base,
     details: clamp(`Watching ${scene.title}`),
     state: clamp(state),
-    // Elapsed-since counter Discord renders as "xx:xx elapsed".
     timestamps: scene.startedAt ? { start: scene.startedAt } : undefined,
   };
 }
 
-// --- Loopback RPC connection ------------------------------------------------
-// Walks the port range until a Discord client answers (it greets us with a
-// DISPATCH/READY frame the moment we connect, since the client_id rides in the
-// query string — no IPC handshake needed over the WS transport). `onClose` fires
-// once, terminally: either no port answered or an established socket dropped.
+// The client_id rides in the query string, so Discord greets with DISPATCH/READY
+// on connect with no handshake. `onClose` fires once, terminally: no port
+// answered or an established socket dropped.
 function createRpcConnection({ onReady, onClose }) {
-  let live = null;       // the socket that reached READY
+  let live = null;
   let portIdx = 0;
   let closed = false;
 
   const tryNextPort = () => {
     if (closed) return;
     if (portIdx >= RPC_PORTS.length) {
-      onClose?.();        // nothing answered — Discord likely isn't running
+      onClose?.();
       return;
     }
     const port = RPC_PORTS[portIdx++];
@@ -237,7 +198,7 @@ function createRpcConnection({ onReady, onClose }) {
         `ws://127.0.0.1:${port}/?v=1&client_id=${DISCORD_CLIENT_ID}&encoding=json`
       );
     } catch {
-      tryNextPort();      // some browsers throw synchronously on a blocked loopback
+      tryNextPort(); // some browsers throw synchronously on a blocked loopback
       return;
     }
 
@@ -249,14 +210,14 @@ function createRpcConnection({ onReady, onClose }) {
         onReady?.(socket);
       }
     };
-    // Errors surface as a close; let onclose drive the state machine.
+    // Errors also fire close, which drives the state machine.
     socket.onerror = () => {};
     socket.onclose = () => {
       if (closed) return;
-      if (live === socket) {  // a working connection dropped (Discord quit)
+      if (live === socket) {
         live = null;
         onClose?.();
-      } else {                // this port wasn't Discord — keep probing
+      } else {
         tryNextPort();
       }
     };
@@ -285,15 +246,10 @@ const setActivityFrame = (activity) => ({
   args: { pid: PID, activity },
 });
 
-// --- Controller hook --------------------------------------------------------
-// Mount once at the app root. Watches the opt-in preference; while enabled it
-// keeps a live RPC connection and pushes the current activity, debounced so rapid
-// changes (seeking, flipping episodes) collapse into one update. Reconnects on a
-// gentle timer if Discord wasn't running yet. Does nothing at all when disabled.
+// Mount once at the app root.
 export function useDiscordPresence() {
   const [enabled, setEnabled] = useState(() => getPlaybackPrefs().discordPresence);
 
-  // React to the toggle (this tab, the settings broadcast, or another tab).
   useEffect(() => {
     const sync = () => setEnabled(getPlaybackPrefs().discordPresence);
     window.addEventListener('crimson-playback-prefs', sync);
@@ -325,7 +281,6 @@ export function useDiscordPresence() {
 
     const connect = () => {
       if (cancelled) return;
-      // Per-cycle flag: did THIS attempt ever reach a live bridge?
       let cycleReady = false;
       conn = createRpcConnection({
         onReady: () => { cycleReady = true; ready = true; push(); },
@@ -333,10 +288,9 @@ export function useDiscordPresence() {
           ready = false;
           conn = null;
           if (cancelled) return;
-          // Only retry when a working connection dropped (the bridge/Discord was
-          // quit and may come back). A cycle that never connected means no bridge
-          // is listening, so we stop — re-probing on a loop would just spam the
-          // console with failed-WebSocket logs for everyone without a bridge.
+          // Only a dropped working connection retries. Re-probing when nothing
+          // ever answered would spam failed-WebSocket logs for everyone without
+          // a bridge.
           if (cycleReady) retryTimer = setTimeout(connect, 15_000);
         },
       });
@@ -358,7 +312,7 @@ export function useDiscordPresence() {
       unsubscribe();
       unsubscribePlayer();
       if (conn) {
-        // Clear the presence so it doesn't linger after we stop (e.g. logout).
+        // Otherwise the presence lingers after logout.
         conn.send(setActivityFrame(null));
         conn.close();
       }

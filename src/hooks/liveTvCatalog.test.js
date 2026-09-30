@@ -2,10 +2,8 @@ import { describe, it, expect } from 'vitest';
 
 import { buildCatalog, browseFacets, listChannels, getChannel } from './liveTvCatalog';
 
-// The client catalogue join must stay behaviourally in lockstep with the backend's
-// iptv_engine.build_catalog (crimson-backend/tests/test_iptv.py) — same membership
-// rules, same best-quality-first ordering, same facet counts, same direct_ok logic.
-// These fixtures are the JS twin of that test's, so a divergence surfaces here.
+// Fixtures twin crimson-backend/tests/test_iptv.py so a divergence from the
+// backend's build_catalog surfaces here.
 const CHANNELS = [
   { id: 'AlphaTV.us', name: 'Alpha TV', alt_names: ['Alpha'], network: 'AlphaNet', country: 'US', categories: ['news'], is_nsfw: false, closed: null, replaced_by: null, website: 'https://alpha.example' },
   { id: 'BetaKids.de', name: 'Beta Kids', alt_names: [], network: null, country: 'DE', categories: ['kids', 'family'], is_nsfw: false, closed: null, replaced_by: null, website: null },
@@ -115,7 +113,7 @@ describe('getChannel + direct_ok', () => {
     const alpha = getChannel(cat, 'AlphaTV.us').streams;
     expect(alpha[0].direct_ok).toBe(false); // 1080p is Referer-gated
     expect(alpha[1].direct_ok).toBe(true); // 480p is plain https
-    expect(getChannel(cat, 'BetaKids.de').streams[0].direct_ok).toBe(false); // http → mixed content
+    expect(getChannel(cat, 'BetaKids.de').streams[0].direct_ok).toBe(false); // http is mixed content
   });
 });
 

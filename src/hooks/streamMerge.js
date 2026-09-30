@@ -1,19 +1,9 @@
-// Pure prefer-local dedup/append + auto-select reducer for the /watch NDJSON
-// `stream` lines. Extracted verbatim (behaviour-identical) from the three streamer
-// hooks (useAnimeStreamer, useShowStreamer, useMovieStreamer), which had three
-// byte-for-byte copies of this logic inlined in their effect closures.
-//
-// This is the code that decides WHICH stream a viewer actually gets when the
-// client-side engine is on: a source can resolve both locally (bytes straight from
-// the CDN, token minted from the viewer's own ASN) and on the backend, and the
-// local line must win — even if the backend's arrived first — while distinct
-// dub/sub variants of the same provider stay separate. A regression here silently
-// serves the wrong (or a duplicated) source. Pinned by streamMerge.test.js.
+// With the client engine on, a source can resolve both locally and on the backend.
+// The local line must win, even when the backend's arrived first, because it
+// streams straight from the CDN with a token minted from the viewer's own ASN.
+// Distinct dub/sub variants of one provider stay separate.
 import { streamRank } from '../streamUtils';
 
-// Build the normalized player tile from a backend/local `stream` NDJSON message.
-// `streamType` is renamed to `type` for the player/sidebar; language/subtitles/
-// cacheTicket are optional (only some scrapers supply them) and stay undefined.
 export function streamFromMsg(msg) {
   return {
     source: msg.source,
@@ -25,24 +15,10 @@ export function streamFromMsg(msg) {
   };
 }
 
-/**
- * Fold one resolved `stream` message into the current stream list.
- *
- * @param {{ streams: object[], dedup: Map<string, {idx: number, origin: string}> }} state
- *        The current tiles and the (source|language) dedup index. `dedup` is
- *        mutated in place — it's the caller's Map, carried across all lines of one
- *        resolution pass — so the reducer stays allocation-cheap per line.
- * @param {object} msg     the parsed `{ type:'stream', source, streamType, url, ... }`.
- * @param {'backend'|'local'} origin  where this line came from.
- * @param {{ enabled: boolean }} opts  `enabled` = clientSourcesEnabled(): when false
- *        the dedup is bypassed entirely and every line simply appends, so default
- *        (engine-off) behaviour is byte-identical to before the client engine existed.
- * @returns {{ streams: object[], changed: boolean, appended: boolean }}
- *        `changed` — the visible list changed (re-render + re-select).
- *        `appended` — a brand-new tile was added (the "first playable source is in"
- *        signal the hooks use to drop the loading veil). A local-over-backend swap
- *        reports changed=true, appended=false (loading was already cleared).
- */
+// `state.dedup` (key "source|language" to { idx, origin }) is the caller's Map,
+// carried across one resolution pass and mutated in place. With `enabled` false
+// every line simply appends. `appended` is the signal to drop the loading veil;
+// a local-over-backend swap reports changed but not appended.
 export function mergeStreamLine(state, msg, origin, { enabled }) {
   const incoming = streamFromMsg(msg);
   const { streams, dedup } = state;
@@ -67,9 +43,7 @@ export function mergeStreamLine(state, msg, origin, { enabled }) {
   return { streams: [...streams, incoming], changed: true, appended: true };
 }
 
-// The auto-select index: lowest streamRank wins, ties fall back to arrival order
-// (the first-resolved source). Mirrors the inline `reselect` the hooks ran; the
-// user-picked guard stays in the hook (it reads a ref).
+// Ties fall back to arrival order. The user-picked guard stays in the hooks.
 export function pickBestIdx(streams, prefs) {
   let bestIdx = 0;
   let bestRank = Infinity;
