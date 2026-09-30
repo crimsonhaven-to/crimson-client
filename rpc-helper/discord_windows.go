@@ -10,9 +10,8 @@ import (
 	winio "github.com/Microsoft/go-winio"
 )
 
-// dialDiscordPipe connects to the first responsive Discord IPC named pipe.
-// Discord exposes them as \\.\pipe\discord-ipc-0 .. -9 (later indices appear
-// when several Discord installs — stable, PTB, Canary — run side by side).
+// Discord exposes \\.\pipe\discord-ipc-0 .. -9. Later indices appear when
+// several installs (stable, PTB, Canary) run side by side.
 func dialDiscordPipe() (net.Conn, error) {
 	var lastErr error
 	for i := 0; i < 10; i++ {

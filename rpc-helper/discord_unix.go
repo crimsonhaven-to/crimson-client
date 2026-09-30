@@ -9,9 +9,8 @@ import (
 	"path/filepath"
 )
 
-// dialDiscordPipe connects to the first responsive Discord IPC unix socket.
-// On macOS/Linux these live as discord-ipc-0 .. -9 inside the runtime dir, with
-// Flatpak and Snap tucking theirs into well-known subfolders.
+// The sockets are discord-ipc-0 .. -9 in the runtime dir; Flatpak and Snap put
+// theirs in well-known subfolders.
 func dialDiscordPipe() (net.Conn, error) {
 	var lastErr error
 	for _, base := range socketDirs() {
