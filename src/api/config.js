@@ -3,7 +3,7 @@
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://backend.crimsonhaven.to';
 //export const API_BASE_URL = 'http://localhost:8000'; // For local development against a locally running backend
-export const CLIENT_VERSION = '13.4.0';
+export const CLIENT_VERSION = '13.5.0';
 
 //   VITE_HOSTED_IN: where user data lives, e.g. "Switzerland" or "🇨🇭 Switzerland".
 //   VITE_DMCA_MAIL: contact address for takedown / DMCA requests.
