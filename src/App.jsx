@@ -6,7 +6,7 @@ import MeshBackground from './MeshBackground';
 // the home rows and the browse hubs render the exact same card (see hubKit.jsx).
 import { kindStyle } from './hubHelpers';
 import { PosterCard, SeeAll } from './hubKit';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, usePublicConfig, apiFetch, startsFresh, CLIENT_VERSION, HOSTED_IN } from './hooks';
+import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, usePublicConfig, useMusicAccess, apiFetch, startsFresh, CLIENT_VERSION, HOSTED_IN } from './hooks';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
@@ -18,6 +18,7 @@ import Lumi from './Lumi';
 // queue exists, and it must outlive every route change for playback to.
 import MiniPlayer from './music/MiniPlayer';
 import { forgetDownloads, hasDownloads, resumeDownloads } from './music/downloads';
+import { forgetListens } from './music/listens';
 import { close as closeMusic } from './music/player';
 import NotFound from './NotFound';
 // Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
@@ -876,9 +877,8 @@ function App() {
   // Gates the Local hub nav entry + route — the on-disk library only exists on
   // operator builds that configured a source (mirrors the old Catalogue toggle).
   // live_tv_enabled gates the Live TV entry the same way (IPTV_ENABLED backend-side).
-  const { local_library_enabled: localEnabled, live_tv_enabled: liveTvEnabled, music_enabled: musicServer } = usePublicConfig();
-  // Music needs both the server's library and this account's grant.
-  const musicEnabled = !!musicServer && !!profile?.music_enabled;
+  const { local_library_enabled: localEnabled, live_tv_enabled: liveTvEnabled } = usePublicConfig();
+  const musicEnabled = useMusicAccess();
   // Offline the profile never loads, so downloads on this device keep Music reachable.
   const showMusic = musicEnabled || hasDownloads();
   const location = useLocation();
@@ -920,6 +920,7 @@ function App() {
     // Nothing of this account's music stays on a device someone else may use next.
     closeMusic();
     forgetDownloads();
+    forgetListens();
     logout();
     navigate('/');
   };

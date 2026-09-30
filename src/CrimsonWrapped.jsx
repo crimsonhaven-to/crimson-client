@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Clock, Flame, CalendarHeart, Film, BookOpen, Tv, Info, Trophy,
 } from 'lucide-react';
-import { useWrapped, useSessionToken, useTitle } from './hooks';
+import { useWrapped, useMusicWrapped, useMusicAccess, useSessionToken, useTitle } from './hooks';
+import MusicYear from './wrapped/MusicYear';
+import StatCard from './wrapped/StatCard';
 
 // A year of watching, as the backend counted it.
 //
@@ -29,25 +31,13 @@ const prettyDay = (iso) =>
       })
     : null;
 
-const StatCard = ({ icon: Icon, value, label, detail }) => (
-  <div className="relative overflow-hidden bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-7 rounded-[2rem] shadow-2xl">
-    <div className="absolute -top-16 -right-16 w-40 h-40 bg-crimson-500/5 blur-[70px] rounded-full"></div>
-    <div className="relative z-10 space-y-2">
-      <Icon className="w-6 h-6 text-crimson-500" />
-      <div className="text-4xl font-black text-crimson-50 tracking-tighter tabular-nums">{value}</div>
-      <div className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">{label}</div>
-      {detail && (
-        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed pt-1">{detail}</p>
-      )}
-    </div>
-  </div>
-);
-
 const CrimsonWrapped = () => {
   const navigate = useNavigate();
   const sessionToken = useSessionToken();
   const [year, setYear] = useState(THIS_YEAR);
   const { data, loading, error } = useWrapped(year);
+  const musicAccess = useMusicAccess();
+  const music = useMusicWrapped(year, musicAccess);
   useTitle('Crimson Wrapped');
 
   if (!sessionToken) {
@@ -68,7 +58,7 @@ const CrimsonWrapped = () => {
     );
   }
 
-  if (loading) {
+  if (loading || music.loading) {
     return (
       <div className="max-w-7xl w-full mx-auto px-6 py-20 flex flex-col items-center justify-center space-y-4">
         <div className="w-12 h-12 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
@@ -81,6 +71,7 @@ const CrimsonWrapped = () => {
 
   const nothingWatched =
     data && !data.episodes && !data.movies && !data.manga_titles;
+  const listened = music.data?.plays > 0;
 
   return (
     <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
@@ -91,7 +82,7 @@ const CrimsonWrapped = () => {
           </h1>
           <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
             <Sparkles className="w-4 h-4 text-crimson-500" />
-            Everything you watched in {year}
+            Everything you {musicAccess ? 'watched and listened to' : 'watched'} in {year}
           </p>
         </div>
 
@@ -138,14 +129,14 @@ const CrimsonWrapped = () => {
         </div>
       )}
 
-      {nothingWatched && !error && (
+      {nothingWatched && !listened && !error && (
         <div className="text-center py-20 space-y-3">
           <Sparkles className="w-10 h-10 text-crimson-700 mx-auto" />
           <p className="text-crimson-500 font-black uppercase tracking-widest text-sm">
             Nothing recorded for {year}
           </p>
           <p className="text-crimson-700 text-xs font-medium max-w-sm mx-auto leading-relaxed">
-            Watch something and come back. The year fills itself in as you go.
+            {musicAccess ? 'Watch or listen to something' : 'Watch something'} and come back. The year fills itself in as you go.
           </p>
         </div>
       )}
@@ -310,6 +301,8 @@ const CrimsonWrapped = () => {
           )}
         </>
       )}
+
+      {listened && <MusicYear data={music.data} year={year} />}
 
       <p className="text-[10px] text-crimson-700 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
         Counted in your own timezone · Yours alone · Never shared

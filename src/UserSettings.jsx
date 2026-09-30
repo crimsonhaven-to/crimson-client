@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle, Gauge, Palette } from 'lucide-react';
-import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTheme, setTheme, THEME_LIST, useTitle, useProfile, updateUsername, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './hooks';
+import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTheme, setTheme, THEME_LIST, useTitle, useProfile, useMusicAccess, updateUsername, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './hooks';
+import PrefToggle from './PrefToggle';
+import CrossfadeCard from './music/CrossfadeCard';
+import { hasDownloads } from './music/downloads';
 
 // The little local bridge that carries presence from the haven to your Discord
 // client (see rpc-helper/). The binaries are cross-compiled into the site image
@@ -33,27 +36,6 @@ function guessHelper() {
       : 'windows-amd64';
   return HELPER_BUILDS.find((b) => b.key === want);
 }
-
-// A simple on/off switch styled to match the crimson pills.
-const PrefToggle = ({ active, onClick, label }) => (
-  <button
-    onClick={onClick}
-    role="switch"
-    aria-checked={active}
-    aria-label={label}
-    className={`relative w-16 h-9 rounded-full border transition-all duration-300 active:scale-95 shrink-0 ${
-      active
-        ? 'bg-crimson-600 border-crimson-400 shadow-[0_8px_20px_rgba(255,0,60,0.3)]'
-        : 'bg-crimson-950/60 border-crimson-900/60'
-    }`}
-  >
-    <span
-      className={`absolute top-1 w-7 h-7 rounded-full bg-white shadow-md transition-all duration-300 ${
-        active ? 'left-8' : 'left-1'
-      }`}
-    />
-  </button>
-);
 
 // A reusable pill: the "Any" choice is the empty string, every other choice is a
 // language ("German") or a type ("Dub"). Selecting the active pill again clears it
@@ -176,6 +158,9 @@ const UserSettings = () => {
     });
   const toggleLite = () => setLiteBackground(!lite);
 
+  // Offline the profile never loads, so downloads on this device keep the setting reachable.
+  const showMusic = useMusicAccess() || hasDownloads();
+
   // One-click helper download tailored to the visitor's OS.
   const helper = guessHelper();
 
@@ -287,7 +272,7 @@ const UserSettings = () => {
               <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Discord Presence</h3>
             </div>
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
-              Let Luminas whisper to Discord what you're watching — a little rich-presence
+              Let Luminas whisper to Discord what you're watching or listening to — a little rich-presence
               card on your profile. Nothing leaves your machine, and you can banish it anytime.
               Because Discord only trusts its own site, this needs a tiny local bridge of
               Luminas' own making, summoned just below. No bridge, no presence — nothing breaks.
@@ -346,12 +331,14 @@ const UserSettings = () => {
             </p>
             <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
               {prefs.discordPresence
-                ? 'Your Discord now flaunts "Watching …" while you stream, and "Browsing the archives…" while you wander.'
+                ? 'Your Discord now flaunts "Watching …" while you stream, "Listening to …" while music plays, and "Browsing the archives…" while you wander.'
                 : 'Your viewing stays unseen — no presence is broadcast to Discord.'}
             </p>
           </div>
         </div>
       </div>
+
+      {showMusic && <CrossfadeCard />}
 
       {/* Theme — a per-device visual theme (not account-synced). Adding a theme
           to src/hooks/theme.js makes it appear here automatically. */}
