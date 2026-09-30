@@ -22,7 +22,7 @@ VITE_API_BASE_URL=http://localhost:8000 npm run dev
 ```
 
 Without `VITE_API_BASE_URL` the dev server talks to the production backend.
-Without the submodule, Vite bundles `src/sourcesStub.js` instead and everything
+Without the submodule, Vite bundles `src/sources/stub.js` instead and everything
 plays through the backend's `/watch` stream.
 
 ```bash
@@ -56,17 +56,22 @@ per-source logs) and `crimson:clientLiveTv` (`0` for the backend).
 
 ## Layout
 
-| Path | Owns |
+Each domain folder owns its pages, its components and its data hooks (`hooks.js`).
+Pages import hooks, hooks import `api/`, and nothing imports upward.
+
+| Folder | Owns |
 | --- | --- |
-| `src/App.jsx`, `src/main.jsx` | Routing, the login wall, the shell and the landing pages |
-| `src/hooks.js`, `src/hooks/` | The data layer: config, the API client, auth, account, watchlists, one module per media type |
-| `src/clientSources.js`, `src/clientManga.js`, `src/liveTvExt.js` | The bridge to `crimson-sources` and the backend grants it needs |
-| `src/WatchView.jsx`, `src/CrimsonPlayer.jsx`, `src/streamUtils.js` | The watch page, the hls.js player, stream ranking and grouping |
-| `src/*Hub.jsx`, `src/*Overview.jsx`, `src/*Watch.jsx`, `src/hubKit.jsx` | Browse, title and watch pages per media type |
-| `src/music/`, `src/Music*.jsx` | Music: the two-deck player with crossfade, queue, offline downloads, listens |
-| `src/admin/`, `src/Admin.jsx`, `src/adminApi.js` | The admin dashboard, one module per tab |
-| `src/wrapped/`, `src/CrimsonWrapped.jsx` | Crimson Wrapped |
-| `src/discordPresence.js`, `rpc-helper/` | Discord Rich Presence and its desktop helper (see [`rpc-helper/README.md`](rpc-helper/README.md)) |
+| `App.jsx`, `main.jsx` | App assembly: the login wall switch, the layout and the route table |
+| `api/` | Build-time config, the API client and session token, the in-memory cache, the NDJSON reader |
+| `shell/` | Navigation, footer, the auth gate, error boundary, background, 404, the welcome tour, page titles |
+| `account/` | Sign-in (mnemonic and email), account, security, settings, playback preferences, themes |
+| `home/`, `browse/` | The landing page with search and recommendations; the shared hub layout and catalogues |
+| `anime/`, `shows/`, `movies/`, `manga/`, `livetv/`, `local/`, `music/` | One folder per kind of media: hub, overview, watch or read page, and data hooks |
+| `watch/` | The watch page, the hls.js player, stream ranking, merging and downloads, resume rules |
+| `sources/` | The bridge to `crimson-sources` and the backend grants it needs, and the no-op stub |
+| `library/` | Watchlists, history, the airing calendar, follow and watchlist buttons |
+| `admin/`, `wrapped/`, `lumi/`, `info/` | The admin dashboard, Crimson Wrapped, the Lumi chat, and the About, changelog, support and legal pages |
+| `discordPresence.js`, `rpc-helper/` | Discord Rich Presence and its desktop helper (see [`rpc-helper/README.md`](rpc-helper/README.md)) |
 | `public/sw.js` | The service worker: installable app, offline shell and offline music |
 | `vendor/crimson-sources` | The private source engine, a git submodule |
 
@@ -80,7 +85,7 @@ backend's `/scrape-meta` grant; `/sign` and `/resolve` cover sources that need t
 edge proxy or a server-held secret.
 
 The engine engages by itself when the companion extension
-([Chrome Web Store and Firefox Add-ons](src/DownloadExtension.jsx), announced by
+([Chrome Web Store and Firefox Add-ons](src/info/DownloadExtension.jsx), announced by
 the `crimson-extension-ready` handshake) is present, and otherwise uses the proxy
 path unless the backend reports it unconfigured. With neither, playback stays on
 the backend alone.
@@ -110,7 +115,7 @@ The image builds the app, cross-compiles the presence helper for every platform
 Every pipeline runs lint and tests first, and a Trivy scan on `main` and tags
 blocks on HIGH and CRITICAL. CI fetches `crimson-sources` from `main` at build
 time; without access the build still succeeds with the stub. A release bumps
-`CLIENT_VERSION` in `src/hooks/config.js`.
+`CLIENT_VERSION` in `src/api/config.js`.
 
 ## Disclaimer
 
