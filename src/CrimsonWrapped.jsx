@@ -3,7 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Clock, Flame, CalendarHeart, Film, BookOpen, Tv, Info, Trophy,
 } from 'lucide-react';
-import { useWrapped, useMusicWrapped, useMusicAccess, useSessionToken, useTitle } from './hooks';
+import { useWrapped, useMusicWrapped } from './hooks/wrapped';
+import { useMusicAccess } from './hooks/music';
+import { useSessionToken } from './hooks/apiClient';
+import { useTitle } from './shell/useTitle';
 import MusicYear from './wrapped/MusicYear';
 import StatCard from './wrapped/StatCard';
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Home, Library, Ghost } from 'lucide-react';
-import { useThemedAsset } from './hooks';
+import { useThemedAsset } from './hooks/theme';
 
 const NotFound = () => {
   const lumi404 = useThemedAsset('lumi_404');

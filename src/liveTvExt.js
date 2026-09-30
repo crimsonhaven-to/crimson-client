@@ -7,7 +7,8 @@
 //   2. Fetch loader: every request goes through CrimsonExtension.fetch(), which
 //      has no mixed-content or CORS wall and can set forbidden headers.
 //   3. The backend's signed /iptv_proxy.
-import { API_BASE_URL, apiFetch } from './hooks';
+import { API_BASE_URL } from './hooks/config';
+import { apiFetch } from './hooks/apiClient';
 
 export function hasExtension() {
   try {

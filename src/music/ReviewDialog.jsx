@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Check, Link2, Loader2, Search, X } from 'lucide-react';
 
-import { musicApi } from '../hooks';
+import { musicApi } from '../hooks/music';
 import SearchResult from './SearchResult';
 import { formatTime } from './queue';
 

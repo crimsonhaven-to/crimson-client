@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { ArrowDownToLine, CircleAlert, Music, Play, Plus, WifiOff } from 'lucide-react';
 
 import { HubShell } from './hubKit';
-import { useMusicPlaylists, useMusicStatus } from './hooks';
+import { useMusicPlaylists, useMusicStatus } from './hooks/music';
 import { Cover } from './music/Cover';
 import DeviceCard from './music/DeviceCard';
 import { isDownloaded, savedPlaylist, useDownloads } from './music/downloads';

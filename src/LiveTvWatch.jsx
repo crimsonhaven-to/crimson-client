@@ -12,7 +12,9 @@
 import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, Tv, Radio, Globe2, AlertTriangle, SatelliteDish } from 'lucide-react';
-import { API_BASE_URL, useLiveTvChannel, useTitle } from './hooks';
+import { API_BASE_URL } from './hooks/config';
+import { useLiveTvChannel } from './hooks/liveTv';
+import { useTitle } from './shell/useTitle';
 import {
   hasExtension, extensionEnabled, installLiveRules, clearLiveRules,
   makeExtensionLoader, resolveProxyUrl,

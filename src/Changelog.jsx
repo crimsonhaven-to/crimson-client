@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { ScrollText, Tag, Calendar, ExternalLink, Sparkles, AlertCircle, Moon, ArrowLeft, FlaskConical } from 'lucide-react';
-import { useChangelog, useTitle } from './hooks';
-import { formatReleaseDate } from './utils';
+import { useChangelog } from './info/hooks';
+import { useTitle } from './shell/useTitle';
+import { formatReleaseDate } from './info/changelogFormat';
 
 // Release notes render as React elements, never dangerouslySetInnerHTML, so nothing
 // in a note can inject markup. Only the subset release notes use is supported;

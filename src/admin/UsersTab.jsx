@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Bot, LogOut, Mail, Music, Search, Send, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react';
 
-import { useProfile } from '../hooks';
+import { useProfile } from '../account/profile';
 import { adminApi } from '../adminApi';
 import { fmtDate } from './format';
 

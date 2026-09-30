@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Key, User, LogOut, Copy, RefreshCw, AlertCircle, CheckCircle2, ShieldCheck, Info } from 'lucide-react';
-import { useAuth, useAccount, useTitle } from './hooks';
+import { useAuth } from './hooks/useAuth';
+import { useAccount } from './hooks/useAccount';
+import { useTitle } from './shell/useTitle';
 import AccountSecurity from './AccountSecurity';
 
 const AccountPage = () => {

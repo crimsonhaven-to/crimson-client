@@ -5,7 +5,9 @@ import {
   Search, Layers, LayoutGrid, List, Film, Tv, Sparkles, ArrowDownUp, GripVertical, ListChecks,
   Circle, CircleCheck, FolderPlus, BookOpen,
 } from 'lucide-react';
-import { useWatchlists, useAuth, useTitle, listLabel, DEFAULT_LIST, ALL_LIST } from './hooks';
+import { useWatchlists, listLabel, DEFAULT_LIST, ALL_LIST } from './hooks/watchlists';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
 import { setWatchlistActivity, clearActivity } from './discordPresence';
 
 const VIEW_KEY = 'crimson:watchlist-view';

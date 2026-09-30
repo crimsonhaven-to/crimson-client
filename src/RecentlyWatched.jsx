@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { History, Play, Clock, Search, X, LayoutGrid, List, Trash2, AlertTriangle } from 'lucide-react';
-import { useAccount, useAuth, useTitle } from './hooks';
+import { useAccount } from './hooks/useAccount';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
 
 const VIEW_KEY = 'crimson:history-view';
 

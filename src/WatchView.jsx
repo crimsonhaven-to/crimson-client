@@ -1,9 +1,13 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, ChevronRight, ChevronDown, ArrowLeft, CalendarClock, Layers, Puzzle, X, RefreshCw, Film, Calendar, Play, ListVideo } from 'lucide-react';
-import { API_BASE_URL, apiFetch, fetchSubtitles, fetchSkipTimes, usePlaybackPrefs, groupStreams, streamVariantLabel } from './hooks';
+import { API_BASE_URL } from './hooks/config';
+import { apiFetch } from './hooks/apiClient';
+import { fetchSubtitles, fetchSkipTimes } from './hooks/media';
+import { usePlaybackPrefs } from './hooks/playbackPrefs';
+import { groupStreams, streamVariantLabel } from './streamUtils';
 import { setWatchActivity, clearWatchActivity } from './discordPresence';
-import { stripHtml } from './utils';
+import { stripHtml } from './stripHtml';
 import WatchlistButton from './WatchlistButton';
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));

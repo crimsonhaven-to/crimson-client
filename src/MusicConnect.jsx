@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
-import { musicApi } from './hooks';
+import { musicApi } from './hooks/music';
 import { redirectUri, takePendingAuthorization } from './music/spotifyAuth';
 
 // Every way this can go wrong rejects, so the page has one place to report it.

@@ -1,5 +1,5 @@
 // Kept apart from hubKit.jsx because React Fast Refresh needs component-only modules.
-import { API_BASE_URL } from './hooks';
+import { API_BASE_URL } from './hooks/config';
 
 export const posterSrc = (poster) =>
   poster ? (poster.startsWith('/') ? `${API_BASE_URL}${poster}` : poster) : null;

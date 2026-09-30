@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Bell, BellRing, Loader2 } from 'lucide-react';
-import { useSubscriptions, useSessionToken } from './hooks';
+import { useSubscriptions } from './hooks/airing';
+import { useSessionToken } from './hooks/apiClient';
 
 // Per-title "tell me when the next episode airs" toggle, sitting beside the
 // watchlist control on an anime overview.

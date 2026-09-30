@@ -4,7 +4,9 @@ import {
   Mail, Lock, KeyRound, LogIn, UserPlus, RefreshCw, AlertCircle,
   CheckCircle2, MailCheck, ArrowLeft, Ticket, Eye, EyeOff, Key, Copy,
 } from 'lucide-react';
-import { useAuth, useTitle, usePublicConfig } from './hooks';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
+import { usePublicConfig } from './hooks/apiClient';
 
 function Field({ icon: Icon, children }) {
   return (

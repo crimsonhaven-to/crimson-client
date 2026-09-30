@@ -112,25 +112,6 @@ export function useTrendingAnime() {
   return { trendingAnimes, trendLoading };
 }
 
-export function useHealthStatus() {
-  const [health, setHealth] = useState(null);
-  const [healthLoading, setHealthLoading] = useState(true);
-  const [healthError, setHealthError] = useState(null);
-
-  useEffect(() => {
-    apiFetch(`/health`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(setHealth)
-      .catch(e => setHealthError(e.message))
-      .finally(() => setHealthLoading(false));
-  }, []);
-
-  return { health, healthLoading, healthError };
-}
-
 export function useCatalogue() {
   const [catalogue, setCatalogue] = useState(() => memGet('catalogue') || { animes: [], categories: [], genres: [], total: 0 });
   const [loading, setLoading] = useState(() => !memGet('catalogue'));
@@ -166,12 +147,3 @@ export function useCatalogue() {
   return { catalogue, loading, error };
 }
 
-export function useTitle(title) {
-  useEffect(() => {
-    const prevTitle = document.title;
-    document.title = title ? `${title} | Crimsonhaven` : 'Crimsonhaven | Your Anime Sanctuary';
-    return () => {
-      document.title = prevTitle;
-    };
-  }, [title]);
-}

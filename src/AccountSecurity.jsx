@@ -3,9 +3,8 @@ import {
   MonitorSmartphone, ShieldAlert, Download, Trash2, LogOut, Loader2, Check,
   AlertTriangle, History,
 } from 'lucide-react';
-import {
-  useSessions, useSecurityEvents, downloadAccountExport, deleteAccount, useAuth,
-} from './hooks';
+import { useSessions, useSecurityEvents, downloadAccountExport, deleteAccount } from './hooks/security';
+import { useAuth } from './hooks/useAuth';
 import { deviceLabel, eventLabel, when } from './securityFormat';
 
 // The account holder's own view of their security: where they are signed in,

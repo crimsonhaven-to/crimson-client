@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { apiFetch, extractError, usePublicConfig } from './apiClient';
-import { useProfile } from './misc';
+import { useProfile } from '../account/profile';
 
 const POLL_MS = 8000;
 

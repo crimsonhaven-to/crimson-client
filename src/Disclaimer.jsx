@@ -1,5 +1,6 @@
 import { Scale, Shield, Eye, Cookie, FileText, RefreshCw } from 'lucide-react';
-import { useTitle, DMCA_MAIL } from './hooks';
+import { useTitle } from './shell/useTitle';
+import { DMCA_MAIL } from './hooks/config';
 
 const Section = ({ icon, title, children }) => (
   <div className="space-y-6">

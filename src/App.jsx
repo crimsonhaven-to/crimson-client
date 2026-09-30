@@ -4,10 +4,25 @@ import { Search, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Ser
 import MeshBackground from './MeshBackground';
 import { kindStyle } from './hubHelpers';
 import { PosterCard, SeeAll } from './hubKit';
-import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, usePublicConfig, useMusicAccess, apiFetch, startsFresh, CLIENT_VERSION, HOSTED_IN } from './hooks';
+import { useAnimeStreamer } from './hooks/useAnimeStreamer';
+import { useTrendingAnime } from './hooks/anime';
+import { useTrendingShows } from './hooks/shows';
+import { useTrendingMovies } from './hooks/movies';
+import { useTrendingManga } from './hooks/manga';
+import { useUnifiedSearch, useRecommendations } from './home/hooks';
+import { useHealthStatus } from './shell/useHealthStatus';
+import { useAuth } from './hooks/useAuth';
+import { useAccount } from './hooks/useAccount';
+import { useProfile } from './account/profile';
+import { useTitle } from './shell/useTitle';
+import { useChangelog } from './info/hooks';
+import { usePublicConfig, apiFetch } from './hooks/apiClient';
+import { useMusicAccess } from './hooks/music';
+import { startsFresh } from './hooks/resumeRules';
+import { CLIENT_VERSION, HOSTED_IN } from './hooks/config';
 import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
-import { changelogExcerpt, formatReleaseDate } from './utils';
+import { changelogExcerpt, formatReleaseDate } from './info/changelogFormat';
 import WatchView from './WatchView';
 // Eager, but renders nothing until /chat/status grants access (deny-by-default).
 import Lumi from './Lumi';

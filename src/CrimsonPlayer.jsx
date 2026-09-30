@@ -7,7 +7,9 @@ import {
   ListVideo, Film, Calendar, X,
 } from 'lucide-react';
 import { downloadStream } from './streamDownload';
-import { groupStreams, streamVariantLabel, API_BASE_URL, getSessionToken } from './hooks';
+import { groupStreams, streamVariantLabel } from './streamUtils';
+import { API_BASE_URL } from './hooks/config';
+import { getSessionToken } from './hooks/apiClient';
 
 const SKIP_SECONDS = 10;
 

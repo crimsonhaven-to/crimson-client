@@ -1,4 +1,4 @@
-import { apiFetch } from './hooks';
+import { apiFetch } from './hooks/apiClient';
 
 const _json = (res) => res.json();
 const _qs = (params) =>

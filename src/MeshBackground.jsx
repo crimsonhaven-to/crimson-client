@@ -1,4 +1,4 @@
-import { useLiteBackground } from './hooks';
+import { useLiteBackground } from './hooks/liteBackground';
 
 // Styles and the performance reasoning live in index.css (.mesh-bg).
 export default function MeshBackground() {

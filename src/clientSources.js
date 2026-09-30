@@ -13,7 +13,7 @@
  *   Debug:    localStorage 'crimson:clientSources:debug' = '1' for per-source logs.
  */
 import { createEngine, waitForExtensionBridge } from 'crimson-sources';
-import { apiFetch } from './hooks';
+import { apiFetch } from './hooks/apiClient';
 
 const FLAG_KEY = 'crimson:clientSources';
 

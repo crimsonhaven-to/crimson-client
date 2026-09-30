@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Star, Layers, PlayCircle, AlertTriangle, ChevronRight } from 'lucide-react';
-import { useMangaOverview, useMangaResume, useTitle } from './hooks';
-import { stripHtml } from './utils';
+import { useMangaOverview, useMangaResume } from './hooks/manga';
+import { useTitle } from './shell/useTitle';
+import { stripHtml } from './stripHtml';
 import WatchlistButton from './WatchlistButton';
 
 // A manga is one ordered run of chapters with no seasons, so this doesn't reuse the

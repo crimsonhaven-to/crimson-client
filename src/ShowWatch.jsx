@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useShowStreamer, useAccount, useAuth, useTitle, apiFetch, startsFresh } from './hooks';
+import { useShowStreamer } from './hooks/shows';
+import { useAccount } from './hooks/useAccount';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
+import { apiFetch } from './hooks/apiClient';
+import { startsFresh } from './hooks/resumeRules';
 import WatchView from './WatchView';
 
 // The backend keys favorites and progress by tmdb_id when there's no anilist_id.

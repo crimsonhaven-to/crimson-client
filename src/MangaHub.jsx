@@ -1,7 +1,7 @@
 // The public backend keeps no manga table, so /catalogue/manga hits AniList per page.
 import { BookOpen } from 'lucide-react';
 import { PaginatedBrowseHub } from './hubKit';
-import { useMangaCatalogue, CATALOGUE_SORTS } from './hooks';
+import { useMangaCatalogue, CATALOGUE_SORTS } from './hooks/browse';
 
 export default function MangaHub() {
   return (

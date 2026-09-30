@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tv, Radio, Globe2, Tag, ChevronDown } from 'lucide-react';
-import { useLiveTvBrowse, useLiveTvChannels, useDebouncedValue, useTitle } from './hooks';
+import { useLiveTvBrowse, useLiveTvChannels, useDebouncedValue } from './hooks/liveTv';
+import { useTitle } from './shell/useTitle';
 import {
   HubShell, ChipRow, Chip, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState,
 } from './hubKit';

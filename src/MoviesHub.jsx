@@ -1,6 +1,6 @@
 import { Film } from 'lucide-react';
 import { PosterBrowseHub } from './hubKit';
-import { useMoviesCatalogue } from './hooks';
+import { useMoviesCatalogue } from './hooks/browse';
 
 const SORTS = [
   { value: 'popular', label: 'Popular' },

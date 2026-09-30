@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, Film, Tv, HardDrive, Calendar, Hash, ListVideo, AlertTriangle } from 'lucide-react';
-import { useLocalOverview, useTitle, API_BASE_URL } from './hooks';
-import { stripHtml } from './utils';
+import { useLocalOverview } from './hooks/local';
+import { useTitle } from './shell/useTitle';
+import { API_BASE_URL } from './hooks/config';
+import { stripHtml } from './stripHtml';
 
 // Local artwork comes back as a relative, signed /local_art path; TMDB posters are
 // already absolute.

@@ -1,7 +1,7 @@
 // Shows carry no rating column, so there's no "Top Rated" sort.
 import { Tv } from 'lucide-react';
 import { PosterBrowseHub } from './hubKit';
-import { useShowsCatalogue } from './hooks';
+import { useShowsCatalogue } from './hooks/browse';
 
 const SORTS = [
   { value: 'popular', label: 'Popular' },

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCircle2, AlertCircle, RefreshCw, LogIn } from 'lucide-react';
-import { useAuth, useTitle } from './hooks';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
 import { Shell } from './Login';
 
 // On success the backend hands back a session, so a verified user lands straight in the app.

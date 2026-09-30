@@ -4,7 +4,10 @@ import {
   ArrowLeft, ChevronLeft, ChevronRight, Rows3, Square, BookOpen,
   AlertTriangle, ArrowLeftRight, Loader2, Maximize2, Minimize2,
 } from 'lucide-react';
-import { useMangaReader, useMangaResume, useAccount, useAuth, useTitle } from './hooks';
+import { useMangaReader, useMangaResume } from './hooks/manga';
+import { useAccount } from './hooks/useAccount';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
 
 // Reading progress reuses /account/progress (media_type 'manga'): the chapter ordinal
 // rides in episode_number and the page in position_seconds, so "continue reading"

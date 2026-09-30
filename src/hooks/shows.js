@@ -3,52 +3,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { clientSourcesEnabled, streamLocalSources } from '../clientSources';
-import { apiFetch, useSessionToken } from './apiClient';
+import { apiFetch } from './apiClient';
 import { memGet, memSet } from './memCache';
 import { getPlaybackPrefs } from './playbackPrefs';
 import { streamWatchNdjson } from './ndjson';
 import { mergeStreamLine, pickBestIdx } from './streamMerge';
-
-export function useUnifiedSearch() {
-  const [queryName, setQueryName] = useState('');
-  const [results, setResults] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-
-  const fetchSuggestions = useCallback(async (query) => {
-    if (!query || query.trim().length < 3) return;
-    try {
-      const [animeRes, showRes, movieRes, mangaRes, localRes] = await Promise.all([
-        apiFetch(`/search/anime?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch(`/search/shows?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch(`/search/movies?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
-        // 503 when manga is disabled; the catch turns that into no rows.
-        apiFetch(`/search/manga?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
-        apiFetch(`/search/local?query_name=${encodeURIComponent(query)}`).then(r => r.ok ? r.json() : null).catch(() => null),
-      ]);
-      const anime = (animeRes?.suggestions || []).map(s => ({ ...s, kind: 'anime' }));
-      const shows = (showRes?.suggestions || []).map(s => ({ ...s, kind: 'show' }));
-      const movies = (movieRes?.suggestions || []).map(s => ({ ...s, kind: 'movie' }));
-      const manga = (mangaRes?.suggestions || []).map(s => ({ ...s, kind: 'manga' }));
-      // The operator's own library is the most relevant when present, and small.
-      const local = (localRes?.suggestions || []).map(s => ({ ...s, kind: 'local' }));
-      setResults([...local, ...anime, ...shows, ...movies, ...manga]);
-    } catch (e) {
-      console.error('Unified search failed:', e);
-      setResults([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (queryName.trim().length >= 3) {
-      const t = setTimeout(() => fetchSuggestions(queryName), 300);
-      return () => clearTimeout(t);
-    }
-    setResults([]);
-    setShowSuggestions(false);
-  }, [queryName, fetchSuggestions]);
-
-  return { queryName, setQueryName, results, showSuggestions, setShowSuggestions };
-}
 
 export function useTrendingShows() {
   const [trendingShows, setTrendingShows] = useState(() => memGet('trending-shows') || []);
@@ -150,36 +109,6 @@ export function useShowOverview(tmdbId) {
   }, [overview, activeSeason]);
 
   return { overview, loading, error, activeSeason, setActiveSeason, episodes, episodesLoading };
-}
-
-// Rows come back newest-first, so the first match is the latest episode. Non-anime
-// shows also require a null anilist_id, mirroring the backend dedup key.
-export function useShowResume({ anilistId = null, tmdbId = null, mediaType = null } = {}) {
-  const sessionToken = useSessionToken();
-  const [resume, setResume] = useState(null);
-
-  useEffect(() => {
-    if (!sessionToken || (anilistId == null && tmdbId == null)) { setResume(null); return; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await apiFetch(`/account/progress`);
-        if (!res.ok) return;
-        const rows = (await res.json()).progress || [];
-        const match = (r) => {
-          if (anilistId != null) return String(r.anilist_id) === String(anilistId);
-          // Movies share the TMDB id space with shows.
-          if (mediaType === 'movie') return String(r.tmdb_id) === String(tmdbId) && r.media_type === 'movie';
-          return String(r.tmdb_id) === String(tmdbId) && r.anilist_id == null && r.media_type !== 'movie';
-        };
-        const latest = rows.find(match) || null;
-        if (!cancelled) setResume(latest);
-      } catch { /* no banner on failure */ }
-    })();
-    return () => { cancelled = true; };
-  }, [sessionToken, anilistId, tmdbId, mediaType]);
-
-  return resume;
 }
 
 export function useShowStreamer(tmdbId, season, episode) {

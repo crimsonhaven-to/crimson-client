@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Languages, Mic, Subtitles, Check, Info, SlidersHorizontal, Gamepad2, Download, UserRound, Loader2, AlertTriangle, Gauge, Palette } from 'lucide-react';
-import { usePlaybackPrefs, useLiteBackground, setLiteBackground, useTheme, setTheme, THEME_LIST, useTitle, useProfile, useMusicAccess, updateUsername, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './hooks';
+import { usePlaybackPrefs, PREF_LANGUAGES, PREF_TYPES, SUBTITLE_LANGUAGES } from './hooks/playbackPrefs';
+import { useLiteBackground, setLiteBackground } from './hooks/liteBackground';
+import { useTheme, setTheme, THEME_LIST } from './hooks/theme';
+import { useTitle } from './shell/useTitle';
+import { useProfile, updateUsername } from './account/profile';
+import { useMusicAccess } from './hooks/music';
 import PrefToggle from './PrefToggle';
 import CrossfadeCard from './music/CrossfadeCard';
 import { hasDownloads } from './music/downloads';

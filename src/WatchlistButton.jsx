@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Heart, Check, Plus, ListPlus } from 'lucide-react';
-import { useWatchlists, listLabel, DEFAULT_LIST, useSessionToken } from './hooks';
+import { useWatchlists, listLabel, DEFAULT_LIST } from './hooks/watchlists';
+import { useSessionToken } from './hooks/apiClient';
 
 // `item`: { tmdb_id?, anilist_id?, title, poster }. `variant` ('overview' | 'watch')
 // only tunes the trigger styling and which side the popover anchors to.

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Check, Loader2, Plus, Search, X } from 'lucide-react';
 
-import { musicApi } from '../hooks';
+import { musicApi } from '../hooks/music';
 import SearchResult from './SearchResult';
 
 export default function AddSongsDialog({ playlist, onClose, onAdded }) {

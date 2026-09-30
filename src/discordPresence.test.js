@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-vi.mock('./hooks', () => ({ getPlaybackPrefs: () => ({ discordPresence: false }) }));
+vi.mock('./hooks/playbackPrefs', () => ({ getPlaybackPrefs: () => ({ discordPresence: false }) }));
 
 const { buildActivity, musicScene, sameMusic } = await import('./discordPresence');
 

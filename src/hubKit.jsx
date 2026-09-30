@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Play, Star, ChevronRight, ChevronDown, Filter, Hash, SlidersHorizontal, Tag, AlertTriangle } from 'lucide-react';
-import { useTitle } from './hooks';
+import { useTitle } from './shell/useTitle';
 // Pure helpers live in hubHelpers.js because React Fast Refresh needs component-only modules.
 import { kindStyle, applyBrowse } from './hubHelpers';
 

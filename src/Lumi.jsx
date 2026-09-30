@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Bot, ChevronLeft, Play, RotateCcw, Send, Sparkles, X } from 'lucide-react';
 
-import { useLumiChat, useLumiStatus } from './hooks';
+import { useLumiChat, useLumiStatus } from './hooks/lumi';
 
 // The watch pages own the whole viewport and their controls sit exactly where
 // the summon button would. Hiding it there beats floating a button over the

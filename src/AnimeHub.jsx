@@ -5,7 +5,9 @@ import {
   HubShell, ChipRow, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState,
   PaginatedBrowseHub, ViewToggle, FallbackBanner,
 } from './hubKit';
-import { useCatalogue, useAnimeCatalogue, CATALOGUE_SORTS, useTitle } from './hooks';
+import { useCatalogue } from './hooks/anime';
+import { useAnimeCatalogue, CATALOGUE_SORTS } from './hooks/browse';
+import { useTitle } from './shell/useTitle';
 
 // Where an Archive card goes. Anime films that TMDB tracks as movies in their own
 // right have no show to sit under (no tmdb_id, no season), so /anime/:id has

@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { apiFetch, themedAsset, useTheme } from './hooks';
+import { apiFetch } from './hooks/apiClient';
+import { themedAsset, useTheme } from './hooks/theme';
 
 // Revealed by the Konami code (see useKonami.js).
 const LUMI_ART_KEYS = [

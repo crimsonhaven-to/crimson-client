@@ -8,7 +8,8 @@ import {
   HubShell, ChipRow, SectionHeader, ArchiveSpinner, ArchiveError, EmptyState,
 } from './hubKit';
 import { posterSrc } from './hubHelpers';
-import { useLocalLibrary, useLocalBrowse, useTitle } from './hooks';
+import { useLocalLibrary, useLocalBrowse } from './hooks/local';
+import { useTitle } from './shell/useTitle';
 
 // The fallback surface for media that never resolved to a title.
 function LocalBrowseView({ searchTerm, navigate }) {

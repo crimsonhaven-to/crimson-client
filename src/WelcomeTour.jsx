@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Crown, Search, Heart, History, SlidersHorizontal, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { HOSTED_IN, useThemedAsset } from './hooks';
+import { HOSTED_IN } from './hooks/config';
+import { useThemedAsset } from './hooks/theme';
 
 // Shown once per login; the trigger lives in App.jsx.
 const STEPS = [

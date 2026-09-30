@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Heart, Copy, Check, Wallet } from 'lucide-react';
-import { useTitle } from './hooks';
+import { useTitle } from './shell/useTitle';
 
 // The wallets we accept contributions through. Symbol drives the little glyph,
 // `accent` keeps each row's chip on-brand for the coin while staying crimson-lit.

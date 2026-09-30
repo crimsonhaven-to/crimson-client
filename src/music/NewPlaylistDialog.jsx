@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { musicApi } from '../hooks';
+import { musicApi } from '../hooks/music';
 
 export default function NewPlaylistDialog({ onClose }) {
   const navigate = useNavigate();

@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { useMovieStreamer, useAccount, useAuth, useTitle, apiFetch } from './hooks';
+import { useMovieStreamer } from './hooks/movies';
+import { useAccount } from './hooks/useAccount';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
+import { apiFetch } from './hooks/apiClient';
 import WatchView from './WatchView';
 
 function MovieWatch() {

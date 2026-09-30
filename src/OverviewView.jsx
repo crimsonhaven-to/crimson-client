@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Play, AlertTriangle, ArrowLeft, Calendar, Layers, Film, Clapperboard, Tag, History } from 'lucide-react';
-import { stripHtml } from './utils';
+import { stripHtml } from './stripHtml';
 import { setOverviewActivity, clearActivity } from './discordPresence';
 import WatchlistButton from './WatchlistButton';
 import FollowButton from './FollowButton';

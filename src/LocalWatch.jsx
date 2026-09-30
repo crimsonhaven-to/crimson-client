@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useLocalStreamer, useAccount, useAuth, useTitle, apiFetch } from './hooks';
+import { useLocalStreamer } from './hooks/local';
+import { useAccount } from './hooks/useAccount';
+import { useAuth } from './hooks/useAuth';
+import { useTitle } from './shell/useTitle';
+import { apiFetch } from './hooks/apiClient';
 import WatchView from './WatchView';
 
 // Movie mode with no season/episode picker: each local episode is its own file token,

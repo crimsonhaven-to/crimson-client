@@ -7,7 +7,7 @@ import {
   Trash2, WifiOff, X,
 } from 'lucide-react';
 
-import { musicApi, useMusicPlaylist } from './hooks';
+import { musicApi, useMusicPlaylist } from './hooks/music';
 import { Cover } from './music/Cover';
 import AddSongsDialog from './music/AddSongsDialog';
 import DownloadButton from './music/DownloadButton';

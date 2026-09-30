@@ -1,5 +1,5 @@
 import React from 'react';
-import { themedAsset } from './hooks';
+import { themedAsset } from './hooks/theme';
 
 // Without this, a render-time exception anywhere in the tree blanks the whole page.
 export default class ErrorBoundary extends React.Component {
