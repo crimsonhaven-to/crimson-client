@@ -1,14 +1,21 @@
-# Production Swarm stack, rolled by CI on release. The image is private, so it is
-# deployed with --with-registry-auth, and the stack name must stay crimson-client.
+# Swarm stack, for reference. The live copies are on the manager and CI never ships
+# this file (see .gitlab-ci.yml).
+#
+#   CRIMSON_IMAGE=<registry>/crimson-client:<tag> PUBLISHED_PORT=8800 \
+#   docker stack deploy --with-registry-auth -c docker-stack.yml crimson-client
+#
+# The image is static nginx with everything baked in at build time, so there are no
+# runtime secrets. --with-registry-auth lets every node pull a private image, now and
+# after a reschedule.
 version: "3.8"
 
 services:
   frontend:
-    image: ${CRIMSON_IMAGE:-registry.ramon.moe/crimsonhaven-to/crimson-client:latest}
+    image: ${CRIMSON_IMAGE:?set CRIMSON_IMAGE to the image to deploy}
     ports:
-      # Must match the port the TLS reverse proxy forwards to.
+      # Point the TLS reverse proxy at this port.
       - target: 80
-        published: 8800
+        published: ${PUBLISHED_PORT:-8080}
         protocol: tcp
         mode: ingress
 

@@ -1,7 +1,7 @@
 # One host. docker-stack.yml is the Swarm deployment.
 services:
   frontend:
-    image: ${CRIMSON_IMAGE:-reallordraymond/crimson-client:latest}
+    image: ${CRIMSON_IMAGE:-crimson-client:local}
     build:
       context: .
       args:

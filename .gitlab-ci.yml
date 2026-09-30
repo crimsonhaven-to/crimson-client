@@ -8,6 +8,10 @@
 # crimson-sources' job token allowlist; if it fails, the build still succeeds with
 # the no-op stub and plays through the backend only.
 #
+# Deploys only run deploy.sh on the manager. The stack files there
+# (~/crimson-client-deploy, ~/dev-crimson-client-deploy) are edited in place; the
+# one in this repo is a reference and never shipped.
+#
 # build and deploy run on `crimsonrunner`, the shell runner on server10 with
 # buildx and SSH to the managers. Swarm nodes pull the private image with the
 # managers' read_registry token, shipped by --with-registry-auth.
@@ -168,11 +172,9 @@ deploy:
     name: production
     url: https://crimsonhaven.to
   script:
-    - scp -o BatchMode=yes -o StrictHostKeyChecking=accept-new docker-stack.yml "${SWARM_MANAGER}:/home/raymond/crimson-client-deploy/docker-stack.yml"
     # VERSION was validated to a safe charset in build.
     - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/crimson-client-deploy/deploy.sh '${VERSION}'"
 
-# The dev stack file lives only on the manager.
 deploy-dev:
   extends: .dev_trigger
   stage: deploy

@@ -103,12 +103,17 @@ inline script means recomputing the hash (the command is in the file).
 
 ```bash
 docker compose up --build                  # one host, http://localhost:8080
-CRIMSON_IMAGE=<registry>/crimson-client:<tag> \
+CRIMSON_IMAGE=<registry>/crimson-client:<tag> PUBLISHED_PORT=8080 \
   docker stack deploy --with-registry-auth -c docker-stack.yml crimson-client
 ```
 
 The image builds the app, cross-compiles the presence helper for every platform
 (served at `/helper/`), and serves both from nginx with a `/healthz` probe.
+
+| File | Use |
+| --- | --- |
+| `docker-compose.yml` | one host, builds the image locally |
+| `docker-stack.yml` | Swarm reference: 3 replicas, rolling updates with rollback; the live copies are on the manager |
 
 | Trigger | Result |
 | --- | --- |
@@ -116,7 +121,8 @@ The image builds the app, cross-compiles the presence helper for every platform
 | `v*` tag | `:<tag>` and `:latest`, rolled onto production; publishes the sourceless demo to Pages |
 | Run with `CHANNEL=prod` (manual, or from `crimson-sources`) | `:main-<sha>`, rolled onto production |
 
-Every pipeline runs lint and tests first, and a Trivy scan on `main` and tags
+CI only runs `deploy.sh` on the manager and never ships a stack file, so a change
+to `docker-stack.yml` must be applied there by hand. Every pipeline runs lint and tests first, and a Trivy scan on `main` and tags
 blocks on HIGH and CRITICAL. CI fetches `crimson-sources` from `main` at build
 time; without access the build still succeeds with the stub. A release bumps
 `CLIENT_VERSION` in `src/api/config.js`.
