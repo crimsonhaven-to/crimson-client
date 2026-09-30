@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History, Search, X, LayoutGrid, List, Trash2, AlertTriangle } from 'lucide-react';
+import { History, Search, X, LayoutGrid, List } from 'lucide-react';
 import { useAccount } from '../account/useAccount';
 import { useAuth } from '../account/useAuth';
 import { useTitle } from '../useTitle';
 import { BUCKETS, bucketOf } from './historyDates';
 import { resumeInfo } from './historyResume';
 import HistoryCard from './HistoryCard';
+import ConfirmDialog from './ConfirmDialog';
 
 const VIEW_KEY = 'crimson:history-view';
 
@@ -220,40 +221,14 @@ const RecentlyWatchedPage = () => {
       )}
 
       {pendingRemove && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200"
-          onClick={() => setPendingRemove(null)}
+        <ConfirmDialog
+          title="Remove from History?"
+          confirmLabel="Remove"
+          onCancel={() => setPendingRemove(null)}
+          onConfirm={confirmRemove}
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md bg-crimson-950 border border-crimson-900/70 rounded-3xl shadow-[0_30px_80px_rgba(0,0,0,0.7)] p-7 space-y-5 animate-in zoom-in-95 duration-200"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-crimson-500/10 border border-crimson-500/30">
-                <AlertTriangle className="w-6 h-6 text-crimson-400" />
-              </div>
-              <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight">Remove from History?</h3>
-            </div>
-            <p className="text-sm text-crimson-300 leading-relaxed">
-              This permanently erases <span className="font-black text-crimson-100">"{pendingRemove.title}"</span> and all its tracked progress from your watch history. This cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-1">
-              <button
-                onClick={() => setPendingRemove(null)}
-                className="px-5 py-2.5 rounded-xl border border-crimson-900/60 text-crimson-300 text-xs font-black uppercase tracking-widest hover:text-white hover:border-crimson-600 transition-all active:scale-95"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmRemove}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-crimson-600 text-white text-xs font-black uppercase tracking-widest hover:bg-crimson-500 shadow-[0_8px_20px_rgba(255,0,60,0.3)] transition-all active:scale-95"
-              >
-                <Trash2 className="w-4 h-4" />
-                Remove
-              </button>
-            </div>
-          </div>
-        </div>
+          This permanently erases <span className="font-black text-crimson-100">"{pendingRemove.title}"</span> and all its tracked progress from your watch history. This cannot be undone.
+        </ConfirmDialog>
       )}
     </div>
   );
