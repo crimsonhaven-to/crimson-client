@@ -1,8 +1,6 @@
-// Empirical reproduction harness for the "old timestamp persists across
-// episode change while fullscreen" bug. Mounts the REAL WatchView + REAL
-// CrimsonPlayer (jsdom, mp4 path) under a wrapper that replicates WatchPage's
-// hook structure exactly (streamer effect BEFORE resume-reset effect), then
-// replays the episode-change sequence and records every seek on the <video>.
+// Guards the "old timestamp persists across episode change" bug. The wrapper must
+// keep WatchPage's hook order (streamer effect BEFORE resume-reset effect) because
+// the bug depended on it.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useCallback, useEffect, useRef, useState, act } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -12,7 +10,7 @@ import { startsFresh } from './hooks/resumeRules';
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-// jsdom lacks fetch in some paths — stub it so stray apiFetch calls don't blow up.
+// jsdom lacks fetch in some paths, so stray apiFetch calls would throw.
 globalThis.fetch = vi.fn(() => Promise.resolve({ ok: false, json: () => Promise.resolve({}) }));
 
 const EP1 = { url: 'https://cdn.example/ep1.mp4', type: 'mp4', source: 'MockSource' };
@@ -20,12 +18,10 @@ const EP2 = { url: 'https://cdn.example/ep2.mp4', type: 'mp4', source: 'MockSour
 const META = { episodes_list: [{ episode_number: 1 }, { episode_number: 2 }, { episode_number: 3 }] };
 
 let hooks = {};
-// episode_number -> stale saved position from an "earlier watch-through"
-// (the harness's stand-in for the backend's /account/progress rows)
+// Stand-in for the backend's /account/progress rows from an earlier watch-through.
 const saved = { current: {} };
 
 function Wrapper() {
-  // --- WatchPage mimic: refs + progress handler (same as App.jsx WatchPage) ---
   const livePositionRef = useRef(0);
   const playbackRef = useRef(null);
   const handlePlayerProgress = useCallback((position, duration) => {
@@ -33,7 +29,6 @@ function Wrapper() {
     livePositionRef.current = position;
   }, []);
 
-  // --- streamer mimic (hook order: BEFORE the resume effect, as in WatchPage) ---
   const [currentEpisode, setCurrentEpisode] = useState(1);
   const [streams, setStreams] = useState([]);
   const [streamLoading, setStreamLoading] = useState(false); // initial state as in the hook
@@ -41,13 +36,11 @@ function Wrapper() {
   const epRef = useRef(currentEpisode);
   epRef.current = currentEpisode;
   useEffect(() => {
-    // mimics useAnimeStreamer's resolve effect
     setStreamLoading(true);
     setStreams([]);
     setActiveStreamIdx(0);
   }, [currentEpisode]);
 
-  // --- sequential-advance stamp (same wiring as WatchPage/ShowWatch) ---
   const startFreshKeyRef = useRef(null);
   const advanceTo = useCallback((nextEpisode) => {
     if (startsFresh(playbackRef.current, 1, epRef.current, 1, nextEpisode)) {
@@ -56,7 +49,6 @@ function Wrapper() {
     setCurrentEpisode(nextEpisode);
   }, []);
 
-  // --- resume mimic (same order/deps as WatchPage, async like the real fetch) ---
   const [resumeAt, setResumeAt] = useState(0);
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +65,7 @@ function Wrapper() {
 
   const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
 
-  // expose the control surface to the test (outside render, keeping lint clean)
+  // Assigned in an effect rather than during render to keep lint clean.
   useEffect(() => {
     hooks = { setCurrentEpisode, advanceTo, setStreams, setStreamLoading, setResumeAt, livePositionRef, playbackRef };
   });
@@ -102,7 +94,6 @@ function Wrapper() {
   );
 }
 
-// Instrument a <video> element: settable currentTime + recorded seeks + duration.
 function instrument(video, duration) {
   const rec = { time: 0, seeks: [] };
   Object.defineProperty(video, 'currentTime', {
@@ -112,7 +103,7 @@ function instrument(video, duration) {
   });
   Object.defineProperty(video, 'duration', { configurable: true, get: () => duration.value });
   Object.defineProperty(video, 'paused', { configurable: true, get: () => false });
-  // real browsers reset the playback position when the media is (re)loaded
+  // Real browsers reset the playback position when the media is (re)loaded.
   video.load = () => { rec.time = 0; };
   video.play = () => Promise.resolve();
   return rec;
@@ -132,7 +123,6 @@ describe('cross-episode timestamp', () => {
 
   async function mountAndPlayEp1({ position }) {
     await act(async () => { root.render(<Wrapper />); });
-    // resolve ep1
     await act(async () => { hooks.setStreams([EP1]); hooks.setStreamLoading(false); });
     // let the lazy CrimsonPlayer chunk land and Suspense re-render
     await act(async () => {
@@ -145,7 +135,6 @@ describe('cross-episode timestamp', () => {
     const duration = { value: 1400 };
     const rec = instrument(video, duration);
     await act(async () => { video.dispatchEvent(new Event('loadedmetadata')); });
-    // simulate playback progress at `position`
     rec.time = position;
     await act(async () => { video.dispatchEvent(new Event('timeupdate')); });
     expect(hooks.livePositionRef.current).toBe(position); // gate open for ep1
@@ -155,18 +144,16 @@ describe('cross-episode timestamp', () => {
   it('picker jump mid-episode: new episode must start at 0', async () => {
     const { video, rec, duration } = await mountAndPlayEp1({ position: 1390 });
 
-    // episode change (in-player picker / below-player card path)
     await act(async () => { hooks.setCurrentEpisode(2); });
     expect(hooks.livePositionRef.current).toBe(0); // reset ran
 
-    // old video still playing behind the veil — reports must be dropped
+    // The old video keeps playing behind the veil; its reports must be dropped.
     rec.time = 1391;
     await act(async () => { video.dispatchEvent(new Event('timeupdate')); });
     expect(hooks.livePositionRef.current).toBe(0);
 
-    rec.seeks.length = 0; // only interested in seeks from here on
+    rec.seeks.length = 0;
 
-    // ep2 resolves
     await act(async () => { hooks.setStreams([EP2]); hooks.setStreamLoading(false); });
     duration.value = 1420;
     await act(async () => { video.dispatchEvent(new Event('loadedmetadata')); });
@@ -200,7 +187,6 @@ describe('cross-episode timestamp', () => {
     await act(async () => { hooks.setStreams([EP2]); hooks.setStreamLoading(false); });
     duration.value = 1420;
     await act(async () => { video.dispatchEvent(new Event('loadedmetadata')); });
-    // resume lookup resolves late with a legit position for ep2
     await act(async () => { hooks.setResumeAt(0); });
     await flush();
 
@@ -213,7 +199,6 @@ describe('cross-episode timestamp', () => {
     const { video, rec, duration } = await mountAndPlayEp1({ position: 1399.5 });
     await act(async () => { video.dispatchEvent(new Event('ended')); });
 
-    // advance through the real handler (Auto-Next / next-episode click path)
     await act(async () => { hooks.advanceTo(2); });
     rec.seeks.length = 0;
 
@@ -248,15 +233,13 @@ describe('cross-episode timestamp', () => {
 
     await act(async () => { hooks.setCurrentEpisode(2); });
 
-    // new episode resolves to the exact same URL (stable companion/capture endpoint)
+    // Companion/capture endpoints are stable, so a new episode can reuse the URL.
     const EP2_SAME = { ...EP1 };
     await act(async () => { hooks.setStreams([EP2_SAME]); hooks.setStreamLoading(false); });
     duration.value = 1420;
     await act(async () => { video.dispatchEvent(new Event('loadedmetadata')); });
     await flush();
 
-    // the player must have restarted playback for the new episode — not be
-    // parked at the old episode's end
     expect(rec.time).toBeLessThan(5);
   });
 
@@ -266,11 +249,9 @@ describe('cross-episode timestamp', () => {
     vi.useFakeTimers();
     try {
 
-      // playback reaches the end → 'ended' arms the Up Next countdown
       await act(async () => { video.dispatchEvent(new Event('ended')); });
 
-      // let the 8s grace period elapse — onNext fires from inside the countdown
-      // interval's setCountdown updater (the real production path)
+      // onNext fires from inside the countdown's setCountdown updater, as in production.
       for (let i = 0; i < 9; i++) {
         await act(async () => { vi.advanceTimersByTime(1000); });
       }
@@ -298,8 +279,8 @@ describe('cross-episode timestamp', () => {
   it('timeupdate in the paint window right after the episode-change commit is not persisted', async () => {
     const { video, rec } = await mountAndPlayEp1({ position: 1390 });
 
-    // Commit the episode change WITHOUT flushing passive effects, then let a
-    // timeupdate from the old source sneak in (the real-browser paint window).
+    // Commit WITHOUT flushing passive effects so an old-source timeupdate lands in
+    // the real-browser paint window.
     const { flushSync } = await import('react-dom');
     globalThis.IS_REACT_ACT_ENVIRONMENT = false;
     try {

@@ -7,12 +7,8 @@ import {
   streamVariantLabel,
 } from './streamUtils';
 
-// streamRank is the auto-select contract shared with the backend's continue-watching
-// warmup ranker (crimson-backend web/warmup.py _warmup_pick_best). If these two ever
-// disagree, the source the player auto-plays and the source the backend pre-caches
-// diverge — so this file pins the ranking rules that must stay in lockstep. The rank
-// is purely the viewer's language/dub-sub preference: there is NO source-quality or
-// provider priority — ties (and the no-preference case) fall back to arrival order.
+// streamRank must stay in lockstep with crimson-backend web/warmup.py _warmup_pick_best,
+// or the source the player auto-plays diverges from the one the backend pre-caches.
 
 describe('streamRank', () => {
   it('scores every stream equal when no preference is set (arrival order decides)', () => {
@@ -23,18 +19,13 @@ describe('streamRank', () => {
 
   it('ranks purely on how well the language/dub-sub preference matches', () => {
     const prefs = { language: 'German', type: 'Dub' };
-    // Perfect match -> best (0).
     expect(streamRank({ source: 'VOE', language: 'German Dub' }, prefs)).toBe(0);
-    // Missing the type -> one mismatch.
     expect(streamRank({ source: 'VOE', language: 'German Sub' }, prefs)).toBe(1);
-    // Missing both -> two mismatches.
     expect(streamRank({ source: 'VOE', language: 'English Sub' }, prefs)).toBe(2);
   });
 
-  it('ignores the provider entirely — only the language match matters', () => {
+  it('ignores the provider entirely, only the language match matters', () => {
     const prefs = { language: 'German' };
-    // A language-matching source beats a wrong-language one regardless of provider,
-    // and provider/URL (e.g. a server-side cache) no longer earns any bonus.
     const matching = streamRank({ source: 'ScreenScape', language: 'German Dub' }, prefs);
     const cacheWrongLang = streamRank({ source: 'NAS', url: '/cache_proxy/x', language: 'English' }, prefs);
     expect(matching).toBe(0);
@@ -78,7 +69,7 @@ describe('groupStreams', () => {
     expect(voe.stacked).toBe(false);
   });
 
-  it('never groups Cache sources — each NAS target is its own solo card', () => {
+  it('never groups Cache sources, each NAS target is its own solo card', () => {
     const streams = [
       { source: 'NAS A', url: '/cache_proxy/a' },
       { source: 'NAS B', url: '/cache_proxy/b' },

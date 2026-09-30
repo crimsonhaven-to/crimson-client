@@ -8,13 +8,11 @@ import WatchlistButton from './WatchlistButton';
 
 const CrimsonPlayer = lazy(() => import('./CrimsonPlayer'));
 
-// How many seconds of playback before we tell the backend "the viewer actually
-// watched this source" so it may cache it. Keeps the fastest-resolving source
-// from being cached over the one the viewer settled on (quality / language).
+// Waiting this long before letting the backend cache a source keeps the fastest-resolving
+// source from being cached over the one the viewer actually settled on.
 const CACHE_CONFIRM_SECONDS = 10;
 
-// Format a TMDB air date ('YYYY-MM-DD') as a readable day, e.g. "Jul 1, 2026".
-// Falls back to the raw string if it can't be parsed.
+// The T00:00:00 suffix parses as local time; a bare 'YYYY-MM-DD' is UTC and can show the previous day.
 const formatAirDate = (iso) => {
   if (!iso) return '';
   const t = new Date(`${iso}T00:00:00`);
@@ -22,9 +20,6 @@ const formatAirDate = (iso) => {
   return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// A single selectable source button (one resolved stream). `label` is what shows
-// as the name — the full source for a standalone tile, or the in-group variant
-// ("MovieBox (1080p)") when rendered inside an expanded group (`nested`).
 const StreamTile = ({ stream, label, active, nested = false, onClick }) => (
   <button
     onClick={onClick}
@@ -59,17 +54,11 @@ const StreamTile = ({ stream, label, active, nested = false, onClick }) => (
   </button>
 );
 
-// A grouped provider (ScreenScape, Cinema.bz, …) rendered as a literally-stacked
-// card: two offset "ghost" cards peek out behind the header so it reads as a deck
-// of sources collapsed into one. Click expands the deck into its member tiles.
-// `containsActive` keeps the deck looking selected when the playing source is one
-// of its members; `open` reveals the members.
 const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle }) => {
   const containsActive = group.items.some((it) => it.idx === activeStreamIdx);
   const count = group.items.length;
   return (
     <div className={`relative ${!open ? 'mb-2' : ''}`}>
-      {/* Stacked "deck" ghosts behind the header — only while collapsed. */}
       {!open && (
         <>
           <div className="absolute -bottom-1.5 inset-x-3 h-full rounded-2xl bg-crimson-950/40 border border-crimson-900/40" />
@@ -114,10 +103,6 @@ const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle })
   );
 };
 
-// One rich episode card for the below-player picker — TMDB still, name, air date
-// and summary, mirroring the overview's EpisodeCard so the two surfaces read as
-// one system. `active` marks the episode currently on screen (a pulsing "Now"
-// crest + a crimson-lit frame) so the viewer never loses their place.
 const PickerEpisodeCard = ({ ep, active, onSelect }) => {
   const hasTitle = ep.title && ep.title !== `Episode ${ep.episode_number}`;
   return (
@@ -166,45 +151,26 @@ const PickerEpisodeCard = ({ ep, active, onSelect }) => {
   );
 };
 
-// Presentational watch UI shared by the anime watch page (/watch/:anilistId/...)
-// and the non-anime show watch page (/watch-show/:tmdbId/...). Both feed it the
-// same prop shape; only the data source (useAnimeStreamer vs useShowStreamer) and
-// the navigation targets (back link, season/episode handlers) differ in the thin
-// wrappers. Extracted from the original WatchPage so anime renders unchanged.
 const WatchView = ({
-  // playback / sources
   streams = [], streamLoading, activeStreamIdx, onSelectStream, onReload,
   unaired,
   poster, playerStartAt, onPlayerProgress,
-  // header / info
   metadata, displayTitle, totalSeasons,
   currentSeason, currentEpisode, refLabel,
-  // selectors
   availableSeasons = [], onEpisodeChange,
-  // Cross-season episode jump: navigate straight to {season, episode} in one hop
-  // (onEpisodeChange only moves within the current season). The season chips and
-  // both pickers browse via this + onEpisodeChange; onSeasonChange is no longer
-  // needed here (the wrappers still pass it — harmlessly ignored).
+  // onEpisodeChange only moves within the current season; this jumps across seasons.
   onSelectEpisode,
-  // account
   isAuthenticated, watchlistItem,
-  // nav
   backUrl,
-  // Movie mode (additive): hide the season/episode stat boxes + selectors and
-  // drop the SxEx from the download name. TV/anime render unchanged (default false).
   isMovie = false,
 }) => {
-  // Memoized so its identity is stable across renders — it feeds a useEffect dep
-  // array (the picker's season seed), which would otherwise re-run every render.
+  // Memoized because it feeds an effect's deps, which would otherwise re-run every render.
   const episodesList = useMemo(() => metadata?.episodes_list || [], [metadata]);
   const currentEpisodeData = episodesList.find(e => e.episode_number === currentEpisode);
   const episodeTitle = currentEpisodeData?.title && currentEpisodeData.title !== `Episode ${currentEpisode}`
     ? currentEpisodeData.title
     : null;
 
-  // Auto-Next wiring: the episode that follows the current one (same season), used
-  // to drive the player's opt-in "play next when this ends" feature. Movies and a
-  // missing/last episode leave this null, so the player simply won't offer it.
   const currentEpisodeIdx = episodesList.findIndex(e => e.episode_number === currentEpisode);
   const nextEpisodeData = !isMovie && currentEpisodeIdx >= 0 ? episodesList[currentEpisodeIdx + 1] : null;
   const goToNextEpisode = useCallback(() => {
@@ -222,21 +188,13 @@ const WatchView = ({
 
   const activeStream = !streamLoading ? streams[activeStreamIdx] : null;
 
-  // --- Stale-progress gate (key tracking) ------------------------------------
-  // The player stays mounted across episode jumps (that's what preserves
-  // fullscreen), so the OLD episode keeps playing — and reporting timeupdates —
-  // behind the loading veil while the next episode's sources resolve. Forwarding
-  // those reports would refill the parent's live-position ref (and its periodic
-  // progress save) with the old episode's timestamp AFTER the parent reset it,
-  // making the next episode start right at the old one's end. So reports are
-  // only forwarded while the episode whose stream is actually attached matches
-  // the episode being watched. The episode key advances a full render BEFORE the
-  // streamer flips streamLoading/clears the old streams (its effect runs after
-  // commit), so there is an intermediate render where the new key coincides with
-  // the old episode's loaded state — stamping there would reopen the gate while
-  // the old source is still playing. The stamp therefore also requires having
-  // seen streamLoading===true for this same key first, i.e. the loaded state
-  // must belong to THIS episode's resolve cycle, not the previous one's.
+  // The player stays mounted across episode jumps (to keep fullscreen), so the OLD
+  // episode keeps reporting timeupdates while the next one resolves. Forwarding them
+  // would make the next episode resume at the old one's end, so progress is only
+  // forwarded once the attached stream belongs to the current episode.
+  // The key advances one render BEFORE the streamer flips streamLoading, so that
+  // render pairs the new key with the old loaded state. Requiring streamLoading to
+  // have been seen for this key first keeps the gate shut there.
   const currentPlayKey = `${currentSeason}:${currentEpisode}`;
   const playingKeyRef = useRef(null);
   const loadSeenKeyRef = useRef(null);
@@ -248,30 +206,13 @@ const WatchView = ({
     }
   }, [streamLoading, streams, currentPlayKey]);
 
-  // --- Keep the player mounted across the inter-episode resolve gap ---------
-  // On Auto-Next / a picker jump the streamer nulls `streamData` and flips
-  // `streamLoading` true while the next episode's sources resolve, so
-  // `activeStream` briefly becomes null. If the render keyed the player off
-  // `activeStream` directly, the <video> wrapper would UNMOUNT during that gap
-  // and take document.fullscreenElement with it — the "falls out of fullscreen
-  // on Auto-Next" bug — and browsers won't let us re-enter fullscreen without a
-  // fresh user gesture. So we hold the last *video* stream and keep feeding it to
-  // a persistent <CrimsonPlayer> through the gap (behind the loading veil); the
-  // player swaps to the new source in place via its own `src` effect once it
-  // lands, never unmounting. iframe embeds can't preserve fullscreen this way, so
-  // they're deliberately excluded (a live iframe still renders below as before).
-  //
-  // The stream travels with the episode key it belongs to ({ stream, key }): the
-  // player reloads on `mediaKey` as well as `src`, because an episode advance can
-  // resolve to the SAME url as the one already attached (stable client-engine /
-  // capture endpoints serve every episode from one url) — keyed on `src` alone
-  // the player would never reload and the new episode would sit at the old one's
-  // position. The inline pair is only trusted once this episode's resolve cycle
-  // has been seen (same loadSeenKeyRef condition as the gate above); the
-  // intermediate render right after an episode click — old loaded state, new key
-  // — falls back to the ref, so the old source keeps its old key through the gap
-  // and is never spuriously reloaded.
-  const lastVideoStreamRef = useRef(null); // { stream, key } of the last attached video source
+  // activeStream is briefly null while the next episode resolves. Unmounting the
+  // player then would drop fullscreen, and browsers need a fresh gesture to re-enter,
+  // so the last video stream is held through the gap. iframes can't keep fullscreen
+  // this way anyway, so they're excluded.
+  // The stream carries its episode key because capture endpoints can serve every
+  // episode from the SAME url; the player reloads on the key as well as on src.
+  const lastVideoStreamRef = useRef(null);
   useEffect(() => {
     if (activeStream && activeStream.type !== 'iframe' && loadSeenKeyRef.current === currentPlayKey) {
       lastVideoStreamRef.current = { stream: activeStream, key: currentPlayKey };
@@ -283,31 +224,20 @@ const WatchView = ({
   const playerStream = attachedPlay?.stream || null;
   const playerKey = attachedPlay?.key ?? null;
 
-  // --- In-player Season / Episode picker -----------------------------------
-  // The player embeds a full season→episode browser (with TMDB stills) so the
-  // viewer can hop episodes without leaving the video — crucially, it works in
-  // fullscreen, unlike the selectors rendered below the player. Browsing a
-  // season the viewer isn't watching needs that season's episode list, so we
-  // fetch it lazily the first time the season is expanded and cache it. The
-  // reused endpoint (/info/{tmdb_id}?season={tmdb_season}) is the exact call the
-  // overview pages already make, and both surfaces carry {tmdb_id, tmdb_season}
-  // per season, so this works for anime and shows alike. The playing season is
-  // seeded straight from the metadata already loaded — no extra request.
+  // Lives inside the player so episodes can be switched in fullscreen. Other seasons'
+  // episode lists are fetched lazily on first expand.
   const [pickerSeason, setPickerSeason] = useState(currentSeason);
-  const [seasonEpisodes, setSeasonEpisodes] = useState({}); // season_number -> episodes[]
+  const [episodesBySeason, setEpisodesBySeason] = useState({});
   const [pickerLoading, setPickerLoading] = useState(false);
 
-  // Follow whatever's playing: when the season changes, expand it in the picker.
   useEffect(() => { setPickerSeason(currentSeason); }, [currentSeason]);
 
-  // Seed the playing season from the episode list we already have in metadata.
   useEffect(() => {
-    if (episodesList.length) setSeasonEpisodes((m) => ({ ...m, [currentSeason]: episodesList }));
+    if (episodesList.length) setEpisodesBySeason((m) => ({ ...m, [currentSeason]: episodesList }));
   }, [currentSeason, episodesList]);
 
-  // Lazily resolve the expanded season's episodes the first time it's opened.
   useEffect(() => {
-    if (isMovie || pickerSeason == null || seasonEpisodes[pickerSeason]) return undefined;
+    if (isMovie || pickerSeason == null || episodesBySeason[pickerSeason]) return undefined;
     const season = availableSeasons.find((s) => s.season_number === pickerSeason);
     if (!season?.tmdb_id) return undefined;
     let cancelled = false;
@@ -317,24 +247,20 @@ const WatchView = ({
       .then((data) => {
         if (cancelled || !data) return;
         const list = Array.isArray(data.episodes_list) ? data.episodes_list : [];
-        setSeasonEpisodes((m) => ({ ...m, [pickerSeason]: list }));
+        setEpisodesBySeason((m) => ({ ...m, [pickerSeason]: list }));
       })
-      .catch(() => { /* best-effort — the panel shows an empty state on failure */ })
+      .catch(() => { /* the panel shows an empty state on failure */ })
       .finally(() => { if (!cancelled) setPickerLoading(false); });
     return () => { cancelled = true; };
-  }, [isMovie, pickerSeason, availableSeasons, seasonEpisodes]);
+  }, [isMovie, pickerSeason, availableSeasons, episodesBySeason]);
 
-  // Jump to an episode from the picker: stay in-season via onEpisodeChange, or
-  // hop seasons via onSelectEpisode when the wrapper provides it (falls back to
-  // an in-season change so a missing prop never dead-ends a click).
+  // Without onSelectEpisode, fall back to an in-season change so a click never dead-ends.
   const handlePickEpisode = useCallback((seasonNumber, episodeNumber) => {
     if (seasonNumber === currentSeason) onEpisodeChange?.(episodeNumber);
     else if (onSelectEpisode) onSelectEpisode(seasonNumber, episodeNumber);
     else onEpisodeChange?.(episodeNumber);
   }, [currentSeason, onEpisodeChange, onSelectEpisode]);
 
-  // The bundle handed to the player. Null for movies (single feature) and when
-  // there's nothing to browse, so the player simply won't render the button.
   const episodePicker = !isMovie && (availableSeasons.length > 0 || episodesList.length > 0)
     ? {
         seasons: availableSeasons,
@@ -342,30 +268,21 @@ const WatchView = ({
         currentEpisode,
         expandedSeason: pickerSeason,
         onExpandSeason: setPickerSeason,
-        episodes: seasonEpisodes[pickerSeason] || [],
-        episodesLoading: pickerLoading && !seasonEpisodes[pickerSeason],
+        episodes: episodesBySeason[pickerSeason] || [],
+        episodesLoading: pickerLoading && !episodesBySeason[pickerSeason],
         onSelectEpisode: handlePickEpisode,
       }
     : null;
 
-  // TMDB id of the title — the key several things below hang off of (sticky source
-  // pref, OpenSubtitles fetch, cache scoping). Declared up here so the sticky-source
-  // block can use it without tripping a temporal-dead-zone ReferenceError.
   const tmdbId = metadata?.tmdb_id;
 
-  // --- source selection + report-broken ------------------------------------
-  // Manual selection just forwards to the streamer hook, which pins the pick for
-  // the current episode (its userPicked guard stops the preference auto-select
-  // from switching the stream out under the viewer). The pick is intentionally
-  // NOT persisted across episodes/reloads — every fresh load re-ranks purely on
-  // the viewer's language/dub-sub preference (see streamRank), which is the whole
-  // point of auto-select. So this is now a thin passthrough.
+  // A manual pick is deliberately not persisted across episodes: every load re-ranks
+  // on the viewer's language preference.
   const handleSelectStream = useCallback((idx) => {
     onSelectStream?.(idx);
   }, [onSelectStream]);
 
-  // Report a source as broken: anonymously beacon the failure (feeds the admin
-  // Client Resolve Stats) and fail over to the next source if there is one.
+  // The anonymous beacon feeds the admin Client Resolve Stats.
   const handleReportBroken = useCallback((idx) => {
     const s = streams[idx];
     if (s?.source) {
@@ -381,10 +298,7 @@ const WatchView = ({
     if (streams.length > 1) handleSelectStream((idx + 1) % streams.length);
   }, [streams, handleSelectStream]);
 
-  // Contextual companion nudge: shown in the sources panel once scanning finishes
-  // and the companion isn't active — the moment of need (more sources resolve
-  // locally with it). Mirrors the home banner's detection + shares its dismiss key
-  // so dismissing in either place hides both; never shown for an unaired episode.
+  // Shares the home banner's dismiss key so dismissing either hides both.
   const EXT_DISMISS_KEY = 'crimson:extBanner:dismissed';
   const [companionActive, setCompanionActive] = useState(() => {
     try { return !!window.CrimsonExtension?.available; } catch { return false; }
@@ -407,21 +321,16 @@ const WatchView = ({
   }, []);
   const showCompanionNudge = !unaired && !streamLoading && !companionActive && !nudgeDismissed;
 
-  // Provider-grouped view of the sources for the "Scraped Targets" sidebar (and
-  // the in-player cog). `openGroups` holds explicit expand/collapse choices; a
-  // group with no explicit choice defaults to open iff it holds the active source.
+  // Only explicit expand/collapse choices; unset groups are open iff they hold the active source.
   const sourceGroups = useMemo(() => groupStreams(streams), [streams]);
   const [openGroups, setOpenGroups] = useState({});
 
-  // External OpenSubtitles tracks (additive). These are title-level — keyed off the
-  // TMDB id + season/episode, independent of which source plays — so they're
-  // fetched here and merged into whatever subtitles the active source already
-  // ships (ShowBox/Febbox). Off entirely unless the viewer has picked subtitle
-  // languages in their preferences. `metadata.current_season` is the real TMDB
-  // season /info resolved (anime season groups aren't 1:1 with TMDB seasons).
+  // OpenSubtitles tracks are per title, not per source, so they're fetched here and
+  // merged into the active source's own tracks.
   const [prefs] = usePlaybackPrefs();
   const subLangs = prefs.subtitleLanguages || [];
   const subLangKey = subLangs.join(',');
+  // Anime season groups aren't 1:1 with TMDB seasons.
   const tmdbSeason = metadata?.current_season ?? currentSeason;
   const [openSubs, setOpenSubs] = useState([]);
 
@@ -441,24 +350,12 @@ const WatchView = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tmdbId, tmdbSeason, currentEpisode, isMovie, subLangKey]);
 
-  // AniSkip intro/outro timestamps (additive, anime-only). Keyed off the AniList id
-  // /info resolved, so non-anime shows (no `anilist_id`) and movies simply skip the
-  // fetch and the player shows no skip affordances.
-  //
-  // Re-fetched per episode AND per active source, feeding AniSkip the *measured*
-  // file duration. AniSkip stores each submission against the episode length it was
-  // timed on and returns the window for the closest length — so the SAME episode has
-  // different OP/ED offsets across encodes (e.g. a source with a recap or trimmed
-  // intro shifts the intro by tens of seconds). Fetching with length 0 pins us to
-  // one arbitrary submission, which only lines up with whichever encode it came from
-  // — the reason skip worked for backend-proxied sources but missed for the client
-  // engine's extension/proxy sources (different providers, different lengths). Giving
-  // AniSkip the real duration makes it return the window for the encode on screen.
+  // AniSkip returns the OP/ED window for the closest episode length it has, and
+  // encodes differ by tens of seconds, so it's re-fetched per source with the
+  // measured duration of the file actually playing.
   const anilistId = metadata?.anilist_id;
   const [skipTimes, setSkipTimes] = useState(null);
-  // Duration of the file actually playing, reported by the player. Reset per
-  // episode/source so each is re-measured (0 = not measured yet → a best-effort
-  // first fetch that gets refined the moment the player reports its duration).
+  // 0 until the player reports it, so the first fetch is refined once measured.
   const [playerDuration, setPlayerDuration] = useState(0);
   const activeStreamUrl = activeStream?.url;
   useEffect(() => {
@@ -475,18 +372,13 @@ const WatchView = ({
     return () => { cancelled = true; };
   }, [anilistId, currentEpisode, isMovie, roundedDuration]);
 
-  // Merge source-supplied tracks with the OpenSubtitles ones, de-duping by URL so a
-  // source that already provides a language doesn't double up.
   const mergedSubtitles = useMemo(() => {
     const base = Array.isArray(activeStream?.subtitles) ? activeStream.subtitles : [];
     const seen = new Set(base.map((s) => s?.url));
     return [...base, ...openSubs.filter((s) => s && !seen.has(s.url))];
   }, [activeStream, openSubs]);
 
-  // Broadcast a Discord Rich Presence for whatever's on screen (opt-in; see
-  // discordPresence.js). Covers anime, shows and movies since all three render
-  // through this view. Re-runs per episode/season so the "elapsed" timer resets,
-  // and clears on unmount so leaving the page drops back to the browsing presence.
+  // Re-runs per episode so Discord's "elapsed" timer resets.
   useEffect(() => {
     if (!displayTitle) return undefined;
     setWatchActivity({
@@ -500,17 +392,10 @@ const WatchView = ({
     return () => clearWatchActivity();
   }, [displayTitle, isMovie, currentSeason, currentEpisode, totalSeasons]);
 
-  // Server-side cache trigger: once the viewer has watched the *active* source for
-  // CACHE_CONFIRM_SECONDS, redeem its signed cacheTicket exactly once so the
-  // backend caches that source (not whichever resolved first). Tickets already
-  // confirmed are remembered so source-switching / re-renders don't re-POST.
   const confirmedTicketsRef = useRef(new Set());
   const handlePlayerProgress = useCallback((position, duration) => {
-    if (playingKeyRef.current !== currentPlayKey) return; // old episode still winding down
+    if (playingKeyRef.current !== currentPlayKey) return;
     if (onPlayerProgress) onPlayerProgress(position, duration);
-    // Feed the real file duration to the AniSkip fetch above (only when the rounded
-    // value actually changes, so this doesn't thrash on every timeupdate). This is
-    // what lets the skip windows align to the source that's actually playing.
     if (duration && Number.isFinite(duration)) {
       setPlayerDuration((prev) => (Math.round(prev) === Math.round(duration) ? prev : duration));
     }
@@ -518,7 +403,7 @@ const WatchView = ({
     if (!ticket || position < CACHE_CONFIRM_SECONDS) return;
     if (confirmedTicketsRef.current.has(ticket)) return;
     confirmedTicketsRef.current.add(ticket);
-    // Fire-and-forget; on failure drop it so a later progress tick can retry.
+    // Dropped on failure so a later progress tick retries.
     apiFetch('/cache/confirm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -526,9 +411,7 @@ const WatchView = ({
     }).catch(() => confirmedTicketsRef.current.delete(ticket));
   }, [onPlayerProgress, activeStream, currentPlayKey]);
 
-  // Filename for the in-player Download button, e.g.
-  // "Frieren - S1E04 - The Land Where Souls Rest". Season is only stamped when
-  // the title actually has more than one.
+  // e.g. "Frieren - S1E04 - The Land Where Souls Rest"
   const downloadName = isMovie
     ? (displayTitle || 'video')
     : [
@@ -539,9 +422,7 @@ const WatchView = ({
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 grid grid-cols-1 lg:grid-cols-4 gap-8 sm:gap-10 animate-in fade-in duration-1000">
-      {/* Main Video Area */}
       <div className="lg:col-span-3 space-y-8">
-        {/* Back to the title's overview page */}
         <Link
           to={backUrl}
           className="group inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 hover:bg-crimson-900/30 transition-all duration-300 text-[11px] font-black uppercase tracking-widest active:scale-95 backdrop-blur-sm shadow-xl"
@@ -574,9 +455,8 @@ const WatchView = ({
           ) : (activeStream && activeStream.type === 'iframe') ? (
               (() => {
                 const url = activeStream.url;
-                // Sandbox iframes we host ourselves (the backend player page, or
-                // anything served from our own origin) — those are trusted, so we
-                // grant the looser sandbox; third-party embeds get none.
+                // Our own pages are sandboxed without allow-popups or allow-top-navigation
+                // to kill pop-unders; third-party players break inside a sandbox.
                 const sandboxed = typeof url === 'string'
                   && (url.startsWith(API_BASE_URL) || url.startsWith(window.location.origin));
                 return (
@@ -595,32 +475,17 @@ const WatchView = ({
             ) : playerStream ? (
               <Suspense fallback={<div className="absolute inset-0 bg-black" />}>
                 <CrimsonPlayer
-                  // No `key` on the stream URL on purpose: keying it here would
-                  // remount the player on every episode advance / source switch,
-                  // destroying the wrapper element that holds fullscreen — so the
-                  // player would "fall out" of fullscreen on Auto-Next and picker
-                  // jumps (and browsers won't let us re-enter without a gesture).
-                  // The player reloads new sources internally via its `src` effect,
-                  // so a persistent instance keeps fullscreen intact across episodes.
-                  // `playerStream` (not `activeStream`) is the persistence key: it
-                  // holds the last video source through the resolve gap so this
-                  // element never unmounts mid-Auto-Next. See its definition above.
+                  // No `key` on purpose: a remount would drop fullscreen on every
+                  // episode advance. The player reloads sources in place.
                   src={playerStream.url}
-                  // The episode identity of the attached source. The player's
-                  // reload effect keys on this too, so an episode advance whose
-                  // new source resolves to the SAME url still reloads instead of
-                  // playing on from the old episode's position.
                   mediaKey={playerKey}
                   type={playerStream.type}
                   subtitles={mergedSubtitles}
                   poster={poster}
                   title={displayTitle}
                   downloadName={downloadName}
-                  // 0 during the resolve gap: what's on screen then is the OLD
-                  // episode winding down, and a freshly-fetched resume position
-                  // for the NEXT one must not seek it. The real value is back in
-                  // place on the same render that delivers the new src, before
-                  // its resume-seek can run.
+                  // During the resolve gap the OLD episode is on screen, and the
+                  // next episode's resume position must not seek it.
                   startAt={streamLoading ? 0 : playerStartAt}
                   onProgress={handlePlayerProgress}
                   onNext={isMovie ? undefined : goToNextEpisode}
@@ -644,7 +509,6 @@ const WatchView = ({
           )}
         </div>
 
-        {/* Info Panel */}
         <div className="p-6 sm:p-10 bg-crimson-950/40 border border-crimson-900/40 rounded-[2.5rem] backdrop-blur-xl relative overflow-hidden shadow-2xl">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-8 relative z-10">
             <div className="space-y-6 w-full">
@@ -695,11 +559,7 @@ const WatchView = ({
           </div>
         </div>
 
-        {/* Season & Episode picker (hidden for movies — single feature). Browse
-            any season's episodes in-place — TMDB stills, names, air dates and
-            summaries — mirroring the in-player overlay, so both read as one
-            system. Season chips BROWSE (not navigate); the episode card is what
-            commits, jumping across seasons in a single hop when needed. */}
+        {/* Season chips only browse; the episode card is what navigates. */}
         {!isMovie && episodePicker && (
         <div className="space-y-6">
           {episodePicker.seasons.length > 1 && (
@@ -774,7 +634,6 @@ const WatchView = ({
         )}
       </div>
 
-      {/* Stream Sources Sidebar */}
       <div className="lg:col-span-1 space-y-6">
         <div className="bg-crimson-950/40 border border-crimson-900/40 p-6 sm:p-8 rounded-[2rem] sticky top-28 backdrop-blur-xl shadow-2xl overflow-hidden">
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
@@ -797,7 +656,7 @@ const WatchView = ({
                 {onReload && !streamLoading && (
                   <button
                     onClick={onReload}
-                    title="Rescan — re-resolve sources from scratch"
+                    title="Rescan: re-resolve sources from scratch"
                     aria-label="Rescan sources"
                     className="text-crimson-700 hover:text-crimson-400 transition-colors"
                   >
@@ -821,7 +680,6 @@ const WatchView = ({
               ))
             ) : streams.length > 0 ? (
               sourceGroups.map((group) => {
-                // Non-stacked groups (cache targets, lone providers) stay flat.
                 if (!group.stacked) {
                   const { stream, idx } = group.items[0];
                   return (

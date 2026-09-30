@@ -5,15 +5,9 @@ import { setOverviewActivity, clearActivity } from './discordPresence';
 import WatchlistButton from './WatchlistButton';
 import FollowButton from './FollowButton';
 
-// Presentational overview UI shared by the anime Overview (/anime/:anilistId) and
-// the non-anime show Overview (/show/:tmdbId). It is purely props-driven — the two
-// pages differ only in their data source (useAnimeOverview vs useShowOverview) and
-// where the play buttons navigate (onPlayEpisode / onPlayExtra), so the look and
-// feel stays identical across both. Extracted from the original AnimeOverview so
-// the anime path renders byte-for-byte the same as before.
+// Shared by the anime, show and movie overview pages, which differ only in data source
+// and where the play buttons navigate.
 
-// One episode tile: uses the per-episode metadata (thumbnail, title, air date,
-// overview) that the backend already stores.
 const EpisodeCard = ({ ep, onSelect }) => {
   const hasTitle = ep.title && ep.title !== `Episode ${ep.episode_number}`;
   return (
@@ -58,36 +52,24 @@ const EpisodeCard = ({ ep, onSelect }) => {
   );
 };
 
-// `notFoundText` lets the show page say "show" where the anime page says "anime".
-// `onPlayEpisode(season, episodeNumber)` and `onPlayExtra(extra)` are supplied by
-// the wrapper so navigation targets the right (anilist vs tmdb) watch route.
 const OverviewView = ({
   overview, loading, error,
   activeSeason, setActiveSeason,
   episodes, episodesLoading,
   onBack, onPlayEpisode, onPlayExtra,
   watchlistItem,
-  // Latest watch-progress row for this title (or null) — drives the "pick up where
-  // you left off" banner. Resuming reuses onPlayEpisode with the row's season.
   resume,
   genres = [],
-  // Movie mode (additive): a movie has no seasons/episodes, so the seasons badge
-  // becomes a runtime badge, the single Start Watching / Resume buttons call
-  // `onPlay()` instead of onPlayEpisode, and the seasons+episodes+extras content
-  // area is hidden. Anime/show render byte-identically when isMovie is false.
+  // Movies have no seasons, so the play buttons call onPlay() instead of onPlayEpisode.
   isMovie = false,
   onPlay,
   runtime,
-  // Which archive this title belongs to ('anime' | 'show' | 'movie') — only used
-  // to tint the Discord Rich Presence flavour line while the page is open.
+  // Only tints the Discord Rich Presence flavour line.
   mediaKind = isMovie ? 'movie' : 'show',
   notFoundText = 'This title could not be summoned from the archives.',
 }) => {
   const [synopsisExpanded, setSynopsisExpanded] = useState(false);
 
-  // Broadcast a "lingering on <title>" Discord Rich Presence while this overview is
-  // open (opt-in; see discordPresence.js). Mirrors the watch page: set once the
-  // title resolves, and clear on unmount so leaving drops back to browsing.
   useEffect(() => {
     if (!overview?.title) return undefined;
     setOverviewActivity({ title: overview.title, mediaKind });
@@ -132,7 +114,6 @@ const OverviewView = ({
 
   return (
     <div className="w-full animate-in fade-in duration-1000">
-      {/* Hero / Backdrop Section */}
       <div className="relative min-h-[500px] sm:min-h-[600px] flex flex-col">
         {overview.backdrop && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -151,8 +132,7 @@ const OverviewView = ({
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back
           </button>
 
-          {/* Degraded notice — when the backend couldn't reach TMDB and rebuilt this
-              page from local/AniList metadata only. Phrased by the backend (Lumi). */}
+          {/* Set when the backend couldn't reach TMDB and fell back to local/AniList metadata. */}
           {overview.notice && (
             <div className="mb-10 flex items-start gap-4 rounded-2xl border border-amber-500/40 bg-amber-950/30 backdrop-blur-md p-4 sm:p-5 shadow-[0_10px_30px_rgba(0,0,0,0.3)]">
               <div className="flex p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 shrink-0">
@@ -213,8 +193,6 @@ const OverviewView = ({
                 )}
               </div>
 
-              {/* Genre tags — only present for anime (the catalogue carries genres);
-                  shows pass an empty list, so this row simply doesn't render. */}
               {genres.length > 0 && (
                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
                   <Tag className="w-3.5 h-3.5 text-crimson-500 opacity-70" />
@@ -245,9 +223,6 @@ const OverviewView = ({
                 </div>
               )}
 
-              {/* Pick up where you left off — only when this account has tracked
-                  progress on this title. Reuses onPlayEpisode (so it routes to the
-                  right anilist/tmdb watch URL) with the last-watched season. */}
               {resume && (() => {
                 const resumeSeason = seasons.find(s => s.season_number === resume.season_number);
                 const pct = resume.duration_seconds
@@ -309,10 +284,8 @@ const OverviewView = ({
         </div>
       </div>
 
-      {/* Main Content Area: Seasons + Episodes (hidden for movies — no seasons) */}
       {!isMovie && (
       <div className="relative -mt-10 sm:-mt-20 z-10 max-w-7xl w-full mx-auto px-6 pb-20 space-y-12">
-        {/* Season Navigation */}
         {seasons.length > 1 && (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -337,7 +310,6 @@ const OverviewView = ({
           </div>
         )}
 
-        {/* Episodes Section */}
         <div className="space-y-6">
           {currentSeason && (
             <div className="flex items-end justify-between gap-4 border-b border-crimson-900/30 pb-4">
@@ -379,7 +351,6 @@ const OverviewView = ({
           )}
         </div>
 
-        {/* Extras / Specials Section (anime only — shows pass an empty list) */}
         {extras.length > 0 && (
           <div className="space-y-6 pt-10">
             <div className="flex items-center gap-4">

@@ -1,12 +1,7 @@
 import React from 'react';
 import { themedAsset } from './hooks';
 
-/*
- * Top-level safety net. A render-time exception anywhere in the tree would
- * otherwise blank the whole page (white screen). This catches it and shows a
- * themed fallback with a recovery action instead. It does not touch any data
- * fetching or backend interaction — it only guards rendering.
- */
+// Without this, a render-time exception anywhere in the tree blanks the whole page.
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -18,7 +13,6 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    // Keep a trace in the console for debugging; no PII, no network calls.
     console.error('Unhandled UI error:', error, info?.componentStack);
   }
 
@@ -58,7 +52,7 @@ export default class ErrorBoundary extends React.Component {
         </h1>
         <p style={{ maxWidth: '34rem', opacity: 0.8, margin: 0 }}>
           Something went wrong while rendering this page. The Haven is still
-          standing — try returning to the entrance.
+          standing. Try returning to the entrance.
         </p>
         <button
           type="button"

@@ -9,68 +9,33 @@ import {
 import { downloadStream } from './streamDownload';
 import { groupStreams, streamVariantLabel, API_BASE_URL, getSessionToken } from './hooks';
 
-// How far the skip-back / skip-forward buttons (and ←/→ keys) jump, in seconds.
 const SKIP_SECONDS = 10;
 
-// Grace period shown as a countdown before Auto-Next advances to the next
-// episode, giving the viewer a beat to cancel or jump in immediately.
+// Gives the viewer a beat to cancel before Auto-Next advances.
 const AUTO_NEXT_SECONDS = 8;
-// localStorage key for the (opt-in, off by default) Auto-Next preference, so the
-// choice persists across episodes, source switches and sessions.
 const AUTO_NEXT_KEY = 'crimson:autoNext';
 
-/**
- * CrimsonPlayer — the Haven's own HLS / MP4 player.
- *
- * Plays the backend's proxied direct streams (VOE / Vidmoly / … m3u8 + mp4)
- * in-app with fully custom, crimson-vampiric controls — no browser chrome, no
- * "Direct Link" dead-end. hls.js drives playback where the browser can't play
- * HLS natively (Chrome/Firefox); native <video> handles mp4 and Safari's HLS.
- *
- * NOTE: hls.js runs with `enableWorker: false` on purpose. The site's CSP is
- * `worker-src 'self'`, which blocks hls.js's blob: web worker — with the worker
- * enabled, playlists load but every fragment silently fails (segments demux in
- * the worker). Main-thread demuxing is CSP-clean and plenty for one stream.
- */
-// `mediaKey` is the identity of the media item `src` belongs to (the watch page
-// passes its season:episode key). The source-wiring effect keys on it alongside
-// `src` because two DIFFERENT episodes can resolve to the SAME url (stable
-// client-engine / capture endpoints serve every episode from one url) — on `src`
-// alone the player would never reload across such an episode advance and the new
-// episode would keep the old one's playback position. Callers that don't pass it
-// (Live TV, local media) get a constant null: behaviour unchanged.
+// `mediaKey` identifies the episode `src` belongs to. Capture endpoints can serve
+// every episode from the SAME url, so reloading on `src` alone would keep the old
+// episode's position.
 export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const hideTimer = useRef(null);
-  // Resume support: seek to `startAt` (seconds) once the media is ready. Kept in
-  // a ref so the [] -dep events effect can read the latest value, and guarded by
-  // `seekedRef` so we only auto-seek once per loaded source (not on every
-  // loadedmetadata, and never fighting the user after they start scrubbing).
+  // Refs so the []-dep event listeners see the latest values without re-subscribing.
+  // seekedRef limits the resume seek to once per source, so it never fights a scrubbing user.
   const startAtRef = useRef(startAt);
   const seekedRef = useRef(false);
   useEffect(() => { startAtRef.current = startAt; }, [startAt]);
-  // Keep the latest onProgress in a ref so the [] -dep event effect below always
-  // calls the current callback without needing to re-subscribe the listeners.
   const onProgressRef = useRef(onProgress);
   useEffect(() => { onProgressRef.current = onProgress; }, [onProgress]);
-  // Same pattern for the "advance to next episode" callback: read the latest one
-  // from inside the [] -dep `ended` listener and the countdown timer without
-  // re-subscribing on every render.
   const onNextRef = useRef(onNext);
   useEffect(() => { onNextRef.current = onNext; }, [onNext]);
-  // Optional fatal-error interceptor (Live TV's direct-first playback): called
-  // when a source is beyond recovery. Returning true means the parent handled it
-  // (it swaps `src` to a fallback), so the error screen is suppressed. When set,
-  // fatal hls.js NETWORK errors get ONE retry then hand off — the default
-  // infinite `startLoad()` retry would spin forever on a CORS-blocked manifest.
+  // Live TV: returning true means the parent swapped `src` to a fallback, so no error screen.
   const onFatalErrorRef = useRef(onFatalError);
   useEffect(() => { onFatalErrorRef.current = onFatalError; }, [onFatalError]);
   const netRetriesRef = useRef(0);
-  // Remembers whether the last interaction with the <video> was a touch or a
-  // mouse press, so the tap handler can treat the two differently (mobile taps
-  // reveal controls; desktop clicks play/pause). Set on pointerdown, read on click.
   const lastPointerType = useRef('mouse');
 
   const [loading, setLoading] = useState(true);
@@ -87,45 +52,31 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
   const [currentLevel, setCurrentLevel] = useState(-1);
   const [controlsVisible, setControlsVisible] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
-  // Presentational only: the fraction (0..1) the cursor hovers over the seek bar,
-  // driving the live timestamp bubble + ghost marker. `null` when not hovering.
   const [seekHover, setSeekHover] = useState(null);
-  // The in-player settings cog (movie-web-style): Sources / Quality / Subtitles in
-  // one panel so none of them need leaving fullscreen. `settingsOpenGroup` tracks
-  // which provider deck is expanded inside the Sources section (one at a time).
+  // Sources, Quality and Subtitles live inside the player so none of them need leaving fullscreen.
   const [showSettings, setShowSettings] = useState(false);
   const [settingsOpenGroup, setSettingsOpenGroup] = useState(null);
-  // The in-player Season / Episode browser (episodic content only). A full-bleed
-  // overlay so it's reachable in fullscreen, unlike the selectors below the player.
   const [showEpisodes, setShowEpisodes] = useState(false);
-  // External subtitle tracks (ShowBox/Febbox + OpenSubtitles). -1 = off. Index maps
-  // to both the `tracks` array below and the <track> elements in DOM order.
+  // -1 = off. Indexes both `tracks` and the <track> elements in DOM order.
   const [subtitleIdx, setSubtitleIdx] = useState(-1);
-  // Download state. `downloading` gates the button; `dlProgress` is 0..1, or null
-  // for an indeterminate (size-unknown) download.
+  // null when the download size is unknown.
   const [downloading, setDownloading] = useState(false);
   const [dlProgress, setDlProgress] = useState(0);
   const dlAbortRef = useRef(null);
 
-  // Auto-Next: opt-in (off by default), persisted so the choice survives episode
-  // changes and sessions. `countdown` is the seconds remaining before we advance
-  // (null = no countdown running); `countdownTimer` holds its interval.
   const [autoNext, setAutoNext] = useState(() => {
     try { return localStorage.getItem(AUTO_NEXT_KEY) === '1'; } catch { return false; }
   });
   const [countdown, setCountdown] = useState(null);
   const countdownTimer = useRef(null);
 
-  // Defensive: only keep well-formed subtitle entries (need a url to load).
   const tracks = Array.isArray(subtitles) ? subtitles.filter((s) => s && s.url) : [];
 
   const isHls = type === 'hls' || (typeof src === 'string' && src.toLowerCase().includes('.m3u8'));
 
-  // The on-the-fly transcode (/local_hls) is the one HLS surface behind the login
-  // wall, so its hls.js requests (manifest + segments) need the session bearer. We
-  // attach it ONLY to backend-origin /local_hls requests: never to a third-party CDN
-  // (would leak the token) and never to the PUBLIC backend proxies (an extra header
-  // turns each segment into a CORS-preflighted request — a needless 2x round-trip).
+  // /local_hls is the only HLS surface behind the login wall. The bearer must never
+  // reach a third-party CDN (token leak), and on the public proxies the extra header
+  // would make every segment a CORS-preflighted request.
   const attachBackendAuth = (xhr, url) => {
     try {
       const u = new URL(url, window.location.href);
@@ -133,10 +84,9 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
       if (u.origin !== backend || !u.pathname.startsWith('/local_hls/')) return;
       const token = getSessionToken();
       if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    } catch { /* malformed URL — skip auth, request proceeds unauthenticated */ }
+    } catch { /* malformed URL: the request proceeds unauthenticated */ }
   };
 
-  // ---- Source / hls.js wiring -------------------------------------------
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
@@ -145,14 +95,14 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     setError(null);
     setLevels([]);
     setCurrentLevel(-1);
-    seekedRef.current = false; // new source: allow one resume-seek again
-    netRetriesRef.current = 0; // new source: fresh network-retry budget
+    seekedRef.current = false;
+    netRetriesRef.current = 0;
 
     let hls;
     if (isHls && Hls.isSupported()) {
-      // `hlsLoader` (Live TV only) routes every manifest/segment fetch through the
-      // crimson-extension companion — see liveTvExt.makeExtensionLoader. When unset
-      // (all VOD playback), hls.js uses its default XHR loader unchanged.
+      // The site's CSP (`worker-src 'self'`) blocks hls.js's blob: worker, and with it
+      // enabled every fragment fails silently, hence enableWorker: false.
+      // hlsLoader (Live TV only) routes fetches through the extension, see liveTvExt.
       hls = new Hls({
         maxBufferLength: 30,
         enableWorker: false,
@@ -172,10 +122,8 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         if (!data.fatal) return;
         if (data.type === Hls.ErrorTypes.MEDIA_ERROR) { hls.recoverMediaError(); return; }
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          // Without a fallback handler, keep the historical behaviour: retry
-          // forever (flaky VOD hosts usually come back). With one installed,
-          // a CORS-blocked / dead manifest must fail fast so the parent can
-          // swap to its fallback — one retry, then hand off below.
+          // Flaky VOD hosts usually come back, so retry forever, unless a fallback
+          // handler exists: then a CORS-blocked manifest must fail fast.
           if (!onFatalErrorRef.current || netRetriesRef.current < 1) {
             netRetriesRef.current += 1;
             hls.startLoad();
@@ -183,14 +131,14 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
           }
         }
         hls.destroy();
-        if (onFatalErrorRef.current?.()) return; // parent swaps src; no error screen
+        if (onFatalErrorRef.current?.()) return;
         setError('This stream could not be played. Try another source.');
       });
     } else if (isHls && video.canPlayType('application/vnd.apple.mpegurl')) {
-      video.src = src; // Safari / iOS native HLS
+      video.src = src;
       if (autoPlay) video.addEventListener('loadedmetadata', () => video.play().catch(() => {}), { once: true });
     } else {
-      video.src = src; // progressive mp4
+      video.src = src;
       if (autoPlay) video.addEventListener('loadeddata', () => video.play().catch(() => {}), { once: true });
     }
 
@@ -199,14 +147,9 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
       video.removeAttribute('src');
       video.load();
     };
-    // hlsLoader is in the deps so a Live TV tier escalation that keeps the same
-    // src (extension media-rules → extension fetch loader) still re-inits hls.js.
-    // mediaKey is in the deps so an episode advance that resolves to the same
-    // url still tears down and reloads the media (see the prop's doc above).
+    // hlsLoader: a Live TV tier escalation can keep the same src but still needs a re-init.
   }, [src, mediaKey, isHls, autoPlay, reloadKey, hlsLoader]);
 
-  // Seek to the saved resume position once the media knows its duration. No-op
-  // unless we have a positive startAt we haven't applied yet for this source.
   const maybeResume = useCallback(() => {
     const v = videoRef.current;
     if (!v || seekedRef.current) return;
@@ -217,11 +160,9 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     }
   }, []);
 
-  // Resume position can land after metadata already loaded (the lookup is async),
-  // so attempt the seek whenever startAt changes too — not just on loadedmetadata.
+  // The resume lookup is async and can land after loadedmetadata.
   useEffect(() => { maybeResume(); }, [startAt, maybeResume]);
 
-  // ---- <video> element events -------------------------------------------
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -230,7 +171,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     const onTime = () => {
       const t = video.currentTime || 0;
       setCurrent(t);
-      // Report real playback position up to the watch page for progress saving.
       if (onProgressRef.current) onProgressRef.current(t, video.duration || 0);
     };
     const onDur = () => { setDuration(video.duration || 0); maybeResume(); };
@@ -245,8 +185,8 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
       } catch { /* no-op */ }
     };
     const onErr = () => {
-      if (hlsRef.current) return; // hls.js path reports through its own handler
-      if (onFatalErrorRef.current?.()) return; // parent swaps src (e.g. Safari native HLS direct-play failing over to the proxy)
+      if (hlsRef.current) return; // hls.js reports through its own handler
+      if (onFatalErrorRef.current?.()) return;
       setError('Could not load this stream. Try another source.');
     };
     const onEnter = () => setPipActive(true);
@@ -282,10 +222,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     };
   }, []);
 
-  // ---- Subtitle tracks ---------------------------------------------------
-  // The browser exposes one TextTrack per <track> element in DOM order, which
-  // matches our `tracks` array. Drive visibility off `subtitleIdx` (-1 = off)
-  // rather than the <track default> attribute so the CC menu stays in control.
+  // Driven by subtitleIdx rather than <track default> so the CC menu stays in control.
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -295,10 +232,8 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     }
   }, [subtitleIdx, tracks.length, reloadKey]);
 
-  // ---- Fullscreen state --------------------------------------------------
-  // Tracks both the standard Fullscreen API (desktop, Android, iPad Safari) and
-  // iOS's native <video> fullscreen, which fires webkitbegin/endfullscreen on
-  // the element instead of updating document.fullscreenElement.
+  // iOS's native <video> fullscreen fires webkitbegin/endfullscreen on the element
+  // instead of updating document.fullscreenElement.
   useEffect(() => {
     const v = videoRef.current;
     const onFs = () => setFullscreen(
@@ -318,7 +253,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     };
   }, []);
 
-  // ---- Controls auto-hide ------------------------------------------------
   const revealControls = useCallback(() => {
     setControlsVisible(true);
     if (hideTimer.current) clearTimeout(hideTimer.current);
@@ -329,8 +263,8 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
 
   useEffect(() => () => { if (hideTimer.current) clearTimeout(hideTimer.current); }, []);
 
-  // Esc closes the Episodes overlay first (before the browser reads it as an exit-
-  // fullscreen). Only bound while the panel is open so it never shadows Esc otherwise.
+  // Capture phase so Esc closes the overlay before the browser exits fullscreen.
+  // Only bound while open so it never shadows Esc otherwise.
   useEffect(() => {
     if (!showEpisodes) return undefined;
     const onEsc = (e) => { if (e.key === 'Escape') { e.stopPropagation(); setShowEpisodes(false); } };
@@ -338,8 +272,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     return () => window.removeEventListener('keydown', onEsc, true);
   }, [showEpisodes]);
 
-  // ---- Auto-Next ---------------------------------------------------------
-  // Toggle persists the preference; cancel tears down any running countdown.
   const toggleAutoNext = useCallback(() => {
     setAutoNext((on) => {
       const next = !on;
@@ -353,8 +285,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     setCountdown(null);
   }, []);
 
-  // Start the grace-period countdown, then hand off to the next episode. Reveals
-  // the controls so the countdown card is visible even if they'd auto-hidden.
   const beginAutoNext = useCallback(() => {
     cancelAutoNext();
     revealControls();
@@ -378,14 +308,9 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     onNextRef.current?.();
   }, [cancelAutoNext]);
 
-  // Clear any pending countdown on unmount so the timer can't fire into a gone
-  // component (e.g. the viewer navigates away mid-countdown).
   useEffect(() => () => cancelAutoNext(), [cancelAutoNext]);
 
-  // When playback reaches the end and Auto-Next is armed (and a next episode
-  // exists), kick off the countdown. Declared after `beginAutoNext` so it can
-  // depend on it; sees the current `autoNext`/`hasNext` without re-binding the
-  // [] -dep events listeners. `onNext` is read through its ref.
+  // Separate from the []-dep listeners so it sees the current autoNext/hasNext.
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return undefined;
@@ -396,11 +321,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     return () => v.removeEventListener('ended', onEnded);
   }, [autoNext, hasNext, beginAutoNext]);
 
-  // ---- Skip Intro / Outro (AniSkip, anime-only) --------------------------
-  // `skipTimes` is { op:{start,end}, ed:{start,end} } (either may be null). We show
-  // a "Skip Intro" button while inside the OP window and a "Skip Outro" button
-  // inside the ED window; and when Auto-Next is armed, entering the ED window kicks
-  // off the existing "Up Next" card early so it doubles as a Continue-Watching prompt.
   const op = skipTimes?.op;
   const ed = skipTimes?.ed;
   // 0.3s guard so a button doesn't flash for a frame at the very edge of a window.
@@ -427,8 +347,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     revealControls();
   }, [skipTimes, duration, cancelAutoNext, revealControls]);
 
-  // Auto-arm the Up Next card when playback reaches the outro (not just on `ended`),
-  // so Auto-Next viewers roll into the next episode over the credits. Once per source.
+  // Arming at the outro rather than on `ended` rolls Auto-Next viewers over the credits.
   const edAutoArmed = useRef(false);
   useEffect(() => { edAutoArmed.current = false; }, [src, mediaKey]);
   useEffect(() => {
@@ -439,18 +358,17 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     }
   }, [inEdRange, autoNext, hasNext, countdown, beginAutoNext]);
 
-  // ---- Actions -----------------------------------------------------------
   const togglePlay = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
-    cancelAutoNext(); // the viewer took over — don't yank them to the next episode
+    cancelAutoNext(); // the viewer took over, so don't yank them to the next episode
     if (v.paused) v.play().catch(() => {}); else v.pause();
     revealControls();
   }, [revealControls, cancelAutoNext]);
 
   const skip = useCallback((delta) => {
     const v = videoRef.current;
-    if (!v || live) return; // a live broadcast has no timeline to scrub
+    if (!v || live) return;
     cancelAutoNext();
     const dur = v.duration || duration || 0;
     const target = v.currentTime + delta;
@@ -459,9 +377,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     revealControls();
   }, [duration, revealControls, cancelAutoNext, live]);
 
-  // Tapping the video: on touch (mobile) the first tap only summons the controls
-  // and a second tap dismisses them — it must NOT pause, which is jarring on a
-  // phone. With a mouse, a click still toggles play/pause as usual.
+  // On touch a tap toggles the controls instead of pausing, which is jarring on a phone.
   const onVideoTap = useCallback(() => {
     if (lastPointerType.current === 'touch') {
       if (controlsVisible) setControlsVisible(false);
@@ -490,8 +406,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     window.addEventListener('pointerup', up);
   }, [seekTo]);
 
-  // Track the cursor's position over the seek bar for the hover timestamp bubble
-  // and the ghost marker. Purely cosmetic — never touches playback.
   const onSeekHover = useCallback((e) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setSeekHover(Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)));
@@ -507,18 +421,15 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
   const toggleFullscreen = useCallback(() => {
     const wrap = wrapRef.current;
     const v = videoRef.current;
-    // Already fullscreen via the standard API? Exit it.
     if (document.fullscreenElement || document.webkitFullscreenElement) {
       (document.exitFullscreen || document.webkitExitFullscreen)?.call(document);
       return;
     }
-    // Standard Fullscreen API (desktop, Android, iPad Safari in-browser), with
-    // the webkit-prefixed form for older Safari.
+    // webkit prefix for older Safari.
     if (wrap?.requestFullscreen) { wrap.requestFullscreen(); return; }
     if (wrap?.webkitRequestFullscreen) { wrap.webkitRequestFullscreen(); return; }
-    // iOS fallback: iPhones (every browser) and iPad homescreen webapps can't
-    // fullscreen an arbitrary element — only the <video> itself can, and it's
-    // dismissed with the native "Done" button rather than an exit call.
+    // iPhones and iPad homescreen webapps can only fullscreen the <video> itself,
+    // dismissed via the native "Done" button.
     if (v?.webkitEnterFullscreen) { v.webkitEnterFullscreen(); return; }
   }, []);
 
@@ -531,14 +442,12 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     } catch { /* unsupported */ }
   }, []);
 
-  // HLS level switch (the settings panel stays open so the viewer can keep tuning).
+  // The settings panel stays open so the viewer can keep tuning.
   const pickLevel = useCallback((lvl) => {
     const hls = hlsRef.current;
     if (hls) { hls.currentLevel = lvl; setCurrentLevel(lvl); }
   }, []);
 
-  // Provider-grouped sources for the cog's Sources section (shared grouping with
-  // the sidebar). Picking a source closes the panel — it remounts the player.
   const sourceGroups = useMemo(() => groupStreams(sources), [sources]);
   const pickSource = useCallback((idx) => {
     setShowSettings(false);
@@ -547,9 +456,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
 
   const retry = useCallback(() => { setError(null); setReloadKey((k) => k + 1); }, []);
 
-  // Download the current source to disk. For mp4 this streams the file straight
-  // through; for HLS it fetches + concatenates (and AES-decrypts) every segment,
-  // so on long episodes it can take a while — hence the live progress + cancel.
+  // HLS downloads fetch every segment and can take a while, hence progress and cancel.
   const handleDownload = useCallback(async () => {
     if (downloading) { dlAbortRef.current?.abort(); return; }
     const controller = new AbortController();
@@ -573,13 +480,9 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     }
   }, [downloading, src, type, downloadName, title]);
 
-  // Abort an in-flight download if the source changes or the player unmounts.
   useEffect(() => () => dlAbortRef.current?.abort(), [src, mediaKey]);
 
-  // ---- Keyboard shortcuts -----------------------------------------------
-  // Active while the player is mounted (only one ever is). Ignored while typing
-  // in a field. Space/K play·pause, ←/→ (and J/L) seek, ↑/↓ volume, F fullscreen,
-  // M mute, P picture-in-picture.
+  // Bound on window: only one player is ever mounted.
   useEffect(() => {
     const onKey = (e) => {
       const t = e.target;
@@ -613,8 +516,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
 
   const pct = duration ? (current / duration) * 100 : 0;
   const bufPct = duration ? Math.min(100, (buffered / duration) * 100) : 0;
-  // Provider deck that holds the currently-playing source, so opening the cog
-  // auto-expands it in the Sources section.
   const activeGroupKey = sourceGroups.find((g) => g.items.some((it) => it.idx === activeSourceIdx))?.key ?? null;
 
   return (
@@ -629,9 +530,8 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         ref={videoRef}
         poster={poster || undefined}
         playsInline
-        // Only opt into CORS when we actually have external <track>s to fetch:
-        // cross-origin text tracks need it, but forcing it on every source would
-        // make plain media playback depend on CORS headers unnecessarily.
+        // Cross-origin <track>s need CORS, but forcing it always would make plain
+        // playback depend on CORS headers.
         crossOrigin={tracks.length ? 'anonymous' : undefined}
         onPointerDown={(e) => { lastPointerType.current = e.pointerType || 'mouse'; }}
         onClick={onVideoTap}
@@ -648,7 +548,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         ))}
       </video>
 
-      {/* Buffering sigil — twin counter-rotating rings around a pulsing spark. */}
       {loading && !error && (
         <div className="absolute inset-0 grid place-items-center pointer-events-none z-20">
           <div className="relative grid place-items-center">
@@ -660,9 +559,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         </div>
       )}
 
-      {/* Center play crest (paused, idle) — hidden while the Auto-Next card is up.
-          Framed by a breathing halo and two slow, counter-rotating rings so the
-          idle state feels alive rather than a flat button. */}
       {!playing && !loading && !error && countdown === null && (
         <div className="absolute inset-0 grid place-items-center z-10 pointer-events-none">
           <div className="absolute w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-crimson-500/10 blur-2xl cp-breathe" />
@@ -678,7 +574,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         </div>
       )}
 
-      {/* Top title ribbon — a floating glass sigil chip riding the fade gradient. */}
       <div className={`absolute top-0 inset-x-0 px-4 sm:px-6 pt-5 pb-14 bg-gradient-to-b from-crimson-950/90 via-crimson-950/40 to-transparent flex items-center transition-all duration-500 ${controlsVisible || !playing ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
         <div className="flex items-center gap-2.5 min-w-0 px-3.5 py-2 rounded-2xl bg-crimson-950/50 border border-crimson-500/20 backdrop-blur-md shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
           <span className="relative flex w-2 h-2 shrink-0">
@@ -691,7 +586,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         </div>
       </div>
 
-      {/* Error sigil */}
       {error && (
         <div className="cp-rise absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 text-center p-8 backdrop-blur-xl z-30">
           <div className="relative grid place-items-center mb-6">
@@ -708,8 +602,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         </div>
       )}
 
-      {/* Skip Intro / Skip Outro crests (AniSkip). Hidden while the Up Next card is
-          up (the card supersedes the outro button when Auto-Next is armed). */}
       {!error && countdown === null && (inOpRange || inEdRange) && (
         <button
           onClick={inOpRange ? skipIntro : skipOutro}
@@ -722,10 +614,8 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         </button>
       )}
 
-      {/* Auto-Next countdown crest — Netflix-style "Up Next" with a grace period */}
       {countdown !== null && !error && (
         <div className="cp-rise absolute z-40 bottom-28 right-4 sm:right-6 w-72 max-w-[calc(100%-2rem)] rounded-3xl bg-crimson-950/95 border border-crimson-500/30 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] p-5">
-          {/* Slim grace-period progress rail draining left→right as the count ticks. */}
           <div className="absolute top-0 inset-x-5 h-0.5 rounded-full bg-crimson-500/15 overflow-hidden">
             <div
               className="h-full bg-gradient-to-r from-crimson-600 to-crimson-400 shadow-[0_0_8px_rgba(255,0,60,0.7)] transition-[width] duration-1000 ease-linear"
@@ -757,16 +647,11 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         </div>
       )}
 
-      {/* Control altar */}
       {!error && (
         <div
           onClick={(e) => e.stopPropagation()}
           className={`absolute bottom-0 inset-x-0 px-4 sm:px-6 pb-4 pt-20 bg-gradient-to-t from-crimson-950 via-crimson-950/70 to-transparent transition-opacity duration-500 ${controlsVisible || !playing ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         >
-          {/* Seek bar — the "lifeline". Thin at rest, it swells on hover and grows
-              a glowing thumb, a ghost marker + a live timestamp bubble under the
-              cursor. All hover state is cosmetic; scrubbing runs through onScrubStart.
-              Hidden for live broadcasts — there is no timeline to scrub. */}
           {!live && (
           <div
             onPointerDown={onScrubStart}
@@ -774,7 +659,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
             onPointerLeave={() => setSeekHover(null)}
             className="group/seek relative h-6 flex items-center cursor-pointer mb-1"
           >
-            {/* Live timestamp bubble at the cursor */}
             {seekHover !== null && duration > 0 && (
               <div
                 className="cp-pop absolute -top-9 z-20 px-2.5 py-1 rounded-lg bg-crimson-950/95 border border-crimson-500/40 backdrop-blur-md text-[10px] font-black tabular-nums text-crimson-50 shadow-[0_10px_25px_rgba(0,0,0,0.6)] pointer-events-none"
@@ -784,23 +668,18 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
               </div>
             )}
             <div className="absolute inset-x-0 h-1.5 group-hover/seek:h-2.5 rounded-full bg-white/5 overflow-hidden backdrop-blur-sm border border-white/5 shadow-inner transition-all duration-200">
-              {/* Buffered ahead */}
               <div className="absolute inset-y-0 left-0 bg-crimson-500/20 transition-[width] duration-300" style={{ width: `${bufPct}%` }} />
-              {/* Ghost fill up to the hovered point */}
               {seekHover !== null && (
                 <div className="absolute inset-y-0 left-0 bg-crimson-400/20" style={{ width: `${seekHover * 100}%` }} />
               )}
-              {/* Played */}
               <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-crimson-800 via-crimson-600 to-crimson-400 shadow-[0_0_20px_rgba(255,0,60,0.8)]" style={{ width: `${pct}%` }} />
             </div>
-            {/* Ghost marker at the hovered point */}
             {seekHover !== null && (
               <div
                 className="absolute w-0.5 h-4 rounded-full bg-crimson-100/70 -translate-x-1/2 pointer-events-none z-[5]"
                 style={{ left: `${seekHover * 100}%` }}
               />
             )}
-            {/* Playhead thumb */}
             <div
               className="absolute w-4 h-4 rounded-full bg-white border-[3px] border-crimson-500 shadow-[0_0_15px_rgba(255,0,60,1)] -translate-x-1/2 scale-0 group-hover/seek:scale-100 transition-transform duration-200 z-10"
               style={{ left: `${pct}%` }}
@@ -808,16 +687,12 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
           </div>
           )}
 
-          {/* Button row */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 text-crimson-100">
-            {/* Primary transport cluster — grouped on a glass slab so play/skip read
-                as one unit, with the main play/pause set in a filled crimson crest. */}
             <div className="flex items-center gap-0.5 sm:gap-1 rounded-2xl bg-crimson-950/40 border border-white/5 p-1 backdrop-blur-sm">
               <button onClick={togglePlay} className="grid place-items-center w-10 h-10 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white shadow-[0_0_18px_rgba(255,0,60,0.45)] transition-all active:scale-90" aria-label={playing ? 'Pause' : 'Play'}>
                 {playing ? <Pause className="w-5 h-5 fill-current" /> : <Play className="w-5 h-5 fill-current translate-x-px" />}
               </button>
 
-              {/* Skip back / forward — meaningless on a live broadcast, so hidden. */}
               {!live && (
                 <>
                   <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Back ${SKIP_SECONDS} seconds`}>
@@ -832,8 +707,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
               )}
             </div>
 
-            {/* Volume — custom crimson track (native range overlaid, opacity-0, so
-                the drag/keyboard behaviour is unchanged while the fill is styled). */}
+            {/* The invisible native range on top keeps drag and keyboard behaviour. */}
             <div className="flex items-center group/vol ml-0.5">
               <button onClick={toggleMute} className="p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label="Mute">
                 {muted || volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -860,7 +734,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
             </div>
 
             {live ? (
-              /* LIVE crest — a broadcast has no timestamps to show. */
               <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-crimson-500/30 ml-1 text-crimson-50">
                 <span className="relative flex w-2 h-2">
                   <span className="absolute inline-flex w-full h-full rounded-full bg-crimson-500 opacity-60 animate-ping" />
@@ -876,8 +749,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
 
             <div className="flex-1" />
 
-            {/* Auto-Next toggle — only for episodic content (onNext provided). Off
-                by default; persisted. Advances to the next episode when one ends. */}
             {onNext && (
               <button
                 onClick={toggleAutoNext}
@@ -895,8 +766,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
               </button>
             )}
 
-            {/* Episodes — opens the Season / Episode browser overlay. Episodic
-                content only (the parent passes a picker bundle for it). */}
             {episodePicker && (
               <button
                 onClick={() => { setShowSettings(false); revealControls(); setShowEpisodes((s) => !s); }}
@@ -912,8 +781,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
               </button>
             )}
 
-            {/* Settings cog — Sources / Quality / Subtitles in one altar so none of
-                them need leaving fullscreen (movie-web-style, dressed in crimson). */}
             {(sources.length > 1 || levels.length > 1 || tracks.length > 0) && (
               <div className="relative">
                 <button
@@ -930,7 +797,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                 {showSettings && (
                   <div className="cp-rise absolute bottom-full right-0 mb-4 w-72 max-h-[60vh] overflow-y-auto no-scrollbar rounded-2xl bg-crimson-950/95 border border-crimson-500/20 backdrop-blur-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7)] z-50 divide-y divide-white/5">
 
-                    {/* Sources */}
                     {sources.length > 1 && (
                       <div className="p-2">
                         <p className="flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">
@@ -991,7 +857,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                         {onReportBroken && activeSourceIdx >= 0 && (
                           <button
                             onClick={() => { onReportBroken(activeSourceIdx); setShowSettings(false); }}
-                            title="This source won't play — report it and switch to the next"
+                            title="This source won't play: report it and switch to the next"
                             className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-500/20 transition-all"
                           >
                             <AlertTriangle className="w-3.5 h-3.5" /> Report broken · try next
@@ -1000,7 +866,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                       </div>
                     )}
 
-                    {/* Quality (HLS levels of the active source) */}
                     {levels.length > 1 && (
                       <div className="p-2">
                         <p className="flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">
@@ -1020,7 +885,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                       </div>
                     )}
 
-                    {/* Subtitles */}
                     {tracks.length > 0 && (
                       <div className="p-2">
                         <p className="flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">
@@ -1053,9 +917,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
             )}
 
             <div className="flex items-center gap-0.5 rounded-2xl bg-crimson-950/40 border border-white/5 p-1 backdrop-blur-sm">
-              {/* Download the current source to disk. Disabled label flips to a
-                  live %/cancel affordance while a download is in flight. Hidden
-                  for live broadcasts — an endless stream never finishes saving. */}
+              {/* An endless live stream never finishes saving. */}
               {!live && (
               <button
                 onClick={handleDownload}
@@ -1086,12 +948,9 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
         </div>
       )}
 
-      {/* Season / Episode altar — a full-bleed browser of every season's episodes
-          (TMDB stills, names, summaries). Lives inside the player wrapper so it's
-          reachable in fullscreen, and reuses the overview's episode-tile language. */}
+      {/* Inside the player wrapper so it's reachable in fullscreen. */}
       {episodePicker && showEpisodes && (
         <div className="cp-rise absolute inset-0 z-[60] flex flex-col bg-gradient-to-b from-crimson-950/95 via-crimson-950/90 to-black/95 backdrop-blur-2xl">
-          {/* Header */}
           <div className="flex items-center gap-3 px-4 sm:px-8 pt-5 pb-4 shrink-0 border-b border-crimson-500/15 bg-crimson-950/40">
             <div className="grid place-items-center w-9 h-9 rounded-xl bg-crimson-500/10 border border-crimson-500/25 text-crimson-400 shrink-0">
               <ListVideo className="w-5 h-5" />
@@ -1109,7 +968,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
             </button>
           </div>
 
-          {/* Season rail — only when the title actually has more than one season. */}
           {episodePicker.seasons.length > 1 && (
             <div className="flex items-center gap-2 px-4 sm:px-8 py-3 shrink-0 overflow-x-auto no-scrollbar border-b border-white/5">
               <span className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-700 whitespace-nowrap pr-1">Archives</span>
@@ -1134,7 +992,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
             </div>
           )}
 
-          {/* Episode list */}
           <div className="flex-1 overflow-y-auto no-scrollbar px-4 sm:px-8 py-5 space-y-2.5">
             {episodePicker.episodesLoading ? (
               [1, 2, 3, 4].map((n) => (
@@ -1155,7 +1012,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                         : 'bg-crimson-950/40 border-crimson-900/50 hover:bg-crimson-900/20 hover:border-crimson-500/50'
                     }`}
                   >
-                    {/* TMDB still */}
                     <div className="relative w-32 sm:w-44 aspect-video shrink-0 rounded-xl overflow-hidden bg-crimson-900/40 shadow-inner">
                       {ep.thumbnail ? (
                         <img src={ep.thumbnail} alt="" loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
@@ -1176,7 +1032,6 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                         </span>
                       )}
                     </div>
-                    {/* Meta */}
                     <div className="flex flex-col min-w-0 py-0.5 flex-1">
                       <h4 className={`text-sm sm:text-base font-black tracking-tight line-clamp-1 transition-colors ${isNow ? 'text-crimson-300' : 'text-crimson-50 group-hover:text-crimson-400'}`}>
                         {hasTitle ? ep.title : `Episode ${ep.episode_number}`}

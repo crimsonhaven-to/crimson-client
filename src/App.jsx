@@ -2,8 +2,6 @@ import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react'
 import { Routes, Route, Link, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { Search, HelpCircle, Film, AlertTriangle, AlertCircle, ChevronRight, Server, Menu, X, Heart, History, User, Sparkles, RefreshCw, LogOut, Shield, ScrollText, Tag, SlidersHorizontal, Flame, Tv, Wallet, Puzzle, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays, Music } from 'lucide-react';
 import MeshBackground from './MeshBackground';
-// Shared browse-hub kit — the per-kind badge + the poster tile now live here so
-// the home rows and the browse hubs render the exact same card (see hubKit.jsx).
 import { kindStyle } from './hubHelpers';
 import { PosterCard, SeeAll } from './hubKit';
 import { useAnimeStreamer, useTrendingAnime, useTrendingShows, useTrendingMovies, useTrendingManga, useUnifiedSearch, useHealthStatus, useAuth, useAccount, useProfile, useRecommendations, useTitle, useChangelog, usePublicConfig, useMusicAccess, apiFetch, startsFresh, CLIENT_VERSION, HOSTED_IN } from './hooks';
@@ -11,27 +9,20 @@ import { useDiscordPresence } from './discordPresence';
 import { useKonamiCode } from './useKonami';
 import { changelogExcerpt, formatReleaseDate } from './utils';
 import WatchView from './WatchView';
-// Lumi's chat drawer. Eager, but it self-suppresses: it renders nothing until
-// /chat/status says this account has been granted access, which is deny-by-default.
+// Eager, but renders nothing until /chat/status grants access (deny-by-default).
 import Lumi from './Lumi';
-// The music player's bottom bar. Eager and tiny: it renders nothing until a
-// queue exists, and it must outlive every route change for playback to.
+// Eager because it must outlive every route change for playback to continue.
 import MiniPlayer from './music/MiniPlayer';
 import { forgetDownloads, hasDownloads, resumeDownloads } from './music/downloads';
 import { forgetListens } from './music/listens';
 import { close as closeMusic } from './music/player';
 import NotFound from './NotFound';
-// Auth wall — eager: it's the first paint for logged-out visitors, so keeping it
-// in the main bundle avoids a chunk round-trip on the critical path.
+// Eager: it's the first paint for logged-out visitors, so a lazy chunk would add a
+// round-trip on the critical path.
 import LoginWall from './Login';
 import VerifyEmail from './VerifyEmail';
 import ResetPassword from './ResetPassword';
-// Authenticated pages — lazy. They (and the heavy hls.js player) only download
-// once a signed-in user actually navigates to them, so the login wall + landing
-// ship a much smaller bundle. See the <Suspense> fallback below.
-// Per-type browse hubs — the content-first replacement for the old single
-// Catalogue page. Each is the browse home for one media kind; /catalogue now
-// redirects to the Anime hub (see the Routes below). Lazy like every other page.
+// Authenticated pages are lazy so the login wall doesn't ship them or hls.js.
 const AnimeHub = lazy(() => import('./AnimeHub'));
 const ShowsHub = lazy(() => import('./ShowsHub'));
 const MoviesHub = lazy(() => import('./MoviesHub'));
@@ -39,8 +30,6 @@ const MangaHub = lazy(() => import('./MangaHub'));
 const LocalHub = lazy(() => import('./LocalHub'));
 const AccountPage = lazy(() => import('./Account'));
 const SettingsPage = lazy(() => import('./UserSettings'));
-// Luminas' welcome ritual — shown once per login (see the auth-transition effect
-// in App). Lazy so it never weighs on the login wall / first paint.
 const WelcomeTour = lazy(() => import('./WelcomeTour'));
 const FavoritesPage = lazy(() => import('./Favorites'));
 const RecentlyWatchedPage = lazy(() => import('./RecentlyWatched'));
@@ -51,33 +40,22 @@ const SupportersPage = lazy(() => import('./Supporters'));
 const DisclaimerPage = lazy(() => import('./Disclaimer'));
 const ChangelogPage = lazy(() => import('./Changelog'));
 const AnimeOverview = lazy(() => import('./AnimeOverview'));
-// Admin dashboard — lazy, and only ever reached by admin accounts.
 const AdminPage = lazy(() => import('./Admin'));
-// Non-anime TV show pages — the TMDB-keyed twins of the anime overview/watch pages.
 const ShowOverview = lazy(() => import('./ShowOverview'));
 const ShowWatch = lazy(() => import('./ShowWatch'));
 const MovieOverview = lazy(() => import('./MovieOverview'));
 const MovieWatch = lazy(() => import('./MovieWatch'));
-// Manga reading surface — the AniList-keyed overview + the page reader. Lazy like
-// every other content page; only downloaded once a signed-in user opens a manga.
 const MangaOverview = lazy(() => import('./MangaOverview'));
 const MangaReader = lazy(() => import('./MangaReader'));
-// Local media library — the on-disk title overview + its watch page (the Index's
-// "Local" view links here). Lazy like every other content page.
 const LocalOverview = lazy(() => import('./LocalOverview'));
 const LocalWatch = lazy(() => import('./LocalWatch'));
-// Live TV — the iptv-org free-to-air surface (browse hub + the live watch page).
-// Gated by the backend's live_tv_enabled config flag, like Local.
 const LiveTvHub = lazy(() => import('./LiveTvHub'));
 const LiveTvWatch = lazy(() => import('./LiveTvWatch'));
 const LumiSecret = lazy(() => import('./LumiSecret'));
-// Music: the hub, one playlist, the full player, and Spotify's redirect target.
 const MusicHub = lazy(() => import('./MusicHub'));
 const MusicPlaylist = lazy(() => import('./MusicPlaylist'));
 const MusicNowPlaying = lazy(() => import('./MusicNowPlaying'));
 const MusicConnect = lazy(() => import('./MusicConnect'));
-// Companion-extension download page — lazy; only reached from the home banner /
-// footer link, and only meaningful to viewers who don't already have it.
 const DownloadExtensionPage = lazy(() => import('./DownloadExtension'));
 
 const GithubIcon = () => (
@@ -110,9 +88,6 @@ const RedditIcon = () => (
   </svg>
 );
 
-// KIND_STYLE + kindStyle now live in hubKit (shared with the browse hubs) and are
-// imported at the top of this file.
-
 const AnimeCard = ({ title, poster, kind, onSelect }) => (
 
   <div
@@ -130,7 +105,6 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
       <span className="text-base font-semibold text-crimson-300 truncate max-w-[240px]">{title}</span>
     </div>
     <div className="flex items-center gap-2 flex-shrink-0">
-      {/* Tag so anime / show / movie / manga is obvious at a glance — distinct tint per kind. */}
       <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${kindStyle(kind).badge}`}>
         {kindStyle(kind).label}
       </span>
@@ -139,19 +113,11 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
   </div>
 );
 
-// ---------- Reusable content row ----------
-// PosterCard (the artwork tile shared by every home row) now lives in hubKit and
-// is imported at the top of this file, so the home rows and the browse-hub grids
-// render the exact same card.
-
-// Fixed tile width shared by the cards and the loading skeletons, so a row is
-// always exactly one horizontal track (no wrapping into a grid).
+// A fixed tile width keeps each row one horizontal track instead of wrapping into a grid.
 const ROW_TILE = 'shrink-0 snap-start w-32 sm:w-40 lg:w-44';
-// Horizontal scroll track. Negative margins let the row bleed to the screen edge
-// on mobile while staying flush with the page padding on desktop.
+// Negative margins let the row bleed to the screen edge on mobile.
 const ROW_TRACK = 'flex items-start gap-4 sm:gap-6 overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
 
-// Skeleton tiles shown while a row's data loads.
 function RowSkeleton() {
   return (
     <div className={`${ROW_TRACK} animate-pulse`}>
@@ -162,9 +128,6 @@ function RowSkeleton() {
   );
 }
 
-// One titled home row: a header plus a single horizontally-scrolling poster track
-// (P-Stream / movie-web style). Renders nothing once it has finished loading with
-// no items, so empty surfaces vanish cleanly.
 function ContentRow({ icon, title, accent, subtitle, items, loading, onSelect, cta }) {
   if (!loading && (!items || items.length === 0)) return null;
   return (
@@ -196,12 +159,6 @@ function ContentRow({ icon, title, accent, subtitle, items, loading, onSelect, c
   );
 }
 
-// ---------- Companion-extension nudge (home banner) ----------
-// A gentle "claim the companion" call-out at the top of the search home, linking
-// to /extension. It self-effaces in two cases so it never nags: (1) the companion
-// is already bound to this browser (we read window.CrimsonExtension and also catch
-// the one-shot `crimson-extension-ready` event in case it injects after mount),
-// or (2) the viewer dismissed it (persisted in localStorage).
 const EXT_BANNER_DISMISS_KEY = 'crimson:extBanner:dismissed';
 
 function ExtensionBanner() {
@@ -242,10 +199,10 @@ function ExtensionBanner() {
       </span>
       <span className="min-w-0 flex-grow">
         <span className="block text-sm font-black text-crimson-50 tracking-tight">
-          Psst, darling — claim the Crimson Companion. 🦇
+          Psst, darling, claim the Crimson Companion. 🦇
         </span>
         <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
-          A featherlight browser familiar that resolves &amp; plays your sources locally — straight from your own hands.
+          A featherlight browser familiar that resolves &amp; plays your sources locally, straight from your own hands.
         </span>
       </span>
       <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-400 group-hover:text-crimson-300 transition-colors shrink-0">
@@ -264,13 +221,8 @@ function ExtensionBanner() {
   );
 }
 
-// ---------- Adblocker warning (home banner) ----------
-// A permanent call-out at the top of the search home, styled like the companion
-// nudge but in Luminas' cautioning voice. Unlike the companion banner this one is
-// NOT dismissible and never self-hides: scraping & resolving now happens in the
-// viewer's own browser, and an adblocker silently severs those local fetches
-// (it can't tell Crimson's own conjuring from an ad), so the warning must stand
-// at all times on the search home.
+// Deliberately not dismissible: resolving runs in the viewer's browser, and an
+// adblocker silently breaks those fetches.
 function AdblockerNotice() {
   return (
     <div
@@ -285,7 +237,7 @@ function AdblockerNotice() {
           Lower your wards on the haven, darling. 🩸
         </span>
         <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
-          Crimson now conjures &amp; resolves your sources right here in your own browser — and a hungry adblocker
+          Crimson now conjures &amp; resolves your sources right here in your own browser, and a hungry adblocker
           mistakes that ritual for prey, severing the threads before the stream can breathe. Whitelist this page
           so the magic may flow.
         </span>
@@ -294,12 +246,9 @@ function AdblockerNotice() {
   );
 }
 
-// ---------- Landing Page Component ----------
 function LandingPage() {
   const navigate = useNavigate();
   useTitle('Search Home');
-  // Unified search: anime AND non-anime shows, anime listed first. Each result is
-  // tagged with `kind` so we route it to the right overview page.
   const {
     queryName, setQueryName,
     results: searchResults, showSuggestions, setShowSuggestions,
@@ -311,13 +260,10 @@ function LandingPage() {
   const { trendingShows, trendLoading: showsLoading } = useTrendingShows();
   const { trendingMovies, trendLoading: moviesLoading } = useTrendingMovies();
   const { trendingManga, trendLoading: mangaLoading } = useTrendingManga();
-  // Personalized "watch next" feed + the viewer's display name for the greeting.
   const { recommendations, basedOn, loading: recsLoading } = useRecommendations(18);
   const profile = useProfile();
   const displayName = profile?.username;
 
-  // Anime -> /anime/{anilist_id}; non-anime show -> /show/{tmdb_id};
-  // movie -> /movie/{tmdb_id}.
   const openOverview = (item) => {
     setQueryName(item.title || item.name || '');
     setShowSuggestions(false);
@@ -346,7 +292,6 @@ function LandingPage() {
     }
   };
 
-  // Greeting for the personalized row: "Recommended for You, {name}".
   const recsTitle = displayName ? 'Recommended for You,' : 'Recommended for';
   const recsAccent = displayName || 'You';
   const recsSubtitle = basedOn?.top_genres?.length
@@ -355,18 +300,14 @@ function LandingPage() {
 
   return (
     <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-16 sm:space-y-20 animate-in fade-in duration-1000">
-      {/* Adblocker warning — permanent: local scraping/resolving runs in the
-          viewer's browser, which adblockers silently break. Shown at all times. */}
       <div className="max-w-2xl mx-auto !mt-0">
         <AdblockerNotice />
       </div>
 
-      {/* Companion nudge — self-hides once the extension is bound or dismissed. */}
       <div className="max-w-2xl mx-auto !mt-2">
         <ExtensionBanner />
       </div>
 
-      {/* Hero — the haven's sigil and the one search that opens every door. */}
       <div className="space-y-4 text-center max-w-3xl mx-auto pt-6 sm:pt-12">
         <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-crimson-50 uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
           crimson<span className="text-crimson-500 font-light opacity-90">haven</span>
@@ -436,8 +377,6 @@ function LandingPage() {
         </div>
       )}
 
-      {/* Personalized recommendations — only when Luminas actually has picks for
-          you. A brand-new account (no history) falls straight through to trending. */}
       {(recsLoading || recommendations.length > 0) && (
         <ContentRow
           icon={<Sparkles className="w-6 h-6" />}
@@ -450,8 +389,6 @@ function LandingPage() {
         />
       )}
 
-      {/* The home is a launchpad: each row previews what's trending, and its
-          "See all" opens that kind's own browse hub (the full, filterable grid). */}
       <ContentRow
         icon={<Flame className="w-6 h-6" />}
         title="Trending"
@@ -495,15 +432,12 @@ function LandingPage() {
   );
 }
 
-// ---------- Watch Page Component ----------
 function WatchPage() {
   const { anilistId, season = '1', episode = '1' } = useParams();
   const navigate = useNavigate();
   const progressTimerRef = useRef(null);
   const playbackRef = useRef(null);
-  // Latest live playback position, so that re-mounting the player (switching
-  // source/quality, or the auto-upgrade to Voe) resumes where the viewer is now
-  // — not back at the load-time saved position.
+  // A re-mounted player (source switch) resumes here rather than at the load-time saved position.
   const livePositionRef = useRef(0);
   const handlePlayerProgress = useCallback((position, duration) => {
     playbackRef.current = { position, duration };
@@ -523,14 +457,10 @@ function WatchPage() {
   const { updateProgress, fetchResumePosition } = useAccount();
   const { isAuthenticated } = useAuth();
 
-  // Sequential-advance "start fresh" stamp: set at episode-change time (while the
-  // outgoing episode's playback state is still known) when the viewer just
-  // finished the current episode and moves to the next one — Auto-Next, or
-  // clicking the next episode over the credits. The resume lookup below skips
-  // the saved position ONCE for the stamped target, so a re-watch rolling into
-  // an episode that was left mid-way on an earlier watch-through starts at 0
-  // instead of yanking to the stale spot. Direct navigation (continue-watching,
-  // opening an episode cold) never stamps and resumes as before.
+  // After finishing an episode and rolling into the next, a re-watch must start at 0
+  // rather than jump to a stale spot from an earlier watch-through. Stamped at change
+  // time because only then is the outgoing episode's playback state still known.
+  // Direct navigation never stamps, so it still resumes.
   const startFreshKeyRef = useRef(null);
   const markEpisodeAdvance = (nextSeason, nextEpisode) => {
     if (startsFresh(playbackRef.current, currentSeason, currentEpisode, nextSeason, nextEpisode)) {
@@ -538,16 +468,14 @@ function WatchPage() {
     }
   };
 
-  // Saved-position resume: look up where the user left off on this exact episode
-  // and hand it to the player as a start time. Re-runs per episode/season change;
-  // resets to 0 first so switching to a fresh episode never inherits a stale seek.
+  // Reset to 0 first so a new episode never inherits a stale seek.
   const [resumeAt, setResumeAt] = useState(0);
   useEffect(() => {
     let cancelled = false;
     setResumeAt(0);
-    livePositionRef.current = 0; // new episode: forget the previous one's live spot
+    livePositionRef.current = 0;
     if (startFreshKeyRef.current === `${currentSeason}:${currentEpisode}`) {
-      startFreshKeyRef.current = null; // one-shot: consumed by this episode load
+      startFreshKeyRef.current = null;
       return;
     }
     if (!isAuthenticated) return;
@@ -556,8 +484,6 @@ function WatchPage() {
     return () => { cancelled = true; };
   }, [anilistId, currentSeason, currentEpisode, isAuthenticated, fetchResumePosition]);
 
-  // Where a freshly-mounted player should start: the live spot once playback has
-  // advanced (source switches keep their place), else the saved resume position.
   const playerStartAt = livePositionRef.current > 5 ? livePositionRef.current : resumeAt;
   
   useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
@@ -613,7 +539,6 @@ function WatchPage() {
     navigate(`/watch/${anilistId}/${currentSeason}/${newEpisode}`);
   };
 
-  // Cross-season jump for the in-player picker: move season + episode together.
   const handleSelectEpisode = (newSeason, newEpisode) => {
     markEpisodeAdvance(newSeason, newEpisode);
     setCurrentSeason(newSeason);
@@ -649,7 +574,6 @@ function WatchPage() {
   );
 }
 
-// ---------- About Page Component ----------
 const SOCIAL_LINKS = [
   { label: 'GitLab', href: 'https://gitlab.ramon.moe/crimsonhaven-to', icon: <GithubIcon /> },
   { label: 'Reddit', href: 'https://www.reddit.com/r/crimsonhaven/', icon: <RedditIcon /> },
@@ -692,7 +616,7 @@ function AboutPage() {
             System Specification Diagnostics
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT:</span> React 18 / Vite / Tailwind</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT:</span> React 19 / Vite / Tailwind</p>
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">ROUTING:</span> FastAPI Asynchronous Engine</p>
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">BLOOD ARCHIVE:</span> 3-Node PostgreSQL HA Coven · Off-Site Crypt Backup</p>
              <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">DOMINION:</span> 3-Node Docker Swarm · Eternal Zero-Interruption CI/CD Ritual</p>
@@ -714,9 +638,6 @@ function AboutPage() {
         </div>
       </div>
 
-      {/* Changelog preview — the first few lines of the latest decree, with a
-          Read More link through to the full Chronicle page. Hidden entirely when
-          the backend changelog engine isn't configured (503). */}
       {!changelogUnavailable && (
         <div className="space-y-6">
           <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
@@ -759,7 +680,7 @@ function AboutPage() {
 
             {!changelogLoading && !latestRelease && (
               <p className="text-sm text-crimson-300/60 italic font-medium">
-                "No decrees etched yet, darling — but the first page awaits."
+                "No decrees etched yet, darling, but the first page awaits."
               </p>
             )}
 
@@ -824,7 +745,6 @@ function AboutPage() {
   );
 }
 
-// Themed fallback shown while a lazy route chunk loads.
 function PageLoader() {
   return (
     <div className="flex flex-col items-center justify-center py-32 gap-5">
@@ -837,12 +757,6 @@ function PageLoader() {
   );
 }
 
-// ---------- Auth Gate (login wall) ----------
-// Shown to everyone who isn't signed in. The site is members-only, so an
-// unauthenticated visitor can only reach the login wall and the email
-// verify/reset landing pages — every other path falls through to the wall.
-// Kept in the main bundle (not lazy) since it's on the critical first-paint
-// path for logged-out users; the heavier authenticated pages load after login.
 function AuthGate() {
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col relative overflow-x-hidden">
@@ -858,14 +772,13 @@ function AuthGate() {
       </div>
       <footer className="w-full text-center py-6 px-4 z-10 relative">
         <p className="text-[10px] font-medium tracking-wide text-crimson-700 uppercase">
-          crimsonhaven — members only · your data stays in {HOSTED_IN}
+          crimsonhaven · members only · your data stays in {HOSTED_IN}
         </p>
       </footer>
     </div>
   );
 }
 
-// ---------- Main App Component ----------
 function App() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -874,9 +787,7 @@ function App() {
   const { health } = useHealthStatus();
   const profile = useProfile();
   const isAdmin = !!profile?.is_admin;
-  // Gates the Local hub nav entry + route — the on-disk library only exists on
-  // operator builds that configured a source (mirrors the old Catalogue toggle).
-  // live_tv_enabled gates the Live TV entry the same way (IPTV_ENABLED backend-side).
+  // The local library only exists on operator builds that configured a source.
   const { local_library_enabled: localEnabled, live_tv_enabled: liveTvEnabled } = usePublicConfig();
   const musicEnabled = useMusicAccess();
   // Offline the profile never loads, so downloads on this device keep Music reachable.
@@ -884,17 +795,13 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Drives the opt-in Discord Rich Presence (see discordPresence.js). Mounted once
-  // here at the root so it spans every page; no-ops unless the viewer enabled it.
+  // Mounted at the root so presence spans every page.
   useDiscordPresence();
 
-  // ↑↑↓↓←→←→BA reveals Lumi's secret shrine (see useKonami.js / LumiSecret.jsx).
   useKonamiCode(useCallback(() => navigate('/lumi'), [navigate]));
 
-  // Luminas' welcome ritual — fires on a fresh login, i.e. an authentication
-  // transition from signed-out to signed-in *during this page's lifetime*. A
-  // reload while already signed in starts authed (wasAuthedRef begins true), so
-  // it does NOT re-show; only an actual login (false -> true) opens it.
+  // Only a signed-out to signed-in transition opens the tour; a reload while
+  // signed in starts with wasAuthedRef true, so it doesn't re-show.
   const [showTour, setShowTour] = useState(false);
   const wasAuthedRef = useRef(isAuthenticated);
   useEffect(() => {
@@ -902,8 +809,6 @@ function App() {
     wasAuthedRef.current = isAuthenticated;
   }, [isAuthenticated]);
 
-  // Nav sits transparent over the wallpaper at the very top, then darkens/blurs
-  // into a solid bar once the page is scrolled — purely a visual effect.
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll);
@@ -925,15 +830,12 @@ function App() {
     navigate('/');
   };
 
-  // Site-wide login wall: nothing past this point renders until authenticated.
   if (!isAuthenticated) {
     return <AuthGate />;
   }
 
-  // Content-first navigation: Home is the search + discovery launchpad, then one
-  // entry per media kind (each opens that kind's own browse hub). The personal
-  // pages sit apart as icons, and the informational pages and Admin live in the
-  // account dropdown, because a label for everything no longer fits one bar.
+  // Informational pages and Admin live in the account dropdown because a label for
+  // everything no longer fits one bar.
   const browseLinks = [
     { to: "/", label: "Home", icon: <Sparkles className="w-4 h-4" /> },
     { to: "/anime", label: "Anime", icon: <Flame className="w-4 h-4" /> },
@@ -958,19 +860,16 @@ function App() {
 
   return (
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
-      {/* Welcome ritual — opens once on a fresh login (see showTour above). */}
       {showTour && (
         <Suspense fallback={null}>
           <WelcomeTour onClose={() => setShowTour(false)} />
         </Suspense>
       )}
 
-      {/* Background — animated crimson mesh gradient (see MeshBackground.jsx) */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <MeshBackground />
       </div>
 
-      {/* Navigation Bar — transparent over the wallpaper at the top, solid once scrolled */}
       <nav className={`sticky top-0 z-50 px-4 sm:px-6 border-b transition-all duration-500 ${
         scrolled
           ? 'bg-crimson-950/80 backdrop-blur-lg border-crimson-900/60 shadow-lg py-3'
@@ -983,7 +882,6 @@ function App() {
             </span>
           </Link>
 
-          {/* Desktop Navigation: icons on medium screens, labels for the media kinds from xl up */}
           <div className="hidden md:flex gap-1 text-[11px] font-black uppercase tracking-wider items-center">
             {browseLinks.map(link => (
               <Link key={link.to} to={link.to} title={link.label} aria-label={link.label} className={navLinkClass(link.to)}>
@@ -998,7 +896,6 @@ function App() {
             ))}
           </div>
 
-          {/* Right cluster: backend status pill, account dropdown, mobile menu toggle */}
           <div className="flex items-center gap-3">
             {health && (
               <div className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl">
@@ -1044,8 +941,6 @@ function App() {
                     >
                       <Sparkles className="w-4 h-4" /> Crimson Wrapped
                     </Link>
-                    {/* Informational pages — moved here out of the main nav to keep
-                        the top bar focused on browsing. */}
                     <div className="my-2 border-t border-crimson-900/20" />
                     <Link to="/support" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
                       <Wallet className="w-4 h-4" /> Support Us
@@ -1077,7 +972,6 @@ function App() {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
             <button
               className="md:hidden p-2 text-crimson-400 hover:text-white transition-colors"
               onClick={() => { setIsMenuOpen(!isMenuOpen); setUserMenuOpen(false); }}
@@ -1087,7 +981,6 @@ function App() {
           </div>
         </div>
 
-        {/* Mobile Navigation Dropdown */}
         {isMenuOpen && (
           <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
             <div className="flex flex-col p-4 space-y-4">
@@ -1108,7 +1001,6 @@ function App() {
         )}
       </nav>
 
-      {/* Main Content */}
       <div className="flex-grow z-10 flex flex-col justify-center px-4 sm:px-6 md:px-0">
         <Suspense fallback={<PageLoader />}>
         <Routes>
@@ -1118,8 +1010,6 @@ function App() {
           <Route path="/supporters" element={<SupportersPage />} />
           <Route path="/disclaimer" element={<DisclaimerPage />} />
           <Route path="/changelog" element={<ChangelogPage />} />
-          {/* Per-type browse hubs — the content-first replacement for the old
-              single Catalogue page. */}
           <Route path="/anime" element={<AnimeHub />} />
           <Route path="/shows" element={<ShowsHub />} />
           <Route path="/movies" element={<MoviesHub />} />
@@ -1130,49 +1020,41 @@ function App() {
           <Route path="/music/playlist/:id" element={<MusicPlaylist />} />
           <Route path="/music/now" element={<MusicNowPlaying />} />
           <Route path="/music/connect" element={<MusicConnect />} />
-          {/* Legacy path — the Catalogue was anime + local; send it to the Anime hub. */}
+          {/* Legacy path: keep old Catalogue bookmarks working. */}
           <Route path="/catalogue" element={<Navigate to="/anime" replace />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/admin" element={<AdminPage />} />
           <Route path="/watchlists" element={<FavoritesPage />} />
-          {/* Legacy path — keep old bookmarks/links working. */}
+          {/* Legacy path: keep old bookmarks working. */}
           <Route path="/favorites" element={<FavoritesPage />} />
           <Route path="/recently-watched" element={<RecentlyWatchedPage />} />
           <Route path="/calendar" element={<AiringCalendarPage />} />
           <Route path="/wrapped" element={<WrappedPage />} />
           <Route path="/anime/:anilistId" element={<AnimeOverview />} />
           <Route path="/watch/:anilistId/:season?/:episode?" element={<WatchPage />} />
-          {/* Non-anime TV shows — TMDB-keyed twins of the anime routes above. */}
           <Route path="/show/:tmdbId" element={<ShowOverview />} />
           <Route path="/watch-show/:tmdbId/:season?/:episode?" element={<ShowWatch />} />
           <Route path="/movie/:tmdbId" element={<MovieOverview />} />
           <Route path="/watch-movie/:tmdbId" element={<MovieWatch />} />
-          {/* Local media library — on-disk title overview + its watch page. */}
           <Route path="/local/:token" element={<LocalOverview />} />
           <Route path="/watch-local/:token" element={<LocalWatch />} />
-          {/* Live TV — one live channel from the iptv-org catalogue. */}
           <Route path="/watch-live/:channelId" element={<LiveTvWatch />} />
-          {/* Manga reading surface — AniList-keyed overview + the page reader. */}
           <Route path="/manga/:anilistId" element={<MangaOverview />} />
-          {/* Resume route (no chapter id): the reader maps saved progress → chapter. */}
+          {/* Without a chapter id the reader resumes from saved progress. */}
           <Route path="/read/:anilistId" element={<MangaReader />} />
           <Route path="/read/:anilistId/:chapterId" element={<MangaReader />} />
-          {/* Companion-extension download + side-load guide. */}
           <Route path="/extension" element={<DownloadExtensionPage />} />
-          {/* Lumi's secret shrine — reached via the Konami code (see useKonami.js). */}
+          {/* Reached via the Konami code. */}
           <Route path="/lumi" element={<LumiSecret />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         </Suspense>
       </div>
 
-      {/* Lumi's chat drawer. Mounted once here rather than per page so she is
-          reachable from anywhere; it hides itself on the watch routes, where the
-          player owns the corner the summon button would occupy. */}
+      {/* Hides itself on the watch routes, where the player owns that corner. */}
       <Lumi />
 
-      {/* Footer */}
       <footer className="w-full border-t border-crimson-900/40 bg-crimson-950/90 backdrop-blur-md py-12 px-6 z-10 relative">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
           <div className="md:col-span-2">
@@ -1180,7 +1062,7 @@ function App() {
               crimson<span className="text-crimson-100 font-light">haven</span>
             </span>
             <p className="text-crimson-400 text-sm leading-relaxed max-w-sm mt-5 mb-6">
-              Your regal sanctuary for seamless anime streaming — curated by Lumi, your crimson curator. ✨
+              Your regal sanctuary for seamless anime streaming, curated by Lumi, your crimson curator. ✨
             </p>
             <div className="flex items-center gap-3 flex-wrap">
               <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">v{CLIENT_VERSION}</div>
