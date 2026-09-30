@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { apiFetch, useSessionToken } from '../api/client';
+import { apiFetch, extractError, useSessionToken } from '../api/client';
 
 export const DEFAULT_LIST = 'favorites';
 // Virtual union of every list, shown only on the Watchlists page. Never sent to
@@ -201,7 +201,7 @@ export function useWatchlists() {
         body: text,
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) return { ok: false, error: data.detail || 'Import failed.' };
+      if (!res.ok) return { ok: false, error: extractError(data, 'Import failed.') };
       await refresh();
       return { ok: true, ...data };
     } catch (e) {
