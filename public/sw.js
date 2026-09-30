@@ -1,21 +1,11 @@
-/*
- * Crimsonhaven service worker.
- *
- * Goal: make the web app installable + resilient offline WITHOUT ever changing
- * how the app talks to the backend. The backend lives on a different origin
- * (e.g. https://dev-backend.crimsonhaven.to), so the guard below — "same-origin
- * GET only" — means every API/auth/stream request bypasses the worker entirely
- * and hits the network exactly as before. Non-GET requests are never touched.
- *
- * Music on the device is the one exception to "network first": songs and covers
- * the page stored under /music-offline/ (src/music/trackStore.js) are served
- * from their caches, which an update of this worker never deletes.
- */
+// The backend is on another origin, so the same-origin GET guard in the fetch
+// handler keeps every API, auth and stream request out of this worker.
+// Offline music under /music-offline/ lives in its own caches, which an update of
+// this worker never deletes.
 
 const VERSION = 'v4';
-// The build replaces BUILD_ID and BUILD_ASSETS (see swPrecache in vite.config.js),
-// so every deploy is a new worker that precaches that build's own chunks. Without
-// them, a page never opened online (say, Music) would not load offline.
+// Filled in by swPrecache in vite.config.js, so each deploy is a new worker that
+// precaches its own chunks and pages never opened online still load offline.
 const BUILD_ID = 'dev';
 const BUILD_ASSETS = [];
 const SHELL_CACHE = `crimson-shell-${VERSION}-${BUILD_ID}`;
@@ -36,7 +26,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(SHELL_CACHE)
-      // addAll is atomic; ignore individual misses so install never hard-fails.
+      // Not addAll: one missing asset would fail the whole install.
       .then((cache) => Promise.allSettled([...SHELL_ASSETS, ...BUILD_ASSETS].map((a) => cache.add(a))))
       .then(() => self.skipWaiting())
   );
@@ -57,7 +47,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Let the page tell a freshly-installed worker to take over immediately.
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
@@ -66,9 +55,6 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Hard guard: only ever handle same-origin GET. Everything else (the backend
-  // API on another origin, POST/DELETE auth + progress calls, the NDJSON stream)
-  // falls straight through to the network, untouched.
   if (request.method !== 'GET' || url.origin !== self.location.origin) {
     return;
   }
@@ -80,8 +66,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // SPA navigations: network-first so a deployed update is picked up online,
-  // with the cached shell as an offline fallback.
+  // Network first so a deploy is picked up online; the cached shell is the offline fallback.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
@@ -95,8 +80,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Same-origin static assets: stale-while-revalidate for instant loads that
-  // still refresh in the background.
   event.respondWith(
     caches.match(request).then((cached) => {
       const network = fetch(request)
@@ -109,7 +92,7 @@ self.addEventListener('fetch', (event) => {
         })
         .catch(() => {
           if (cached) return cached;
-          // Return a valid Response object to prevent "Failed to convert value to 'Response'"
+          // respondWith rejects anything that is not a Response.
           return new Response('Network error', { 
             status: 408, 
             statusText: 'Network error',
