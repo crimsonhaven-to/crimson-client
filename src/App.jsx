@@ -86,7 +86,7 @@ function App() {
     <div className="min-h-screen bg-crimson-950 text-crimson-100 font-sans selection:bg-crimson-500 selection:text-white flex flex-col justify-between relative overflow-x-hidden">
       {showTour && (
         <Suspense fallback={null}>
-          <WelcomeTour onClose={() => setShowTour(false)} />
+          <WelcomeTour musicEnabled={musicEnabled} onClose={() => setShowTour(false)} />
         </Suspense>
       )}
 

@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Crown, Search, Heart, History, SlidersHorizontal, Sparkles, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bot, CalendarDays, ChevronLeft, ChevronRight, Crown, Gift, Heart, Music, Palette, Puzzle, Search, SlidersHorizontal, Sparkles, X } from 'lucide-react';
 import { HOSTED_IN } from '../api/config';
+import { usePublicConfig } from '../api/client';
+import { useLumiStatus } from '../lumi/hooks';
 import { useThemedAsset } from '../account/theme';
 
-// Shown once per login; the trigger lives in App.jsx.
+// Shown once per login; the trigger lives in App.jsx. A step with `when` appears only
+// if that feature is live for this viewer, so the tour never points at a missing door.
 const STEPS = [
   {
     icon: Crown,
     title: 'Welcome to the Haven',
-    body: (
+    body: () => (
       <>
         Ahh… a fresh pulse graces my sanctuary. I am <strong className="text-crimson-50">Luminas Crimsonveil</strong>,
         eternal curator of this place. Lean close, darling~. Let me unveil the little delights woven into your
@@ -20,69 +23,144 @@ const STEPS = [
   {
     icon: Search,
     title: 'Summon Anything',
-    body: (
+    body: ({ liveTvEnabled, localEnabled }) => (
       <>
-        Whisper a name into the search and I shall conjure it: anime, mortal shows, and cinema alike. Crave a grander
-        hunt? The <strong className="text-crimson-50">Catalogue</strong> lays my entire archive bare for your wandering eyes.
-      </>
-    ),
-  },
-  {
-    icon: Heart,
-    title: 'Curate Your Collections',
-    body: (
-      <>
-        Claim what calls to you. Build as many <strong className="text-crimson-50">Watchlists</strong> as your heart desires
-        ("Devouring", "For Later", "Forsaken"), and a single jewel may rest in many at once. Export them, import them;
-        they are forever yours.
-      </>
-    ),
-  },
-  {
-    icon: History,
-    title: 'Never Lose Your Place',
-    body: (
-      <>
-        I remember <em>everything</em>, darling~. Slip away mid-tale and I hold your place to the very second. Your
-        <strong className="text-crimson-50"> History</strong> keeps every manifestation you've savoured, ready to resume at a
-        single touch.
+        Whisper a name into the search and I shall conjure it: anime, mortal shows and cinema alike. Crave a grander
+        hunt? <strong className="text-crimson-50">Anime</strong>, <strong className="text-crimson-50">Shows</strong>,{' '}
+        <strong className="text-crimson-50">Movies</strong> and <strong className="text-crimson-50">Manga</strong> each keep
+        their own hall above, and manga is read right here, chapter by chapter.
+        {liveTvEnabled && <> <strong className="text-crimson-50">Live TV</strong> streams channels as they air.</>}
+        {localEnabled && <> The <strong className="text-crimson-50">Local</strong> vault holds this castle&apos;s own library.</>}
+        {' '}And the rows on the home page? Picked from what you have already savoured.
       </>
     ),
   },
   {
     icon: SlidersHorizontal,
     title: 'Streams That Bend to Your Will',
-    isNew: true,
-    body: (
+    body: () => (
       <>
-        Each tale is drawn from many sources, and I always serve the swiftest first. And now, my newest gift: slip into
-        <strong className="text-crimson-50"> Preferences</strong> and name your tongue: German or English,{' '}
-        <strong className="text-crimson-50">Dubbed</strong> or <strong className="text-crimson-50">Subbed</strong>. I shall favour
-        your chosen language ever after, across every device you haunt.
+        Each tale is drawn from many sources and I serve the swiftest first; the gear in the player lets you switch.
+        I skip the intro and outro at a touch, and <strong className="text-crimson-50">Auto-Next</strong> carries you into
+        the following episode. In <strong className="text-crimson-50">Preferences</strong>, name your tongue,{' '}
+        <strong className="text-crimson-50">Dubbed</strong> or <strong className="text-crimson-50">Subbed</strong>, and your
+        subtitle languages; I remember them on every device you haunt.
       </>
     ),
     cta: { label: 'Open Preferences', to: '/settings' },
   },
   {
+    icon: Heart,
+    title: 'Curate Your Collections',
+    body: () => (
+      <>
+        Build as many <strong className="text-crimson-50">Watchlists</strong> as your heart desires, sort them by hand, and
+        let a single jewel rest in many at once. Export them, import them; they are forever yours. And slip away
+        mid-tale without a care: your <strong className="text-crimson-50">History</strong> holds your place to the very second.
+      </>
+    ),
+  },
+  {
+    icon: CalendarDays,
+    title: 'Never Miss a Night',
+    isNew: true,
+    body: () => (
+      <>
+        The <strong className="text-crimson-50">Calendar</strong> shows when every airing episode arrives, in your own hours.
+        <strong className="text-crimson-50"> Follow</strong> a title and I shall mark it for you, and send word by email the
+        moment a new episode lands, once your address is verified.
+      </>
+    ),
+    cta: { label: 'Open the Calendar', to: '/calendar' },
+  },
+  {
+    icon: Music,
+    title: 'A Song for the Dark',
+    isNew: true,
+    when: ({ musicEnabled }) => musicEnabled,
+    body: () => (
+      <>
+        <strong className="text-crimson-50">Music</strong> now sings in the Haven. Bring your Spotify playlists or a CSV, or
+        build your own by searching. Let songs <strong className="text-crimson-50">crossfade</strong> into one another,
+        and download whole playlists to play with no signal at all, lock screen and all.
+      </>
+    ),
+    cta: { label: 'Open Music', to: '/music' },
+  },
+  {
+    icon: Puzzle,
+    title: 'The Crimson Companion',
+    body: () => (
+      <>
+        My <strong className="text-crimson-50">Companion</strong> for Chrome and Firefox lets your own browser fetch the
+        sources, straight from your connection, so more of them answer and they answer faster. It takes but a
+        moment to claim.
+      </>
+    ),
+    cta: { label: 'Claim the Companion', to: '/extension' },
+  },
+  {
+    icon: Palette,
+    title: 'Make It Yours',
+    isNew: true,
+    body: () => (
+      <>
+        Dress the Haven in another <strong className="text-crimson-50">theme</strong> (a certain catgirl has her own~), or
+        calm the background on gentler devices. With a tiny desktop helper,{' '}
+        <strong className="text-crimson-50">Discord Presence</strong> tells your friends what you watch and hear. All of
+        it waits in Preferences.
+      </>
+    ),
+    cta: { label: 'Open Preferences', to: '/settings' },
+  },
+  {
+    icon: Gift,
+    title: 'Your Year in Crimson',
+    isNew: true,
+    body: ({ musicEnabled }) => (
+      <>
+        Every tale you finish, I remember. <strong className="text-crimson-50">Crimson Wrapped</strong> lays your year
+        bare: where your hours went, your favourite genres, your longest streak{musicEnabled ? ', and the songs you could not stop playing' : ''}.
+        Find it in your account menu, up in the corner.
+      </>
+    ),
+    cta: { label: 'Open Wrapped', to: '/wrapped' },
+  },
+  {
+    icon: Bot,
+    title: 'Whisper to Me',
+    when: ({ lumiAvailable }) => lumiAvailable,
+    body: () => (
+      <>
+        You are among the few I speak with directly, darling~. Summon me from the corner of any page, ask for something
+        to watch, and I shall find it and start it for you.
+      </>
+    ),
+  },
+  {
     icon: Sparkles,
     title: 'The Night Is Yours',
-    body: (
+    body: () => (
       <>
-        Enough secrets for one evening, darling~. Everything waits behind the little crimson crest in the corner whenever
-        you wish to wander back. Now, go. Lose yourself beautifully. And do rest easy: your data slumbers safely in
-        {' '}{HOSTED_IN}.
+        Enough secrets for one evening. Your account, your sessions and a full export of your data wait in your
+        account menu, up in the corner, whenever you wish to wander back. Now, go. Lose yourself beautifully. And do rest easy: your
+        data slumbers safely in {HOSTED_IN}.
       </>
     ),
   },
 ];
 
-const WelcomeTour = ({ onClose }) => {
+const WelcomeTour = ({ musicEnabled, onClose }) => {
+  const { live_tv_enabled: liveTvEnabled, local_library_enabled: localEnabled } = usePublicConfig();
+  const lumiAvailable = !!useLumiStatus()?.available;
+  const features = { musicEnabled, liveTvEnabled, localEnabled, lumiAvailable };
+  const steps = STEPS.filter((s) => !s.when || s.when(features));
   const [step, setStep] = useState(0);
   const navigate = useNavigate();
   const lumiAvatar = useThemedAsset('lumi_avatar');
   const isFirst = step === 0;
-  const isLast = step === STEPS.length - 1;
-  const current = STEPS[step];
+  const isLast = step === steps.length - 1;
+  const current = steps[step];
   const Icon = current.icon;
 
   const close = useCallback(() => onClose?.(), [onClose]);
@@ -91,7 +169,7 @@ const WelcomeTour = ({ onClose }) => {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') close();
-      else if (e.key === 'ArrowRight' && step < STEPS.length - 1) setStep((s) => s + 1);
+      else if (e.key === 'ArrowRight' && step < steps.length - 1) setStep((s) => s + 1);
       else if (e.key === 'ArrowLeft' && step > 0) setStep((s) => s - 1);
     };
     window.addEventListener('keydown', onKey);
@@ -101,7 +179,7 @@ const WelcomeTour = ({ onClose }) => {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [close, step]);
+  }, [close, step, steps.length]);
 
   const goToCta = () => {
     close();
@@ -110,14 +188,14 @@ const WelcomeTour = ({ onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-crimson-950/80 backdrop-blur-md animate-in fade-in duration-300"
+      className="fixed inset-0 z-[100] flex overflow-y-auto p-4 sm:p-6 bg-crimson-950/80 backdrop-blur-md animate-in fade-in duration-300"
       onClick={close}
       role="dialog"
       aria-modal="true"
       aria-label="Welcome to CrimsonHaven"
     >
       <div
-        className="relative w-full max-w-lg bg-crimson-950/95 border border-crimson-900 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500"
+        className="relative m-auto w-full max-w-lg bg-crimson-950/95 border border-crimson-900 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute -top-24 -right-24 w-56 h-56 bg-crimson-500/10 blur-[90px] rounded-full pointer-events-none" />
@@ -147,7 +225,7 @@ const WelcomeTour = ({ onClose }) => {
                 <Crown className="w-3.5 h-3.5 text-crimson-500 shrink-0" />
               </div>
               <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-600 mt-0.5">
-                {isFirst ? "The Queen's Welcome" : `Rite ${step} of ${STEPS.length - 1}`}
+                {isFirst ? "The Queen's Welcome" : `Rite ${step} of ${steps.length - 1}`}
               </p>
             </div>
             {current.isNew && (
@@ -169,7 +247,7 @@ const WelcomeTour = ({ onClose }) => {
                 </h2>
               </div>
               <p className="text-sm sm:text-[15px] text-crimson-100/75 leading-relaxed font-medium">
-                {current.body}
+                {current.body(features)}
               </p>
               {current.cta && (
                 <button
@@ -183,7 +261,7 @@ const WelcomeTour = ({ onClose }) => {
           </div>
 
           <div className="flex items-center justify-center gap-2 pt-1">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setStep(i)}
