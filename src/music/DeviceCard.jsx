@@ -1,10 +1,8 @@
-// What this device keeps: how many upcoming songs to preload, the playlists
-// downloaded for offline, and the space it all takes. All of it is per device,
-// so a phone and a laptop on the same account can choose differently.
+// Per device, so a phone and a laptop on the same account can choose differently.
 import { useEffect, useState } from 'react';
 import { Loader2, Smartphone } from 'lucide-react';
 
-import { formatBytes } from '../admin/format';
+import { formatBytes } from '../formatBytes';
 import { forgetDownloads, useDownloads } from './downloads';
 import { PRELOAD_CHOICES, preloadCount, setPreloadCount } from './preload';
 import { supported } from './trackStore';

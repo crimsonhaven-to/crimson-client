@@ -1,17 +1,15 @@
-// Admin › Music tab. The whole library on the share: every song, whose
-// playlists hold it, how much room it takes, and whether the CDN has a copy.
-// A song is stored once however many members hold it, so this is the one
-// place that shows the library as the disk sees it. Grants live on Users.
+// A song is stored once however many members hold it, so this is the one place that
+// shows the library as the disk sees it.
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle, Clock, Cloud, CloudOff, Disc3, HardDrive, Music, Pause, Play, RefreshCw, Search,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
+import { formatBytes } from '../formatBytes';
 import { Cover } from '../music/Cover';
 import { currentTrack, playTracks, toggle, useMusicPlayer } from '../music/player';
 import { formatTime } from '../music/queue';
-import { formatBytes } from './format';
 import { StatCard } from './ui';
 
 const PAGE = 50;
@@ -52,8 +50,7 @@ export default function MusicTab({ notify }) {
   const player = useMusicPlayer();
   const playing = currentTrack(player);
 
-  // The spinners are switched on by whoever asks for the page (a filter, the
-  // refresh button, "show more"), so the first load needs no state set here.
+  // Callers switch the spinners on, so the first load needs no state set here.
   const load = useCallback((offset = 0) => adminApi
     .musicLibrary({ q: search, status, limit: PAGE, offset })
     .then(

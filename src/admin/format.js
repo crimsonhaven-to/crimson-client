@@ -1,10 +1,6 @@
-// Non-component helpers for the Admin dashboard: the status colour vocabulary and
-// the date formatter. Kept in a plain .js module (separate from ui.jsx's
-// components) so Vite fast-refresh stays happy — a file may export components OR
-// shared constants/functions, not both.
+// Kept apart from ui.jsx because Vite fast-refresh needs a file to export either
+// components or helpers, not both.
 
-// One palette + label per status string the backend emits, so colours stay
-// consistent across the summary strip, the source rows and the overview teaser.
 export const STATUS_META = {
   ok:        { label: 'Healthy',  dot: 'bg-green-400',  text: 'text-green-300',  ring: 'border-green-700/40',  glow: 'shadow-[0_0_10px_rgba(74,222,128,0.5)]' },
   active:    { label: 'Active',   dot: 'bg-green-400',  text: 'text-green-300',  ring: 'border-green-700/40',  glow: 'shadow-[0_0_10px_rgba(74,222,128,0.5)]' },
@@ -14,17 +10,9 @@ export const STATUS_META = {
   disabled:  { label: 'Dormant',  dot: 'bg-crimson-900', text: 'text-crimson-600', ring: 'border-crimson-900/50', glow: '' },
 };
 
-export const statusMeta = (s) => STATUS_META[s] || { label: s || '—', dot: 'bg-crimson-700', text: 'text-crimson-500', ring: 'border-crimson-900/50', glow: '' };
+export const statusMeta = (s) => STATUS_META[s] || { label: s || '-', dot: 'bg-crimson-700', text: 'text-crimson-500', ring: 'border-crimson-900/50', glow: '' };
 
 export const fmtDate = (iso) => {
-  if (!iso) return '—';
+  if (!iso) return '-';
   try { return new Date(iso).toLocaleString(); } catch { return iso; }
-};
-
-export const formatBytes = (n) => {
-  if (n == null) return '—';
-  if (n === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
-  return `${(n / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 };

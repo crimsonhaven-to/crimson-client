@@ -1,27 +1,14 @@
-// Admin › Metrics, the history half (Phase 1).
-//
-// Everything below the History heading comes from a private Prometheus that
-// scrapes every replica, so unlike the live snapshot underneath it these numbers
-// are fleet-wide, survive restarts and are rates rather than totals since boot.
-//
-// The browser picks a panel id and a range id off the server's own list and sends
-// them back; the PromQL each id stands for lives in the backend's
-// core/prom_query.py and is never composed here. See deploy/prometheus/README.md.
-//
-// With no Prometheus deployed the panels endpoint answers `available: false`,
-// which is the normal state of a fresh install rather than an error, so this
-// renders a short setup note and the tab carries on with the snapshot.
+// No Prometheus is the normal state of a fresh install, not an error, so the panels
+// endpoint answers `available: false` and this renders a setup note.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Clock, LineChart, RefreshCw, Server } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import TimeChart from './TimeChart';
 import { parseDuration } from './chartFormat';
 
-// Panels are fetched a few at a time rather than all at once. Each one is a
-// query_range against Prometheus, and firing a whole group in parallel makes the
-// slowest of them set the time before anything at all appears; in batches the
-// charts fill in as they arrive.
+// Each panel is a query_range; firing a whole group in parallel lets the slowest one
+// hold up the first paint, while batches fill in as they arrive.
 const BATCH = 3;
 
 const GroupPill = ({ active, label, onClick }) => (
@@ -87,8 +74,7 @@ export default function MetricsHistory({ notify }) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
 
-  // Bumped on every (re)load so a batch still in flight when the range changes
-  // cannot write its stale results over the new ones.
+  // A batch still in flight when the range changes must not overwrite the new results.
   const runRef = useRef(0);
 
   useEffect(() => {
@@ -162,9 +148,8 @@ export default function MetricsHistory({ notify }) {
     );
   }
 
-  // No Prometheus (or the endpoint itself is unreachable). Both are stated
-  // plainly rather than hidden: an operator who deployed one and sees this needs
-  // to know it is not being reached.
+  // Stated plainly: an operator who deployed Prometheus and sees this needs to know it
+  // is not being reached.
   if (failed || !meta?.available) {
     return (
       <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl px-6 py-8 text-center space-y-3">
@@ -207,8 +192,7 @@ export default function MetricsHistory({ notify }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold">
-        {/* An empty chart because nothing happened and an empty chart because the
-            scraper lost the fleet look identical, so say which it is. */}
+        {/* Otherwise "nothing happened" and "the scraper lost the fleet" look identical. */}
         {targets?.ok && (
           <span className={`flex items-center gap-1.5 ${targets.down ? 'text-amber-300' : 'text-crimson-600'}`}>
             <Server className="w-3.5 h-3.5" />

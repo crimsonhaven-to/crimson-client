@@ -1,16 +1,13 @@
-// Admin › Cache tab — the video-cache master switch, cache targets (NAS dirs) and
-// the cached-episodes ledger. Lifted verbatim from Admin.jsx.
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle, CheckCircle2, Database, DownloadCloud, Film, FolderOpen,
   FolderSearch, HardDrive, Languages, Pencil, Plus, Power, PowerOff, RefreshCw, Trash2,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
-import { formatBytes } from './format';
+import { adminApi } from './api';
+import { formatBytes } from '../formatBytes';
 import { StatCard } from './ui';
 
-// Map a cache target's filesystem probe into a one-line status with a colour cue.
 const cacheTargetStatus = (st) => {
   if (!st) return { text: 'Unknown', ok: false };
   if (!st.exists) return { text: 'Path not found in container', ok: false };
@@ -149,7 +146,6 @@ export default function CacheTab({ notify }) {
 
   return (
     <div className="space-y-8">
-      {/* master switch + status */}
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-5 relative overflow-hidden">
         <div className="absolute -top-16 -right-16 w-48 h-48 bg-crimson-500/5 blur-3xl rounded-full" />
         <div className="flex items-center gap-3 relative z-10">
@@ -168,11 +164,11 @@ export default function CacheTab({ notify }) {
           </button>
         </div>
         <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-3xl">
-          With caching on, the first time an episode is played the backend downloads the whole stream (remuxed to mp4) to the first enabled, writable target below — tagged with its audio/subtitle language. On the next play it surfaces as a source named after that target, served straight off the NAS. The path is the one <span className="text-crimson-400 font-bold">inside the backend container</span>: bind-mount your NAS share (e.g. <code className="font-mono text-crimson-400">- /nas/cache:/crimson/cache</code>) and register <code className="font-mono text-crimson-400">/crimson/cache</code>.
+          With caching on, the first time an episode is played the backend downloads the whole stream (remuxed to mp4) to the first enabled, writable target below, tagged with its audio/subtitle language. On the next play it surfaces as a source named after that target, served straight off the NAS. The path is the one <span className="text-crimson-400 font-bold">inside the backend container</span>: bind-mount your NAS share (e.g. <code className="font-mono text-crimson-400">- /nas/cache:/crimson/cache</code>) and register <code className="font-mono text-crimson-400">/crimson/cache</code>.
         </p>
         {overview && !overview.ffmpeg_available && (
           <div className="relative z-10 flex items-center gap-2 px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-bold">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" /> ffmpeg is not available on the backend — downloads will fail until it's installed in the image.
+            <AlertCircle className="w-4 h-4 flex-shrink-0" /> ffmpeg is not available on the backend: downloads will fail until it's installed in the image.
           </div>
         )}
         {overview && (
@@ -186,7 +182,6 @@ export default function CacheTab({ notify }) {
         )}
       </div>
 
-      {/* add target */}
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-5 relative overflow-hidden">
         <div className="flex items-center gap-3 relative z-10">
           <HardDrive className="w-6 h-6 text-crimson-500" />
@@ -280,7 +275,6 @@ export default function CacheTab({ notify }) {
         )}
       </div>
 
-      {/* cached episodes ledger */}
       <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-[2rem] p-6 sm:p-8 space-y-5 relative overflow-hidden">
         <div className="flex items-center gap-3 relative z-10 flex-wrap">
           <Film className="w-6 h-6 text-crimson-500" />
@@ -313,7 +307,7 @@ export default function CacheTab({ notify }) {
                     <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${CACHE_STATUS_STYLES[ep.status] || 'bg-crimson-900/40 border-crimson-800/50 text-crimson-600'}`}>{ep.status}</span>
                   </div>
                   <p className="text-[10px] font-medium text-crimson-600 mt-1 truncate">
-                    {ep.target_name ? `${ep.target_name} · ` : ''}{ep.source_origin || '—'}
+                    {ep.target_name ? `${ep.target_name} · ` : ''}{ep.source_origin || '-'}
                     {ep.file_size ? ` · ${formatBytes(ep.file_size)}` : ''}
                     {ep.status === 'failed' && ep.error ? ` · ${ep.error}` : ''}
                   </p>

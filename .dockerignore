@@ -1,5 +1,4 @@
-# Keep the build context lean & reproducible — let `npm ci` + `vite build`
-# regenerate these inside the image instead of copying host artifacts.
+# npm ci and vite build regenerate these inside the image.
 node_modules
 dist
 dist-ssr
@@ -8,7 +7,6 @@ dist-ssr
 .github
 .gitignore
 
-# Local / editor noise
 *.log
 npm-debug.log*
 .vscode
@@ -16,8 +14,6 @@ npm-debug.log*
 .DS_Store
 *.local
 
-# Compose / docs aren't needed in the image
 docker-compose.yml
 docker-stack.yml
 README.md
-DOCS_BACKEND.md

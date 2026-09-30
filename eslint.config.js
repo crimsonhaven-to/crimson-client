@@ -5,9 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  // `dist` is build output; `vendor/` holds the crimson-sources git submodule,
-  // a separate repo with its own toolchain and runtime globals — it's linted in
-  // its own CI, not here.
+  // vendor/ is crimson-sources, linted in its own repository.
   globalIgnores(['dist', 'vendor']),
   {
     files: ['**/*.{js,jsx}'],
@@ -21,15 +19,10 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     rules: {
-      // Unused caught errors are an intentional, common pattern here
-      // (`try { … } catch (e) { /* best-effort */ }`); don't fail on them.
+      // Best-effort try/catch blocks that ignore the error are common here.
       'no-unused-vars': ['error', { caughtErrors: 'none' }],
-      // The react-hooks v7 "recommended" set bundles the new react-compiler
-      // advisories. They flag patterns that are perfectly correct (and already
-      // shipping) but not compiler-optimal — valuable as guidance, NOT as a
-      // deploy-blocking gate. Demote them to warnings so the gate stays focused
-      // on real bugs (no-undef, no-unused-vars, rules-of-hooks). Revisit/clear
-      // these incrementally (they pair well with the hooks.js split).
+      // React Compiler advisories: correct code that is not compiler-optimal
+      // should not block a deploy.
       'react-hooks/set-state-in-effect': 'warn',
       'react-hooks/refs': 'warn',
       'react-hooks/immutability': 'warn',

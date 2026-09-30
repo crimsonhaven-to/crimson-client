@@ -1,19 +1,16 @@
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
-import ErrorBoundary from './ErrorBoundary';
-import { summonLumiConsole } from './lumiConsole';
-import { applyThemeToDom, getTheme } from './hooks/theme';
+import ErrorBoundary from './shell/ErrorBoundary';
+import { summonLumiConsole } from './lumi/console';
+import { applyThemeToDom, getTheme } from './account/theme';
 import "./index.css";
 
-// Sync the saved theme into the DOM before first render. The inline guard in
-// index.html already set `data-theme` (to avoid a flash); this re-affirms it and
-// updates the mobile theme-color meta from the single source of truth.
+// index.html already set `data-theme` to avoid a flash; this also updates the
+// mobile theme-color meta.
 applyThemeToDom(getTheme());
 
-// Lumi's little flex in the devtools console — a styled banner + a chatty
-// `window.lumi` object for the curious. Purely cosmetic; wrapped so a console
-// quirk in some exotic browser can never block the app from rendering.
+// Purely cosmetic, so a console quirk in an exotic browser must never block rendering.
 try { summonLumiConsole(); } catch { /* the empress forgives */ }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -24,9 +21,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </ErrorBoundary>
 );
 
-// Register the service worker that makes the app installable ("Install app" /
-// add-to-home-screen) and resilient offline. Only runs in production builds and
-// over secure contexts; it never proxies the cross-origin backend API.
+// The service worker makes the app installable and never proxies the cross-origin backend API.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {

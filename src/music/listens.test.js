@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../hooks/apiClient', () => ({
+vi.mock('../api/client', () => ({
   apiFetch: vi.fn(async () => ({ ok: true, status: 200 })),
   getSessionToken: () => null,
 }));

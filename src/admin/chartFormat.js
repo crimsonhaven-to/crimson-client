@@ -1,16 +1,6 @@
-/*
- * Geometry and formatting for the Admin › Metrics history charts.
- *
- * Pure functions only, no JSX: the chart's maths is the part that is worth
- * pinning down with tests, and it is far easier to assert a path string than to
- * dig one out of a mounted SVG. TimeChart.jsx is then a thin renderer over these.
- *
- * The chart draws in a normalised 0..100 by 0..100 box and is stretched to fit
- * its container with preserveAspectRatio="none", which is why nothing here knows
- * about pixels. Strokes are kept honest at render time with
- * vector-effect="non-scaling-stroke"; without it the horizontal stretch would
- * make vertical lines fatter than horizontal ones.
- */
+// Pure functions so the chart maths can be tested as strings instead of dug out of a
+// mounted SVG. Everything draws in a 0..100 box that TimeChart stretches with
+// preserveAspectRatio="none", which is why nothing here knows about pixels.
 
 // Distinct enough to tell apart at 1.5px, and starting with the house crimson so
 // a single-series panel looks like it belongs to the rest of the dashboard.
@@ -27,9 +17,10 @@ export const SERIES_COLORS = [
 
 export const colorFor = (index) => SERIES_COLORS[index % SERIES_COLORS.length];
 
-// ---------- formatting ----------
-
-export const formatBytes = (n) => {
+// Unlike the app-wide formatBytes: whole numbers from 100 up so tick labels stay
+// narrow, and anything missing or non-finite reads as 0 B because a chart axis has no
+// place for a '-'.
+export const formatBytesCompact = (n) => {
   if (n == null || !Number.isFinite(n) || n <= 0) return '0 B';
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let v = n;
@@ -46,9 +37,8 @@ const formatNumber = (v) => {
   if (abs < 0.01) return v.toFixed(3);
   if (abs < 1) return v.toFixed(2);
   if (abs < 10) return v.toFixed(1);
-  // 10..100 is exactly where request rates and connection counts live, so keep a
-  // decimal there rather than rounding 12.5/s to 13/s. Trailing .0 is dropped so
-  // a whole number of database connections does not read as "12.0".
+  // Request rates and connection counts live in 10..100: keep 12.5/s, but not "12.0"
+  // connections.
   if (abs < 100) return v.toFixed(1).replace(/\.0$/, '');
   if (abs < 10000) return Math.round(v).toLocaleString();
   if (abs < 1e6) return `${(v / 1000).toFixed(1)}k`;
@@ -61,7 +51,6 @@ export const formatSeconds = (v) => {
   return `${Math.floor(v / 60)}m ${Math.round(v % 60)}s`;
 };
 
-/** One sample, formatted the way its panel's unit wants to be read. */
 export const formatValue = (unit, v) => {
   if (v == null || !Number.isFinite(v)) return 'n/a';
   switch (unit) {
@@ -70,16 +59,13 @@ export const formatValue = (unit, v) => {
       return `${pct > 0 && pct < 10 ? pct.toFixed(1) : Math.round(pct)}%`;
     }
     case 'seconds': return formatSeconds(v);
-    case 'bytes': return formatBytes(v);
+    case 'bytes': return formatBytesCompact(v);
     case 'rps': return `${formatNumber(v)}/s`;
     default: return formatNumber(v);
   }
 };
 
-/**
- * An x-axis label. Which half of the clock a point falls in matters on an hour
- * range and is noise on a month range, so the format follows the span.
- */
+// The time of day matters on an hour range and is noise on a month range.
 export const formatTime = (unixSeconds, spanSeconds) => {
   const d = new Date(unixSeconds * 1000);
   if (spanSeconds <= 86400) {
@@ -91,9 +77,8 @@ export const formatTime = (unixSeconds, spanSeconds) => {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 };
 
-// Prometheus reports its retention as its own flag string ("45d", "15d", "6h").
-// The tab compares it against the selected range so a month-long view of a
-// fortnight-long database says so instead of silently drawing half a chart.
+// Prometheus reports retention as a flag string ("45d", "6h"). Comparing it with the
+// selected range lets the tab warn instead of silently drawing half a chart.
 const DURATION_UNITS = { s: 1, m: 60, h: 3600, d: 86400, w: 604800, y: 31536000 };
 
 export const parseDuration = (text) => {
@@ -108,13 +93,8 @@ export const formatTimestamp = (unixSeconds) =>
     month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 
-// ---------- domain ----------
-
-/**
- * Round a peak up to a number a human would have picked for the top gridline.
- * 0.37 becomes 0.4, 1340 becomes 1500. An axis topping out at exactly the peak
- * puts the highest point on the frame, where it is hard to see.
- */
+// Rounds up to a gridline a human would pick (0.37 to 0.4, 1340 to 1500). Topping out
+// at exactly the peak would put the highest point on the frame, where it is hard to see.
 export const niceCeil = (v) => {
   if (!(v > 0) || !Number.isFinite(v)) return 1;
   const exponent = Math.floor(Math.log10(v));
@@ -125,14 +105,8 @@ export const niceCeil = (v) => {
   return 10 * base;
 };
 
-/**
- * The y range to draw in.
- *
- * Ratios are pinned to 0..1 rather than scaled to their peak, deliberately: a
- * success rate wobbling between 97% and 99% autoscaled to fill the box looks
- * like a catastrophe, and the whole point of the panel is to show that it is
- * sitting near the top.
- */
+// Ratios are pinned to 0..1: a success rate wobbling between 97% and 99%, autoscaled
+// to fill the box, looks like a catastrophe.
 export const domainOf = (rows, { unit, stacked } = {}) => {
   if (unit === 'ratio') return { min: 0, max: 1 };
 
@@ -154,21 +128,12 @@ export const domainOf = (rows, { unit, stacked } = {}) => {
   return { min: 0, max: niceCeil(peak) };
 };
 
-/** Three gridline values, top first, matching how they are drawn. */
+/** Top first, matching the order the gridlines are drawn. */
 export const axisTicks = ({ min, max }) => [max, (max + min) / 2, min];
 
-// ---------- shaping ----------
-
-/**
- * Put every series on one shared time grid.
- *
- * Series do NOT arrive sharing a set of timestamps. `sum by (status) (rate(...))`
- * emits nothing at all for a status nobody hit during part of the window, so a
- * 500 line legitimately has fewer points than the 200 line next to it. Indexing
- * one against the other would slide the whole series sideways in time. The grid
- * is rebuilt from the start/end/step the backend reports and each sample is
- * placed by its own timestamp.
- */
+// Series do not share timestamps: `sum by (status) (rate(...))` emits nothing for a
+// status nobody hit, so indexing one series against another would slide it in time.
+// Each sample is placed on the start/end/step grid by its own timestamp instead.
 export const alignSeries = (series, { start, end, step }) => {
   if (!Array.isArray(series) || !step || !Number.isFinite(start) || !Number.isFinite(end)) {
     return { times: [], rows: [] };
@@ -188,13 +153,8 @@ export const alignSeries = (series, { start, end, step }) => {
   return { times, rows };
 };
 
-/**
- * Cumulative tops for a stacked panel, plus the base each band sits on.
- *
- * A null in a stacked rate panel means "this outcome did not occur in this
- * step", which is a real zero rather than missing data, so it contributes 0 to
- * the stack instead of tearing a hole in it.
- */
+// A null in a stacked rate panel means "did not occur in this step", a real zero,
+// so it contributes 0 instead of tearing a hole in the stack.
 export const stackRows = (rows) => {
   if (!rows.length) return [];
   const running = new Array(rows[0].values.length).fill(0);
@@ -208,8 +168,6 @@ export const stackRows = (rows) => {
   });
 };
 
-// ---------- paths ----------
-
 const X = (i, n) => (n <= 1 ? 50 : (i / (n - 1)) * 100);
 const Y = (v, { min, max }) => {
   const span = max - min;
@@ -219,14 +177,9 @@ const Y = (v, { min, max }) => {
 
 const round = (n) => Math.round(n * 100) / 100;
 
-/**
- * A line, with nulls breaking it into separate subpaths rather than being
- * bridged. Bridging a gap invents data across an outage, which on a latency
- * chart is exactly the interval you were trying to look at.
- *
- * An isolated sample (nulls either side) is emitted as a zero-length segment so
- * a round linecap renders it as a dot; without that it would be invisible.
- */
+// Nulls break the line instead of being bridged: bridging invents data across an
+// outage, which is exactly the interval you want to see. An isolated sample becomes a
+// zero-length segment so the round linecap renders it as a dot.
 export const toLinePath = (values, domain) => {
   const n = values.length;
   const parts = [];
@@ -246,10 +199,7 @@ export const toLinePath = (values, domain) => {
   return parts.join('');
 };
 
-/**
- * A filled band between two boundaries (or between a line and the floor, when
- * `base` is omitted). Used for the stacked panels.
- */
+/** Without `base`, the band is filled down to the floor. */
 export const toAreaPath = (top, base, domain) => {
   const n = top.length;
   if (!n) return '';
@@ -264,10 +214,7 @@ export const toAreaPath = (top, base, domain) => {
   return `${up.join('')}${down.join('')}Z`;
 };
 
-/**
- * Which column a pointer at `fraction` (0..1 across the plot) is nearest to.
- * Returns null for an empty chart or a container jsdom has not laid out.
- */
+/** `fraction` is 0..1 across the plot. Null for an empty chart or an unlaid-out container. */
 export const nearestIndex = (fraction, columns) => {
   if (!columns || columns < 1 || !Number.isFinite(fraction)) return null;
   if (columns === 1) return 0;

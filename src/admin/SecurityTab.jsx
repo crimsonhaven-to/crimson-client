@@ -1,23 +1,17 @@
-// Admin › Security tab — the gatekeeper's ledger. Consumes the backend's
-// security-event log (/admin/security/stats + /admin/security/events): 24h
-// threat tiles, a per-day activity chart, top offending IPs, the most-targeted
-// identities, and the filterable raw ledger underneath. The chart is plain
-// flex-divs (no chart lib) so the bundle stays lean.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Crosshair, Gauge, RefreshCw, ScrollText, Search, ShieldX,
   Ticket, UserPlus, X,
 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { StatCard } from './ui';
 import { fmtDate } from './format';
 
 const WINDOWS = [7, 14, 30, 90];
 const PAGE_SIZE = 25;
 
-// Label + chip tone per event type the backend emits. Unknown types fall back
-// to a neutral chip, so a backend that learns a new event needs no client change.
+// Unknown types fall back to a neutral chip, so a new backend event needs no client change.
 const EVENT_META = {
   login_success:            { label: 'Login',             tone: 'green' },
   login_failed:             { label: 'Failed Login',      tone: 'red' },
@@ -42,7 +36,7 @@ const TONE_CHIP = {
   dim:   'bg-crimson-900/30 border-crimson-800/50 text-crimson-500',
 };
 
-const eventMeta = (type) => EVENT_META[type] || { label: type || '—', tone: 'dim' };
+const eventMeta = (type) => EVENT_META[type] || { label: type || '-', tone: 'dim' };
 
 const EventChip = ({ type }) => {
   const m = eventMeta(type);
@@ -53,7 +47,6 @@ const EventChip = ({ type }) => {
   );
 };
 
-// Compact "k: v · k: v" rendering of an event's detail blob for the ledger rows.
 const detailSummary = (detail) => {
   if (!detail || typeof detail !== 'object') return null;
   const parts = Object.entries(detail)
@@ -68,8 +61,6 @@ const SectionHeading = ({ icon: Icon, children }) => (
   </h3>
 );
 
-// Per-day activity bars: a dim column for all events with the denials burning
-// brighter inside it. Pure CSS/flex — hover a column for the exact numbers.
 const ActivityChart = ({ series }) => {
   const max = Math.max(1, ...series.map((d) => d.total));
   const labelStep = Math.max(1, Math.ceil(series.length / 10));
@@ -84,7 +75,7 @@ const ActivityChart = ({ series }) => {
             <div
               key={d.day}
               className="flex-1 h-full flex flex-col justify-end group relative min-w-0"
-              title={`${label} — ${d.total} event${d.total === 1 ? '' : 's'} · ${d.failures} denial${d.failures === 1 ? '' : 's'}`}
+              title={`${label}: ${d.total} event${d.total === 1 ? '' : 's'} · ${d.failures} denial${d.failures === 1 ? '' : 's'}`}
             >
               <div className="relative w-full flex flex-col justify-end" style={{ height: '100%' }}>
                 <div
@@ -120,7 +111,6 @@ export default function SecurityTab({ notify }) {
   const [stats, setStats] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Ledger filters + paging.
   const [typeFilter, setTypeFilter] = useState('');
   const [outcomeFilter, setOutcomeFilter] = useState('');
   const [ipFilter, setIpFilter] = useState('');
@@ -174,7 +164,6 @@ export default function SecurityTab({ notify }) {
 
   return (
     <div className="space-y-10">
-      {/* Window selector + refresh */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           {WINDOWS.map((w) => (
@@ -206,7 +195,6 @@ export default function SecurityTab({ notify }) {
         </div>
       </div>
 
-      {/* Threat tiles */}
       <section className="space-y-4">
         <SectionHeading icon={Crosshair}>The Watchtower</SectionHeading>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -219,7 +207,6 @@ export default function SecurityTab({ notify }) {
         </div>
       </section>
 
-      {/* Per-day activity chart */}
       <section className="space-y-4">
         <SectionHeading icon={Gauge}>Activity at the Gates</SectionHeading>
         {loadingStats && !stats ? (
@@ -241,7 +228,6 @@ export default function SecurityTab({ notify }) {
         )}
       </section>
 
-      {/* Offenders + targets */}
       <div className="grid lg:grid-cols-2 gap-8">
         <section className="space-y-4">
           <SectionHeading icon={Crosshair}>Top Offenders</SectionHeading>
@@ -270,7 +256,7 @@ export default function SecurityTab({ notify }) {
               </button>
             ))}
             {(!stats?.top_ips || stats.top_ips.length === 0) && !loadingStats && (
-              <p className="py-10 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No offenders in this window — the gates stand quiet</p>
+              <p className="py-10 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No offenders in this window, the gates stand quiet</p>
             )}
           </div>
         </section>
@@ -293,7 +279,6 @@ export default function SecurityTab({ notify }) {
         </section>
       </div>
 
-      {/* The raw ledger */}
       <section className="space-y-4">
         <SectionHeading icon={ScrollText}>The Ledger</SectionHeading>
 
@@ -384,7 +369,7 @@ export default function SecurityTab({ notify }) {
             ))}
             {ledger.events.length === 0 && (
               <p className="py-16 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">
-                {anyFilter ? 'Nothing matches these filters' : 'The ledger is spotless — no one has rattled the gates'}
+                {anyFilter ? 'Nothing matches these filters' : 'The ledger is spotless: no one has rattled the gates'}
               </p>
             )}
           </div>

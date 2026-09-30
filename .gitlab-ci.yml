@@ -1,45 +1,20 @@
-# GitLab CI/CD for crimson-client.
+# A push to main builds :dev-<sha> and rolls the dev stack. A v* tag, or a run with
+# CHANNEL=prod (manual, or triggered by crimson-sources), builds an immutable tag
+# and rolls production. A v* tag or a manual run also publishes the Pages demo.
 #
-# Build the Vite frontend, bake it into an nginx image, push it to the PRIVATE
-# GitLab Container Registry, then roll it out to the Docker Swarm.
+# VITE_API_BASE_URL is baked in at build time, so each channel builds its own
+# image. crimson-sources is fetched from main for every channel; a release pins it
+# by baking it into the immutable image. The fetch needs this project on
+# crimson-sources' job token allowlist; if it fails, the build still succeeds with
+# the no-op stub and plays through the backend only.
 #
-#   * push to `main`  -> build + push registry.ramon.moe/.../crimson-client:dev
-#                        with VITE_API_BASE_URL = https://dev-backend...
-#                        and roll the crimson-client-dev stack.
-#   * a v* tag        -> build + push :<tag> and :latest with
-#                        VITE_API_BASE_URL = https://backend... then deploy
-#                        that immutable :<tag> to the swarm (zero-downtime,
-#                        health-gated, auto-rollback).
+# Deploys only run deploy.sh on the manager. The stack files there
+# (~/crimson-client-deploy, ~/dev-crimson-client-deploy) are edited in place; the
+# one in this repo is a reference and never shipped.
 #
-# The private sources engine is fetched best-effort at build time from
-# crimson-sources@main, for every channel (nothing is committed back).
-# crimson-sources is single-branch too, so dev and prod builds bake the same
-# engine tip; a prod release pins it by baking it into the immutable :<tag>
-# image rather than by tracking a separate branch.
-# The companion extension is NOT baked in: it ships on the Chrome Web Store and
-# the /extension page links straight to that listing.
-#
-# Which repo to fetch is ENV-DRIVEN (not hardcoded): set the CI/CD variable
-# CRIMSON_SOURCES_REPO (e.g. crimsonhaven-to/crimson-sources). If it is unset or
-# unreachable, the build STILL succeeds with no client-side sources (Vite swaps in
-# the built-in stub) — so anyone without access can deploy. The clone uses
-# CI_JOB_TOKEN, which needs this project added to crimson-sources' job token
-# allowlist (Settings > CI/CD > Job token permissions on crimson-sources).
-#
-# IMPORTANT: VITE_API_BASE_URL is baked in at BUILD time (Vite), so dev and
-# release builds point at different backends. The image is PRIVATE; swarm nodes
-# pull it with the durable read_registry deploy token configured on the managers,
-# shipped by `docker stack deploy --with-registry-auth`.
-#
-# Runner: `crimsonrunner`, the base-OS shell runner on server10 (Docker + buildx +
-# passwordless SSH to the managers), the same one crimson-backend uses. The gate and
-# the Pages demo run on the containerised `docker` runner.
-#
-# Channel: a pipeline variable CHANNEL, set when running the pipeline manually or
-# by the multi-project trigger in crimson-sources:
-#   * CHANNEL=dev (default): builds :dev-<sha> and rolls the dev stack.
-#   * CHANNEL=prod         : builds :main-<sha> and rolls the prod swarm
-#                            (auto-deploy), same target as a v* tag.
+# build and deploy run on `crimsonrunner`, the shell runner on server10 with
+# buildx and SSH to the managers. Swarm nodes pull the private image with the
+# managers' read_registry token, shipped by --with-registry-auth.
 
 stages:
   - security
@@ -58,15 +33,13 @@ variables:
 default:
   interruptible: false
 
-# --- when things run ---------------------------------------------------------
 .prod_trigger:
   rules:
     - if: $CI_COMMIT_TAG =~ /^v/
     - if: ($CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline") && $CHANNEL == "prod"
 
-# `main` now carries BOTH channels, so the dev rule has to exclude a CHANNEL=prod
-# run explicitly. Without that guard a sources-driven prod trigger (which also runs
-# on `main`) would match here too and roll the dev stack alongside prod.
+# A CHANNEL=prod trigger also runs on main, so without the exclusion it would roll
+# the dev stack alongside prod.
 .dev_trigger:
   rules:
     - if: $CI_COMMIT_BRANCH == "main" && $CHANNEL != "prod"
@@ -78,15 +51,6 @@ default:
     - if: $CI_COMMIT_BRANCH == "main"
     - if: $CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "pipeline"
 
-# Quality gate — MUST pass before the image is built/deployed. ESLint over the
-# app source (vendored sources are excluded — they're linted in their own repo)
-# plus the Vitest unit suite (pure logic: the stream ranker, playback-pref
-# sanitiser, error extraction — jsdom, no browser). No sources checkout needed,
-# so it's fast. Runs in a clean node:24-slim container.
-#
-# The GitHub version ended with a chmod that handed the shared self-hosted
-# workspace back to the host user; on GitLab this is an ordinary containerised job
-# with its own workspace, so that step is gone.
 gate:
   extends: .any_trigger
   stage: gate
@@ -94,9 +58,7 @@ gate:
   image: node:24-slim
   script:
     - npm ci
-    - echo "Lint (eslint)"
     - npm run lint
-    - echo "Unit tests (vitest)"
     - npm test
 
 build:
@@ -106,41 +68,33 @@ build:
   needs: [gate]
   resource_group: crimson-client-$CI_COMMIT_REF_NAME
   variables:
-    # Which repo holds the client-side sources engine. Override with a CI/CD
-    # variable; empty / unreachable => build with NO sources: vite.config.js swaps
-    # in src/sourcesStub.js and the client plays via the backend only.
     CRIMSON_SOURCES_REPO: "crimsonhaven-to/crimson-sources"
   before_script:
-    # network=host matters: BuildKit runs in its own container and would otherwise
-    # resolve registry.ramon.moe through public DNS to the Cloudflare Tunnel, whose
-    # 100MB request body cap rejects large layers with a 413. On the host network it
-    # picks up /etc/hosts, which points the registry at the LAN address instead.
+    # network=host so BuildKit reads /etc/hosts and pushes to the registry over the
+    # LAN. Through public DNS it hits the Cloudflare Tunnel, whose 100MB body cap
+    # rejects large layers with a 413.
     - docker buildx create --name crimson --driver docker-container --driver-opt network=host 2>/dev/null || true
     - docker buildx use crimson
     - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
   script:
     - |
       set -u
-      # Prod ships on a v* tag OR an explicit CHANNEL=prod run; everything else
-      # (dev push, default manual run, sources-driven dev trigger) is the dev channel.
       if [ -n "${CI_COMMIT_TAG:-}" ] || [ "${CHANNEL:-dev}" = "prod" ]; then
         BUILD_CHANNEL=prod
       else
         BUILD_CHANNEL=dev
       fi
-      # crimson-sources is single-branch, so every channel bakes the same tip.
       SOURCES_BRANCH=main
       echo "channel=${BUILD_CHANNEL} sources=${SOURCES_BRANCH}"
 
-      # Clone <repo>@<branch> into <dest>, best-effort. Any failure (repo unset, no
-      # access, branch missing) leaves an EMPTY <dest> and never fails the job —
-      # that's the whole point of the safeguard.
+      # Any failure leaves <dest> empty instead of failing the job, so a build
+      # without access to the sources still ships.
       fetch() {  # <repo slug or empty> <branch> <dest>
         repo="$1"; branch="$2"; dest="$3"
         rm -rf "$dest"
         if [ -z "$repo" ]; then
           mkdir -p "$dest"
-          echo "no repo configured for ${dest} — building without it"
+          echo "no repo configured for ${dest}, building without it"
           return 0
         fi
         url="https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${repo}.git"
@@ -156,22 +110,19 @@ build:
           echo "${repo} bundled"
         else
           rm -rf "$dest"; mkdir -p "$dest"
-          echo "could not fetch ${repo} (no access / not found) — building without it"
+          echo "could not fetch ${repo} (no access or not found), building without it"
         fi
       }
       fetch "${CRIMSON_SOURCES_REPO:-}" "$SOURCES_BRANCH" vendor/crimson-sources
 
       if [ "$BUILD_CHANNEL" = "prod" ]; then
         if [ -n "${CI_COMMIT_TAG:-}" ]; then
-          # Immutable, human-chosen version tag straight off the tag.
           VER="$CI_COMMIT_TAG"
           if ! printf '%s' "$VER" | grep -Eq '^[A-Za-z0-9._-]+$'; then
             echo "Refusing to build/deploy an unsafe release tag: '$VER'" >&2
             exit 1
           fi
         else
-          # Sources-driven / manual prod rebuild: no tag exists, so mint an
-          # immutable per-commit tag off the client's main HEAD to deploy.
           VER="main-$(git rev-parse --short HEAD)"
         fi
         TAGS="--tag ${IMAGE}:${VER} --tag ${IMAGE}:latest"
@@ -192,8 +143,7 @@ build:
           echo "VERSION="
           echo "DEPLOY=false"
           echo "BUILD_CHANNEL=dev"
-          # Deploy the immutable per-commit tag, not the rolling :dev, so the
-          # dev stack always rolls to exactly this build.
+          # Not the rolling :dev, so the stack rolls to exactly this build.
           echo "IMAGE_TAG=dev-${SHORT_SHA}"
         } >> build.env
       fi
@@ -212,9 +162,6 @@ build:
     reports:
       dotenv: build.env
 
-# Prod rollout — a v* tag (immutable vX.Y.Z) OR a CHANNEL=prod run (immutable
-# main-<sha>, fired by crimson-sources on a tag). Both roll the prod
-# swarm the same way.
 deploy:
   extends: .prod_trigger
   stage: deploy
@@ -225,16 +172,9 @@ deploy:
     name: production
     url: https://crimsonhaven.to
   script:
-    - echo "Ship stack file to the manager"
-    - scp -o BatchMode=yes -o StrictHostKeyChecking=accept-new docker-stack.yml "${SWARM_MANAGER}:/home/raymond/crimson-client-deploy/docker-stack.yml"
-    - echo "Deploy to the swarm"
-    # Via a variable, not inline interpolation, so the value is never spliced into
-    # the runner's command line (it is validated to a safe charset upstream).
+    # VERSION was validated to a safe charset in build.
     - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/crimson-client-deploy/deploy.sh '${VERSION}'"
 
-# Dev auto-deploy: a push to `main` rolls the just-built dev-<sha> frontend onto
-# the crimson-client-dev stack. The dev docker-stack.yml lives on the manager
-# (~/dev-crimson-client-deploy/), so CI just triggers its deploy.sh.
 deploy-dev:
   extends: .dev_trigger
   stage: deploy
@@ -247,21 +187,8 @@ deploy-dev:
   script:
     - ssh -o BatchMode=yes -o StrictHostKeyChecking=accept-new "${SWARM_MANAGER}" "/home/raymond/dev-crimson-client-deploy/deploy.sh '${IMAGE_TAG}'"
 
-# --- Pages demo ---------------------------------------------------------------
-# Publishes a SOURCELESS demo of the client to GitLab Pages at demo.crimsonhaven.org
-# (the custom domain is registered on this project under Settings > Pages).
-#
-#   * a v* tag                   -> build + deploy (tracks stable, like prod).
-#   * a manual run from the UI   -> rebuild on demand.
-#
-# Deliberately CLEAN, to mirror the demo backend:
-#   * crimson-sources is NOT vendored (it's private), so vite.config.js swaps in the
-#     no-op stub (src/sourcesStub.js) — the demo resolves NOTHING client-side. The
-#     demo backend has no sources either, so the demo shows the UI + account UX only,
-#     never a stream (by design — no streams = nothing to host).
-#   * the companion extension ships on the Chrome Web Store, so nothing is baked in
-#     here — the /extension page just links to that listing.
-#   * VITE_API_BASE_URL is baked to the demo backend at build time.
+# The demo at demo.crimsonhaven.org is sourceless on purpose, like its backend: no
+# crimson-sources fetch, so it shows the UI and accounts but never a stream.
 pages:
   stage: pages
   tags: [docker]
@@ -272,33 +199,21 @@ pages:
     - if: $CI_PIPELINE_SOURCE == "web"
   resource_group: pages-demo
   variables:
-    # Baked in by Vite at build time (see hooks.js API_BASE_URL).
     VITE_API_BASE_URL: https://demo-backend.crimsonhaven.to
-    # Origin for the social-embed (Open Graph) URLs — the demo domain, not prod
-    # (see vite.config.js SITE_URL).
     VITE_SITE_URL: https://demo.crimsonhaven.org
   script:
-    # No sources fetch on purpose — a sourceless demo build.
     - npm ci
     - npm run build
-    # GitLab Pages has no SPA rewrite either; serving index.html as 404.html makes
-    # deep links (/watch/...) resolve to the app instead of a 404.
+    # Pages has no SPA rewrite, so deep links reach the app through 404.html.
     - cp dist/index.html dist/404.html
     - rm -rf public && mv dist public
   artifacts:
     paths:
       - public
 
-# --- Dependency vulnerability scan ---------------------------------------------
-# GitLab's own Dependency Scanning is Ultimate-only: every job in its template is
-# gated on $GITLAB_FEATURES, which a CE instance never sets, so including it would
-# quietly scan nothing. Trivy reads the committed lockfiles directly instead and
-# needs no licence.
-#
-# Two passes on purpose. The first prints every severity for the record; only the
-# second is allowed to fail, so HIGH and CRITICAL block a deploy and the rest do
-# not. This scans DEPENDENCIES, not the built image: base-image OS findings are
-# usually not actionable here and would wedge every deploy.
+# GitLab's Dependency Scanning is Ultimate-only and silently scans nothing on CE.
+# The first pass records every severity; only HIGH and CRITICAL block. The lockfile
+# is scanned, not the image, because base-image OS findings would wedge deploys.
 scan-deps:
   stage: security
   tags: [docker]
@@ -320,14 +235,8 @@ scan-deps:
     - trivy fs --scanners vuln --severity LOW,MEDIUM,HIGH,CRITICAL --exit-code 0 .
     - trivy fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 .
 
-# --- Automated dependency updates ----------------------------------------------
-# Dependabot does not exist here, so Renovate fills the same role: it opens one
-# merge request per available update, which then runs the gate like any other MR.
-#
-# Runs ONLY from a pipeline schedule, and self-skips when RENOVATE_TOKEN is unset,
-# so an ordinary push never triggers it and the pipeline stays green before setup.
-# One-time setup: add a group CI/CD variable RENOVATE_TOKEN (a personal access
-# token with the `api` scope), then create a pipeline schedule on this project.
+# Runs only from a pipeline schedule and skips itself until RENOVATE_TOKEN (a
+# group variable, a token with the `api` scope) is set.
 renovate:
   stage: security
   tags: [docker]

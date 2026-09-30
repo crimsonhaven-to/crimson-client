@@ -19,9 +19,8 @@ const (
 	runKey   = `Software\Microsoft\Windows\CurrentVersion\Run`
 )
 
-// setupLogging redirects logs to a file under %LOCALAPPDATA%, because the binary
-// is linked as a GUI app (no console window) so there's nowhere to print. The
-// file is truncated each launch so it never grows without bound.
+// The binary is linked as a GUI app with no console, so logs go to a file. It is
+// truncated each launch so it never grows without bound.
 func setupLogging() {
 	dir := filepath.Join(os.Getenv("LOCALAPPDATA"), appName)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -34,7 +33,6 @@ func setupLogging() {
 	}
 }
 
-// runApp serves the bridge in the background and lives in the system tray.
 func runApp(s *server) error {
 	go func() {
 		if err := s.run(); err != nil {
@@ -59,7 +57,6 @@ func onTrayReady(s *server) {
 	systray.AddSeparator()
 	quit := systray.AddMenuItem("Quit", "Stop the presence bridge")
 
-	// Mirror the bridge's state into the tray label + tooltip.
 	s.presence.onStatus = func(st string) {
 		label, tip := "Idle", appTitle+" · idle"
 		if st == "watching" {
@@ -116,8 +113,7 @@ func exePath() string {
 	return p
 }
 
-// autostartEnabled reports whether our HKCU Run entry is present. HKCU means
-// per-user, so no administrator rights are ever needed.
+// HKCU is per-user, so autostart never needs administrator rights.
 func autostartEnabled() bool {
 	k, err := registry.OpenKey(registry.CURRENT_USER, runKey, registry.QUERY_VALUE)
 	if err != nil {
@@ -135,8 +131,8 @@ func setAutostart(on bool) error {
 	}
 	defer k.Close()
 	if on {
-		// Wrap in literal double quotes so a Program Files-style space can't split
-		// the command. (Not %q — that would escape the path's backslashes.)
+		// Quoted so a space in the path can't split the command. Not %q, which
+		// would escape the backslashes.
 		return k.SetStringValue(appName, `"`+exePath()+`"`)
 	}
 	if err := k.DeleteValue(appName); err != nil && err != registry.ErrNotExist {

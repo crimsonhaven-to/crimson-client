@@ -1,19 +1,9 @@
-// Admin › Sources tab — register / toggle / transcode-toggle / remove local media
-// directories, with a mount discovery helper. Lifted verbatim from Admin.jsx.
 import { useCallback, useEffect, useState } from 'react';
 import { Download, Film, FolderOpen, FolderSearch, HardDrive, Plus, Power, PowerOff, RefreshCw, Trash2 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
+import { formatBytes } from '../formatBytes';
 
-const formatBytes = (n) => {
-  if (n == null) return '—';
-  if (n === 0) return '0 B';
-  const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
-  return `${(n / Math.pow(1024, i)).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-};
-
-// Map a source's filesystem-probe into a one-line status with a colour cue.
 const localStatus = (st) => {
   if (!st) return { text: 'Unknown', ok: false };
   if (!st.exists) return { text: 'Path not found in container', ok: false };
@@ -23,8 +13,7 @@ const localStatus = (st) => {
   const t = st.transcodable_count ?? 0;
   const cap = st.video_count_capped ? '+' : '';
   let text = `${n}${cap} direct-play file${n === 1 ? '' : 's'}`;
-  // Surface how many files only become playable with encoding on, so the toggle's
-  // payoff is visible before flipping it.
+  // Shows the toggle's payoff before flipping it.
   if (t > 0) text += ` · ${t}${cap} need encoding`;
   return { text, ok: true };
 };
@@ -100,7 +89,7 @@ export default function SourcesTab({ notify }) {
   };
 
   const remove = async (s) => {
-    if (!window.confirm(`Remove local source "${s.label}"? The files stay on disk — they just stop being offered as a streaming source.`)) return;
+    if (!window.confirm(`Remove local source "${s.label}"? The files stay on disk, they just stop being offered as a streaming source.`)) return;
     setBusyId(s.id);
     try {
       const res = await adminApi.deleteLocalSource(s.id);
@@ -140,10 +129,10 @@ export default function SourcesTab({ notify }) {
           </div>
         </div>
         <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-3xl">
-          Register a directory the backend can read and the haven will match shows against the files inside it and stream them directly — no third-party scraper involved.
+          Register a directory the backend can read and the haven will match shows against the files inside it and stream them directly, no third-party scraper involved.
           The path is the one <span className="text-crimson-400 font-bold">inside the backend container</span>: bind-mount your library in <code className="font-mono text-crimson-400">docker-compose</code> (e.g. <code className="font-mono text-crimson-400">- /movies:/crimson/movies1</code>) and register <code className="font-mono text-crimson-400">/crimson/movies1</code> here.
-          Browser-playable files (mp4 / m4v / mov / webm) always direct-play. Turn on <span className="text-crimson-400 font-bold">transcoding</span> to also serve other containers (MKV, HEVC, AC-3…) — they're re-encoded to a seekable HLS stream on the fly by ffmpeg.
-          Turn on <span className="text-crimson-400 font-bold">downloads</span> to let the background downloader (Downloads tab) write finished media into this source under <code className="font-mono text-crimson-400">/crimson-downloads</code> — it picks the first download-enabled source with enough free space.
+          Browser-playable files (mp4 / m4v / mov / webm) always direct-play. Turn on <span className="text-crimson-400 font-bold">transcoding</span> to also serve other containers (MKV, HEVC, AC-3…): they're re-encoded to a seekable HLS stream on the fly by ffmpeg.
+          Turn on <span className="text-crimson-400 font-bold">downloads</span> to let the background downloader (Downloads tab) write finished media into this source under <code className="font-mono text-crimson-400">/crimson-downloads</code>. It picks the first download-enabled source with enough free space.
         </p>
 
         <form onSubmit={add} className="space-y-4 relative z-10">

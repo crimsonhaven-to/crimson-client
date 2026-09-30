@@ -1,17 +1,5 @@
-// A time series chart, hand rolled in SVG.
-//
-// No charting library on purpose. The whole Metrics tab exists to answer "is the
-// haven healthy", and pulling ~200KB of recharts/chart.js into the bundle to draw
-// what amounts to a polyline and three gridlines would cost every visitor of the
-// site for a page only the keepers ever open. Same reasoning that keeps the
-// Prometheus parser hand written in promParse.js.
-//
-// The maths lives in ./chartFormat so it can be tested without a DOM; this file
-// is the renderer. It draws into a normalised 0..100 box stretched to fit with
-// preserveAspectRatio="none", so it needs no measurement of its own container
-// and no ResizeObserver. Strokes carry vector-effect="non-scaling-stroke", which
-// is what stops that stretch from making vertical lines fatter than horizontal
-// ones.
+// Hand rolled in SVG: a charting library would add ~200KB for every visitor to draw a
+// polyline on a page only admins open. The maths lives in ./chartFormat.
 import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
@@ -19,7 +7,6 @@ import {
   formatValue, nearestIndex, stackRows, toAreaPath, toLinePath,
 } from './chartFormat';
 
-// Where the value at 0..100 in chart space sits as a CSS percentage from the top.
 const topPct = (value, domain) => {
   const span = domain.max - domain.min;
   if (!(span > 0)) return 100;
@@ -28,9 +15,8 @@ const topPct = (value, domain) => {
 
 const leftPct = (index, columns) => (columns <= 1 ? 50 : (index / (columns - 1)) * 100);
 
-// The last sample a series actually has, which is what the legend shows when
-// nothing is hovered. Skips trailing nulls: Prometheus' most recent step is often
-// still empty, and reading "n/a" off an otherwise healthy line is alarming.
+// Skips trailing nulls: Prometheus' most recent step is often still empty, and "n/a"
+// on an otherwise healthy line is alarming.
 const latestOf = (values) => {
   for (let i = values.length - 1; i >= 0; i -= 1) {
     if (values[i] != null) return values[i];
@@ -53,8 +39,7 @@ export default function TimeChart({ series, unit, stacked, start, end, step }) {
 
   const onMove = useCallback((event) => {
     const box = plotRef.current?.getBoundingClientRect();
-    // jsdom (and a container mid-layout) reports zero width; guard rather than
-    // dividing by it and parking the crosshair at NaN.
+    // jsdom and a container mid-layout report zero width.
     if (!box || !box.width) return;
     setHover(nearestIndex((event.clientX - box.left) / box.width, columns));
   }, [columns]);
@@ -76,8 +61,7 @@ export default function TimeChart({ series, unit, stacked, start, end, step }) {
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
-        {/* Axis labels are HTML rather than <text>, so they stay crisp and level
-            no matter how far the SVG next to them is stretched. */}
+        {/* HTML rather than <text>, so labels are not distorted by the stretched SVG. */}
         <div className="w-14 shrink-0 h-40 flex flex-col justify-between items-end py-0 text-[9px] font-black tabular-nums text-crimson-700">
           {ticks.map((t, i) => <span key={i}>{formatValue(unit, t)}</span>)}
         </div>
@@ -169,8 +153,6 @@ export default function TimeChart({ series, unit, stacked, start, end, step }) {
           );
         })}
         <span className="text-[9px] font-bold text-crimson-700 ml-auto tabular-nums">
-          {/* Which instant the legend is quoting. Without it the numbers are just
-              floating, and "latest" and "where my cursor is" look identical. */}
           {hoveredAt != null ? formatTimestamp(hoveredAt) : 'latest'}
         </span>
       </div>

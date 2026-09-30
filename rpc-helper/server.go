@@ -12,10 +12,9 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// Discord's RPC server binds the first free port in this range, and the browser
-// probes them in order until one answers (src/discordPresence.js). So we grab
-// the first port Discord left free: if Discord is running it sits on 6463 and
-// rejects the page's origin, the page moves on, and lands on us one port over.
+// Discord binds the first free port here and the page probes them in order
+// (src/presence/discordPresence.js). With Discord on 6463 rejecting our origin, the page
+// moves on and lands on us one port over.
 var rpcPorts = []int{6463, 6464, 6465, 6466, 6467, 6468, 6469, 6470, 6471, 6472}
 
 type server struct {
@@ -38,8 +37,7 @@ func originList(m map[string]bool) string {
 	return strings.Join(out, ", ")
 }
 
-// originAllowed trusts the configured Crimson Haven origins plus any localhost
-// origin, so the site keeps working when developed against `vite dev`.
+// Any localhost origin is trusted so the site keeps working under `vite dev`.
 func (s *server) originAllowed(origin string) bool {
 	if origin == "" {
 		return false
@@ -66,7 +64,7 @@ func (s *server) run() error {
 	if s.presence == nil {
 		s.presence = newPresence()
 	}
-	log.Printf("👂 listening on ws://127.0.0.1:%d — open Crimson Haven and flip on Discord Presence", port)
+	log.Printf("👂 listening on ws://127.0.0.1:%d, open Crimson Haven and flip on Discord Presence", port)
 
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(r *http.Request) bool {
@@ -93,7 +91,6 @@ func (s *server) run() error {
 	return (&http.Server{Handler: mux}).Serve(ln)
 }
 
-// listenLoopback binds the first free port in the Discord RPC range on 127.0.0.1.
 func listenLoopback() (net.Listener, int, error) {
 	var lastErr error
 	for _, p := range rpcPorts {
@@ -106,22 +103,16 @@ func listenLoopback() (net.Listener, int, error) {
 	return nil, 0, lastErr
 }
 
-// handle serves one browser connection: greet it as Discord would, then hand
-// every SET_ACTIVITY it sends to the shared presence manager. The manager owns
-// the actual Discord link, so reconnecting tabs don't each churn their own.
 func (s *server) handle(conn *websocket.Conn, clientID string) {
 	defer conn.Close()
 	peer := conn.RemoteAddr().String()
 	log.Printf("🌹 a viewer connected (%s)", peer)
 
-	// The page's state machine only advances once it sees a DISPATCH/READY frame,
-	// so greet it immediately.
+	// The page's state machine only advances once it sees a DISPATCH/READY frame.
 	if err := conn.WriteJSON(readyFrame()); err != nil {
 		return
 	}
 
-	// Count this tab so the presence is held across its reconnects, and retired
-	// only once it (and any siblings) have been gone for the grace period.
 	s.presence.browserConnected()
 	defer s.presence.browserDisconnected()
 
@@ -150,9 +141,8 @@ func (s *server) handle(conn *websocket.Conn, clientID string) {
 	}
 }
 
-// readyFrame mimics the greeting the real Discord RPC server sends on connect.
-// The page only checks cmd == DISPATCH && evt == READY, but we fill in a
-// plausible config block so anything stricter is satisfied too.
+// The page only checks cmd == DISPATCH && evt == READY; the config block mimics
+// real Discord so anything stricter is satisfied too.
 func readyFrame() map[string]any {
 	return map[string]any{
 		"cmd": "DISPATCH",

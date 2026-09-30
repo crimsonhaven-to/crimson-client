@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// Discord IPC opcodes (the 4-byte op that prefixes every framed message).
+// Every Discord IPC message is: int32 opcode (LE) | int32 length (LE) | JSON.
 const (
 	opHandshake = 0
 	opFrame     = 1
@@ -19,14 +19,9 @@ const (
 	opPong      = 4
 )
 
-// writeTimeout caps how long a single frame write may block. Without it, a write
-// to a wedged pipe could stall forever while holding the presence lock, which
-// would also starve the read loop — so we bound it and let the error path
-// reconnect instead.
+// A write to a wedged pipe would otherwise block forever while holding the
+// presence lock and starve the read loop. Timing out lets the error path reconnect.
 const writeTimeout = 5 * time.Second
-
-// --- IPC framing ------------------------------------------------------------
-// Every Discord IPC message is: int32 opcode (LE) | int32 length (LE) | JSON.
 
 func writeFrame(c net.Conn, op int32, payload any) error {
 	body, err := json.Marshal(payload)
@@ -56,10 +51,8 @@ func readFrame(c net.Conn) (int32, []byte, error) {
 	return op, body, nil
 }
 
-// transformActivity adapts the browser's activity to what Discord's IPC expects.
-// The page sends rich `buttons: [{label,url}]`, which is exactly what Discord's
-// local IPC schema validator expects.
-// A null/empty activity stays nil (that's how presence is cleared).
+// The page's `buttons: [{label,url}]` already match Discord's IPC schema, so the
+// activity passes through as is. A null activity stays nil, which clears presence.
 func transformActivity(raw json.RawMessage) any {
 	if isNullActivity(raw) {
 		return nil
@@ -75,8 +68,8 @@ func isNullActivity(raw json.RawMessage) bool {
 	return len(raw) == 0 || string(raw) == "null"
 }
 
-// newNonce returns a UUID-ish string; Discord only echoes it back to pair
-// replies with requests, so it just needs to be unique per frame.
+// Discord only echoes the nonce back to pair replies with requests, so it just
+// needs to be unique per frame.
 func newNonce() string {
 	var b [16]byte
 	_, _ = rand.Read(b[:])

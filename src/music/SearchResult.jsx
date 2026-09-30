@@ -1,5 +1,3 @@
-// One recording the server found, as both pickers show it: picking the
-// recording for an imported song, and adding songs to your own playlist.
 import { ExternalLink } from 'lucide-react';
 
 import { formatTime } from './queue';

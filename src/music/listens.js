@@ -7,7 +7,7 @@
 // because the songs that most need counting are the ones played offline: a
 // download in the car, a tunnel. The song playing now is kept there too, so a
 // PWA swept from memory mid-song still counts it on the next launch.
-import { apiFetch, getSessionToken } from '../hooks/apiClient';
+import { apiFetch, getSessionToken } from '../api/client';
 
 const OUTBOX_KEY = 'crimson:music-listens';
 const CURRENT_KEY = 'crimson:music-listening';
@@ -42,7 +42,6 @@ export function toReport(listen) {
   return { track_id: listen.track_id, listened_at: listen.listened_at, seconds: Math.round(listen.seconds * 10) / 10 };
 }
 
-// Seconds heard between two time updates.
 export function heardBetween(last, now) {
   if (last === null || !Number.isFinite(now)) return 0;
   const step = now - last;

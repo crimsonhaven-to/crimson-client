@@ -1,9 +1,7 @@
-// Admin › Invites tab — mint single-use invite codes + the ledger of existing
-// ones (copy / revoke). Lifted verbatim from Admin.jsx.
 import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Copy, Plus, RefreshCw, Ticket, Trash2 } from 'lucide-react';
 
-import { adminApi } from '../adminApi';
+import { adminApi } from './api';
 import { fmtDate } from './format';
 
 export default function InvitesTab({ notify }) {
@@ -58,7 +56,7 @@ export default function InvitesTab({ notify }) {
         <h3 className="text-sm font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-2"><Ticket className="w-5 h-5 text-crimson-500" /> Mint Invite Codes</h3>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="space-y-2 flex-1">
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">How many (1–50)</label>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">How many (1 to 50)</label>
             <input type="number" min="1" max="50" value={count} onChange={(e) => setCount(e.target.value)} className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold focus:outline-none focus:border-crimson-500" />
           </div>
           <div className="space-y-2 flex-1">
@@ -71,7 +69,7 @@ export default function InvitesTab({ notify }) {
             </button>
           </div>
         </div>
-        <p className="text-[10px] text-crimson-700 font-bold leading-relaxed">Single-use codes — recipients paste them into the signup form's invite field. Same contract as the Discord bot.</p>
+        <p className="text-[10px] text-crimson-700 font-bold leading-relaxed">Single-use codes: recipients paste them into the signup form's invite field. Same contract as the Discord bot.</p>
       </form>
 
       {loading ? (
@@ -88,7 +86,7 @@ export default function InvitesTab({ notify }) {
                     : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Unused</span>}
                 </div>
                 <p className="text-[10px] font-bold text-crimson-700 mt-1 tracking-wide truncate">
-                  by {inv.created_by || '—'} · {fmtDate(inv.created_at)}
+                  by {inv.created_by || '-'} · {fmtDate(inv.created_at)}
                   {inv.expires_at ? ` · expires ${fmtDate(inv.expires_at)}` : ''}
                   {inv.used_by ? ` · used by ${inv.used_by}` : ''}
                 </p>

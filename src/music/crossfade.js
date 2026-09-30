@@ -37,7 +37,7 @@ export function setCrossfadeSetting(setting) {
 }
 
 // iPhones and iPads ignore a page setting an audio element's volume, so a fade
-// there would be two songs at full volume at once. Those switch songs as before.
+// there would be two songs at full volume at once. Those switch songs without a fade.
 let volumeWorks = null;
 export function canCrossfade() {
   if (volumeWorks === null) {
@@ -52,7 +52,6 @@ export function canCrossfade() {
   return volumeWorks;
 }
 
-// How long the current fade should last, or 0 for none.
 export function crossfadeSeconds() {
   const { on, seconds } = crossfadeSetting();
   return on && canCrossfade() ? seconds : 0;

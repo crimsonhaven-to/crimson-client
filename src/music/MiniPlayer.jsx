@@ -1,6 +1,5 @@
-// The persistent bottom bar. Mounted once in the App shell, next to Lumi, so the
-// music keeps going and stays reachable on every page. It sets --music-bar on
-// the root while visible, which Lumi's summon button reads to sit above it.
+// Mounted once in the App shell so the music survives navigation. It sets --music-bar
+// on the root while visible, which Lumi's summon button reads to sit above it.
 import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Loader2, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';

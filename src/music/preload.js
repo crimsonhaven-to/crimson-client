@@ -61,7 +61,7 @@ export async function preloadAhead(current, upcoming) {
     try {
       await storeAudio(PRELOADS, track, controller.signal);
     } catch {
-      // A dropped connection or an expired link: the song streams as before.
+      // A dropped connection or an expired link: the song streams instead.
     }
   }
 }

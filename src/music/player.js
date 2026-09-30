@@ -1,19 +1,9 @@
-// The music player: <audio> elements that live for the life of the app, a
-// queue, and a tiny store React subscribes to. It lives outside React on
-// purpose: playback must survive every route change, and Android keeps a
-// page's audio going in the background (screen off, car on Bluetooth) only
-// while something on it keeps playing.
+// Lives outside React so playback survives route changes, and Android only keeps a
+// page's audio alive in the background while something on it keeps playing.
 //
-// There are two elements, "decks", so one song can fade into the next. Only
-// one is the playing deck at a time and only its events reach the store; the
-// other is idle, or finishing a fade out. Without a crossfade, tracks change
-// by swapping the playing deck's src, never the element, so the media session
-// is never dropped between songs. A crossfade starts the next song on the
-// other deck while the last one is still sounding, so there is no gap there
-// either.
-//
-// A song on the device (downloaded, or preloaded ahead of the queue) plays from
-// there, through an object URL, and only a song that is not streams.
+// Two decks let one song fade into the next; only the playing deck's events reach the
+// store. Without a crossfade, tracks change by swapping src on the same element so the
+// media session is never dropped between songs.
 import { useSyncExternalStore } from 'react';
 
 import {
@@ -71,8 +61,8 @@ function emit(patch) {
   for (const listener of listeners) listener();
 }
 
-// Also for code outside React (the Discord presence), which must not re-render
-// the app on every time update to follow along.
+// Exported for code outside React (the Discord presence), which must not re-render
+// the app on every time update.
 export function subscribe(listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -88,10 +78,8 @@ export function currentTrack(s = state) {
   return s.position >= 0 ? s.tracks[s.order[s.position]] || null : null;
 }
 
-// --- persistence --------------------------------------------------------------
-// The queue survives a reload or the PWA being swept from memory, so getting
-// back in the car picks up where it stopped. Per device, and optional: a
-// browser without storage just starts empty.
+// Survives a reload or the PWA being swept from memory, so getting back in the car
+// picks up where it stopped.
 function save() {
   try {
     if (!state.tracks.length) {
@@ -127,7 +115,6 @@ export function restoreQueue() {
   load(saved.position, false, saved.time || 0);
 }
 
-// --- the decks ------------------------------------------------------------------
 function createDeck() {
   const deck = new Audio();
   deck.preload = 'auto';
@@ -231,7 +218,6 @@ function onError() {
   if (failedInARow < MAX_SKIPS_ON_ERROR && state.tracks.length > 1) advance(true);
 }
 
-// The store, the lock screen and the listen counter move to a new song.
 function announce(position, track, startAt, autoplay) {
   emit({ position, currentTime: startAt, duration: track.duration_ms / 1000, loading: autoplay, error: null });
   // The last song's position must not linger on the lock screen until this one's metadata loads.
@@ -260,7 +246,6 @@ async function load(position, autoplay, startAt = 0) {
   if (autoplay) play();
 }
 
-// --- crossfade ------------------------------------------------------------------
 function maybeCrossfade() {
   const seconds = crossfadeSeconds();
   if (!seconds || fade || audio.paused) return;
@@ -268,7 +253,7 @@ function maybeCrossfade() {
   // A song shorter than two fades would spend most of itself fading.
   if (!Number.isFinite(remaining) || remaining > seconds || audio.duration < seconds * 2) return;
   const position = nextPosition(state.position, state.order.length, state.repeat, false);
-  // The end of the queue, and a song on repeat, end as they always did.
+  // The end of the queue and a song on repeat end without a fade.
   if (position === -1 || position === state.position) return;
   crossfadeTo(position, seconds);
 }
@@ -315,7 +300,6 @@ function stopFade() {
   audio.volume = 1;
 }
 
-// --- controls -------------------------------------------------------------------
 export function play() {
   const deck = element();
   if (!deck.src && state.position >= 0) {
@@ -386,8 +370,7 @@ export function previous() {
   if (position >= 0) load(position, true);
 }
 
-// `tracks` are what can play (each has a stream_url); `start` indexes into
-// them. `source` names where they came from, for the Now Playing header.
+// `start` indexes into `tracks`; `source` labels the Now Playing header.
 export function playTracks(tracks, start = 0, source = null, { shuffle = state.shuffle } = {}) {
   const playable = tracks.filter((t) => t.stream_url);
   if (!playable.length) return;

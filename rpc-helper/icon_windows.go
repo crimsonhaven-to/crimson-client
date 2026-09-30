@@ -11,9 +11,8 @@ import (
 	"math"
 )
 
-// trayIcon is a small crimson sigil, generated at startup so we don't have to
-// ship a binary asset. It's a multi-size .ico (16 + 32 px) wrapping PNG images,
-// which Windows' icon loader understands.
+// Generated at startup so we don't ship a binary asset. Windows' icon loader
+// accepts an .ico that wraps PNG images.
 var trayIcon = buildTrayIcon()
 
 type iconImage struct {
@@ -33,8 +32,7 @@ func buildTrayIcon() []byte {
 	return wrapICO(imgs)
 }
 
-// drawSigil paints a filled crimson disc with a darker rim and a soft anti-
-// aliased edge — Luminas' mark, scaled to the requested size.
+// The sigil is Luminas' mark.
 func drawSigil(size int) image.Image {
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	center := float64(size) / 2
@@ -52,17 +50,16 @@ func drawSigil(size int) image.Image {
 			case d <= radius:
 				img.Set(x, y, rim)
 			case d <= radius+0.8:
-				a := uint8(255 * (radius + 0.8 - d) / 0.8) // feathered edge
+				a := uint8(255 * (radius + 0.8 - d) / 0.8)
 				img.Set(x, y, color.RGBA{rim.R, rim.G, rim.B, a})
 			default:
-				img.Set(x, y, color.RGBA{}) // transparent
+				img.Set(x, y, color.RGBA{})
 			}
 		}
 	}
 	return img
 }
 
-// wrapICO packs the PNG images into a single .ico container.
 func wrapICO(imgs []iconImage) []byte {
 	var buf bytes.Buffer
 	// ICONDIR header: reserved, type (1 = icon), image count.

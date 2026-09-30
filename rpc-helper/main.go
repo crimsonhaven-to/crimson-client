@@ -1,17 +1,11 @@
-// Command crimson-presence-helper is the little bridge that lets Crimson Haven's
-// browser-based Discord Rich Presence actually reach Discord.
+// Command crimson-presence-helper lets Crimson Haven's browser-based Discord Rich
+// Presence reach Discord.
 //
-// The website (https://crimsonhaven.to) already builds SET_ACTIVITY frames and
-// dials a Discord RPC WebSocket on the loopback port range — see
-// src/discordPresence.js. The *real* Discord desktop client, and arRPC, both
-// reject that socket because our origin isn't on their hardcoded allowlist. This
-// helper speaks the exact same WebSocket RPC protocol the page expects, but
-// trusts our origin, and relays whatever the page sends straight to Discord over
-// its local IPC pipe.
-//
-// It is deliberately tiny and nosy about nothing: it listens only on 127.0.0.1
-// and talks only to the Discord pipe on the same machine. Nothing leaves your
-// computer.
+// The site dials a Discord RPC WebSocket on the loopback port range
+// (src/presence/discordPresence.js), but Discord and arRPC reject it because our origin is
+// not on their hardcoded allowlist. This helper speaks the same protocol, trusts
+// our origin, and relays to Discord's local IPC pipe. It listens only on
+// 127.0.0.1, so nothing leaves the machine.
 package main
 
 import (
@@ -35,13 +29,11 @@ func main() {
 		}
 	}
 
-	setupLogging() // console on macOS/Linux; a log file on Windows (GUI app, no console)
+	setupLogging()
 	log.SetFlags(log.Ltime)
 	log.Print("🩸 Luminas' bridge stirs awake…")
 	log.Printf("   trusting origins: %s (+ any localhost)", originList(origins))
 
-	// runApp blocks: it serves the bridge directly on macOS/Linux, or runs it in
-	// the background behind a system-tray icon on Windows.
 	if err := runApp(&server{allowedOrigins: origins}); err != nil {
 		fmt.Fprintln(os.Stderr, "the bridge collapsed:", err)
 		os.Exit(1)

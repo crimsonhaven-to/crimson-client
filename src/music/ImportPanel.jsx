@@ -1,11 +1,10 @@
-// The ways to bring a playlist in from Spotify: a link, and a CSV export. Without a Spotify connection a link is read
-// from the public page; with one it goes through the Web API, which reads
-// private playlists and every song.
+// Without a Spotify connection a link is read from the public page; with one it goes
+// through the Web API, which also reads private playlists and every song.
 import { useRef, useState } from 'react';
 import { ExternalLink, FileUp, Link2, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-import { musicApi } from '../hooks';
+import { musicApi } from './hooks';
 
 const EXPORTIFY = 'https://exportify.app';
 

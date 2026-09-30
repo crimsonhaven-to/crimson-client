@@ -1,4 +1,3 @@
-// One headline number on the Wrapped page.
 const StatCard = ({ icon: Icon, value, label, detail }) => (
   <div className="relative overflow-hidden bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-7 rounded-[2rem] shadow-2xl">
     <div className="absolute -top-16 -right-16 w-40 h-40 bg-crimson-500/5 blur-[70px] rounded-full"></div>

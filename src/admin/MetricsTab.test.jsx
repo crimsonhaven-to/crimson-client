@@ -1,7 +1,5 @@
-// Mounts the REAL MetricsTab against a REAL /metrics payload (trimmed from an
-// actual backend response) and asserts the numbers it derives, so a change to
-// either the parser or a metric name on the backend surfaces here rather than as
-// a blank panel in the Admin sanctum.
+// A real /metrics payload, so a renamed backend metric fails here instead of leaving
+// a blank panel.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -11,13 +9,10 @@ import MetricsTab from './MetricsTab';
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const metrics = vi.fn();
-// The tab now also mounts the history half, which asks whether a Prometheus
-// exists. These tests are about the live snapshot, so it answers "no" and the
-// history section renders its setup note (MetricsHistory.test.jsx covers the
-// other side). Leaving these unmocked would still "pass", but by crashing the
-// history section rather than by exercising the snapshot, which is worth nothing.
+// Unmocked, the history half would crash instead of rendering its setup note, and
+// these tests would pass without exercising the snapshot.
 const metricsPanels = vi.fn();
-vi.mock('../adminApi', () => ({
+vi.mock('./api', () => ({
   adminApi: {
     metrics: (...a) => metrics(...a),
     metricsPanels: (...a) => metricsPanels(...a),
@@ -97,8 +92,7 @@ describe('MetricsTab', () => {
     metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
     const text = await mount();
 
-    // 40 + 120 + 3 = 163. If the counter's _created twin (a ~1.78e9 unix
-    // timestamp) ever leaked into the sum, this is what would catch it.
+    // 40 + 120 + 3. Catches the _created twin (a unix timestamp) leaking into the sum.
     expect(text).toContain('163');
     expect(text).toContain('3 failed');   // the one 500
     expect(text).toContain('10');         // watch fan-outs, 8 + 2
@@ -109,8 +103,6 @@ describe('MetricsTab', () => {
   it('renders the route table using the templated label', async () => {
     metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
     const text = await mount();
-    // The route label must arrive whole, braces and all, which is the parser's
-    // lastIndexOf('}') behaviour showing through end to end.
     expect(text).toContain('/watch/{tmdb_id}/{season_number}/{episode_number}');
   });
 
@@ -125,16 +117,12 @@ describe('MetricsTab', () => {
   });
 
   it('always carries the one-replica caveat', async () => {
-    // The numbers are easy to misread without it, so it is not optional chrome.
     metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
     const text = await mount();
     expect(text).toContain('Live snapshot, one replica');
   });
 
   it('keeps the two halves labelled so their numbers are not read as one', async () => {
-    // History is fleet-wide and survives restarts; the snapshot is one replica
-    // since boot. Side by side and unlabelled, the two invite exactly the wrong
-    // comparison.
     metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
     const text = await mount();
     expect(text).toContain('History');
@@ -142,8 +130,6 @@ describe('MetricsTab', () => {
   });
 
   it('still renders the snapshot when no history is being kept', async () => {
-    // The whole reason the snapshot was not simply replaced by the charts: it is
-    // the half that needs nothing beyond the backend itself.
     metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
     const text = await mount();
     expect(text).toContain('No history is being kept');
@@ -159,8 +145,7 @@ describe('MetricsTab', () => {
   });
 
   it('renders absent optional metrics as n/a rather than 0', async () => {
-    // process_* only exists on Linux, and the schema gauges only once migrations
-    // have run. Reporting a missing gauge as 0 would look like a real reading.
+    // A missing gauge reported as 0 would look like a real reading.
     metrics.mockResolvedValue({ ok: true, text: PAYLOAD });
     const text = await mount();
     expect(text).toContain('Resident memory');
