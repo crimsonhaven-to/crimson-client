@@ -26,3 +26,7 @@ dist-ssr
 #secret files
 .env
 .trivycache
+
+# go build output in rpc-helper/
+rpc-helper/rpc-helper
+rpc-helper/crimson-presence-helper*
