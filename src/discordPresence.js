@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getPlaybackPrefs } from './hooks';
+import { currentTrack, getState as getPlayerState, subscribe as subscribeToPlayer } from './music/player';
 
 // --- Discord Rich Presence (browser → loopback RPC, no backend) -------------
 // We connect a browser WebSocket to a Discord RPC server on the loopback port
@@ -58,9 +59,14 @@ const nonce = () =>
 //   • { kind:'overview', title, mediaKind }         → lingering on a title's page
 //   • { kind:'watch', title, isMovie, season,       → watching something
 //       episode, totalSeasons, startedAt }
+//   • { kind:'music', ... }                         → listening (see musicScene)
 // Every page is last-write-wins: navigating swaps one scene for the next, and the
 // debounced push in the controller collapses the clear+set of a navigation into a
 // single Discord update so the card never flickers between them.
+//
+// Music is not a page scene. It plays across every route, so while a song is
+// playing it outranks whatever page is open, and pausing it hands the card back
+// to the page. A video starting pauses the music, so watching still wins.
 let _activity = null;
 const _listeners = new Set();
 
@@ -100,12 +106,68 @@ function subscribe(fn) {
   return () => _listeners.delete(fn);
 }
 
+// The playing song as a scene, or null while nothing plays. `startedAt` is when
+// the song would have started had it played straight through, which is what
+// Discord's progress bar counts from.
+export function musicScene(player, now = Date.now()) {
+  const track = currentTrack(player);
+  if (!track || !player.playing) return null;
+  const duration = Number.isFinite(player.duration) && player.duration > 0
+    ? player.duration
+    : track.duration_ms / 1000;
+  return {
+    kind: 'music',
+    id: track.id,
+    title: track.title,
+    artists: (track.artists || []).join(', '),
+    album: track.album || '',
+    cover: track.cover_url || null,
+    startedAt: Math.round(now - player.currentTime * 1000),
+    duration,
+  };
+}
+
+// The player reports its position four times a second; Discord only needs to
+// hear about a new song, a pause, or a seek. A drift under two seconds is the
+// clock, not a seek.
+export function sameMusic(a, b) {
+  if (!a || !b) return a === b;
+  return a.id === b.id
+    && Math.abs(a.startedAt - b.startedAt) < 2000
+    && Math.round(a.duration) === Math.round(b.duration);
+}
+
+// Discord fetches an https image link itself; anything else (a device-local
+// blob, an overlong signed link) falls back to the uploaded art.
+const coverImage = (url) => (url && url.startsWith('https://') && url.length <= 256 ? url : null);
+
 // Turn the current scene (or null) into a Discord activity payload, phrased in
 // Luminas' voice. `type: 3` is "Watching" — newer clients honour it so the profile
 // line reads "Watching CRIMSONHAVEN"; older ones ignore it and fall back to
 // "Playing", which is why the verb is repeated in `details` to guarantee the
 // wording the card shows either way.
-function buildActivity(scene) {
+export function buildActivity(scene) {
+  // Listening to a song: `type: 2` makes the profile read "Listening to
+  // CRIMSONHAVEN", and start plus end give Discord its progress bar.
+  if (scene?.kind === 'music') {
+    const start = scene.startedAt;
+    return {
+      type: 2,
+      assets: {
+        large_image: coverImage(scene.cover) || LARGE_IMAGE,
+        large_text: clamp(scene.album || LARGE_TEXT),
+        small_image: SMALL_IMAGE,
+        small_text: SMALL_TEXT,
+      },
+      buttons: BUTTONS,
+      details: clamp(scene.title),
+      state: clamp(scene.artists ? `by ${scene.artists}` : 'A crimson melody'),
+      timestamps: scene.duration > 0
+        ? { start, end: start + Math.round(scene.duration * 1000) }
+        : { start },
+    };
+  }
+
   const assets = {
     large_image: LARGE_IMAGE,
     large_text: LARGE_TEXT,
@@ -251,9 +313,10 @@ export function useDiscordPresence() {
     let ready = false;
     let pushTimer = null;
     let retryTimer = null;
+    let music = musicScene(getPlayerState());
 
     const push = () => {
-      if (conn && ready) conn.send(setActivityFrame(buildActivity(_activity)));
+      if (conn && ready) conn.send(setActivityFrame(buildActivity(music || _activity)));
     };
     const schedulePush = () => {
       clearTimeout(pushTimer);
@@ -280,6 +343,12 @@ export function useDiscordPresence() {
     };
 
     const unsubscribe = subscribe(schedulePush);
+    const unsubscribePlayer = subscribeToPlayer(() => {
+      const next = musicScene(getPlayerState());
+      if (sameMusic(music, next)) return;
+      music = next;
+      schedulePush();
+    });
     connect();
 
     return () => {
@@ -287,6 +356,7 @@ export function useDiscordPresence() {
       clearTimeout(pushTimer);
       clearTimeout(retryTimer);
       unsubscribe();
+      unsubscribePlayer();
       if (conn) {
         // Clear the presence so it doesn't linger after we stop (e.g. logout).
         conn.send(setActivityFrame(null));

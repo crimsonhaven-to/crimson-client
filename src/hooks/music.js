@@ -5,7 +5,8 @@
 // tracks turning ready.
 import { useCallback, useEffect, useState } from 'react';
 
-import { apiFetch, extractError } from './apiClient';
+import { apiFetch, extractError, usePublicConfig } from './apiClient';
+import { useProfile } from './misc';
 
 const POLL_MS = 8000;
 
@@ -87,6 +88,13 @@ const playlistsBusy = (list) => list.some(
 
 const loadPlaylist = (id) => musicApi.playlist(id);
 const playlistBusy = (d) => d.tracks.some((t) => BUSY.includes(t.status));
+
+// Music needs both the server's library and this account's grant.
+export function useMusicAccess() {
+  const { music_enabled: server } = usePublicConfig();
+  const profile = useProfile();
+  return !!server && !!profile?.music_enabled;
+}
 
 export function useMusicStatus() {
   return usePolled('status', loadStatus, statusBusy);
