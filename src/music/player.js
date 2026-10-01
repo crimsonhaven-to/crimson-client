@@ -1,9 +1,11 @@
 // Lives outside React so playback survives route changes, and Android only keeps a
 // page's audio alive in the background while something on it keeps playing.
 //
-// Two decks let one song fade into the next; only the playing deck's events reach the
-// store. Without a crossfade, tracks change by swapping src on the same element so the
-// media session is never dropped between songs.
+// Two decks: the next song is loaded on the idle one while the current one plays, then
+// started inside the old one's `ended` handler. Android freezes a hidden page the moment
+// it goes quiet, and awaiting a read from the device between songs was long enough to
+// lose the race and stop the music a few songs in. The same idle deck carries the
+// crossfade. Only the playing deck's events reach the store.
 import { useSyncExternalStore } from 'react';
 
 import {
@@ -26,6 +28,9 @@ const SAVED_KEY = 'crimson:music-queue';
 // share) stops here rather than spinning through the whole queue.
 const MAX_SKIPS_ON_ERROR = 3;
 const FADE_STEP_MS = 50;
+// Early enough that a slow read from the device or a stream that has to buffer is
+// ready before the song ends, late enough not to fetch songs that get skipped.
+const ARM_AHEAD_SECONDS = 30;
 
 const EMPTY = {
   tracks: [],
@@ -49,6 +54,8 @@ let audio = null;
 const objectUrls = new Map();
 // A crossfade in progress: { outgoing, timer, step }.
 let fade = null;
+// The next song on the idle deck: { deck, position, ready }.
+let armed = null;
 let failedInARow = 0;
 let lastSavedAt = 0;
 // Counts loads, so a slow read from the device cannot start a song the member
@@ -150,8 +157,12 @@ function createDeck() {
       lastSavedAt = Date.now();
       save();
     }
-    if (fade?.step) fade.step();
-    else maybeCrossfade();
+    if (fade?.step) {
+      fade.step();
+    } else {
+      maybeArm();
+      maybeCrossfade();
+    }
   });
   on('ended', () => advance(false));
   on('error', onError);
@@ -231,6 +242,7 @@ async function load(position, autoplay, startAt = 0) {
   const track = state.tracks[state.order[position]];
   if (!track) return;
   stopFade();
+  disarm();
   const deck = element();
   const thisLoad = ++loadCount;
   announce(position, track, startAt, autoplay);
@@ -246,47 +258,78 @@ async function load(position, autoplay, startAt = 0) {
   if (autoplay) play();
 }
 
+// The position that plays when this song ends by itself, or -1 when nothing new does.
+function followingPosition() {
+  const position = nextPosition(state.position, state.order.length, state.repeat, false);
+  // The end of the queue and a song on repeat need no second deck.
+  return position === state.position ? -1 : position;
+}
+
+async function maybeArm() {
+  if (armed || fade || audio.paused) return;
+  const remaining = audio.duration - audio.currentTime;
+  if (!Number.isFinite(remaining) || remaining > crossfadeSeconds() + ARM_AHEAD_SECONDS) return;
+  const position = followingPosition();
+  const track = state.tracks[state.order[position]];
+  if (!track) return;
+  const thisArm = { deck: decks.find((deck) => deck !== audio), position, ready: false };
+  armed = thisArm;
+  const source = await sourceFor(track);
+  if (armed !== thisArm) {
+    if (source.local) URL.revokeObjectURL(source.url);
+    return;
+  }
+  setSource(thisArm.deck, source);
+  thisArm.ready = true;
+  // The read may have finished after the fade was already due.
+  maybeCrossfade();
+}
+
+function disarm() {
+  if (!armed) return;
+  const { deck } = armed;
+  armed = null;
+  if (deck !== audio) silence(deck);
+}
+
+// Moves playback to the armed deck. Synchronous on purpose, see the top of the file.
+function takeArmed(position, volume) {
+  if (!armed?.ready || armed.position !== position) return null;
+  const outgoing = audio;
+  audio = armed.deck;
+  armed = null;
+  loadCount += 1;
+  audio.volume = volume;
+  announce(position, state.tracks[state.order[position]], 0, true);
+  play();
+  return outgoing;
+}
+
 function maybeCrossfade() {
   const seconds = crossfadeSeconds();
   if (!seconds || fade || audio.paused) return;
   const remaining = audio.duration - audio.currentTime;
   // A song shorter than two fades would spend most of itself fading.
   if (!Number.isFinite(remaining) || remaining > seconds || audio.duration < seconds * 2) return;
-  const position = nextPosition(state.position, state.order.length, state.repeat, false);
-  // The end of the queue and a song on repeat end without a fade.
-  if (position === -1 || position === state.position) return;
-  crossfadeTo(position, seconds);
+  const position = followingPosition();
+  if (position !== -1) crossfadeTo(position, seconds);
 }
 
-async function crossfadeTo(position, seconds) {
-  const track = state.tracks[state.order[position]];
-  if (!track) return;
-  const outgoing = audio;
-  const incoming = decks.find((deck) => deck !== outgoing);
-  const thisFade = { outgoing, timer: null, step: null };
-  fade = thisFade;
-  const thisLoad = ++loadCount;
-  const source = await sourceFor(track);
-  if (thisLoad !== loadCount || fade !== thisFade) {
-    if (source.local) URL.revokeObjectURL(source.url);
-    return;
-  }
-  incoming.volume = 0;
-  setSource(incoming, source);
-  audio = incoming;
-  announce(position, track, 0, true);
-  play();
+function crossfadeTo(position, seconds) {
+  const incoming = armed?.deck;
+  const outgoing = takeArmed(position, 0);
+  if (!outgoing) return;
   // Paced by the new song's own clock, so a slow start (still buffering) holds
   // the old song up instead of the new one arriving at full volume. The time
   // updates step it too, since a phone with the screen off slows the timer down.
-  thisFade.step = () => {
+  const step = () => {
     const progress = incoming.currentTime / seconds;
     const volumes = fadeVolumes(progress);
     incoming.volume = volumes.incoming;
     outgoing.volume = volumes.outgoing;
     if (progress >= 1) stopFade();
   };
-  thisFade.timer = setInterval(thisFade.step, FADE_STEP_MS);
+  fade = { outgoing, step, timer: setInterval(step, FADE_STEP_MS) };
 }
 
 // Ends a crossfade where it stands: the old song stops and the new one plays
@@ -353,7 +396,9 @@ function advance(manual) {
     play();
     return;
   }
-  load(position, true);
+  const finished = manual ? null : takeArmed(position, 1);
+  if (finished) silence(finished);
+  else load(position, true);
 }
 
 export function next() {
@@ -392,12 +437,14 @@ export function toggleShuffle() {
   } else {
     emit({ shuffle: true, order: shuffledOrder(state.tracks.length, current), position: 0 });
   }
+  disarm();
   save();
   preloadNext();
 }
 
 export function toggleRepeat() {
   emit({ repeat: cycleRepeat(state.repeat) });
+  disarm();
   save();
   preloadNext();
 }
@@ -409,6 +456,7 @@ export function playAt(position) {
 export function close() {
   loadCount += 1;
   stopFade();
+  armed = null;
   decks.forEach(silence);
   endListen();
   state = EMPTY;

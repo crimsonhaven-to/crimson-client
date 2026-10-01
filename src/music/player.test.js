@@ -85,6 +85,28 @@ describe('crossfade', () => {
     expect(player.getState().position).toBe(1);
   });
 
+  it('starts the next song in the same task the last one ends in', async () => {
+    const first = await startTwoSongs();
+    const second = await reachTheEnd(first);
+    expect(second.paused).toBe(true);
+    first.paused = true;
+    first.fire('ended');
+    expect(player.getState().position).toBe(1);
+    expect(second.paused).toBe(false);
+    expect(first.src).toBe('');
+  });
+
+  it('drops the loaded next song when the queue order changes', async () => {
+    const first = await startTwoSongs();
+    const second = await reachTheEnd(first);
+    player.toggleRepeat();
+    player.toggleRepeat();
+    expect(second.src).toBe('');
+    first.fire('ended');
+    await settle();
+    expect(player.getState().position).toBe(0);
+  });
+
   it('starts the next song on the other deck and blends them', async () => {
     setCrossfadeSetting({ on: true, seconds: 5 });
     const first = await startTwoSongs();
