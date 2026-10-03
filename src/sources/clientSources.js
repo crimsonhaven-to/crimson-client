@@ -201,9 +201,39 @@ function sendResolveBeacon(results) {
   } catch { /* never let telemetry affect playback */ }
 }
 
+// Every resolve clears the companion's header rules for the whole tab, and a
+// watch page needs its rules for as long as it plays what it resolved. The
+// pages abort their signal when they move on, so a live signal means a page is
+// still playing. Offline downloads resolve in the background and wait for this
+// to be false, or they would cut off the player's CDN mid-episode.
+const watching = new Set();
+const watchingListeners = new Set();
+
+function notifyWatching() {
+  for (const listener of watchingListeners) listener();
+}
+
+function holdRulesUntilAborted(signal) {
+  if (!signal || signal.aborted) return;
+  watching.add(signal);
+  notifyWatching();
+  signal.addEventListener('abort', () => {
+    watching.delete(signal);
+    notifyWatching();
+  }, { once: true });
+}
+
+export const isWatching = () => watching.size > 0;
+
+export function onWatchingChange(listener) {
+  watchingListeners.add(listener);
+  return () => watchingListeners.delete(listener);
+}
+
 // Resolves immediately when nothing can run client-side, so callers can always
 // await it alongside the backend stream. Returns the source labels emitted.
-export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
+// `background` is for offline downloads, which do not play what they resolve.
+export async function streamLocalSources(mediaCtx, { signal, onLine, background = false } = {}) {
   const emitted = new Set();
 
   const override = flagOverride();
@@ -211,6 +241,7 @@ export async function streamLocalSources(mediaCtx, { signal, onLine } = {}) {
     console.info('[clientSources] pinned OFF via flag, using the backend (E0).');
     return emitted;
   }
+  if (!background) holdRulesUntilAborted(signal);
 
   // Waits briefly for the ready event in case a cold load onto /watch beat the
   // companion's async inject.

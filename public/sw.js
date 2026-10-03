@@ -1,7 +1,7 @@
 // The backend is on another origin, so the same-origin GET guard in the fetch
 // handler keeps every API, auth and stream request out of this worker.
-// Offline music under /music-offline/ lives in its own caches, which an update of
-// this worker never deletes.
+// Offline music under /music-offline/ and offline videos under /video-offline/
+// live in their own caches, which an update of this worker never deletes.
 
 const VERSION = 'v4';
 // Filled in by swPrecache in vite.config.js, so each deploy is a new worker that
@@ -10,8 +10,10 @@ const BUILD_ID = 'dev';
 const BUILD_ASSETS = [];
 const SHELL_CACHE = `crimson-shell-${VERSION}-${BUILD_ID}`;
 const RUNTIME_CACHE = `crimson-runtime-${VERSION}`;
-const MUSIC_CACHE_PREFIX = 'crimson-music-';
-const MUSIC_COVER_PATH = '/music-offline/cover/';
+const OFFLINE_CACHE_PREFIXES = ['crimson-music-', 'crimson-video-'];
+// The page plays videos through hls.js straight from the cache. Serving them
+// here too covers Safari's native HLS, which only loads real URLs.
+const OFFLINE_PATHS = ['/music-offline/cover/', '/video-offline/'];
 
 const SHELL_ASSETS = [
   '/',
@@ -39,7 +41,7 @@ self.addEventListener('activate', (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((k) => k !== SHELL_CACHE && k !== RUNTIME_CACHE && !k.startsWith(MUSIC_CACHE_PREFIX))
+            .filter((k) => k !== SHELL_CACHE && k !== RUNTIME_CACHE && !OFFLINE_CACHE_PREFIXES.some((p) => k.startsWith(p)))
             .map((k) => caches.delete(k))
         )
       )
@@ -59,7 +61,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname.startsWith(MUSIC_COVER_PATH)) {
+  if (OFFLINE_PATHS.some((p) => url.pathname.startsWith(p))) {
     event.respondWith(
       caches.match(url.pathname).then((r) => r || new Response('Not found', { status: 404 }))
     );

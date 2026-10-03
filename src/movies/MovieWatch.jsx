@@ -6,6 +6,7 @@ import { useAuth } from '../account/useAuth';
 import { useTitle } from '../useTitle';
 import { apiFetch } from '../api/client';
 import WatchView from '../watch/WatchView';
+import SaveOffline from '../offline/SaveOffline';
 
 function MovieWatch() {
   const { tmdbId } = useParams();
@@ -84,6 +85,17 @@ function MovieWatch() {
 
   const watchlistItem = { tmdb_id: parseInt(tmdbId), anilist_id: null, media_type: 'movie', title: displayTitle, poster };
 
+  const offlineItems = [{
+    id: `movie-${tmdbId}`,
+    titleKey: `movie-${tmdbId}`,
+    titleName: displayTitle || 'Movie',
+    poster,
+    href: `/movie/${tmdbId}`,
+    kind: 'movie',
+    target: { path: `/watch/movie/${tmdbId}`, ctx: { tmdbId, mediaType: 'movie' } },
+    subtitleQuery: { tmdbId, isMovie: true },
+  }];
+
   return (
     <WatchView
       isMovie
@@ -106,6 +118,9 @@ function MovieWatch() {
       onEpisodeChange={() => {}}
       isAuthenticated={isAuthenticated}
       watchlistItem={watchlistItem}
+      saveAction={(
+        <SaveOffline streams={streamData?.streams || []} activeStreamIdx={activeStreamIdx} items={offlineItems} />
+      )}
       backUrl={`/movie/${tmdbId}`}
     />
   );

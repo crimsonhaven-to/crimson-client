@@ -212,6 +212,40 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     }
   }, [availableSeasons]);
 
+  // tmdbId/season let enrichMediaCtx pull the AniList title set from the
+  // backend's /scrape-meta grant, exactly as the backend scrapers do.
+  const mediaCtxFor = (anilistIdToUse, episode) => {
+    const seasonRec =
+      availableSeasons.find((s) => s.anilist_id === anilistIdToUse) ||
+      availableSeasons.find((s) => s.season_number === currentSeason);
+    // For an extra, the ctx keeps the show's titles (they find the show on the
+    // target site) and carries the extra's own title to pick it out once there.
+    const extraRec = availableExtras.find((x) => x.anilist_id === anilistIdToUse);
+    return {
+      tmdbId: seasonRec?.tmdb_id,
+      mediaType: 'tv',
+      season: seasonRec?.tmdb_season ?? null,
+      episode,
+      title: animeMetadata?.title || seasonGroups?.title || undefined,
+      anilistId: anilistIdToUse,
+      extraTitle: extraRec
+        ? (extraRec.title_english || extraRec.title_romaji || null)
+        : null,
+    };
+  };
+
+  // What an offline download needs to find an episode of the season on screen
+  // again later, without this hook.
+  const offlineTarget = (episode) => {
+    const anilistIdToUse = currentSeasonAnilistId || selectedAnilistId;
+    if (!anilistIdToUse) return null;
+    return {
+      anilistId: anilistIdToUse,
+      path: `/watch/${anilistIdToUse}/${episode}`,
+      ctx: mediaCtxFor(anilistIdToUse, episode),
+    };
+  };
+
   useEffect(() => {
     const anilistIdToUse = currentSeasonAnilistId || selectedAnilistId;
     if (!anilistIdToUse) return;
@@ -274,28 +308,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
       }
     };
 
-    // tmdbId/season let enrichMediaCtx pull the AniList title set from the
-    // backend's /scrape-meta grant, exactly as the backend scrapers do.
-    const seasonRec =
-      availableSeasons.find((s) => s.anilist_id === anilistIdToUse) ||
-      availableSeasons.find((s) => s.season_number === currentSeason);
-    // For an extra, the ctx keeps the show's titles (they find the show on the
-    // target site) and carries the extra's own title to pick it out once there.
-    const extraRec = availableExtras.find((x) => x.anilist_id === anilistIdToUse);
-    const mediaCtx = {
-      tmdbId: seasonRec?.tmdb_id,
-      mediaType: 'tv',
-      season: seasonRec?.tmdb_season ?? null,
-      episode: currentEpisode,
-      title: animeMetadata?.title || seasonGroups?.title || undefined,
-      anilistId: anilistIdToUse,
-      extraTitle: extraRec
-        ? (extraRec.title_english || extraRec.title_romaji || null)
-        : null,
-    };
-
     (async () => {
-      const local = streamLocalSources(mediaCtx, {
+      const local = streamLocalSources(mediaCtxFor(anilistIdToUse, currentEpisode), {
         signal: controller.signal,
         onLine: (s) => handleLine(s, 'local'),
       });
@@ -323,5 +337,6 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
     handleSelectSuggestion,
     initializeFromIds,
     reloadStreams,
+    offlineTarget,
   };
 }

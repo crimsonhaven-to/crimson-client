@@ -10,6 +10,7 @@ import { useKonamiCode } from './shell/useKonami';
 import { useAuth } from './account/useAuth';
 import { useMusicAccess } from './music/hooks';
 import { resumeDownloads } from './music/downloads';
+import { resumeVideoDownloads } from './offline/queue';
 import { useDiscordPresence } from './presence/discordPresence';
 import LandingPage from './home/LandingPage';
 import AnimeWatch from './anime/AnimeWatch';
@@ -53,6 +54,8 @@ const MusicPlaylist = lazy(() => import('./music/MusicPlaylist'));
 const MusicNowPlaying = lazy(() => import('./music/MusicNowPlaying'));
 const MusicConnect = lazy(() => import('./music/MusicConnect'));
 const DownloadExtensionPage = lazy(() => import('./info/DownloadExtension'));
+const DownloadsPage = lazy(() => import('./offline/Downloads'));
+const OfflineWatch = lazy(() => import('./offline/OfflineWatch'));
 
 function App() {
   const { isAuthenticated } = useAuth();
@@ -77,6 +80,11 @@ function App() {
   useEffect(() => {
     if (musicEnabled) resumeDownloads();
   }, [musicEnabled]);
+
+  // Finishes movies and episodes the last session left half saved.
+  useEffect(() => {
+    if (isAuthenticated) resumeVideoDownloads();
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return <AuthGate />;
@@ -135,6 +143,8 @@ function App() {
           <Route path="/local/:token" element={<LocalOverview />} />
           <Route path="/watch-local/:token" element={<LocalWatch />} />
           <Route path="/watch-live/:channelId" element={<LiveTvWatch />} />
+          <Route path="/downloads" element={<DownloadsPage />} />
+          <Route path="/downloads/watch/:id" element={<OfflineWatch />} />
           <Route path="/manga/:anilistId" element={<MangaOverview />} />
           {/* Without a chapter id the reader resumes from saved progress. */}
           <Route path="/read/:anilistId" element={<MangaReader />} />
