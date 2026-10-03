@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { ArrowDownToLine, Check, Loader2 } from 'lucide-react';
 
@@ -121,7 +122,9 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
           disabled={!stream || busy}
           className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
         >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" />
+            : items[0].kind === 'movie' ? 'Save movie'
+              : chosen.length > 1 ? `Save ${chosen.length} episodes` : 'Save episode'}
         </button>
       </div>
     </Dialog>
@@ -162,8 +165,12 @@ export default function SaveOffline({ streams, activeStreamIdx, items }) {
       >
         <ArrowDownToLine className="w-4 h-4" /> {entry?.status === 'failed' ? 'Save again' : 'Save offline'}
       </button>
-      {open && (
-        <SaveDialog streams={streams} activeStreamIdx={activeStreamIdx} items={items} onClose={() => setOpen(false)} />
+      {/* Portaled: the watch page's info card has a backdrop blur, which makes it
+          the containing block of fixed children, so the dialog would sit inside
+          the card and be clipped by its overflow. */}
+      {open && createPortal(
+        <SaveDialog streams={streams} activeStreamIdx={activeStreamIdx} items={items} onClose={() => setOpen(false)} />,
+        document.body,
       )}
     </>
   );
