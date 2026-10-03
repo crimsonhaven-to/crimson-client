@@ -2,6 +2,9 @@
 // segment, decrypt AES-128 if needed, and concatenate (.ts, or .mp4 for fMP4).
 // Fetches go through the same backend proxies as the player, so anything that plays
 // is downloadable.
+import {
+  createDecryptor, isMasterPlaylist, parseMaster, parseMedia, pickBestVariant, segmentRanges,
+} from './hlsPlaylist';
 
 const sanitize = (name) =>
   (name || 'video')
@@ -10,7 +13,7 @@ const sanitize = (name) =>
     .trim()
     .slice(0, 150) || 'video';
 
-const isHlsUrl = (url, type) =>
+export const isHlsUrl = (url, type) =>
   type === 'hls' || (typeof url === 'string' && url.toLowerCase().split('?')[0].endsWith('.m3u8'));
 
 async function fetchText(url) {
@@ -25,135 +28,36 @@ async function fetchBytes(url, rangeHeader) {
   return new Uint8Array(await res.arrayBuffer());
 }
 
-// HLS spec: without an explicit IV, the IV is the media-sequence number, big-endian
-// in 16 bytes.
-function sequenceIv(seq) {
-  const iv = new Uint8Array(16);
-  new DataView(iv.buffer).setUint32(12, seq >>> 0);
-  return iv;
-}
-
-function hexToBytes(hex) {
-  const clean = hex.replace(/^0x/i, '');
-  const out = new Uint8Array(clean.length / 2);
-  for (let i = 0; i < out.length; i++) out[i] = parseInt(clean.substr(i * 2, 2), 16);
-  return out;
-}
-
-// attr('#EXT-X-KEY:METHOD=AES-128,URI="k.key"', 'URI') -> 'k.key'
-function attr(line, name) {
-  const m = line.match(new RegExp(`${name}=("[^"]*"|[^,]*)`));
-  if (!m) return null;
-  return m[1].replace(/^"|"$/g, '');
-}
-
-function pickBestVariant(text, baseUrl) {
-  const lines = text.split(/\r?\n/);
-  let best = null;
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith('#EXT-X-STREAM-INF')) {
-      const bandwidth = parseInt(attr(lines[i], 'BANDWIDTH') || '0', 10);
-      const uri = (lines[i + 1] || '').trim();
-      if (uri && !uri.startsWith('#') && (!best || bandwidth > best.bandwidth)) {
-        best = { bandwidth, url: new URL(uri, baseUrl).href };
-      }
-    }
-  }
-  return best?.url || null;
-}
-
-function parseMedia(text, baseUrl) {
-  const lines = text.split(/\r?\n/);
-  let seq = 0;
-  let key = null;
-  let pendingRange = null;
-  let initUri = null;
-  const segments = [];
-  let isFmp4 = false;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (line.startsWith('#EXT-X-MEDIA-SEQUENCE')) {
-      seq = parseInt(line.split(':')[1] || '0', 10) || 0;
-    } else if (line.startsWith('#EXT-X-MAP')) {
-      const uri = attr(line, 'URI');
-      if (uri) { initUri = new URL(uri, baseUrl).href; isFmp4 = true; }
-    } else if (line.startsWith('#EXT-X-KEY')) {
-      const method = attr(line, 'METHOD');
-      if (!method || method === 'NONE') {
-        key = null;
-      } else if (method === 'AES-128') {
-        key = { uri: new URL(attr(line, 'URI'), baseUrl).href, ivHex: attr(line, 'IV') };
-      } else {
-        throw new Error(`Unsupported HLS encryption (${method}); cannot download this source.`);
-      }
-    } else if (line.startsWith('#EXT-X-BYTERANGE')) {
-      pendingRange = line.split(':')[1];
-    } else if (line && !line.startsWith('#')) {
-      const url = new URL(line, baseUrl).href;
-      if (/\.(m4s|mp4)(\?|$)/i.test(line)) isFmp4 = true;
-      segments.push({ url, key, seq, byteRange: pendingRange });
-      pendingRange = null;
-      seq++;
-    }
-  }
-  return { initUri, segments, isFmp4 };
-}
-
-// EXT-X-BYTERANGE is "<len>[@<offset>]"; an omitted offset continues from the previous range.
-function byteRangeHeader(value, state) {
-  const [lenStr, offStr] = value.split('@');
-  const len = parseInt(lenStr, 10);
-  const offset = offStr != null ? parseInt(offStr, 10) : state.next;
-  state.next = offset + len;
-  return `bytes=${offset}-${offset + len - 1}`;
-}
-
 async function downloadHls(masterUrl, onProgress, signal) {
   let playlistUrl = masterUrl;
   let text = await fetchText(masterUrl);
 
-  if (text.includes('#EXT-X-STREAM-INF')) {
-    const variant = pickBestVariant(text, masterUrl);
+  if (isMasterPlaylist(text)) {
+    const variant = pickBestVariant(parseMaster(text, masterUrl).variants);
     if (!variant) throw new Error('No playable variant found in this playlist.');
-    playlistUrl = variant;
+    playlistUrl = variant.url;
     text = await fetchText(playlistUrl);
   }
 
-  const { initUri, segments, isFmp4 } = parseMedia(text, playlistUrl);
+  const { maps, segments, isFmp4 } = parseMedia(text, playlistUrl);
   if (!segments.length) throw new Error('Playlist contained no segments.');
+  const init = maps[0];
 
   const parts = [];
-  const total = segments.length + (initUri ? 1 : 0);
+  const total = segments.length + (init ? 1 : 0);
   let done = 0;
   const tick = (label) => onProgress?.(done / total, { received: done, total, label });
 
-  if (initUri) {
-    parts.push(await fetchBytes(initUri));
+  if (init) {
+    parts.push(await fetchBytes(init.url));
     done++; tick('init');
   }
 
-  // Most playlists reuse one key for every segment.
-  const keyCache = new Map();
-  const getCryptoKey = async (uri) => {
-    if (!keyCache.has(uri)) {
-      const raw = await fetchBytes(uri);
-      keyCache.set(uri, crypto.subtle.importKey('raw', raw, { name: 'AES-CBC' }, false, ['decrypt']));
-    }
-    return keyCache.get(uri);
-  };
-
-  const rangeState = { next: 0 };
-  for (const seg of segments) {
+  const decrypt = createDecryptor(fetchBytes);
+  const ranges = segmentRanges(segments);
+  for (const [i, seg] of segments.entries()) {
     if (signal?.aborted) throw new DOMException('Download cancelled', 'AbortError');
-    const range = seg.byteRange ? byteRangeHeader(seg.byteRange, rangeState) : null;
-    let bytes = await fetchBytes(seg.url, range);
-    if (seg.key) {
-      const cryptoKey = await getCryptoKey(seg.key.uri);
-      const iv = seg.key.ivHex ? hexToBytes(seg.key.ivHex) : sequenceIv(seg.seq);
-      bytes = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-CBC', iv }, cryptoKey, bytes));
-    }
-    parts.push(bytes);
+    parts.push(await decrypt(seg, await fetchBytes(seg.url, ranges[i])));
     done++; tick(`segment ${done}/${total}`);
   }
 

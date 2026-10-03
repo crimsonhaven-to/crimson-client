@@ -6,6 +6,8 @@ import { useAuth } from '../account/useAuth';
 import { useTitle } from '../useTitle';
 import { startsFresh } from '../watch/resumeRules';
 import WatchView from '../watch/WatchView';
+import SaveOffline from '../offline/SaveOffline';
+import { episodeTitle, episodesFrom } from '../offline/items';
 
 export default function AnimeWatch() {
   const { anilistId, season = '1', episode = '1' } = useParams();
@@ -26,7 +28,7 @@ export default function AnimeWatch() {
     currentSeason, setCurrentSeason,
     currentEpisode, setCurrentEpisode,
     activeStreamIdx, setActiveStreamIdx,
-    initializeFromIds, reloadStreams
+    initializeFromIds, reloadStreams, offlineTarget,
   } = useAnimeStreamer({ initialAnilistId: anilistId, initialSeason: parseInt(season), initialEpisode: parseInt(episode) });
 
   const { updateProgress, fetchResumePosition } = useAccount();
@@ -64,6 +66,29 @@ export default function AnimeWatch() {
   useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
 
   const watchlistItem = { ...animeMetadata, anilist_id: parseInt(anilistId) };
+
+  const displayTitle = seasonGroups?.title || animeMetadata?.title;
+  // Keyed by the season's own AniList id, which is what the backend resolves by.
+  const offlineItems = episodesFrom(animeMetadata?.episodes_list || [], currentEpisode).flatMap((ep) => {
+    const found = offlineTarget(ep.episode_number);
+    if (!found) return [];
+    const { anilistId: seasonAnilistId, ...target } = found;
+    return [{
+      id: `anime-${seasonAnilistId}-e${ep.episode_number}`,
+      titleKey: `anime-${anilistId}`,
+      titleName: displayTitle || 'Anime',
+      poster: animeMetadata?.poster,
+      href: `/anime/${anilistId}`,
+      kind: 'episode',
+      season: parseInt(currentSeason),
+      episode: ep.episode_number,
+      episodeTitle: episodeTitle(ep),
+      target,
+      subtitleQuery: animeMetadata?.tmdb_id
+        ? { tmdbId: animeMetadata.tmdb_id, season: animeMetadata.current_season ?? currentSeason, episode: ep.episode_number }
+        : null,
+    }];
+  });
 
   useEffect(() => {
     if (anilistId) {
@@ -128,7 +153,7 @@ export default function AnimeWatch() {
       playerStartAt={playerStartAt}
       onPlayerProgress={handlePlayerProgress}
       metadata={animeMetadata}
-      displayTitle={seasonGroups?.title || animeMetadata?.title}
+      displayTitle={displayTitle}
       totalSeasons={seasonGroups?.totalSeasons}
       currentSeason={currentSeason}
       currentEpisode={currentEpisode}
@@ -138,6 +163,9 @@ export default function AnimeWatch() {
       onSelectEpisode={handleSelectEpisode}
       isAuthenticated={isAuthenticated}
       watchlistItem={watchlistItem}
+      saveAction={!unaired && (
+        <SaveOffline streams={streamData?.streams || []} activeStreamIdx={activeStreamIdx} items={offlineItems} />
+      )}
       backUrl={`/anime/${anilistId}`}
     />
   );

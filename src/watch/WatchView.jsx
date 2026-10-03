@@ -30,6 +30,9 @@ const WatchView = ({
   // onEpisodeChange only moves within the current season; this jumps across seasons.
   onSelectEpisode,
   isAuthenticated, watchlistItem,
+  // The page's Save offline button. The page renders it because it alone knows
+  // how to find each episode's link again later.
+  saveAction = null,
   backUrl,
   isMovie = false,
 }) => {
@@ -325,9 +328,10 @@ const WatchView = ({
                 <span className="text-[10px] text-crimson-600 font-black tracking-widest uppercase opacity-70">
                   REF: {refLabel || 'UNK'}
                 </span>
-                {isAuthenticated && watchlistItem && (
-                  <div className="ml-auto">
-                    <WatchlistButton item={watchlistItem} variant="watch" />
+                {(saveAction || (isAuthenticated && watchlistItem)) && (
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    {saveAction}
+                    {isAuthenticated && watchlistItem && <WatchlistButton item={watchlistItem} variant="watch" />}
                   </div>
                 )}
               </div>

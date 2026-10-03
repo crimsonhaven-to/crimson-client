@@ -9,7 +9,7 @@ import { useLumiChat, useLumiStatus } from './hooks';
 // The watch pages own the whole viewport and their controls sit exactly where
 // the summon button would. Hiding it there beats floating a button over the
 // player's seek bar.
-const HIDDEN_ON = [/^\/watch/, /^\/watch-show/, /^\/watch-movie/, /^\/watch-local/, /^\/watch-live/];
+const HIDDEN_ON = [/^\/watch/, /^\/watch-show/, /^\/watch-movie/, /^\/watch-local/, /^\/watch-live/, /^\/downloads\/watch/];
 
 // The manga reader keeps its own controls near the bottom edge, and on a phone
 // the summon button lands on top of them. Rather than hide her there too, the

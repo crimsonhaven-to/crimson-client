@@ -7,6 +7,8 @@ import { useTitle } from '../useTitle';
 import { apiFetch } from '../api/client';
 import { startsFresh } from '../watch/resumeRules';
 import WatchView from '../watch/WatchView';
+import SaveOffline from '../offline/SaveOffline';
+import { episodeTitle, episodesFrom } from '../offline/items';
 
 // The backend keys favorites and progress by tmdb_id when there's no anilist_id.
 function ShowWatch() {
@@ -108,6 +110,23 @@ function ShowWatch() {
 
   const watchlistItem = { tmdb_id: parseInt(tmdbId), anilist_id: null, title: displayTitle, poster };
 
+  const offlineItems = episodesFrom(metadata?.episodes_list || [], currentEpisode).map((ep) => ({
+    id: `tv-${tmdbId}-s${currentSeason}-e${ep.episode_number}`,
+    titleKey: `tv-${tmdbId}`,
+    titleName: displayTitle || 'Show',
+    poster,
+    href: `/show/${tmdbId}`,
+    kind: 'episode',
+    season: currentSeason,
+    episode: ep.episode_number,
+    episodeTitle: episodeTitle(ep),
+    target: {
+      path: `/watch/${tmdbId}/${currentSeason}/${ep.episode_number}`,
+      ctx: { tmdbId, mediaType: 'tv', season: currentSeason, episode: ep.episode_number },
+    },
+    subtitleQuery: { tmdbId, season: currentSeason, episode: ep.episode_number },
+  }));
+
   const onSeasonChange = (newSeason) => navigate(`/watch-show/${tmdbId}/${newSeason}/1`);
   const onEpisodeChange = (newEpisode) => {
     markEpisodeAdvance(currentSeason, newEpisode);
@@ -141,6 +160,9 @@ function ShowWatch() {
       onSelectEpisode={onSelectEpisode}
       isAuthenticated={isAuthenticated}
       watchlistItem={watchlistItem}
+      saveAction={!unaired && (
+        <SaveOffline streams={streamData?.streams || []} activeStreamIdx={activeStreamIdx} items={offlineItems} />
+      )}
       backUrl={`/show/${tmdbId}`}
     />
   );

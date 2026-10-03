@@ -28,7 +28,7 @@ import PlayerEpisodeList from './player/PlayerEpisodeList';
 // `mediaKey` identifies the episode `src` belongs to. Capture endpoints can serve
 // every episode from the SAME url, so reloading on `src` alone would keep the old
 // episode's position.
-export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null }) {
+export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null, canDownload = true }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -84,7 +84,8 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     if (isHls && Hls.isSupported()) {
       // The site's CSP (`worker-src 'self'`) blocks hls.js's blob: worker, and with it
       // enabled every fragment fails silently, hence enableWorker: false.
-      // hlsLoader (Live TV only) routes fetches through the extension, see livetv/extension.js.
+      // hlsLoader routes fetches elsewhere: through the extension for Live TV
+      // (livetv/extension.js), from Cache Storage for offline copies (offline/CacheLoader.js).
       hls = new Hls({
         maxBufferLength: 30,
         enableWorker: false,
@@ -477,7 +478,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
 
             <div className="flex items-center gap-0.5 rounded-2xl bg-crimson-950/40 border border-white/5 p-1 backdrop-blur-sm">
               {/* An endless live stream never finishes saving. */}
-              {!live && <DownloadButton downloading={downloading} progress={dlProgress} onClick={toggleDownload} />}
+              {!live && canDownload && <DownloadButton downloading={downloading} progress={dlProgress} onClick={toggleDownload} />}
 
               {document.pictureInPictureEnabled && (
                 <button onClick={togglePip} className={`p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90 ${pipActive ? 'text-crimson-400' : ''}`} aria-label="Picture in picture">

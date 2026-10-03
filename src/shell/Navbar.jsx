@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { HelpCircle, Menu, X, Heart, History, User, Sparkles, LogOut, Shield, SlidersHorizontal, Flame, Tv, Wallet, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays, Music } from 'lucide-react';
+import { HelpCircle, Menu, X, Heart, History, User, Sparkles, LogOut, Shield, SlidersHorizontal, Flame, Tv, Wallet, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays, Music, ArrowDownToLine } from 'lucide-react';
 import { useHealthStatus } from '../api/useHealthStatus';
 import { useAuth } from '../account/useAuth';
 import { useProfile } from '../account/profile';
 import { usePublicConfig } from '../api/client';
 import { forgetDownloads, hasDownloads } from '../music/downloads';
 import { forgetListens } from '../music/listens';
+import { forgetVideoDownloads } from '../offline/queue';
 import { close as closeMusic } from '../music/player';
 
 export default function Navbar({ musicEnabled }) {
@@ -32,9 +33,10 @@ export default function Navbar({ musicEnabled }) {
 
   const handleLogout = () => {
     setUserMenuOpen(false);
-    // Nothing of this account's music stays on a device someone else may use next.
+    // Nothing of this account's music or videos stays on a device someone else may use next.
     closeMusic();
     forgetDownloads();
+    forgetVideoDownloads();
     forgetListens();
     logout();
     navigate('/');
@@ -56,6 +58,7 @@ export default function Navbar({ musicEnabled }) {
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" /> },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" /> },
     { to: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
+    { to: "/downloads", label: "Downloads", icon: <ArrowDownToLine className="w-4 h-4" /> },
   ];
   const isCurrent = (to) => (to === '/' ? location.pathname === '/' : location.pathname.startsWith(to));
   const navLinkClass = (to) => `flex items-center gap-1.5 rounded-xl px-2.5 py-2 transition-all ${

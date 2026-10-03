@@ -74,9 +74,10 @@ other.
 | `watch/` | The watch page, the hls.js player, stream ranking, merging and downloads, resume rules |
 | `sources/` | The bridge to `crimson-sources` and the backend grants it needs, and the no-op stub |
 | `library/` | Watchlists, history, the airing calendar, follow and watchlist buttons |
+| `offline/` | Offline downloads of movies and episodes: the Save offline dialog, the download queue, `/downloads` and the offline player |
 | `admin/`, `wrapped/`, `lumi/`, `info/` | The admin dashboard, Crimson Wrapped, the Lumi chat, and the About, changelog, support and legal pages |
 | `presence/`, `rpc-helper/` | Discord Rich Presence and its desktop helper (see [`rpc-helper/README.md`](rpc-helper/README.md)) |
-| `public/sw.js` | The service worker: installable app, offline shell and offline music |
+| `public/sw.js` | The service worker: installable app, offline shell, offline music and videos |
 | `vendor/crimson-sources` | The private source engine, a git submodule |
 
 ## Browser sources
