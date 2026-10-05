@@ -4,6 +4,7 @@ import App from './App';
 import ErrorBoundary from './shell/ErrorBoundary';
 import { summonLumiConsole } from './lumi/console';
 import { applyThemeToDom, getTheme } from './account/theme';
+import { startDesktopBridge } from './native/desktopBridge';
 import "./index.css";
 
 // index.html already set `data-theme` to avoid a flash; this also updates the
@@ -12,6 +13,8 @@ applyThemeToDom(getTheme());
 
 // Purely cosmetic, so a console quirk in an exotic browser must never block rendering.
 try { summonLumiConsole(); } catch { /* the empress forgives */ }
+
+startDesktopBridge();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary>

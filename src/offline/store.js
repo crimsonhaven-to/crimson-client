@@ -37,7 +37,7 @@ function emit(patch) {
   for (const listener of listeners) listener();
 }
 
-function subscribe(listener) {
+export function subscribe(listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
