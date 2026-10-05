@@ -11,9 +11,11 @@ const STATE_KEY = 'crimson:spotify-state';
 const CLIENT_ID_KEY = 'crimson:spotify-client';
 
 // Must match what the member registered in their Spotify app, character for
-// character, which is why the connect card shows it for copying.
+// character, which is why the connect card shows it for copying. Spotify does
+// not redirect to the desktop app's app:// origin, so the app listens on a
+// fixed loopback address instead.
 export function redirectUri() {
-  return `${window.location.origin}/music/connect`;
+  return window.CrimsonNative?.spotify?.redirectUri || `${window.location.origin}/music/connect`;
 }
 
 // RFC 7636 base64url: no padding, and the two URL hostile characters swapped.
@@ -55,7 +57,15 @@ export async function beginAuthorization(clientId, scopes) {
     state,
     scope: scopes,
   });
-  window.location.assign(`${AUTHORIZE_URL}?${params}`);
+  const native = window.CrimsonNative?.spotify;
+  if (!native) {
+    window.location.assign(`${AUTHORIZE_URL}?${params}`);
+    return;
+  }
+  // The consent page opens in the system browser; the app waits for Spotify's
+  // answer and then continues on the same callback route as the website.
+  const answer = await native.authorize(`${AUTHORIZE_URL}?${params}`);
+  window.location.assign(`/music/connect?${answer}`);
 }
 
 // Consumes what beginAuthorization stored, and refuses a callback whose state

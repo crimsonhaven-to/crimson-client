@@ -240,6 +240,21 @@ function createRpcConnection({ onReady, onClose }) {
   };
 }
 
+// The desktop app talks to Discord's IPC itself, so there is no WebSocket and
+// no origin check to get past. It is always "ready"; without Discord running
+// the updates go nowhere, quietly.
+function createNativeConnection({ onReady }) {
+  const discord = window.CrimsonNative.discord;
+  queueMicrotask(() => onReady?.());
+  return {
+    send(payload) {
+      discord.setActivity(DISCORD_CLIENT_ID, payload.args.activity).catch(() => {});
+      return true;
+    },
+    close() {},
+  };
+}
+
 const setActivityFrame = (activity) => ({
   cmd: 'SET_ACTIVITY',
   nonce: nonce(),
@@ -262,7 +277,8 @@ export function useDiscordPresence() {
 
   useEffect(() => {
     if (!enabled) return;
-    if (typeof WebSocket === 'undefined') return;
+    const native = Boolean(window.CrimsonNative?.discord);
+    if (!native && typeof WebSocket === 'undefined') return;
 
     let cancelled = false;
     let conn = null;
@@ -282,7 +298,7 @@ export function useDiscordPresence() {
     const connect = () => {
       if (cancelled) return;
       let cycleReady = false;
-      conn = createRpcConnection({
+      conn = (native ? createNativeConnection : createRpcConnection)({
         onReady: () => { cycleReady = true; ready = true; push(); },
         onClose: () => {
           ready = false;

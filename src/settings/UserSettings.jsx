@@ -9,6 +9,7 @@ import { useMusicAccess } from '../music/hooks';
 import PrefToggle from '../account/PrefToggle';
 import CrossfadeCard from '../music/CrossfadeCard';
 import { hasDownloads } from '../music/downloads';
+import DesktopAppCard from './DesktopAppCard';
 import NativeBackendCard from './NativeBackendCard';
 
 // Served same-origin from /helper because the repo is private, so GitHub Releases
@@ -172,6 +173,7 @@ const UserSettings = () => {
       <DisplayNameCard />
 
       <NativeBackendCard />
+      <DesktopAppCard />
 
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>
@@ -259,51 +261,54 @@ const UserSettings = () => {
             <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
               Let Luminas whisper to Discord what you're watching or listening to (a little rich-presence
               card on your profile). Nothing leaves your machine, and you can banish it anytime.
-              Because Discord only trusts its own site, this needs a tiny local bridge of
-              Luminas' own making, summoned just below. No bridge, no presence. Nothing breaks.
+              {window.CrimsonNative
+                ? ' The desktop app speaks to Discord itself, so nothing else is needed.'
+                : " Because Discord only trusts its own site, this needs a tiny local bridge of Luminas' own making, summoned just below. No bridge, no presence. Nothing breaks."}
             </p>
           </div>
           <PrefToggle active={prefs.discordPresence} onClick={toggleDiscord} label="Toggle Discord Rich Presence" />
         </div>
 
-        <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-900/20 border border-crimson-700/30 rounded-3xl">
-          <div className="p-2.5 rounded-2xl bg-crimson-900/30 shrink-0">
-            <Download className="w-5 h-5 text-crimson-400" />
+        {!window.CrimsonNative && (
+          <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-900/20 border border-crimson-700/30 rounded-3xl">
+            <div className="p-2.5 rounded-2xl bg-crimson-900/30 shrink-0">
+              <Download className="w-5 h-5 text-crimson-400" />
+            </div>
+            <div className="space-y-2">
+              <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
+                Summon the Crimson Bridge
+              </p>
+              <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+                For Luminas' whispers to reach Discord, a small familiar must keep watch on your
+                machine. Call the little bridge down{' '}
+                <a
+                  href={helperHref(helper.file)}
+                  download
+                  className="text-crimson-300 font-bold underline decoration-dotted underline-offset-2 hover:text-white"
+                >
+                  here
+                </a>{' '}
+                ({helper.label}) and let it dwell in your taskbar beside Discord. Without it, the
+                toggle stirs but your profile stays silent.
+              </p>
+              <p className="text-[11px] text-crimson-400/70 leading-relaxed font-medium">
+                Another machine?{' '}
+                {HELPER_BUILDS.map((b, i) => (
+                  <span key={b.key}>
+                    {i > 0 && <span className="text-crimson-700"> · </span>}
+                    <a
+                      href={helperHref(b.file)}
+                      download
+                      className="underline decoration-dotted underline-offset-2 hover:text-crimson-200"
+                    >
+                      {b.label}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            </div>
           </div>
-          <div className="space-y-2">
-            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
-              Summon the Crimson Bridge
-            </p>
-            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
-              For Luminas' whispers to reach Discord, a small familiar must keep watch on your
-              machine. Call the little bridge down{' '}
-              <a
-                href={helperHref(helper.file)}
-                download
-                className="text-crimson-300 font-bold underline decoration-dotted underline-offset-2 hover:text-white"
-              >
-                here
-              </a>{' '}
-              ({helper.label}) and let it dwell in your taskbar beside Discord. Without it, the
-              toggle stirs but your profile stays silent.
-            </p>
-            <p className="text-[11px] text-crimson-400/70 leading-relaxed font-medium">
-              Another machine?{' '}
-              {HELPER_BUILDS.map((b, i) => (
-                <span key={b.key}>
-                  {i > 0 && <span className="text-crimson-700"> · </span>}
-                  <a
-                    href={helperHref(b.file)}
-                    download
-                    className="underline decoration-dotted underline-offset-2 hover:text-crimson-200"
-                  >
-                    {b.label}
-                  </a>
-                </span>
-              ))}
-            </p>
-          </div>
-        </div>
+        )}
 
         <div className="relative z-10 flex items-start gap-4 p-6 bg-crimson-500/5 border border-crimson-500/20 rounded-3xl">
           <div className="p-2.5 rounded-2xl bg-crimson-900/20 shrink-0">

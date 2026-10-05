@@ -29,13 +29,22 @@ function CopyField({ value }) {
 function ConnectForm({ scopes }) {
   const [clientId, setClientId] = useState('');
   const [starting, setStarting] = useState(false);
+  const [error, setError] = useState(null);
   const valid = isClientId(clientId);
 
+  // On the website this leaves the page. In the desktop app it waits for the
+  // browser, so it can also fail or be abandoned here.
   const connect = async (e) => {
     e.preventDefault();
     if (!valid) return;
     setStarting(true);
-    await beginAuthorization(clientId.trim(), scopes);
+    setError(null);
+    try {
+      await beginAuthorization(clientId.trim(), scopes);
+    } catch (err) {
+      setError(err.message);
+      setStarting(false);
+    }
   };
 
   return (
@@ -75,6 +84,7 @@ function ConnectForm({ scopes }) {
               {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Connect'}
             </button>
           </form>
+          {error && <p className="mt-2 text-xs font-bold text-amber-400">{error}</p>}
         </li>
       </ol>
     </div>
