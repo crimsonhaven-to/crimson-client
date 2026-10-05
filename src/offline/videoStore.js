@@ -1,11 +1,15 @@
-// Movies and episodes kept on this device, in Cache Storage like the music, so
-// the page and the service worker can both read them. Keys live under
-// /video-offline/<entry id>/, never the source's URL, because those are signed
-// and expire long before the copy does.
+// Movies and episodes kept on this device, in the same device cache as the
+// music (deviceCache.js), so the page and the service worker can both read
+// them. Keys live under /video-offline/<entry id>/, never the source's URL,
+// because those are signed and expire long before the copy does.
 //
 // A HLS copy is stored as its playlists plus one cache entry per segment,
 // already decrypted, so it plays from here with hls.js and never needs the
 // whole video in memory. An mp4 copy is one entry.
+import { deleteCache, openCache, supported } from '../deviceCache';
+
+export { supported };
+
 export const VIDEO_CACHE = 'crimson-video-downloads';
 
 const PREFIX = '/video-offline/';
@@ -27,9 +31,7 @@ export const isOfflineUrl = (url) => {
   }
 };
 
-export const supported = () => typeof caches !== 'undefined';
-
-const open = () => caches.open(VIDEO_CACHE);
+const open = () => openCache(VIDEO_CACHE);
 
 export async function putBytes(key, bytes, type = 'application/octet-stream') {
   await (await open()).put(key, new Response(bytes, { headers: { 'Content-Type': type } }));
@@ -66,5 +68,5 @@ export async function forgetPoster(titleKey) {
 
 export async function forgetAll() {
   if (!supported()) return;
-  await caches.delete(VIDEO_CACHE);
+  await deleteCache(VIDEO_CACHE);
 }

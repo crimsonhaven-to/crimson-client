@@ -7,6 +7,7 @@ import CacheLoader from './CacheLoader';
 import { itemLabel } from './items';
 import { savePosition } from './queue';
 import { getState, nextKept, useVideoDownloads } from './store';
+import { servesFiles } from '../deviceCache';
 import { fileKey, playlistKey, read, subtitleKey } from './videoStore';
 
 const CrimsonPlayer = lazy(() => import('../watch/CrimsonPlayer'));
@@ -15,6 +16,7 @@ const SAVE_EVERY_MS = 5000;
 
 // HLS copies play through CacheLoader; an mp4 copy and the subtitles become
 // object URLs of the stored blobs, which are disk-backed, not read into memory.
+// The desktop app serves the mp4 file itself, with seeking, so it needs no blob.
 function useOfflineMedia(entry) {
   const [media, setMedia] = useState(null);
   const [error, setError] = useState(null);
@@ -35,9 +37,15 @@ function useOfflineMedia(entry) {
       urls.push(url);
       return url;
     };
+    const mp4Url = async () => {
+      if (!servesFiles()) return objectUrl(fileKey(id));
+      const res = await read(fileKey(id));
+      await res?.body?.cancel();
+      return res ? fileKey(id) : null;
+    };
     (async () => {
       try {
-        const src = format === 'hls' ? playlistKey(id, 'index') : await objectUrl(fileKey(id));
+        const src = format === 'hls' ? playlistKey(id, 'index') : await mp4Url();
         if (!src) throw new Error('This copy is missing from the device. Remove it and save it again.');
         const tracks = [];
         for (const sub of subtitles || []) {
