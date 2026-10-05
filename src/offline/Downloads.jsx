@@ -5,7 +5,9 @@ import {
 } from 'lucide-react';
 
 import { HubShell } from '../browse/hubKit';
+import { estimate as estimateStorage } from '../deviceCache';
 import { formatBytes } from '../formatBytes';
+import DownloadFolder from '../native/DownloadFolder';
 import { useTitle } from '../useTitle';
 import { itemLabel } from './items';
 import OfflinePoster from './OfflinePoster';
@@ -13,11 +15,11 @@ import { removeDownload, removeTitle, retryDownload } from './queue';
 import { titlesOf, useVideoDownloads } from './store';
 import { supported } from './videoStore';
 
-function useStorageEstimate(entries) {
+function useStorageEstimate(entries, moves) {
   const [estimate, setEstimate] = useState(null);
   useEffect(() => {
-    navigator.storage?.estimate?.().then(setEstimate).catch(() => {});
-  }, [entries]);
+    estimateStorage().then(setEstimate).catch(() => {});
+  }, [entries, moves]);
   return estimate;
 }
 
@@ -121,7 +123,8 @@ function TitleCard({ title, progress }) {
 export default function Downloads() {
   useTitle('Downloads');
   const { entries, progress, waiting } = useVideoDownloads();
-  const estimate = useStorageEstimate(entries);
+  const [moves, setMoves] = useState(0);
+  const estimate = useStorageEstimate(entries, moves);
   const titles = titlesOf(entries);
   const subtitle = estimate?.quota
     ? `${formatBytes(estimate.usage)} of ${formatBytes(estimate.quota)} used on this device`
@@ -150,9 +153,11 @@ export default function Downloads() {
       )}
 
       <p className="text-[11px] text-crimson-700 font-medium max-w-2xl">
-        Downloads live in this browser only. They run while Crimson Haven is open, pick up where they stopped the
-        next time you open it, and are deleted from the device when you sign out.
+        Downloads live {window.CrimsonNative ? 'in a folder on this device' : 'in this browser only'}. They run while
+        Crimson Haven is open, pick up where they stopped the next time you open it, and are deleted from the device
+        when you sign out.
       </p>
+      <DownloadFolder onMoved={() => setMoves((n) => n + 1)} />
     </HubShell>
   );
 }

@@ -2,7 +2,9 @@
 import { useEffect, useState } from 'react';
 import { Loader2, Smartphone } from 'lucide-react';
 
+import { estimate } from '../deviceCache';
 import { formatBytes } from '../formatBytes';
+import DownloadFolder from '../native/DownloadFolder';
 import { forgetDownloads, useDownloads } from './downloads';
 import { PRELOAD_CHOICES, preloadCount, setPreloadCount } from './preload';
 import { supported } from './trackStore';
@@ -10,7 +12,7 @@ import { supported } from './trackStore';
 function useStorageUsed(stored) {
   const [usage, setUsage] = useState(null);
   useEffect(() => {
-    navigator.storage?.estimate?.().then((e) => setUsage(e.usage ?? null), () => {});
+    estimate().then((e) => setUsage(e?.usage ?? null), () => {});
   }, [stored]);
   return usage;
 }
@@ -83,6 +85,7 @@ export default function DeviceCard() {
             {downloads.failed} {downloads.failed === 1 ? 'song' : 'songs'} could not be downloaded. They are tried again next time the app opens online.
           </p>
         )}
+        <DownloadFolder />
         {playlistCount > 0 && (
           <button onClick={removeAll} className="text-[10px] font-black uppercase tracking-widest text-crimson-700 hover:text-crimson-400">
             Remove all downloads
