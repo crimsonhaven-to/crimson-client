@@ -157,6 +157,11 @@ body {
   }
 }
 
+/* Paused, not removed, so the blobs resume from where they stood on focus. */
+.mesh-bg.is-paused .mesh-blob {
+  animation-play-state: paused;
+}
+
 /* Lite background (useLiteBackground). Clearing will-change frees the GPU textures;
    the wide gradient falloff keeps it smooth without the blur. */
 .mesh-bg.is-lite .mesh-blob {

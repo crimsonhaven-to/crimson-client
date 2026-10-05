@@ -35,7 +35,9 @@ export default function MiniPlayer() {
         className="fixed inset-x-0 bottom-0 z-[70] bg-crimson-950/95 backdrop-blur-xl border-t border-crimson-900/60 shadow-[0_-10px_30px_rgba(0,0,0,0.4)]"
         style={{ height: BAR_HEIGHT, paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="absolute top-0 left-0 h-0.5 bg-crimson-500 transition-[width] duration-300" style={{ width: `${progress}%` }} />
+        {/* No transition: one that outlasts the gap between timeupdates (about
+            250 ms) keeps the page repainting every frame for as long as music plays. */}
+        <div className="absolute top-0 left-0 h-0.5 w-full origin-left bg-crimson-500" style={{ transform: `scaleX(${progress / 100})` }} />
         <div className="max-w-7xl mx-auto h-full px-3 sm:px-6 flex items-center gap-3">
           <Link to="/music/now" className="flex items-center gap-3 min-w-0 flex-grow group" aria-label="Open Now Playing">
             <Cover src={track.cover_url} className="w-12 h-12 rounded-lg flex-shrink-0" />
