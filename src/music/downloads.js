@@ -41,12 +41,12 @@ function emit(patch) {
   for (const listener of listeners) listener();
 }
 
-function subscribe(listener) {
+export function subscribe(listener) {
   listeners.add(listener);
   return () => listeners.delete(listener);
 }
 
-const getState = () => state;
+export const getState = () => state;
 
 export function useDownloads() {
   return useSyncExternalStore(subscribe, getState, getState);
