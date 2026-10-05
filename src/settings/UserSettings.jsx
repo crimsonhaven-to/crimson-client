@@ -9,6 +9,7 @@ import { useMusicAccess } from '../music/hooks';
 import PrefToggle from '../account/PrefToggle';
 import CrossfadeCard from '../music/CrossfadeCard';
 import { hasDownloads } from '../music/downloads';
+import NativeBackendCard from './NativeBackendCard';
 
 // Served same-origin from /helper because the repo is private, so GitHub Releases
 // wouldn't be reachable.
@@ -169,6 +170,8 @@ const UserSettings = () => {
       </div>
 
       <DisplayNameCard />
+
+      <NativeBackendCard />
 
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/40 p-8 sm:p-10 rounded-[2.5rem] space-y-10 shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full"></div>

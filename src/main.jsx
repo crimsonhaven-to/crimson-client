@@ -22,7 +22,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 );
 
 // The service worker makes the app installable and never proxies the cross-origin backend API.
-if ('serviceWorker' in navigator && import.meta.env.PROD) {
+// The desktop app ships the shell on disk already, so it has nothing to install or precache.
+if ('serviceWorker' in navigator && import.meta.env.PROD && !window.CrimsonNative) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('Service worker registration failed:', err);

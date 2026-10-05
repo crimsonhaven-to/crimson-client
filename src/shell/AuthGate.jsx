@@ -6,6 +6,7 @@ import { HOSTED_IN } from '../api/config';
 import LoginWall from '../account/Login';
 import VerifyEmail from '../account/VerifyEmail';
 import ResetPassword from '../account/ResetPassword';
+import SwitchBackendLink from '../native/SwitchBackendLink';
 
 export default function AuthGate() {
   return (
@@ -20,7 +21,8 @@ export default function AuthGate() {
           <Route path="*" element={<LoginWall />} />
         </Routes>
       </div>
-      <footer className="w-full text-center py-6 px-4 z-10 relative">
+      <footer className="w-full text-center py-6 px-4 z-10 relative space-y-3">
+        <SwitchBackendLink />
         <p className="text-[10px] font-medium tracking-wide text-crimson-700 uppercase">
           crimsonhaven · members only · your data stays in {HOSTED_IN}
         </p>
