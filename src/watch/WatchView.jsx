@@ -6,6 +6,7 @@ import { apiFetch } from '../api/client';
 import { fetchSubtitles, fetchSkipTimes } from './media';
 import { usePlaybackPrefs } from '../account/playbackPrefs';
 import { setWatchActivity, clearWatchActivity } from '../presence/discordPresence';
+import { clearVideo, showVideo } from './videoMediaSession';
 import { stripHtml } from '../stripHtml';
 import { formatAirDate } from '../formatAirDate';
 import WatchlistButton from '../library/WatchlistButton';
@@ -196,7 +197,11 @@ const WatchView = ({
       totalSeasons,
       startedAt: Date.now(),
     });
-    return () => clearWatchActivity();
+    showVideo({ title: displayTitle, detail: isMovie ? '' : `Season ${currentSeason} · Episode ${currentEpisode}` });
+    return () => {
+      clearWatchActivity();
+      clearVideo();
+    };
   }, [displayTitle, isMovie, currentSeason, currentEpisode, totalSeasons]);
 
   const confirmedTicketsRef = useRef(new Set());

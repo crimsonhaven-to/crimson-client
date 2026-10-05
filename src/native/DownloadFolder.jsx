@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FolderOpen, Loader2 } from 'lucide-react';
 
-// IPC errors arrive wrapped as "Error invoking remote method '...': Error: ...".
-const plainMessage = (err) => String(err?.message || err).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
-
 // The desktop app keeps downloads as files in a folder that can move, for
 // example to a bigger drive. The web build has no such folder.
 export default function DownloadFolder({ onMoved }) {
@@ -28,7 +25,7 @@ export default function DownloadFolder({ onMoved }) {
         onMoved?.();
       }
     } catch (err) {
-      setError(plainMessage(err));
+      setError(err.message);
     } finally {
       setMoving(false);
     }

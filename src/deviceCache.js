@@ -31,9 +31,8 @@ function quotaError(err) {
   return new DOMException('Not enough space on the download drive.', 'QuotaExceededError');
 }
 
-async function writeBody(media, id, body) {
-  if (!body) return;
-  const reader = body.getReader();
+// Writes into an open native write, gathering small network chunks first.
+export function fileWriter(media, id) {
   let parts = [];
   let size = 0;
   const flush = async () => {
@@ -48,25 +47,32 @@ async function writeBody(media, id, body) {
     size = 0;
     await media.append(id, chunk);
   };
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    parts.push(value);
-    size += value.byteLength;
-    if (size >= BATCH_BYTES) await flush();
-  }
-  await flush();
+  return {
+    async write(bytes) {
+      parts.push(bytes);
+      size += bytes.byteLength;
+      if (size >= BATCH_BYTES) await flush();
+    },
+    async close() {
+      await flush();
+      await media.finish(id);
+    },
+    abort: () => media.abort(id),
+  };
 }
 
 function fileCache(media, name) {
   return {
     async put(key, response) {
-      const id = await media.begin(name, key);
+      const writer = fileWriter(media, await media.begin(name, key));
       try {
-        await writeBody(media, id, response.body);
-        await media.finish(id);
+        if (response.body) {
+          const reader = response.body.getReader();
+          for (let next = await reader.read(); !next.done; next = await reader.read()) await writer.write(next.value);
+        }
+        await writer.close();
       } catch (err) {
-        await media.abort(id).catch(() => {});
+        await writer.abort().catch(() => {});
         throw quotaError(err);
       }
     },

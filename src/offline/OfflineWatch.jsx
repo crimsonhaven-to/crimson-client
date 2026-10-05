@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { AlertTriangle, ArrowLeft, WifiOff } from 'lucide-react';
 
 import { useTitle } from '../useTitle';
+import { clearVideo, showVideo } from '../watch/videoMediaSession';
 import CacheLoader from './CacheLoader';
 import { itemLabel } from './items';
 import { savePosition } from './queue';
@@ -86,6 +87,13 @@ function OfflineCopy({ id }) {
   const next = nextKept(entries, id);
   const { media, error } = useOfflineMedia(entry);
   useTitle(entry ? `Watch ${entry.titleName}` : 'Downloads');
+  const mediaTitle = entry?.titleName;
+  const mediaDetail = entry && entry.kind !== 'movie' ? itemLabel(entry) : '';
+  useEffect(() => {
+    if (!mediaTitle) return undefined;
+    showVideo({ title: mediaTitle, detail: mediaDetail });
+    return clearVideo;
+  }, [mediaTitle, mediaDetail]);
 
   // Read once: the saved position moves while the copy plays, and a moving
   // startAt would seek the player back.
