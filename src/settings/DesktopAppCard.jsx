@@ -11,10 +11,12 @@ const KIND_LABELS = {
   deb: 'Debian, Ubuntu (.deb)',
   rpm: 'Fedora, openSUSE (.rpm)',
   dmg: 'macOS (.dmg)',
+  apk: 'Android (.apk)',
 };
 
 function platformOfThisDevice() {
   const ua = navigator.userAgent;
+  if (/Android/i.test(ua)) return 'android';
   if (/Windows/i.test(ua)) return 'windows';
   if (/Mac OS X|Macintosh/i.test(ua)) return 'macos';
   if (/Linux/i.test(ua) && !/Android/i.test(ua)) return 'linux';
@@ -44,11 +46,12 @@ export default function DesktopAppCard() {
       <div className="space-y-3 relative z-10">
         <div className="flex items-center gap-3 text-crimson-500">
           <MonitorDown className="w-6 h-6" />
-          <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Desktop App</h3>
+          <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">The App</h3>
         </div>
         <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
-          Version {release.version}. Every source works without the browser extension, downloads become real
-          files that are never evicted, and Discord presence needs no helper. It updates itself.
+          Version {release.version}, for desktop and Android. Every source works without the browser extension,
+          and downloads become real files that are never evicted. The desktop app updates itself and needs no
+          Discord helper.
         </p>
       </div>
       <ul className="relative z-10 space-y-2">
@@ -71,7 +74,7 @@ export default function DesktopAppCard() {
       </ul>
       <p className="relative z-10 text-[11px] text-crimson-400/70 leading-relaxed font-medium max-w-md">
         The app is not code signed. Windows may warn on first start: choose <em>More info</em>, then{' '}
-        <em>Run anyway</em>. On macOS, right-click the app and choose <em>Open</em>.
+        <em>Run anyway</em>. On Android, allow installing from your browser when asked.
       </p>
     </div>
   );

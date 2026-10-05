@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { FolderOpen, Loader2 } from 'lucide-react';
 
 // The desktop app keeps downloads as files in a folder that can move, for
-// example to a bigger drive. The web build has no such folder.
+// example to a bigger drive. Android keeps them in the app's own storage, so
+// it shows where without offering a move. The web build has no such folder.
 export default function DownloadFolder({ onMoved }) {
   const media = window.CrimsonNative?.media;
   const [root, setRoot] = useState(null);
@@ -35,11 +36,11 @@ export default function DownloadFolder({ onMoved }) {
     <div className="space-y-1">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="text-[11px] text-crimson-600 font-bold break-all">Saved in {root || '...'}</span>
-        <button onClick={change} disabled={moving}
+        {media.chooseRoot && <button onClick={change} disabled={moving}
           className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300 disabled:opacity-50">
           {moving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FolderOpen className="w-3.5 h-3.5" />}
           {moving ? 'Moving' : 'Change folder'}
-        </button>
+        </button>}
       </div>
       {error && <p className="text-[11px] font-bold text-amber-400">{error}</p>}
     </div>
