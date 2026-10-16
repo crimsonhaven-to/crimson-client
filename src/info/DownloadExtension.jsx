@@ -172,7 +172,7 @@ export default function DownloadExtension() {
       </div>
 
       <div className="flex items-center justify-between gap-4 pt-2">
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 flex items-center gap-2">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 flex items-center gap-2">
           <ShieldCheck className="w-3.5 h-3.5" /> Desktop Chromium &amp; Firefox
         </p>
         <Link

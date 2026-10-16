@@ -28,7 +28,7 @@ export default function AboutPage() {
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 space-y-2">
         <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter leading-none">About <span className="text-crimson-500">CrimsonHaven</span></h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">The architectural design manifest</p>
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">The architectural design manifest</p>
       </div>
 
       <div className="space-y-8 text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium">
@@ -43,12 +43,12 @@ export default function AboutPage() {
             System Specification Diagnostics
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT:</span> React 19 / Vite / Tailwind</p>
-             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">ROUTING:</span> FastAPI Asynchronous Engine</p>
-             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">BLOOD ARCHIVE:</span> 3-Node PostgreSQL HA Coven · Off-Site Crypt Backup</p>
-             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">DOMINION:</span> 3-Node Docker Swarm · Eternal Zero-Interruption CI/CD Ritual</p>
-             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">BACKEND VERSION:</span> {backendVersion}</p>
-             <p className="flex items-center gap-2"><span className="text-crimson-600 font-black">CLIENT VERSION:</span> {CLIENT_VERSION}</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">CLIENT:</span> React 19 / Vite / Tailwind</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">ROUTING:</span> FastAPI Asynchronous Engine</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">BLOOD ARCHIVE:</span> 3-Node PostgreSQL HA Coven · Off-Site Crypt Backup</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">DOMINION:</span> 3-Node Docker Swarm · Eternal Zero-Interruption CI/CD Ritual</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">BACKEND VERSION:</span> {backendVersion}</p>
+             <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">CLIENT VERSION:</span> {CLIENT_VERSION}</p>
           </div>
         </div>
 
@@ -91,7 +91,7 @@ export default function AboutPage() {
                     {latestRelease.tag || latestRelease.name}
                   </span>
                   {latestRelease.published_at && (
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400">
                       {formatReleaseDate(latestRelease.published_at)}
                     </span>
                   )}
@@ -106,7 +106,7 @@ export default function AboutPage() {
             )}
 
             {!changelogLoading && !latestRelease && (
-              <p className="text-sm text-crimson-300/60 italic font-medium">
+              <p className="text-sm text-crimson-400 italic font-medium">
                 "No decrees etched yet, darling, but the first page awaits."
               </p>
             )}
@@ -160,9 +160,9 @@ export default function AboutPage() {
             </p>
           )}
           {health && Object.entries(health).map(([key, value]) => (
-            <p key={key} className="text-crimson-400/80 group">
-              <span className="text-crimson-600 font-black mr-2">/</span> 
-              <span className="font-black uppercase tracking-wider text-crimson-700">{key}:</span>{' '}
+            <p key={key} className="text-crimson-400 group">
+              <span className="text-crimson-400 font-black mr-2">/</span> 
+              <span className="font-black uppercase tracking-wider text-crimson-400">{key}:</span>{' '}
               <span className="text-crimson-100 group-hover:text-white transition-colors">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
             </p>
           ))}

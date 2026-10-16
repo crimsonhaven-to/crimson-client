@@ -24,7 +24,7 @@ export default function CrossfadeCard() {
             <Blend className="w-6 h-6" />
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Crossfade</h3>
           </div>
-          <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+          <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
             Let the last seconds of a song melt into the first of the next, so the music
             never stops between them. The end of a queue, and a song on repeat, still end
             as they always did.
@@ -51,7 +51,7 @@ export default function CrossfadeCard() {
           onChange={(e) => change({ seconds: Number(e.target.value) })}
           className="w-full accent-crimson-500"
         />
-        <div className="flex justify-between text-[10px] font-black text-crimson-700 uppercase tracking-widest tabular-nums">
+        <div className="flex justify-between text-[10px] font-black text-crimson-400 uppercase tracking-widest tabular-nums">
           <span>{MIN_SECONDS}s</span>
           <span>{MAX_SECONDS}s</span>
         </div>
@@ -65,7 +65,7 @@ export default function CrossfadeCard() {
           <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
           </p>
-          <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+          <p className="text-xs text-crimson-400 leading-relaxed font-medium">
             {!works
               ? 'This browser does not let a page fade audio (iPhone and iPad), so songs here switch without a blend.'
               : setting.on

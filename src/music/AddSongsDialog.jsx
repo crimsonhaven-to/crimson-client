@@ -48,12 +48,12 @@ export default function AddSongsDialog({ playlist, onClose, onAdded }) {
           <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">Add songs</p>
           <p className="text-crimson-50 font-bold truncate mt-1">{playlist.name}</p>
         </div>
-        <button onClick={onClose} aria-label="Close" className="p-1 text-crimson-600 hover:text-white"><X className="w-5 h-5" /></button>
+        <button onClick={onClose} aria-label="Close" className="p-1 text-crimson-400 hover:text-white"><X className="w-5 h-5" /></button>
       </div>
 
       <form onSubmit={search} className="p-4 flex gap-2 border-b border-crimson-900/30">
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Artist and song..." autoFocus
-          className="flex-grow min-w-0 px-4 py-2.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-sm text-crimson-50 placeholder-crimson-700 focus:outline-none focus:border-crimson-500" />
+          className="flex-grow min-w-0 px-4 py-2.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-sm text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
         <button type="submit" disabled={searching || !query.trim()} className="px-4 rounded-xl bg-crimson-900/60 hover:bg-crimson-800 text-crimson-200 disabled:opacity-40" aria-label="Search">
           <Search className="w-4 h-4" />
         </button>
@@ -62,11 +62,11 @@ export default function AddSongsDialog({ playlist, onClose, onAdded }) {
       <div className="overflow-y-auto flex-grow p-2 min-h-[12rem]">
         {error && <p className="px-3 py-2 text-xs font-bold text-amber-400">{error}</p>}
         {searching ? (
-          <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 text-crimson-600 animate-spin" /></div>
+          <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 text-crimson-400 animate-spin" /></div>
         ) : results === null ? (
-          <p className="py-12 text-center text-crimson-700 text-sm italic">Search for a song to add it here.</p>
+          <p className="py-12 text-center text-crimson-400 text-sm italic">Search for a song to add it here.</p>
         ) : results.length === 0 ? (
-          <p className="py-12 text-center text-crimson-700 text-sm italic">Nothing found. Try other words.</p>
+          <p className="py-12 text-center text-crimson-400 text-sm italic">Nothing found. Try other words.</p>
         ) : (
           <ul className="space-y-1">
             {results.map((r) => {
@@ -85,7 +85,7 @@ export default function AddSongsDialog({ playlist, onClose, onAdded }) {
       </div>
 
       <div className="p-4 border-t border-crimson-900/40 flex items-center justify-between gap-3">
-        <p className="text-[11px] text-crimson-600">Added songs download in the background.</p>
+        <p className="text-[11px] text-crimson-400">Added songs download in the background.</p>
         <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest">
           Done
         </button>

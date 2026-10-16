@@ -21,7 +21,7 @@ function Blocked({ error }) {
       : error.message;
   return (
     <div className="max-w-xl mx-auto py-32 px-6 text-center space-y-4">
-      <Music className="w-10 h-10 text-crimson-700 mx-auto" />
+      <Music className="w-10 h-10 text-crimson-400 mx-auto" />
       <p className="text-crimson-300 font-bold">{message}</p>
     </div>
   );
@@ -53,7 +53,7 @@ function PlaylistTile({ playlist, downloaded }) {
       </div>
       <div className="min-w-0">
         <p className="text-sm font-bold text-crimson-50 truncate group-hover:text-crimson-300">{playlist.name}</p>
-        <p className="text-[11px] text-crimson-600 truncate">
+        <p className="text-[11px] text-crimson-400 truncate">
           {playlist.ready_count} / {total} ready
           {pending > 0 && ` · ${pending} queued`}
           {playlist.review_count > 0 && <span className="text-amber-400"> · {playlist.review_count} to pick</span>}
@@ -73,7 +73,7 @@ function NewPlaylistTile({ onClick }) {
       </span>
       <span className="block min-w-0">
         <span className="block text-sm font-bold text-crimson-50 group-hover:text-crimson-300">New playlist</span>
-        <span className="block text-[11px] text-crimson-600 truncate">Your own, filled by search</span>
+        <span className="block text-[11px] text-crimson-400 truncate">Your own, filled by search</span>
       </span>
     </button>
   );
@@ -95,7 +95,7 @@ function OfflineHub({ downloads }) {
               <Cover src={playlist.cover_url} className="w-full aspect-square rounded-2xl shadow-xl group-hover:scale-[1.02] transition-transform" />
               <div className="min-w-0">
                 <p className="text-sm font-bold text-crimson-50 truncate group-hover:text-crimson-300">{playlist.name}</p>
-                <p className="text-[11px] text-crimson-600 truncate">
+                <p className="text-[11px] text-crimson-400 truncate">
                   {tracks.filter((t) => downloads.stored.has(t.id)).length} songs on this device
                 </p>
               </div>
@@ -114,7 +114,7 @@ export default function MusicHub() {
   const [creating, setCreating] = useState(false);
 
   if (status.loading) {
-    return <div className="py-32 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Tuning the strings...</div>;
+    return <div className="py-32 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Tuning the strings...</div>;
   }
   // A request that never reached the server has no status: that is being offline.
   if (status.error && !status.error.status) return <OfflineHub downloads={downloads} />;

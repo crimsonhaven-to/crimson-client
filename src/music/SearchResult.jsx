@@ -13,9 +13,9 @@ export default function SearchResult({ result, detail, note, children }) {
         <p className="text-xs text-crimson-500 truncate">
           {result.channel} · {formatTime(result.duration_ms / 1000)}{detail}
         </p>
-        {note && <p className="text-[11px] text-crimson-700 truncate" title={note}>{note}</p>}
+        {note && <p className="text-[11px] text-crimson-400 truncate" title={note}>{note}</p>}
       </div>
-      <a href={result.url} target="_blank" rel="noopener noreferrer" aria-label="Open the source" className="p-2 text-crimson-700 hover:text-crimson-300">
+      <a href={result.url} target="_blank" rel="noopener noreferrer" aria-label="Open the source" className="p-2 text-crimson-400 hover:text-crimson-300">
         <ExternalLink className="w-4 h-4" />
       </a>
       {children}

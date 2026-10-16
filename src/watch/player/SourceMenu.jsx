@@ -41,7 +41,7 @@ export default function SourceMenu({ sources, activeSourceIdx, onPick, onReportB
                 <span className="flex items-center gap-2 truncate">
                   <Layers className="w-3 h-3 shrink-0 text-crimson-500" />
                   <span className="truncate">{group.label}</span>
-                  <span className="text-crimson-500/80">· {group.items.length}</span>
+                  <span className="text-crimson-400">· {group.items.length}</span>
                 </span>
                 <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
               </button>

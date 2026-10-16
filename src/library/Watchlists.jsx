@@ -216,7 +216,7 @@ const WatchlistsPage = () => {
             <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
               Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Favorites</span>
             </h1>
-            <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
+            <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
               <Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />
               {totalCount} item{totalCount === 1 ? '' : 's'} across {lists.length} list{lists.length === 1 ? '' : 's'}
             </p>
@@ -259,18 +259,18 @@ const WatchlistsPage = () => {
       {shows.length > 0 && (
         <div className="sticky top-16 z-30 flex flex-col lg:flex-row lg:items-center gap-3 p-3 rounded-2xl border border-crimson-900/60 bg-crimson-950/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.4)]">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-400 pointer-events-none" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={`Search "${listLabel(effectiveList)}"…`}
-              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
             />
             {query && (
               <button
                 onClick={() => setQuery('')}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-crimson-600 hover:text-white transition-colors active:scale-90"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-crimson-400 hover:text-white transition-colors active:scale-90"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -299,7 +299,7 @@ const WatchlistsPage = () => {
             )}
 
             <div className="flex items-center gap-1.5 p-1 rounded-xl bg-crimson-950/40 border border-crimson-900/60 shrink-0">
-              <ArrowDownUp className="w-3.5 h-3.5 text-crimson-700 ml-1.5" />
+              <ArrowDownUp className="w-3.5 h-3.5 text-crimson-400 ml-1.5" />
               {SORTS.map((s) => {
                 const active = sort === s.key;
                 return (
@@ -355,12 +355,12 @@ const WatchlistsPage = () => {
       )}
 
       {sort === 'manual' && !selectMode && shows.length > 1 && !canDrag && effectiveList !== ALL_LIST && (
-        <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-700">
+        <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-400">
           Clear the search & type filter to drag items into a custom order.
         </p>
       )}
       {sort === 'manual' && effectiveList === ALL_LIST && shows.length > 1 && (
-        <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-700">
+        <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-400">
           Manual ordering is saved per list. Pick a specific list to rearrange it.
         </p>
       )}
@@ -375,7 +375,7 @@ const WatchlistsPage = () => {
             <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">
               "{listLabel(effectiveList)}" is currently empty
             </p>
-            <p className="text-crimson-700 font-medium text-xs">Add shows to this list from any overview or watch page.</p>
+            <p className="text-crimson-400 font-medium text-xs">Add shows to this list from any overview or watch page.</p>
           </div>
           <button
             onClick={() => navigate('/catalogue')}
@@ -394,7 +394,7 @@ const WatchlistsPage = () => {
             <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">
               No matches in "{listLabel(effectiveList)}"
             </p>
-            <p className="text-crimson-700 font-medium text-xs">
+            <p className="text-crimson-400 font-medium text-xs">
               {q
                 ? <>Nothing here matches "<span className="text-crimson-400">{query.trim()}</span>".</>
                 : 'Try a different type filter.'}
@@ -417,7 +417,7 @@ const WatchlistsPage = () => {
                   <h2 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-crimson-500">
                     <Icon className="w-3.5 h-3.5" /> {group.label}
                   </h2>
-                  <span className="text-[10px] font-black text-crimson-700 tabular-nums">{group.items.length}</span>
+                  <span className="text-[10px] font-black text-crimson-400 tabular-nums">{group.items.length}</span>
                   <div className="flex-1 h-px bg-gradient-to-r from-crimson-900/50 to-transparent"></div>
                 </div>
                 <div className={view === 'list'

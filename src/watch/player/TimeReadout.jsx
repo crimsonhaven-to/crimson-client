@@ -14,7 +14,7 @@ export default function TimeReadout({ live, current, duration }) {
   }
   return (
     <span className="text-[11px] font-mono font-black tracking-tighter tabular-nums bg-crimson-950/60 px-3 py-1.5 rounded-lg border border-white/5 ml-1">
-      <span className="text-crimson-50">{formatPlaybackTime(current)}</span> <span className="text-crimson-500 mx-0.5">/</span> <span className="text-crimson-300/80">{formatPlaybackTime(duration)}</span>
+      <span className="text-crimson-50">{formatPlaybackTime(current)}</span> <span className="text-crimson-500 mx-0.5">/</span> <span className="text-crimson-400">{formatPlaybackTime(duration)}</span>
     </span>
   );
 }

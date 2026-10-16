@@ -42,7 +42,7 @@ const AccountPage = () => {
         <div className="border-b border-crimson-900/30 pb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-2 text-center sm:text-left">
             <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Your <span className="text-crimson-500">Sanctuary</span></h2>
-            <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Synchronized with the dark network</p>
+            <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Synchronized with the dark network</p>
           </div>
           <button 
             onClick={logout}
@@ -63,7 +63,7 @@ const AccountPage = () => {
             
             <div className="space-y-8 font-mono text-xs relative z-10">
               <div className="space-y-3">
-                <p className="text-[10px] text-crimson-600 font-black uppercase tracking-[0.2em] mb-1 opacity-70">
+                <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.2em] mb-1">
                   {profile?.email ? 'Email (Account ID)' : 'Public Signature (Account ID)'}
                 </p>
                 <div className="p-5 bg-crimson-950/80 border border-crimson-900/60 rounded-2xl text-crimson-400 break-all select-all font-mono shadow-inner">
@@ -73,11 +73,11 @@ const AccountPage = () => {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
-                  <p className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Favorites</p>
+                  <p className="text-[9px] text-crimson-400 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Favorites</p>
                   <p className="text-4xl font-black text-crimson-50 tracking-tighter">{profile?.favorites_count || 0}</p>
                 </div>
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
-                  <p className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Manifests</p>
+                  <p className="text-[9px] text-crimson-400 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Manifests</p>
                   <p className="text-4xl font-black text-crimson-50 tracking-tighter">{profile?.progress_count || 0}</p>
                 </div>
               </div>
@@ -90,7 +90,7 @@ const AccountPage = () => {
             </div>
             <div className="space-y-2">
               <h4 className="text-sm font-black text-crimson-100 uppercase tracking-widest">Security Notice</h4>
-              <p className="text-xs text-crimson-300/60 leading-relaxed font-medium">
+              <p className="text-xs text-crimson-400 leading-relaxed font-medium">
                 {profile?.email
                   ? 'Your account is secured with your email and password. Keep them safe, and use the reset link if you ever forget your password.'
                   : 'Your account is bound to your 12-word mnemonic. We do not store your private keys. If you lose your mnemonic, your data is lost forever in the void.'}
@@ -111,7 +111,7 @@ const AccountPage = () => {
     <div className="max-w-md w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="text-center space-y-3">
         <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Establish <span className="text-crimson-500">Link</span></h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Access your personal archives via mnemonic</p>
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Access your personal archives via mnemonic</p>
       </div>
 
       {!showNewMnemonic ? (
@@ -123,7 +123,7 @@ const AccountPage = () => {
                 placeholder="word1 word2 word3..." 
                 value={mnemonic}
                 onChange={(e) => setMnemonic(e.target.value)}
-                className="w-full h-32 bg-crimson-950/30 border border-crimson-900/50 rounded-3xl p-5 text-crimson-50 placeholder-crimson-500/50 focus:outline-none focus:border-crimson-500 focus:shadow-[0_0_30px_rgba(255,0,60,0.1)] transition-all font-bold resize-none text-sm backdrop-blur-md"
+                className="w-full h-32 bg-crimson-950/30 border border-crimson-900/50 rounded-3xl p-5 text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-500 focus:shadow-[0_0_30px_rgba(255,0,60,0.1)] transition-all font-bold resize-none text-sm backdrop-blur-md"
               />
             </div>
             <button 
@@ -148,7 +148,7 @@ const AccountPage = () => {
 
           <div className="relative py-4">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-crimson-900/30"></div></div>
-            <div className="relative flex justify-center"><span className="bg-crimson-950 px-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-800">New Vessel</span></div>
+            <div className="relative flex justify-center"><span className="bg-crimson-950 px-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">New Vessel</span></div>
           </div>
 
           <button 
@@ -167,7 +167,7 @@ const AccountPage = () => {
               <ShieldCheck className="w-8 h-8 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
               <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Secret Manifest</h3>
             </div>
-            <p className="text-xs text-crimson-300 font-medium leading-relaxed italic relative z-10 opacity-70">
+            <p className="text-xs text-crimson-400 font-medium leading-relaxed italic relative z-10">
               "This is your only key. If you lose it, your manifestations will be lost to the abyss. Store it safely."
             </p>
             <div className="p-6 bg-crimson-950/80 rounded-2xl text-crimson-50 font-mono text-sm leading-relaxed border border-crimson-900 shadow-inner break-words select-all relative z-10">
@@ -192,7 +192,7 @@ const AccountPage = () => {
           
           <button 
             onClick={() => setShowNewMnemonic(false)}
-            className="w-full text-center text-[10px] text-crimson-700 hover:text-crimson-500 transition-colors font-black uppercase tracking-[0.2em]"
+            className="w-full text-center text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]"
           >
             Return to Link Establishment
           </button>

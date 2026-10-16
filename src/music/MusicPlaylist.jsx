@@ -24,7 +24,7 @@ function StatusCell({ track, onReview, onRetry }) {
     case 'ready':
       return null;
     case 'pending':
-      return <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-crimson-600"><Clock className="w-3 h-3" /> Queued</span>;
+      return <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-crimson-400"><Clock className="w-3 h-3" /> Queued</span>;
     case 'working':
       return <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-crimson-400"><Loader2 className="w-3 h-3 animate-spin" /> Fetching</span>;
     case 'review':
@@ -69,7 +69,7 @@ export default function MusicPlaylist() {
   }, [live.playlist, live.tracks]);
 
   if (loading) {
-    return <div className="py-32 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Opening the playlist...</div>;
+    return <div className="py-32 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Opening the playlist...</div>;
   }
   if ((error && !offline) || !playlist) {
     return (
@@ -173,7 +173,7 @@ export default function MusicPlaylist() {
             )}
             {!offline && (
               <button disabled={busy} onClick={remove} aria-label="Remove playlist" title="Remove playlist"
-                className="p-3 rounded-2xl text-crimson-700 hover:text-crimson-400 hover:bg-crimson-900/30 disabled:opacity-40">
+                className="p-3 rounded-2xl text-crimson-400 hover:text-crimson-200 hover:bg-crimson-900/30 disabled:opacity-40">
                 <Trash2 className="w-4 h-4" />
               </button>
             )}
@@ -204,7 +204,7 @@ export default function MusicPlaylist() {
                 className="flex items-center gap-3 min-w-0 flex-grow text-left disabled:cursor-default group"
                 aria-label={playable ? `Play ${track.title}` : track.title}
               >
-                <span className="w-6 text-right text-[11px] font-bold text-crimson-700 tabular-nums flex-shrink-0">
+                <span className="w-6 text-right text-[11px] font-bold text-crimson-400 tabular-nums flex-shrink-0">
                   {isCurrent && player.playing ? <Play className="w-3.5 h-3.5 inline text-crimson-500" fill="currentColor" /> : index + 1}
                 </span>
                 <Cover src={track.cover_url} className="w-10 h-10 rounded-md flex-shrink-0" />
@@ -212,7 +212,7 @@ export default function MusicPlaylist() {
                   <span className={`block text-sm font-bold truncate ${isCurrent ? 'text-crimson-400' : playable ? 'text-crimson-100 group-hover:text-white' : 'text-crimson-500'}`}>
                     {track.title}
                   </span>
-                  <span className="block text-xs text-crimson-600 truncate">
+                  <span className="block text-xs text-crimson-400 truncate">
                     {track.artists.join(', ')}{track.album ? ` · ${track.album}` : ''}
                     {track.removed_upstream && <span className="ml-2 text-[9px] font-black uppercase tracking-widest text-amber-400/80">Gone from Spotify</span>}
                   </span>
@@ -229,11 +229,11 @@ export default function MusicPlaylist() {
               {own && (
                 <button disabled={busy} onClick={() => run(() => musicApi.removeSong(playlist.id, track.id))}
                   aria-label={`Remove ${track.title}`} title="Remove from playlist"
-                  className="p-1.5 rounded-lg text-crimson-700 hover:text-crimson-300 hover:bg-crimson-900/40 disabled:opacity-40 flex-shrink-0">
+                  className="p-1.5 rounded-lg text-crimson-400 hover:text-crimson-300 hover:bg-crimson-900/40 disabled:opacity-40 flex-shrink-0">
                   <X className="w-4 h-4" />
                 </button>
               )}
-              <span className="hidden sm:block w-12 text-right text-[11px] text-crimson-700 tabular-nums flex-shrink-0">{formatTime(track.duration_ms / 1000)}</span>
+              <span className="hidden sm:block w-12 text-right text-[11px] text-crimson-400 tabular-nums flex-shrink-0">{formatTime(track.duration_ms / 1000)}</span>
             </li>
           );
         })}

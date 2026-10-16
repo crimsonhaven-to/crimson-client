@@ -51,7 +51,7 @@ export default function LumiSecret() {
     <div className="relative w-full min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-black via-crimson-950 to-black px-6 py-24 text-center">
       <div className="pointer-events-none absolute h-[60vmin] w-[60vmin] rounded-full bg-crimson-600/20 blur-3xl" />
 
-      <p className="z-10 mb-6 text-xs font-black uppercase tracking-[0.4em] text-crimson-500/80 animate-pulse">
+      <p className="z-10 mb-6 text-xs font-black uppercase tracking-[0.4em] text-crimson-400 animate-pulse">
         ✦ A Secret Audience ✦
       </p>
 
@@ -72,7 +72,7 @@ export default function LumiSecret() {
       <h1 className="z-10 mt-8 font-black uppercase tracking-widest text-3xl sm:text-4xl text-crimson-100">
         Luminas Crimsonveil
       </h1>
-      <p className="z-10 mt-1 text-xs font-bold uppercase tracking-[0.3em] text-crimson-500/80">
+      <p className="z-10 mt-1 text-xs font-bold uppercase tracking-[0.3em] text-crimson-400">
         {title}
       </p>
 
@@ -89,7 +89,7 @@ export default function LumiSecret() {
         </Link>
       </div>
 
-      <p className="z-10 mt-6 text-[0.65rem] uppercase tracking-[0.3em] text-crimson-700">
+      <p className="z-10 mt-6 text-[0.65rem] uppercase tracking-[0.3em] text-crimson-400">
         (click the empress: she enjoys the attention)
       </p>
     </div>

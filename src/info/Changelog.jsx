@@ -61,7 +61,7 @@ function renderInline(text, keyPrefix) {
 
 function renderMarkdown(body) {
   if (!body || !body.trim()) {
-    return <p className="italic text-crimson-300/40">No notes were left for this release.</p>;
+    return <p className="italic text-crimson-400">No notes were left for this release.</p>;
   }
   const lines = body.replace(/\r\n/g, '\n').split('\n');
   const blocks = [];
@@ -178,11 +178,11 @@ function ReleaseEntry({ entry, latest }) {
         <h3 className="text-xl sm:text-2xl font-black text-crimson-50 tracking-tight mb-3 leading-tight">{entry.name}</h3>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 mb-6">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 mb-6">
         {entry.published_at && (
           <span className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> {formatReleaseDate(entry.published_at)}</span>
         )}
-        {entry.author && <span className="text-crimson-700">Inscribed by {entry.author}</span>}
+        {entry.author && <span className="text-crimson-400">Inscribed by {entry.author}</span>}
       </div>
 
       <div className="text-sm sm:text-base text-crimson-100/70 font-medium space-y-4">
@@ -213,7 +213,7 @@ export default function ChangelogPage() {
       <div className="border-b border-crimson-900/30 pb-8 space-y-3">
         <Link
           to="/about"
-          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-600 hover:text-crimson-400 transition-colors mb-2"
+          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 hover:text-crimson-200 transition-colors mb-2"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to the Haven
         </Link>
@@ -221,7 +221,7 @@ export default function ChangelogPage() {
           <ScrollText className="w-10 h-10 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]" />
           The <span className="text-crimson-500">Chronicle</span>
         </h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">
           Every decree the Queen has etched into the Haven
         </p>
       </div>
@@ -251,16 +251,16 @@ export default function ChangelogPage() {
             <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
             <div className="absolute inset-0 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-600 animate-pulse">Unsealing the chronicle</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 animate-pulse">Unsealing the chronicle</p>
         </div>
       )}
 
       {/* The backend has no GITHUB_TOKEN. */}
       {!loading && notConfigured && (
         <div className="text-center py-16 space-y-5 bg-crimson-950/30 border border-crimson-900/40 rounded-[2.5rem] px-8">
-          <Moon className="w-12 h-12 text-crimson-700 mx-auto" />
+          <Moon className="w-12 h-12 text-crimson-400 mx-auto" />
           <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tight">The Chronicle Slumbers</h3>
-          <p className="text-sm text-crimson-300/60 font-medium max-w-md mx-auto leading-relaxed italic">
+          <p className="text-sm text-crimson-400 font-medium max-w-md mx-auto leading-relaxed italic">
             "The archive is sealed for now, little mortal. My scribes have yet to be granted their quill.
             Return soon, and the chronicle shall awaken."
           </p>
@@ -271,14 +271,14 @@ export default function ChangelogPage() {
         <div className="text-center py-16 space-y-4 bg-crimson-500/5 border border-crimson-500/20 rounded-[2.5rem] px-8">
           <AlertCircle className="w-10 h-10 text-crimson-500 mx-auto" />
           <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400">System Message: {error}</p>
-          <p className="text-sm text-crimson-300/50 italic">The chronicle could not be summoned. Try again in a moment.</p>
+          <p className="text-sm text-crimson-400 italic">The chronicle could not be summoned. Try again in a moment.</p>
         </div>
       )}
 
       {!loading && !notConfigured && !error && entries.length === 0 && (
         <div className="text-center py-16 space-y-4 bg-crimson-950/30 border border-crimson-900/40 rounded-[2.5rem] px-8">
-          <ScrollText className="w-12 h-12 text-crimson-700 mx-auto" />
-          <p className="text-sm text-crimson-300/60 font-medium italic">"No decrees have been etched yet, darling. The first page awaits."</p>
+          <ScrollText className="w-12 h-12 text-crimson-400 mx-auto" />
+          <p className="text-sm text-crimson-400 font-medium italic">"No decrees have been etched yet, darling. The first page awaits."</p>
         </div>
       )}
 

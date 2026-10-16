@@ -15,7 +15,7 @@ export default function AutoNextCard({ countdown, nextLabel, onPlayNow, onCancel
         <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">Up Next</p>
       </div>
       <p className="text-sm font-black text-crimson-50 truncate mb-1.5">{nextLabel || 'Next Episode'}</p>
-      <p className="text-[11px] font-bold text-crimson-300/70 mb-4">
+      <p className="text-[11px] font-bold text-crimson-400 mb-4">
         Manifesting in <span className="text-crimson-400 tabular-nums font-black">{countdown}</span>s
       </p>
       <div className="flex items-center gap-2">

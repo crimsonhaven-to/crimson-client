@@ -87,7 +87,7 @@ const ActivityChart = ({ series }) => {
                   style={{ height: `${d.failures > 0 ? Math.max(failH, 2) : 0}%` }}
                 />
               </div>
-              <p className={`text-[8px] font-black text-crimson-700 text-center mt-1.5 truncate ${i % labelStep === 0 ? '' : 'invisible'}`}>
+              <p className={`text-[8px] font-black text-crimson-400 text-center mt-1.5 truncate ${i % labelStep === 0 ? '' : 'invisible'}`}>
                 {label}
               </p>
             </div>
@@ -95,7 +95,7 @@ const ActivityChart = ({ series }) => {
         })}
       </div>
       <div className="flex items-center gap-5 mt-4">
-        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-crimson-600">
+        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-crimson-400">
           <span className="inline-block w-2.5 h-2.5 rounded-sm bg-crimson-900/60" /> All events
         </span>
         <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-crimson-400">
@@ -182,7 +182,7 @@ export default function SecurityTab({ notify }) {
         </div>
         <div className="flex items-center gap-4">
           {stats?.retention_days && (
-            <p className="text-[9px] font-black uppercase tracking-widest text-crimson-800">
+            <p className="text-[9px] font-black uppercase tracking-widest text-crimson-400">
               Ledger keeps {stats.retention_days} days
             </p>
           )}
@@ -210,13 +210,13 @@ export default function SecurityTab({ notify }) {
       <section className="space-y-4">
         <SectionHeading icon={Gauge}>Activity at the Gates</SectionHeading>
         {loadingStats && !stats ? (
-          <div className="py-16 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Consulting the ledger…</div>
+          <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Consulting the ledger…</div>
         ) : (
           <ActivityChart series={stats?.series || []} />
         )}
         {failureTypes.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pl-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-crimson-700">Denials by kind:</span>
+            <span className="text-[9px] font-black uppercase tracking-widest text-crimson-400">Denials by kind:</span>
             {failureTypes.map((t) => (
               <button key={t.event_type} onClick={() => setType(t.event_type)} title="Filter the ledger to this kind" className="hover:scale-105 transition-transform">
                 <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${TONE_CHIP[eventMeta(t.event_type).tone]}`}>
@@ -241,7 +241,7 @@ export default function SecurityTab({ notify }) {
               >
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-sm font-black text-crimson-50 font-mono truncate">
-                    <span className="text-crimson-700 mr-2">#{i + 1}</span>{o.ip}
+                    <span className="text-crimson-400 mr-2">#{i + 1}</span>{o.ip}
                   </span>
                   <span className="text-[10px] font-black uppercase tracking-widest text-crimson-500 whitespace-nowrap">{o.count} denial{o.count === 1 ? '' : 's'}</span>
                 </div>
@@ -251,12 +251,12 @@ export default function SecurityTab({ notify }) {
                       {eventMeta(t).label} · {n}
                     </span>
                   ))}
-                  <span className="text-[9px] font-bold text-crimson-700 ml-auto">last seen {fmtDate(o.last_seen)}</span>
+                  <span className="text-[9px] font-bold text-crimson-400 ml-auto">last seen {fmtDate(o.last_seen)}</span>
                 </div>
               </button>
             ))}
             {(!stats?.top_ips || stats.top_ips.length === 0) && !loadingStats && (
-              <p className="py-10 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No offenders in this window, the gates stand quiet</p>
+              <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No offenders in this window, the gates stand quiet</p>
             )}
           </div>
         </section>
@@ -273,7 +273,7 @@ export default function SecurityTab({ notify }) {
               </div>
             ))}
             {(!stats?.top_identities || stats.top_identities.length === 0) && !loadingStats && (
-              <p className="py-10 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No souls under siege</p>
+              <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No souls under siege</p>
             )}
           </div>
         </section>
@@ -287,12 +287,12 @@ export default function SecurityTab({ notify }) {
             onSubmit={(e) => { e.preventDefault(); setOffset(0); setQuery(search); }}
             className="relative flex-grow min-w-[200px]"
           >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-600" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-400" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search identity or IP…"
-              className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all"
+              className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all"
             />
           </form>
           <select
@@ -324,34 +324,34 @@ export default function SecurityTab({ notify }) {
           {anyFilter && !ipFilter && (
             <button
               onClick={() => { setTypeFilter(''); setOutcomeFilter(''); setSearch(''); setQuery(''); setOffset(0); }}
-              className="text-[10px] font-black uppercase tracking-widest text-crimson-600 hover:text-crimson-400 transition-colors"
+              className="text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200 transition-colors"
             >
               Clear
             </button>
           )}
         </div>
 
-        <p className="text-[10px] font-black uppercase tracking-widest text-crimson-700">
+        <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400">
           {ledger.total} event{ledger.total === 1 ? '' : 's'} on record{anyFilter ? ' (filtered)' : ''}
         </p>
 
         {loadingLedger ? (
-          <div className="py-16 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Consulting the ledger…</div>
+          <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Consulting the ledger…</div>
         ) : (
           <div className="space-y-2">
             {ledger.events.map((ev) => (
               <div key={ev.id} className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 hover:border-crimson-900/80 transition-all">
                 <div className="flex items-center gap-3 flex-shrink-0 sm:w-56">
                   <EventChip type={ev.event_type} />
-                  <span className="text-[10px] font-bold text-crimson-600 whitespace-nowrap">{fmtDate(ev.ts)}</span>
+                  <span className="text-[10px] font-bold text-crimson-400 whitespace-nowrap">{fmtDate(ev.ts)}</span>
                 </div>
                 <div className="flex-grow min-w-0">
                   <p className="text-xs font-bold text-crimson-100 truncate">
-                    {ev.identity || <span className="text-crimson-700 italic">unknown identity</span>}
-                    {ev.user_id != null && <span className="text-crimson-600 font-black ml-2">#{ev.user_id}</span>}
+                    {ev.identity || <span className="text-crimson-400 italic">unknown identity</span>}
+                    {ev.user_id != null && <span className="text-crimson-400 font-black ml-2">#{ev.user_id}</span>}
                   </p>
                   {detailSummary(ev.detail) && (
-                    <p className="text-[10px] font-bold text-crimson-600 truncate mt-0.5">{detailSummary(ev.detail)}</p>
+                    <p className="text-[10px] font-bold text-crimson-400 truncate mt-0.5">{detailSummary(ev.detail)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0 text-right">
@@ -368,7 +368,7 @@ export default function SecurityTab({ notify }) {
               </div>
             ))}
             {ledger.events.length === 0 && (
-              <p className="py-16 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">
+              <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">
                 {anyFilter ? 'Nothing matches these filters' : 'The ledger is spotless: no one has rattled the gates'}
               </p>
             )}
@@ -384,7 +384,7 @@ export default function SecurityTab({ notify }) {
             >
               Prev
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-crimson-600">Page {page} / {pages}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Page {page} / {pages}</span>
             <button
               disabled={offset + PAGE_SIZE >= ledger.total}
               onClick={() => setOffset(offset + PAGE_SIZE)}

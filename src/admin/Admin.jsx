@@ -56,9 +56,9 @@ const AdminPage = () => {
   if (profile && !profile.is_admin) {
     return (
       <div className="max-w-md w-full mx-auto px-6 py-32 text-center space-y-6 animate-in fade-in duration-700">
-        <ShieldOff className="w-14 h-14 text-crimson-600 mx-auto" />
+        <ShieldOff className="w-14 h-14 text-crimson-400 mx-auto" />
         <h2 className="text-3xl font-black text-crimson-50 uppercase tracking-tighter">Access <span className="text-crimson-500">Denied</span></h2>
-        <p className="text-xs text-crimson-400/60 font-medium leading-relaxed">This sanctum is reserved for the haven's keepers. Your vessel lacks the crimson seal.</p>
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed">This sanctum is reserved for the haven's keepers. Your vessel lacks the crimson seal.</p>
       </div>
     );
   }
@@ -71,7 +71,7 @@ const AdminPage = () => {
             <Shield className="w-8 h-8 text-crimson-500 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
             <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Admin <span className="text-crimson-500">Sanctum</span></h2>
           </div>
-          <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80 ml-1">Keeper controls for the dark network</p>
+          <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] ml-1">Keeper controls for the dark network</p>
         </div>
         <button onClick={() => { setLoading(true); loadStats(); }} className="group flex items-center gap-2.5 px-5 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[10px] font-black uppercase tracking-widest self-start sm:self-auto">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : 'group-hover:rotate-90 transition-transform'}`} /> Refresh
@@ -96,7 +96,7 @@ const AdminPage = () => {
 
       <div>
         {tab === 'overview' && (loading && !stats
-          ? <div className="py-24 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Gathering diagnostics…</div>
+          ? <div className="py-24 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Gathering diagnostics…</div>
           : <OverviewTab stats={stats} health={health} system={system} />)}
         {tab === 'health' && <HealthTab notify={notify} />}
         {tab === 'metrics' && <MetricsTab notify={notify} />}

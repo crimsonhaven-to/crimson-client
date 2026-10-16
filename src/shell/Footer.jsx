@@ -47,18 +47,18 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto mt-10 pt-8 border-t border-crimson-900/20 flex flex-col gap-4">
-        <p className="text-[11px] font-medium tracking-wide text-crimson-600 uppercase leading-normal">
-          Disclaimer: <span className="text-crimson-400/70">crimsonhaven does not host, store, or upload any file assets locally. Any legal issues should be taken up with the providers directly :3</span>{' '}
+        <p className="text-[11px] font-medium tracking-wide text-crimson-400 uppercase leading-normal">
+          Disclaimer: <span className="text-crimson-400">crimsonhaven does not host, store, or upload any file assets locally. Any legal issues should be taken up with the providers directly :3</span>{' '}
           <Link to="/disclaimer" className="text-crimson-500 hover:text-crimson-400 underline underline-offset-2 transition-colors font-black">
             Read More
           </Link>
         </p>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-crimson-700 text-[10px] font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Crimsonhaven. All rites reserved.</p>
-            <span className="px-2.5 py-0.5 bg-crimson-950/40 border border-crimson-900/60 rounded-full text-[9px] font-black text-crimson-600 uppercase tracking-widest">Hosted in {HOSTED_IN}</span>
+            <p className="text-crimson-400 text-[10px] font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Crimsonhaven. All rites reserved.</p>
+            <span className="px-2.5 py-0.5 bg-crimson-950/40 border border-crimson-900/60 rounded-full text-[9px] font-black text-crimson-400 uppercase tracking-widest">Hosted in {HOSTED_IN}</span>
           </div>
-          <div className="flex items-center gap-4 text-crimson-700">
+          <div className="flex items-center gap-4 text-crimson-400">
             <Shield className="w-4 h-4" />
             <Server className="w-4 h-4" />
             <Sparkles className="w-4 h-4" />

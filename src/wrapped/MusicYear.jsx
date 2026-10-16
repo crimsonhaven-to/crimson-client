@@ -45,7 +45,7 @@ export default function MusicYear({ data, year }) {
                     disabled={!track.stream_url}
                     className="group w-full flex items-center gap-4 p-2 -m-2 rounded-2xl text-left hover:bg-crimson-900/20 disabled:hover:bg-transparent transition-colors"
                   >
-                    <span className="w-5 text-right text-sm font-black text-crimson-700 tabular-nums shrink-0">{i + 1}</span>
+                    <span className="w-5 text-right text-sm font-black text-crimson-400 tabular-nums shrink-0">{i + 1}</span>
                     <div className="relative w-11 h-11 shrink-0">
                       <Cover src={track.cover_url} className="w-11 h-11 rounded-lg" />
                       {track.stream_url && (
@@ -56,7 +56,7 @@ export default function MusicYear({ data, year }) {
                     </div>
                     <div className="min-w-0 flex-grow">
                       <div className="text-sm font-black text-crimson-50 truncate tracking-tight">{track.title}</div>
-                      <div className="text-xs text-crimson-400/70 truncate">{(track.artists || []).join(', ')}</div>
+                      <div className="text-xs text-crimson-400 truncate">{(track.artists || []).join(', ')}</div>
                     </div>
                     <span className="text-[10px] font-black uppercase tracking-widest text-crimson-500 shrink-0 tabular-nums">
                       {plural(plays, 'play', 'plays')}
@@ -76,7 +76,7 @@ export default function MusicYear({ data, year }) {
                 const widest = data.top_artists[0].minutes || 1;
                 return (
                   <li key={artist.name} className="flex items-center gap-4">
-                    <span className="w-5 text-right text-sm font-black text-crimson-700 tabular-nums shrink-0">{i + 1}</span>
+                    <span className="w-5 text-right text-sm font-black text-crimson-400 tabular-nums shrink-0">{i + 1}</span>
                     <div className="flex-grow min-w-0">
                       <div className="flex items-baseline justify-between gap-4">
                         <span className="text-sm font-black text-crimson-50 truncate tracking-tight">{artist.name}</span>

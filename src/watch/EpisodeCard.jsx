@@ -40,12 +40,12 @@ const EpisodeCard = ({ ep, active = false, onSelect }) => {
           {hasTitle ? ep.title : `Episode ${ep.episode_number}`}
         </h4>
         {ep.air_date && (
-          <span className="flex items-center gap-1 text-[10px] text-crimson-600 font-black uppercase tracking-widest mt-1 opacity-80">
+          <span className="flex items-center gap-1 text-[10px] text-crimson-400 font-black uppercase tracking-widest mt-1">
             <Calendar className="w-3 h-3" /> {ep.air_date}
           </span>
         )}
         {ep.overview && (
-          <p className="text-xs text-crimson-200/50 leading-relaxed line-clamp-2 mt-2 font-medium">
+          <p className="text-xs text-crimson-300 leading-relaxed line-clamp-2 mt-2 font-medium">
             {ep.overview}
           </p>
         )}

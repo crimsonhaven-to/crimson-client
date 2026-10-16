@@ -103,7 +103,7 @@ function LocalOverview() {
               </span>
             )}
             {!overview.has_metadata && (
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-900/10 border-crimson-900/40 text-crimson-700" title="Identified from the filename (no on-disk metadata)">
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-900/10 border-crimson-900/40 text-crimson-400" title="Identified from the filename (no on-disk metadata)">
                 Filename-matched
               </span>
             )}
@@ -113,7 +113,7 @@ function LocalOverview() {
             {overview.title}
           </h1>
 
-          <div className="flex flex-wrap items-center gap-4 text-[11px] font-black uppercase tracking-widest text-crimson-600">
+          <div className="flex flex-wrap items-center gap-4 text-[11px] font-black uppercase tracking-widest text-crimson-400">
             {overview.year && <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-crimson-500" /> {overview.year}</span>}
             {!isMovie && seasons.length > 0 && (
               <span className="flex items-center gap-1.5"><ListVideo className="w-3.5 h-3.5 text-crimson-500" /> {seasons.reduce((n, s) => n + (s.episodes?.length || 0), 0)} files</span>
@@ -124,14 +124,14 @@ function LocalOverview() {
           {(overview.genres || []).length > 0 && (
             <div className="flex flex-wrap gap-2">
               {overview.genres.map((g) => (
-                <span key={g} className="px-3 py-1 rounded-lg bg-crimson-500/5 border border-crimson-500/20 text-[9px] font-black uppercase tracking-widest text-crimson-500/80">
+                <span key={g} className="px-3 py-1 rounded-lg bg-crimson-500/5 border border-crimson-500/20 text-[9px] font-black uppercase tracking-widest text-crimson-400">
                   {g}
                 </span>
               ))}
             </div>
           )}
 
-          <p className="text-sm sm:text-base text-crimson-100/60 leading-relaxed max-w-3xl font-medium">
+          <p className="text-sm sm:text-base text-crimson-300 leading-relaxed max-w-3xl font-medium">
             {description}
           </p>
 
@@ -150,7 +150,7 @@ function LocalOverview() {
         <div className="space-y-6">
           {seasons.length > 1 && (
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar p-4 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-700 pl-2 whitespace-nowrap">Seasons</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 pl-2 whitespace-nowrap">Seasons</span>
               {seasons.map((s) => (
                 <button
                   key={s.season_number}
@@ -173,7 +173,7 @@ function LocalOverview() {
                 <ListVideo className="w-6 h-6 text-crimson-500" /> Episodes
               </h3>
               <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-crimson-600 whitespace-nowrap opacity-80">
+              <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400 whitespace-nowrap">
                 {seasonData?.episodes?.length || 0} files
               </span>
             </div>
@@ -197,7 +197,7 @@ function LocalOverview() {
                     <span className="text-sm font-bold text-crimson-50 group-hover:text-crimson-400 transition-colors truncate">
                       {ep.title || `Episode ${ep.episode_number}`}
                     </span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-crimson-700">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400">
                       S{ep.season_number} · E{ep.episode_number}
                     </span>
                   </div>
@@ -212,7 +212,7 @@ function LocalOverview() {
       )}
 
       {!isMovie && seasons.length === 0 && (
-        <div className="py-16 text-center text-crimson-700 font-black uppercase tracking-widest text-xs">
+        <div className="py-16 text-center text-crimson-400 font-black uppercase tracking-widest text-xs">
           No playable files found in this title.
         </div>
       )}

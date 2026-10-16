@@ -108,12 +108,12 @@ export default function MusicTab({ notify }) {
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
         <div className="relative flex-grow min-w-0">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-400" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Title, artist or album"
-            className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm focus:outline-none focus:border-crimson-500"
+            className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm focus:outline-none focus:border-crimson-500"
           />
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -138,15 +138,15 @@ export default function MusicTab({ notify }) {
       </div>
 
       {loading && !tracks.length ? (
-        <div className="py-16 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Counting the records…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Counting the records…</div>
       ) : tracks.length === 0 ? (
         <div className="py-16 text-center space-y-3">
           <Disc3 className="w-8 h-8 text-crimson-800 mx-auto" />
-          <p className="text-crimson-600 text-sm">{search || status ? 'No song matches.' : 'The library is empty.'}</p>
+          <p className="text-crimson-400 text-sm">{search || status ? 'No song matches.' : 'The library is empty.'}</p>
         </div>
       ) : (
         <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl overflow-hidden">
-          <p className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-crimson-600 border-b border-crimson-900/40">
+          <p className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-crimson-400 border-b border-crimson-900/40">
             {data.total} song{data.total === 1 ? '' : 's'}{search || status ? ' match' : ''}
           </p>
           <ul className="divide-y divide-crimson-900/30">
@@ -172,17 +172,17 @@ export default function MusicTab({ notify }) {
                     <p className="text-xs text-crimson-500 truncate">
                       {track.artists.join(', ')}{track.album ? ` · ${track.album}` : ''}
                     </p>
-                    <p className="text-[11px] text-crimson-700 truncate" title={track.error || track.rel_path || ''}>
+                    <p className="text-[11px] text-crimson-400 truncate" title={track.error || track.rel_path || ''}>
                       {track.owners.length
                         ? `${track.owners.join(', ')} · ${track.playlist_count} playlist${track.playlist_count === 1 ? '' : 's'}`
                         : 'In no playlist'}
                       {track.error ? ` · ${track.error}` : ''}
                     </p>
                   </div>
-                  <span className="hidden md:block w-16 text-right text-[11px] text-crimson-600 tabular-nums">{track.file_size ? formatBytes(track.file_size) : ''}</span>
-                  <span className="hidden sm:block w-12 text-right text-[11px] text-crimson-600 tabular-nums">{formatTime(track.duration_ms / 1000)}</span>
+                  <span className="hidden md:block w-16 text-right text-[11px] text-crimson-400 tabular-nums">{track.file_size ? formatBytes(track.file_size) : ''}</span>
+                  <span className="hidden sm:block w-12 text-right text-[11px] text-crimson-400 tabular-nums">{formatTime(track.duration_ms / 1000)}</span>
                   <span title={track.mirrored ? 'Copied to the CDN' : 'Not on the CDN'} className="hidden sm:block w-5">
-                    {track.mirrored ? <Cloud className="w-4 h-4 text-green-500/80" /> : <CloudOff className="w-4 h-4 text-crimson-900" />}
+                    {track.mirrored ? <Cloud className="w-4 h-4 text-green-500/80" /> : <CloudOff className="w-4 h-4 text-crimson-400" />}
                   </span>
                   <span className={`px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest flex-shrink-0 ${STATUS_STYLES[track.status] || STATUS_STYLES.pending}`}>
                     {track.status}

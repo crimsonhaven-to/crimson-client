@@ -36,7 +36,7 @@ const fmtUptime = (startedUnix) => {
 };
 
 const ratioTone = (r) => {
-  if (r == null) return 'text-crimson-600';
+  if (r == null) return 'text-crimson-400';
   if (r >= 0.9) return 'text-green-300';
   if (r >= 0.6) return 'text-amber-300';
   return 'text-crimson-400';
@@ -54,14 +54,14 @@ const Section = ({ icon: Icon, title, note, children }) => (
     <div className="flex items-baseline gap-2.5 flex-wrap">
       {Icon && <Icon className="w-4 h-4 text-crimson-500 self-center" />}
       <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-crimson-300">{title}</h3>
-      {note && <span className="text-[10px] font-bold text-crimson-600/80">{note}</span>}
+      {note && <span className="text-[10px] font-bold text-crimson-400">{note}</span>}
     </div>
     {children}
   </div>
 );
 
 const Empty = ({ children }) => (
-  <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl px-5 py-6 text-[11px] font-bold text-crimson-600/80">
+  <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl px-5 py-6 text-[11px] font-bold text-crimson-400">
     {children}
   </div>
 );
@@ -79,7 +79,7 @@ const RatioRow = ({ label, ratio, right, sub }) => (
     <div className="h-1.5 rounded-full bg-crimson-950 border border-crimson-900/60 overflow-hidden">
       <div className={`h-full ${barTone(ratio)} transition-all`} style={{ width: `${Math.round((ratio ?? 0) * 100)}%` }} />
     </div>
-    {sub && <p className="text-[10px] font-bold text-crimson-600/80 mt-1.5">{sub}</p>}
+    {sub && <p className="text-[10px] font-bold text-crimson-400 mt-1.5">{sub}</p>}
   </div>
 );
 
@@ -87,7 +87,7 @@ const Facts = ({ rows }) => (
   <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-2xl divide-y divide-crimson-900/40">
     {rows.map(([label, value]) => (
       <div key={label} className="flex items-center justify-between gap-4 px-4 py-2.5">
-        <span className="text-[10px] font-black uppercase tracking-widest text-crimson-600">{label}</span>
+        <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400">{label}</span>
         <span className="text-[11px] font-black tabular-nums text-crimson-100">{value ?? 'n/a'}</span>
       </div>
     ))}
@@ -140,15 +140,15 @@ function LiveSnapshot({ notify }) {
   useEffect(() => { load(); }, [load]);
 
   if (loading && !parsed && !unavailable) {
-    return <div className="py-24 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Counting the empress's ledgers…</div>;
+    return <div className="py-24 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Counting the empress's ledgers…</div>;
   }
 
   if (unavailable) {
     return (
       <div className="max-w-xl mx-auto py-20 text-center space-y-4">
-        <LineChart className="w-12 h-12 text-crimson-700 mx-auto" />
+        <LineChart className="w-12 h-12 text-crimson-400 mx-auto" />
         <h3 className="text-lg font-black text-crimson-100 uppercase tracking-tighter">No ledgers kept</h3>
-        <p className="text-[11px] text-crimson-500/80 font-medium leading-relaxed">
+        <p className="text-[11px] text-crimson-400 font-medium leading-relaxed">
           This build has no <span className="font-mono text-crimson-400">prometheus-client</span>, so the
           backend keeps no counters and <span className="font-mono text-crimson-400">/metrics</span> answers 503.
           Add it to <span className="font-mono text-crimson-400">requirements.txt</span> and rebuild the image.
@@ -265,7 +265,7 @@ function LiveSnapshot({ notify }) {
                   {r.key === '__unmatched__' ? 'unmatched (404s and probes)' : r.key}
                 </span>
                 <span className="text-[11px] font-black tabular-nums text-crimson-400 shrink-0 w-20 text-right">{fmtInt(r.value)}</span>
-                <span className="text-[11px] font-black tabular-nums text-crimson-600 shrink-0 w-24 text-right">{fmtSeconds(r.p95) ?? 'n/a'}</span>
+                <span className="text-[11px] font-black tabular-nums text-crimson-400 shrink-0 w-24 text-right">{fmtSeconds(r.p95) ?? 'n/a'}</span>
               </div>
             ))}
           </div>

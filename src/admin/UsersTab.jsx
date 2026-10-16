@@ -61,14 +61,14 @@ function EmailSender({ notify }) {
         <Send className="w-4 h-4 text-crimson-500" />
         <h3 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">E-Mail Sender</h3>
         {status && configured && (
-          <span className="ml-auto text-[10px] font-bold text-crimson-700 tracking-wide">
+          <span className="ml-auto text-[10px] font-bold text-crimson-400 tracking-wide">
             reaches {recipients} member{recipients === 1 ? '' : 's'}
           </span>
         )}
       </div>
 
       {status && !configured && (
-        <p className="text-xs font-bold text-crimson-600 leading-relaxed">
+        <p className="text-xs font-bold text-crimson-400 leading-relaxed">
           SMTP isn&apos;t configured on the backend. Set <code className="text-crimson-400">SMTP_HOST</code> (and friends) to enable member emails.
         </p>
       )}
@@ -79,7 +79,7 @@ function EmailSender({ notify }) {
         </p>
       )}
       {!running && broadcast?.finished_at && (
-        <p className="text-[10px] font-bold text-crimson-700 tracking-wide">
+        <p className="text-[10px] font-bold text-crimson-400 tracking-wide">
           Last broadcast “{broadcast.subject}”: {broadcast.sent} sent{broadcast.failed ? `, ${broadcast.failed} failed` : ''} · {fmtDate(broadcast.finished_at)}
         </p>
       )}
@@ -91,7 +91,7 @@ function EmailSender({ notify }) {
           placeholder="Subject…"
           maxLength={200}
           disabled={disabled}
-          className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all disabled:opacity-40"
+          className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all disabled:opacity-40"
         />
         <textarea
           value={message}
@@ -100,7 +100,7 @@ function EmailSender({ notify }) {
           rows={5}
           maxLength={20000}
           disabled={disabled}
-          className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all resize-y disabled:opacity-40"
+          className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all resize-y disabled:opacity-40"
         />
         <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-crimson-500 cursor-pointer select-none">
@@ -147,7 +147,7 @@ function AccessToggles({ user, disabled, onToggle }) {
             title={`${granted ? 'Revoke' : 'Grant'} ${label} access`}
             onClick={() => onToggle(key, label, !granted)}
             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-40 ${
-              granted ? on : 'border-transparent text-crimson-700 hover:text-crimson-300'
+              granted ? on : 'border-transparent text-crimson-400 hover:text-crimson-300'
             }`}
           >
             <Icon className="w-3.5 h-3.5" /> {label}
@@ -195,12 +195,12 @@ export default function UsersTab({ notify }) {
         className="flex items-center gap-3"
       >
         <div className="relative flex-grow">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-600" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search email, name, label, or id…"
-            className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all"
+            className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all"
           />
         </div>
         <button type="submit" className="px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Search</button>
@@ -208,10 +208,10 @@ export default function UsersTab({ notify }) {
 
       <EmailSender notify={notify} />
 
-      <p className="text-[10px] font-black uppercase tracking-widest text-crimson-700">{data.total} member{data.total === 1 ? '' : 's'} total</p>
+      <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400">{data.total} member{data.total === 1 ? '' : 's'} total</p>
 
       {loading ? (
-        <div className="py-16 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Summoning members…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Summoning members…</div>
       ) : (
         <div className="space-y-3">
           {data.users.map((u) => {
@@ -230,7 +230,7 @@ export default function UsersTab({ notify }) {
                       : u.email ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-500">Unverified</span> : null}
                     {u.has_mnemonic && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/30 border border-crimson-800/50 text-crimson-400">Mnemonic</span>}
                   </div>
-                  <p className="text-[10px] font-bold text-crimson-700 mt-1.5 tracking-wide">
+                  <p className="text-[10px] font-bold text-crimson-400 mt-1.5 tracking-wide">
                     #{u.user_id} · {u.favorites_count} favs · {u.progress_count} watched · {u.sessions_count} session{u.sessions_count === 1 ? '' : 's'} · joined {fmtDate(u.created_at)}
                   </p>
                 </div>
@@ -287,7 +287,7 @@ export default function UsersTab({ notify }) {
             );
           })}
           {data.users.length === 0 && (
-            <p className="py-16 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No members found</p>
+            <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No members found</p>
           )}
         </div>
       )}

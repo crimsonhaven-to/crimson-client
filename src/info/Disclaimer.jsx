@@ -24,7 +24,7 @@ const DisclaimerPage = () => {
         <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4 leading-none">
           <Scale className="w-10 h-10 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]" /> Disclaimer
         </h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Protocol: Legal &amp; Privacy Manifest</p>
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Protocol: Legal &amp; Privacy Manifest</p>
       </div>
 
       <Section icon={<Shield className="w-4 h-4" />} title="DMCA / Disclaimer Policy">
@@ -83,7 +83,7 @@ const DisclaimerPage = () => {
         </p>
       </Section>
 
-      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] text-crimson-400/80 space-y-2 shadow-inner relative overflow-hidden">
+      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] text-crimson-400 space-y-2 shadow-inner relative overflow-hidden">
         <div className="absolute top-0 right-0 p-3 opacity-5">
           <Scale className="w-12 h-12 text-crimson-500" />
         </div>
@@ -91,9 +91,9 @@ const DisclaimerPage = () => {
           <div className="w-1.5 h-1.5 rounded-full bg-crimson-500"></div>
           Compliance Diagnostics
         </h3>
-        <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> No media assets are hosted or stored on crimsonhaven servers.</p>
-        <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> Collected log data is anonymous and never personally linked.</p>
-        <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> Takedown requests belong with the upstream host sites.</p>
+        <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">•</span> No media assets are hosted or stored on crimsonhaven servers.</p>
+        <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">•</span> Collected log data is anonymous and never personally linked.</p>
+        <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">•</span> Takedown requests belong with the upstream host sites.</p>
       </div>
     </div>
   );

@@ -31,9 +31,9 @@ export default function NewPlaylistDialog({ onClose }) {
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-grow">
           <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">New playlist</p>
-          <p className="text-[11px] text-crimson-600 mt-1">Kept only here. Add songs to it by searching, no Spotify needed.</p>
+          <p className="text-[11px] text-crimson-400 mt-1">Kept only here. Add songs to it by searching, no Spotify needed.</p>
         </div>
-        <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-crimson-600 hover:text-white"><X className="w-5 h-5" /></button>
+        <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-crimson-400 hover:text-white"><X className="w-5 h-5" /></button>
       </div>
       <input
         value={name}
@@ -41,7 +41,7 @@ export default function NewPlaylistDialog({ onClose }) {
         maxLength={200}
         placeholder="Name it"
         autoFocus
-        className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm focus:outline-none focus:border-crimson-500"
+        className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm focus:outline-none focus:border-crimson-500"
       />
       {error && <p className="text-xs font-bold text-amber-400">{error}</p>}
       <div className="flex justify-end gap-2">

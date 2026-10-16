@@ -27,11 +27,11 @@ const AiringRow = ({ item, following, onToggle, busy }) => {
       }`}
     >
       <div className="w-14 shrink-0 text-center">
-        <div className={`text-sm font-black tabular-nums ${aired ? 'text-crimson-600' : 'text-crimson-300'}`}>
+        <div className={`text-sm font-black tabular-nums ${aired ? 'text-crimson-400' : 'text-crimson-300'}`}>
           {timeLabel(item.airing_at)}
         </div>
         {aired && (
-          <div className="text-[9px] font-black uppercase tracking-widest text-crimson-700">Aired</div>
+          <div className="text-[9px] font-black uppercase tracking-widest text-crimson-400">Aired</div>
         )}
       </div>
 
@@ -42,7 +42,7 @@ const AiringRow = ({ item, following, onToggle, busy }) => {
         <h4 className="text-sm sm:text-base font-black text-crimson-50 truncate group-hover:text-crimson-400 transition-colors tracking-tight">
           {item.title || `AniList #${item.anilist_id}`}
         </h4>
-        <div className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-crimson-600">
+        <div className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-crimson-400">
           Episode {item.episode}
         </div>
       </button>
@@ -55,7 +55,7 @@ const AiringRow = ({ item, following, onToggle, busy }) => {
         className={`shrink-0 p-2.5 rounded-full border transition-all active:scale-90 disabled:opacity-60 ${
           following
             ? 'bg-crimson-500 border-crimson-400 text-white shadow-[0_0_12px_rgba(255,0,60,0.4)]'
-            : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-600 hover:text-crimson-200 hover:border-crimson-600'
+            : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-400 hover:text-crimson-200 hover:border-crimson-600'
         }`}
       >
         {busy ? (
@@ -84,7 +84,7 @@ const FollowingList = ({ subscriptions, onUnfollow, busyId }) => {
             Everything you follow
           </h3>
         </div>
-        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
           Including titles between seasons, which have nothing on the schedule above.
         </p>
       </div>
@@ -99,7 +99,7 @@ const FollowingList = ({ subscriptions, onUnfollow, busyId }) => {
               <div className="text-sm font-black text-crimson-50 truncate tracking-tight">
                 {sub.title || `AniList #${sub.anilist_id}`}
               </div>
-              <div className="mt-1 text-[10px] font-black uppercase tracking-widest text-crimson-600">
+              <div className="mt-1 text-[10px] font-black uppercase tracking-widest text-crimson-400">
                 {sub.next_airing_at
                   ? `Episode ${sub.next_episode} on ${new Date(sub.next_airing_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`
                   : 'Nothing scheduled yet'}
@@ -109,7 +109,7 @@ const FollowingList = ({ subscriptions, onUnfollow, busyId }) => {
               onClick={() => onUnfollow(sub.anilist_id)}
               disabled={busyId === sub.anilist_id}
               aria-label={`Stop following ${sub.title || sub.anilist_id}`}
-              className="shrink-0 p-2.5 rounded-full text-crimson-600 hover:text-white hover:bg-crimson-900/50 transition-all active:scale-90 disabled:opacity-50"
+              className="shrink-0 p-2.5 rounded-full text-crimson-400 hover:text-white hover:bg-crimson-900/50 transition-all active:scale-90 disabled:opacity-50"
             >
               {busyId === sub.anilist_id ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -193,7 +193,7 @@ const AiringCalendar = () => {
           <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
             Airing <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Calendar</span>
           </h1>
-          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
+          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
             <CalendarDays className="w-4 h-4 text-crimson-500" />
             {followedCount
               ? `Following ${followedCount} title${followedCount === 1 ? '' : 's'}`
@@ -232,7 +232,7 @@ const AiringCalendar = () => {
               <MailWarning className="w-5 h-5 text-amber-500" />
             )}
           </div>
-          <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+          <p className="text-xs text-crimson-400 leading-relaxed font-medium">
             {emailNotifications
               ? 'A new episode of a title you follow brings a note to your inbox, shortly after it airs in Japan.'
               : 'Your follows are kept and lit up here, but nothing can be mailed until this account has a verified email address.'}
@@ -248,11 +248,11 @@ const AiringCalendar = () => {
 
       {days.length === 0 && !error && (
         <div className="text-center py-20 space-y-3">
-          <Clock className="w-10 h-10 text-crimson-700 mx-auto" />
+          <Clock className="w-10 h-10 text-crimson-400 mx-auto" />
           <p className="text-crimson-500 font-black uppercase tracking-widest text-sm">
             {onlyFollowed ? 'Nothing you follow airs this week' : 'The schedule is empty just now'}
           </p>
-          <p className="text-crimson-700 text-xs font-medium max-w-sm mx-auto leading-relaxed">
+          <p className="text-crimson-400 text-xs font-medium max-w-sm mx-auto leading-relaxed">
             {onlyFollowed
               ? 'Your titles are between seasons, or their next episodes are further out than a week.'
               : 'The schedule is refreshed a few times a day. If this stays empty, the calendar may not have been filled yet.'}
@@ -266,7 +266,7 @@ const AiringCalendar = () => {
             <h2 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">
               {dayLabel(day.date)}
             </h2>
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400">
               {day.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
             </span>
           </div>
@@ -286,7 +286,7 @@ const AiringCalendar = () => {
 
       <FollowingList subscriptions={subscriptions} onUnfollow={drop} busyId={busyId} />
 
-      <p className="text-[10px] text-crimson-700 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
+      <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
         Times are your own · Schedule from AniList · A follow can be dropped at any time
       </p>
     </div>

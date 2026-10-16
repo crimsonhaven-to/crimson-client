@@ -25,18 +25,18 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
           <h4 className="text-sm sm:text-base font-black text-crimson-50 truncate group-hover:text-crimson-400 transition-colors tracking-tight">
             {item.title}
           </h4>
-          <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-600">
-            <span className="text-crimson-400">{item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : (item.media_type === 'local' && item.episode_number == null) ? 'Local' : <>S{item.season_number}<span className="text-crimson-700 mx-0.5">•</span>E{item.episode_number}</>}</span>
+          <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-400">
+            <span className="text-crimson-400">{item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : (item.media_type === 'local' && item.episode_number == null) ? 'Local' : <>S{item.season_number}<span className="text-crimson-400 mx-0.5">•</span>E{item.episode_number}</>}</span>
             <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{percent}%</span>
             {item.status === 'completed' && <span className="text-crimson-400">Finished</span>}
-            {ago && <span className="text-crimson-700 normal-case tracking-normal">· {ago}</span>}
+            {ago && <span className="text-crimson-400 normal-case tracking-normal">· {ago}</span>}
           </div>
         </div>
 
         <button
           onClick={handleRemove}
           aria-label="Remove from history"
-          className="shrink-0 p-2 rounded-full text-crimson-700 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
+          className="shrink-0 p-2 rounded-full text-crimson-400 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -81,14 +81,14 @@ const HistoryCard = ({ item, view, onOpen, onRemove }) => {
           </h4>
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 bg-crimson-500/10 text-crimson-400 text-[10px] font-black uppercase rounded-lg border border-crimson-500/20 tracking-widest">
-              {item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : (item.media_type === 'local' && item.episode_number == null) ? 'Local' : <>S{item.season_number} <span className="text-crimson-700 mx-0.5">•</span> E{item.episode_number}</>}
+              {item.media_type === 'movie' ? 'Movie' : item.media_type === 'manga' ? <>Ch. {item.episode_number}</> : (item.media_type === 'local' && item.episode_number == null) ? 'Local' : <>S{item.season_number} <span className="text-crimson-400 mx-0.5">•</span> E{item.episode_number}</>}
             </span>
-            {ago && <span className="text-[10px] font-bold text-crimson-700">{ago}</span>}
+            {ago && <span className="text-[10px] font-bold text-crimson-400">{ago}</span>}
           </div>
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600">
+          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400">
             <span className="flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5" /> {percent}%
             </span>

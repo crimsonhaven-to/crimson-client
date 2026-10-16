@@ -11,7 +11,7 @@ export default function NativeBackendCard() {
           <Server className="w-6 h-6" />
           <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Your Haven</h3>
         </div>
-        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
           This app is bound to <span className="text-crimson-300 font-bold break-all">{API_BASE_URL}</span>.
           Each haven keeps its own login, settings and downloads, so wandering to another
           one and back loses nothing.

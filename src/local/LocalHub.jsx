@@ -73,7 +73,7 @@ function LocalBrowseView({ searchTerm, navigate }) {
                   {poster ? (
                     <img src={poster} alt="" loading="lazy" className="w-full h-full object-cover" />
                   ) : isFolder ? (
-                    <Folder className="w-5 h-5 text-crimson-700" />
+                    <Folder className="w-5 h-5 text-crimson-400" />
                   ) : isTitle ? (
                     e.media_kind === 'movie' ? <Film className="w-4 h-4 text-crimson-800" /> : <Tv className="w-4 h-4 text-crimson-800" />
                   ) : (
@@ -84,10 +84,10 @@ function LocalBrowseView({ searchTerm, navigate }) {
                   <span className="text-crimson-50 font-bold group-hover:text-crimson-400 transition-colors truncate tracking-tight text-base">
                     {e.title || e.name}
                   </span>
-                  <div className="flex items-center gap-3 text-[10px] text-crimson-700 font-black uppercase tracking-widest">
-                    {isFolder && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-500/80">Folder</span>}
-                    {isTitle && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-500/80">{e.media_kind === 'movie' ? 'Movie' : `Show · ${e.episode_count} ep`}</span>}
-                    {e.type === 'file' && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-500/80">File</span>}
+                  <div className="flex items-center gap-3 text-[10px] text-crimson-400 font-black uppercase tracking-widest">
+                    {isFolder && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">Folder</span>}
+                    {isTitle && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">{e.media_kind === 'movie' ? 'Movie' : `Show · ${e.episode_count} ep`}</span>}
+                    {e.type === 'file' && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">File</span>}
                     {isTitle && e.year && <span className="opacity-80 flex items-center gap-1"><Calendar className="w-3 h-3" /> {e.year}</span>}
                     {isTitle && !e.has_metadata && <span className="opacity-40 normal-case tracking-normal font-medium">filename</span>}
                   </div>
@@ -211,8 +211,8 @@ export default function LocalHub() {
                         <span className="text-crimson-50 font-bold group-hover:text-crimson-400 transition-colors truncate tracking-tight text-base">
                           {it.title}
                         </span>
-                        <div className="flex items-center gap-3 text-[10px] text-crimson-700 font-black uppercase tracking-widest">
-                          <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-500/80">
+                        <div className="flex items-center gap-3 text-[10px] text-crimson-400 font-black uppercase tracking-widest">
+                          <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">
                             {it.media_kind === 'movie' ? 'Movie' : `Show · ${it.episode_count} ep`}
                           </span>
                           {it.year && <span className="opacity-80 flex items-center gap-1"><Calendar className="w-3 h-3" /> {it.year}</span>}

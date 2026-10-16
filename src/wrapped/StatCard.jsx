@@ -6,7 +6,7 @@ const StatCard = ({ icon: Icon, value, label, detail }) => (
       <div className="text-4xl font-black text-crimson-50 tracking-tighter tabular-nums">{value}</div>
       <div className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">{label}</div>
       {detail && (
-        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed pt-1">{detail}</p>
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed pt-1">{detail}</p>
       )}
     </div>
   </div>

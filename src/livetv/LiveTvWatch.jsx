@@ -164,7 +164,7 @@ export default function LiveTvWatch() {
               <AlertTriangle className="w-12 h-12 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.5)]" />
             </div>
             <p className="text-crimson-50 font-black text-lg sm:text-2xl mb-2 uppercase tracking-tighter">Broadcast Link Severed</p>
-            <p className="text-crimson-400/80 text-xs sm:text-sm max-w-sm font-medium leading-relaxed">
+            <p className="text-crimson-400 text-xs sm:text-sm max-w-sm font-medium leading-relaxed">
               {error || prepError || 'This channel eludes even Lumi’s gaze tonight. Try another.'}
             </p>
           </div>
@@ -192,16 +192,16 @@ export default function LiveTvWatch() {
               {channel.logo ? (
                 <img src={channel.logo} alt="" className="w-full h-full object-contain p-2" />
               ) : (
-                <Tv className="w-6 h-6 text-crimson-700" />
+                <Tv className="w-6 h-6 text-crimson-400" />
               )}
             </div>
             <div className="min-w-0">
               <h1 className="text-xl sm:text-3xl font-black text-crimson-50 uppercase tracking-tighter leading-none truncate">
                 {channel.name}
               </h1>
-              <p className="text-crimson-400 font-black tracking-[0.2em] text-[10px] uppercase opacity-80 mt-1.5 flex items-center gap-2 flex-wrap">
+              <p className="text-crimson-400 font-black tracking-[0.2em] text-[10px] uppercase mt-1.5 flex items-center gap-2 flex-wrap">
                 <Globe2 className="w-3.5 h-3.5" /> {channel.country || 'Unknown Realm'}
-                {channel.network && <span className="text-crimson-600">· {channel.network}</span>}
+                {channel.network && <span className="text-crimson-400">· {channel.network}</span>}
                 {(channel.categories || []).map((c) => (
                   <span key={c} className="px-2 py-0.5 rounded-md bg-crimson-950/40 border border-crimson-900/50 text-crimson-500">{c}</span>
                 ))}
@@ -211,7 +211,7 @@ export default function LiveTvWatch() {
 
           {streams.length > 1 && (
             <div className="space-y-3">
-              <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-700">
+              <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">
                 <SatelliteDish className="w-3.5 h-3.5" /> Broadcast Feeds
               </p>
               <div className="flex flex-wrap gap-2">
@@ -231,7 +231,7 @@ export default function LiveTvWatch() {
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-crimson-700 font-bold tracking-wide">
+              <p className="text-[10px] text-crimson-400 font-bold tracking-wide">
                 A feed refuses to manifest? Free-to-air broadcasts flicker. Invoke another and Lumi shall re-tune. 🦇
               </p>
             </div>

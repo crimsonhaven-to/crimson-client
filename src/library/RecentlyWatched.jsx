@@ -92,7 +92,7 @@ const RecentlyWatchedPage = () => {
           <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
             Recent <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Echoes</span>
           </h1>
-          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
+          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
             <History className="w-4 h-4 text-crimson-500" />
             {hasHistory ? `${totalCount} title${totalCount === 1 ? '' : 's'} in your history` : 'Picking up where you left off'}
           </p>
@@ -102,18 +102,18 @@ const RecentlyWatchedPage = () => {
       {hasHistory && (
         <div className="sticky top-16 z-30 flex flex-col lg:flex-row lg:items-center gap-3 p-3 rounded-2xl border border-crimson-900/60 bg-crimson-950/90 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.4)]">
           <div className="relative flex-1 min-w-0">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700 pointer-events-none" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-400 pointer-events-none" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search your history…"
-              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
             />
             {query && (
               <button
                 onClick={() => setQuery('')}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-crimson-600 hover:text-white transition-colors active:scale-90"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-crimson-400 hover:text-white transition-colors active:scale-90"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -168,7 +168,7 @@ const RecentlyWatchedPage = () => {
           </div>
           <div className="space-y-2">
             <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">No recent echoes detected</p>
-            <p className="text-crimson-700 font-medium text-xs">Your journey through the dimensions has yet to begin.</p>
+            <p className="text-crimson-400 font-medium text-xs">Your journey through the dimensions has yet to begin.</p>
           </div>
           <button
             onClick={() => navigate('/')}
@@ -184,7 +184,7 @@ const RecentlyWatchedPage = () => {
           </div>
           <div className="space-y-2">
             <p className="text-crimson-500 font-black uppercase tracking-[0.3em] text-sm">No echoes match your filters</p>
-            <p className="text-crimson-700 font-medium text-xs">
+            <p className="text-crimson-400 font-medium text-xs">
               {q ? <>Nothing matches "<span className="text-crimson-400">{query.trim()}</span>".</> : 'Try a different status filter.'}
             </p>
           </div>
@@ -201,7 +201,7 @@ const RecentlyWatchedPage = () => {
             <section key={group.name} className="space-y-5">
               <div className="flex items-center gap-3">
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-crimson-500">{group.name}</h2>
-                <span className="text-[10px] font-black text-crimson-700 tabular-nums">{group.items.length}</span>
+                <span className="text-[10px] font-black text-crimson-400 tabular-nums">{group.items.length}</span>
                 <div className="flex-1 h-px bg-gradient-to-r from-crimson-900/50 to-transparent"></div>
               </div>
               <div className={view === 'list' ? 'space-y-3' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'}>

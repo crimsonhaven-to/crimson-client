@@ -23,12 +23,12 @@ const WatchlistCard = ({
         className={`group relative flex items-center gap-4 p-3 pr-4 bg-crimson-950/30 backdrop-blur-md border rounded-2xl hover:border-crimson-500/50 hover:shadow-[0_10px_25px_rgba(0,0,0,0.35)] transition-[border-color,box-shadow] duration-300 cursor-pointer ${ring} ${isDragOver ? 'ring-2 ring-crimson-500/40' : ''}`}
       >
         {draggable && (
-          <span className="shrink-0 -ml-1 text-crimson-700 cursor-grab active:cursor-grabbing" aria-hidden="true">
+          <span className="shrink-0 -ml-1 text-crimson-400 cursor-grab active:cursor-grabbing" aria-hidden="true">
             <GripVertical className="w-4 h-4" />
           </span>
         )}
         {selectMode && (
-          <SelMark className={`shrink-0 w-5 h-5 ${selected ? 'text-crimson-400' : 'text-crimson-700'}`} />
+          <SelMark className="shrink-0 w-5 h-5 text-crimson-400" />
         )}
 
         <div className="w-12 h-16 shrink-0 relative rounded-lg overflow-hidden border border-crimson-900/50">
@@ -39,9 +39,9 @@ const WatchlistCard = ({
           <h4 className="text-sm sm:text-base font-black text-crimson-50 truncate group-hover:text-crimson-400 transition-colors tracking-tight">
             {item.title}
           </h4>
-          <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-600">
+          <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-400">
             <span className="flex items-center gap-1 text-crimson-400"><KindIcon className="w-3 h-3" />{kindLabel}</span>
-            <span className="text-crimson-700 normal-case tracking-normal">· Ref {item.anilist_id || item.tmdb_id}</span>
+            <span className="text-crimson-400 normal-case tracking-normal">· Ref {item.anilist_id || item.tmdb_id}</span>
           </div>
         </div>
 
@@ -50,7 +50,7 @@ const WatchlistCard = ({
             <button
               onClick={stop(onLists)}
               aria-label={`Add ${item.title} to a list`}
-              className="shrink-0 p-2 rounded-full text-crimson-700 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
+              className="shrink-0 p-2 rounded-full text-crimson-400 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
             >
               <FolderPlus className="w-3.5 h-3.5" />
             </button>
@@ -58,7 +58,7 @@ const WatchlistCard = ({
               <button
                 onClick={stop(onRemove)}
                 aria-label={`Remove ${item.title}`}
-                className="shrink-0 p-2 rounded-full text-crimson-700 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
+                className="shrink-0 p-2 rounded-full text-crimson-400 hover:text-white hover:bg-crimson-900/50 transition-all opacity-0 group-hover:opacity-100"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

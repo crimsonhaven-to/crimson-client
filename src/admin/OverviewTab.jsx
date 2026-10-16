@@ -21,7 +21,7 @@ export default function OverviewTab({ stats, health, system }) {
             <StatCard label="Version" value={`v${system.version}`} sub={`up ${system.uptime_human}`} icon={Shield} accent="text-crimson-500" />
             <StatCard label="Sources" value={system.registry?.scrapers} sub={`${system.registry?.resolvers ?? 0} resolvers`} icon={Boxes} accent="text-green-400" />
             <StatCard label="DB Pool" value={p.available ? `${p.in_use}/${p.max_size}` : '-'} sub={p.available ? `${p.idle ?? 0} idle · ${p.waiting ?? 0} waiting` : 'pool closed'} icon={Gauge} accent={p.waiting > 0 ? 'text-amber-400' : undefined} />
-            <StatCard label="Video Cache" value={system.cache?.enabled ? (system.cache?.ready ?? 0) : 'Off'} sub={system.cache?.enabled ? `${system.cache?.pending ?? 0} pending · ${system.cache?.targets_enabled ?? 0} targets` : 'caching disabled'} icon={DownloadCloud} accent={system.cache?.enabled ? 'text-green-400' : 'text-crimson-700'} />
+            <StatCard label="Video Cache" value={system.cache?.enabled ? (system.cache?.ready ?? 0) : 'Off'} sub={system.cache?.enabled ? `${system.cache?.pending ?? 0} pending · ${system.cache?.targets_enabled ?? 0} targets` : 'caching disabled'} icon={DownloadCloud} accent={system.cache?.enabled ? 'text-green-400' : 'text-crimson-400'} />
           </div>
         </section>
       )}
@@ -53,7 +53,7 @@ export default function OverviewTab({ stats, health, system }) {
           <StatCard label="TMDB Extras" value={c.tmdb_extras} icon={Database} />
           <StatCard label="Cached Shows" value={c.tmdb_shows} sub={`${c.tmdb_movies ?? 0} movies · ${c.api_cache ?? 0} cache rows`} icon={Database} />
         </div>
-        <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest pl-1">
+        <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
           Last mapping sync: <span className="text-crimson-400">{fmtDate(c.last_synced)}</span>
         </p>
       </section>
@@ -64,12 +64,12 @@ export default function OverviewTab({ stats, health, system }) {
         </h3>
         <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[11px] space-y-2 shadow-inner">
           {health ? Object.entries(health).map(([k, v]) => (
-            <p key={k} className="text-crimson-400/80 group">
-              <span className="text-crimson-600 font-black mr-2">/</span>
-              <span className="font-black uppercase tracking-wider text-crimson-700">{k}:</span>{' '}
+            <p key={k} className="text-crimson-400 group">
+              <span className="text-crimson-400 font-black mr-2">/</span>
+              <span className="font-black uppercase tracking-wider text-crimson-400">{k}:</span>{' '}
               <span className="text-crimson-100">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
             </p>
-          )) : <p className="text-crimson-600 animate-pulse">Probing node…</p>}
+          )) : <p className="text-crimson-400 animate-pulse">Probing node…</p>}
         </div>
       </section>
     </div>
