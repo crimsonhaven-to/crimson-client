@@ -59,7 +59,7 @@ const WatchlistTabs = ({ lists, collageByList, activeList, onSwitch, onCreate, o
               onBlur={() => { if (!newName.trim()) setCreating(false); }}
               maxLength={100}
               placeholder="List name…"
-              className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
+              className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
             />
           </div>
           <button type="submit" disabled={!newName.trim()} aria-label="Create list"

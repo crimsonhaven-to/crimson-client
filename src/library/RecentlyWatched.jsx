@@ -101,7 +101,7 @@ const RecentlyWatchedPage = () => {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search your history…"
-              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
+              className="w-full pl-11 pr-10 py-2.5 text-sm font-bold bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
             />
             {query && (
               <button

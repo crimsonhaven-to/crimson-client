@@ -121,7 +121,7 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
                 onChange={(e) => setNewName(e.target.value)}
                 maxLength={100}
                 placeholder="New list…"
-                className="w-full pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-lg text-crimson-50 placeholder:text-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
+                className="w-full pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-lg text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
               />
             </div>
             <button

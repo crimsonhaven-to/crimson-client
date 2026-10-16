@@ -259,14 +259,14 @@ const DeleteCard = ({ hasEmail }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Your password"
-              className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-400 text-sm font-bold focus:outline-none focus:border-red-600 transition-colors"
+              className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-red-600 transition-colors"
             />
           ) : (
             <textarea
               value={mnemonic}
               onChange={(e) => setMnemonic(e.target.value)}
               placeholder="word1 word2 word3…"
-              className="w-full h-24 px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-400 text-sm font-bold resize-none focus:outline-none focus:border-red-600 transition-colors"
+              className="w-full h-24 px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold resize-none focus:outline-none focus:border-red-600 transition-colors"
             />
           )}
 
@@ -274,7 +274,7 @@ const DeleteCard = ({ hasEmail }) => {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             placeholder="Type DELETE"
-            className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-400 text-sm font-black tracking-widest uppercase focus:outline-none focus:border-red-600 transition-colors"
+            className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-black tracking-widest uppercase focus:outline-none focus:border-red-600 transition-colors"
           />
 
           {error && <p className="text-xs text-amber-400 font-medium">{error}</p>}
