@@ -281,7 +281,7 @@ const WatchlistsPage = () => {
                     <button
                       key={key}
                       onClick={() => setTypeFilter(key)}
-                      className={`px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
+                      className={`px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 ${
                         active ? 'bg-crimson-600 text-white shadow-[0_4px_12px_rgba(255,0,60,0.25)]' : 'text-crimson-500 hover:text-white'
                       }`}
                     >
@@ -300,7 +300,7 @@ const WatchlistsPage = () => {
                   <button
                     key={s.key}
                     onClick={() => setSortPersist(s.key)}
-                    className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 ${
                       active ? 'bg-crimson-600 text-white shadow-[0_4px_12px_rgba(255,0,60,0.25)]' : 'text-crimson-500 hover:text-white'
                     }`}
                   >
@@ -313,7 +313,7 @@ const WatchlistsPage = () => {
             <button
               onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
               aria-pressed={selectMode}
-              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 ${
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shrink-0 ${
                 selectMode
                   ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_4px_12px_rgba(255,0,60,0.25)]'
                   : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-500 hover:text-white hover:border-crimson-600'
@@ -349,12 +349,12 @@ const WatchlistsPage = () => {
       )}
 
       {sort === 'manual' && !selectMode && shows.length > 1 && !canDrag && effectiveList !== ALL_LIST && (
-        <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-400">
+        <p className="-mt-4 text-[11px] font-black uppercase tracking-widest text-crimson-400">
           Clear the search & type filter to drag items into a custom order.
         </p>
       )}
       {sort === 'manual' && effectiveList === ALL_LIST && shows.length > 1 && (
-        <p className="-mt-4 text-[10px] font-black uppercase tracking-widest text-crimson-400">
+        <p className="-mt-4 text-[11px] font-black uppercase tracking-widest text-crimson-400">
           Manual ordering is saved per list. Pick a specific list to rearrange it.
         </p>
       )}
@@ -373,7 +373,7 @@ const WatchlistsPage = () => {
           </div>
           <button
             onClick={() => navigate('/catalogue')}
-            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl"
           >
             Explore the Catalogue
           </button>
@@ -396,7 +396,7 @@ const WatchlistsPage = () => {
           </div>
           <button
             onClick={() => { setQuery(''); setTypeFilter('all'); }}
-            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl"
           >
             Clear Filters
           </button>
@@ -411,7 +411,7 @@ const WatchlistsPage = () => {
                   <h2 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-crimson-500">
                     <Icon className="w-3.5 h-3.5" /> {group.label}
                   </h2>
-                  <span className="text-[10px] font-black text-crimson-400 tabular-nums">{group.items.length}</span>
+                  <span className="text-[11px] font-black text-crimson-400 tabular-nums">{group.items.length}</span>
                   <div className="flex-1 h-px bg-gradient-to-r from-crimson-900/50 to-transparent"></div>
                 </div>
                 <div className={view === 'list'

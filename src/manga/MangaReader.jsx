@@ -224,7 +224,7 @@ const MangaReader = () => {
         </Link>
         <div className="min-w-0 flex-grow">
           <p className="text-xs sm:text-sm font-black text-crimson-50 truncate tracking-tight">{title}</p>
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 truncate">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 truncate">
             {currentChapter ? chapterLabel(currentChapter) : 'Chapter'}
           </p>
         </div>
@@ -274,10 +274,10 @@ const MangaReader = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <button onClick={() => goToChapter(prevChapter)} disabled={!prevChapter} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-900/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+          <button onClick={() => goToChapter(prevChapter)} disabled={!prevChapter} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-900/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
             <ChevronLeft className="w-3.5 h-3.5" /> Prev Ch.
           </button>
-          <button onClick={() => goToChapter(nextChapter)} disabled={!nextChapter} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-900/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
+          <button onClick={() => goToChapter(nextChapter)} disabled={!nextChapter} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-900/50 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
             Next Ch. <ChevronRight className="w-3.5 h-3.5" />
           </button>
 
@@ -313,8 +313,8 @@ const MangaReader = () => {
           <AlertTriangle className="w-10 h-10 text-crimson-500 mx-auto" />
           <p className="text-crimson-300 font-bold">This chapter's pages could not be conjured.</p>
           <div className="flex items-center justify-center gap-3">
-            {prevChapter && <button onClick={() => goToChapter(prevChapter)} className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400">Previous</button>}
-            {nextChapter && <button onClick={() => goToChapter(nextChapter)} className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400">Next</button>}
+            {prevChapter && <button onClick={() => goToChapter(prevChapter)} className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400">Previous</button>}
+            {nextChapter && <button onClick={() => goToChapter(nextChapter)} className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400">Next</button>}
           </div>
         </div>
         {fsExit}
@@ -330,7 +330,7 @@ const MangaReader = () => {
       {(pagesLoading || resolvingResume) ? (
         <div className="flex flex-col items-center justify-center py-40 gap-4">
           <Loader2 className="w-8 h-8 text-crimson-500 animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">
             {resolvingResume ? 'Finding your place' : 'Summoning pages'}
           </p>
         </div>
@@ -370,7 +370,7 @@ const MangaReader = () => {
 function ChapterFooter({ prevChapter, nextChapter, onGo, chapterLabel }) {
   if (!prevChapter && !nextChapter) {
     return (
-      <div className="text-center py-12 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">
+      <div className="text-center py-12 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">
         <BookOpen className="w-6 h-6 mx-auto mb-3 text-crimson-800" />
         The end, for now
       </div>
@@ -382,7 +382,7 @@ function ChapterFooter({ prevChapter, nextChapter, onGo, chapterLabel }) {
         <button onClick={() => onGo(prevChapter)} className="flex-1 flex items-center gap-3 px-4 py-4 rounded-xl bg-crimson-950/50 border border-crimson-900/60 hover:border-crimson-600/60 transition-all text-left group">
           <ChevronLeft className="w-5 h-5 text-crimson-500 shrink-0 group-hover:-translate-x-1 transition-transform" />
           <span className="min-w-0">
-            <span className="block text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400">Previous</span>
+            <span className="block text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">Previous</span>
             <span className="block text-xs font-bold text-crimson-200 truncate">{chapterLabel(prevChapter)}</span>
           </span>
         </button>
@@ -390,7 +390,7 @@ function ChapterFooter({ prevChapter, nextChapter, onGo, chapterLabel }) {
       {nextChapter ? (
         <button onClick={() => onGo(nextChapter)} className="flex-1 flex items-center justify-end gap-3 px-4 py-4 rounded-xl bg-crimson-600/15 border border-crimson-500/40 hover:border-crimson-500/70 transition-all text-right group">
           <span className="min-w-0">
-            <span className="block text-[9px] font-black uppercase tracking-[0.2em] text-crimson-500">Next</span>
+            <span className="block text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500">Next</span>
             <span className="block text-xs font-bold text-crimson-100 truncate">{chapterLabel(nextChapter)}</span>
           </span>
           <ChevronRight className="w-5 h-5 text-crimson-400 shrink-0 group-hover:translate-x-1 transition-transform" />

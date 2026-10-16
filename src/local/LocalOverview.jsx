@@ -83,7 +83,7 @@ function LocalOverview() {
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-crimson-800">
                 {isMovie ? <Film className="w-10 h-10" /> : <Tv className="w-10 h-10" />}
-                <span className="text-[9px] font-black uppercase tracking-[0.2em]">No Sigil</span>
+                <span className="text-[11px] font-black uppercase tracking-[0.2em]">No Sigil</span>
               </div>
             )}
           </div>
@@ -91,19 +91,19 @@ function LocalOverview() {
 
         <div className="flex-grow space-y-5">
           <div className="flex flex-wrap items-center gap-2.5">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-emerald-500/15 border-emerald-400/40 text-emerald-300">
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-emerald-500/15 border-emerald-400/40 text-emerald-300">
               Local
             </span>
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-500/10 border-crimson-500/30 text-crimson-400 flex items-center gap-1.5">
+            <span className="text-[11px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-500/10 border-crimson-500/30 text-crimson-400 flex items-center gap-1.5">
               {isMovie ? <Film className="w-3 h-3" /> : <Tv className="w-3 h-3" />} {isMovie ? 'Movie' : 'Show'}
             </span>
             {overview.source_label && (
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-950/60 border-crimson-900/60 text-crimson-500 flex items-center gap-1.5">
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-950/60 border-crimson-900/60 text-crimson-500 flex items-center gap-1.5">
                 <HardDrive className="w-3 h-3" /> {overview.source_label}
               </span>
             )}
             {!overview.has_metadata && (
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-900/10 border-crimson-900/40 text-crimson-400" title="Identified from the filename (no on-disk metadata)">
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md border bg-crimson-900/10 border-crimson-900/40 text-crimson-400" title="Identified from the filename (no on-disk metadata)">
                 Filename-matched
               </span>
             )}
@@ -124,7 +124,7 @@ function LocalOverview() {
           {(overview.genres || []).length > 0 && (
             <div className="flex flex-wrap gap-2">
               {overview.genres.map((g) => (
-                <span key={g} className="px-3 py-1 rounded-lg bg-crimson-500/5 border border-crimson-500/20 text-[9px] font-black uppercase tracking-widest text-crimson-400">
+                <span key={g} className="px-3 py-1 rounded-lg bg-crimson-500/5 border border-crimson-500/20 text-[11px] font-black uppercase tracking-widest text-crimson-400">
                   {g}
                 </span>
               ))}
@@ -150,7 +150,7 @@ function LocalOverview() {
         <div className="space-y-6">
           {seasons.length > 1 && (
             <div className="flex items-center gap-3 overflow-x-auto no-scrollbar p-4 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 pl-2 whitespace-nowrap">Seasons</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 pl-2 whitespace-nowrap">Seasons</span>
               {seasons.map((s) => (
                 <button
                   key={s.season_number}
@@ -173,7 +173,7 @@ function LocalOverview() {
                 <ListVideo className="w-6 h-6 text-crimson-500" /> Episodes
               </h3>
               <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400 whitespace-nowrap">
+              <span className="text-[11px] font-black uppercase tracking-widest text-crimson-400 whitespace-nowrap">
                 {seasonData?.episodes?.length || 0} files
               </span>
             </div>
@@ -197,7 +197,7 @@ function LocalOverview() {
                     <span className="text-sm font-bold text-crimson-50 group-hover:text-crimson-400 transition-colors truncate">
                       {ep.title || `Episode ${ep.episode_number}`}
                     </span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-crimson-400">
                       S{ep.season_number} · E{ep.episode_number}
                     </span>
                   </div>

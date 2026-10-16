@@ -10,7 +10,7 @@ const NotFound = () => {
 
       <div className="flex-1 space-y-10 text-center md:text-left z-10 max-w-2xl relative">
         <div className="space-y-4">
-          <div className="inline-flex items-center gap-2 px-4 py-1 bg-crimson-500/10 border border-crimson-500/20 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 mb-2">
+          <div className="inline-flex items-center gap-2 px-4 py-1 bg-crimson-500/10 border border-crimson-500/20 rounded-full text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 mb-2">
              <Ghost className="w-3 h-3" /> Ethereal Error
           </div>
           <h1 className="text-5xl sm:text-8xl font-black text-crimson-50 uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.3)] leading-none">
@@ -19,7 +19,7 @@ const NotFound = () => {
           <p className="text-xl sm:text-2xl text-crimson-100/90 font-medium italic leading-relaxed tracking-tight">
             "Oh dear… you’ve wandered into a forgotten corridor of my castle."
           </p>
-          <p className="text-[10px] sm:text-xs text-crimson-400 font-black uppercase tracking-[0.4em] flex items-center justify-center md:justify-start gap-4">
+          <p className="text-[11px] sm:text-xs text-crimson-400 font-black uppercase tracking-[0.2em] flex items-center justify-center md:justify-start gap-4">
             <span className="w-12 h-px bg-crimson-900/50 hidden md:block"></span>
             Luminas, the Vampire Queen
           </p>
@@ -64,13 +64,13 @@ const NotFound = () => {
             "I’ve ruled for centuries, and even I get lost in my own domain. <br className="hidden sm:block" />
             Don’t blush. Click the pretty button above and I’ll pretend this never happened."
           </p>
-          <p className="text-crimson-400 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs flex items-center gap-3">
+          <p className="text-crimson-400 font-black uppercase tracking-[0.2em] text-[11px] sm:text-xs flex items-center gap-3">
              <span className="block w-6 h-px bg-crimson-900"></span>
              Lumi, adjusting her tiny velvet cape
           </p>
         </div>
 
-        <div className="text-[9px] font-mono text-crimson-400 font-black uppercase tracking-[0.4em] pt-8">
+        <div className="text-[11px] font-mono text-crimson-400 font-black uppercase tracking-[0.2em] pt-8">
           SYSTEM_ERROR: 0x404 <span className="mx-2">//</span> LINK_SEVERED
         </div>
       </div>

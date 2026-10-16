@@ -17,7 +17,7 @@ export default function MusicNowPlaying() {
     return (
       <div className="max-w-xl mx-auto py-32 text-center space-y-6">
         <p className="text-crimson-400 font-black uppercase tracking-[0.3em] text-xs">Nothing is playing</p>
-        <Link to="/music" className="inline-block px-6 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">
+        <Link to="/music" className="inline-block px-6 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest">
           Open your music
         </Link>
       </div>
@@ -35,7 +35,7 @@ export default function MusicNowPlaying() {
             <ChevronDown className="w-6 h-6" />
           </button>
           {state.source?.path ? (
-            <Link to={state.source.path} className="text-[10px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300 truncate max-w-[70%]">
+            <Link to={state.source.path} className="text-[11px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300 truncate max-w-[70%]">
               {state.source.name}
             </Link>
           ) : <span />}
@@ -92,7 +92,7 @@ export default function MusicNowPlaying() {
       </div>
 
       <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-crimson-500 mb-4">
+        <h2 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-500 mb-4">
           <ListMusic className="w-4 h-4" /> Up next
         </h2>
         {upcoming.length === 0 ? (

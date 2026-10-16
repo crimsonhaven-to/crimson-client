@@ -46,7 +46,7 @@ const FollowButton = ({ item, variant = 'overview' }) => {
       title={hint}
       aria-pressed={following}
       className={`group inline-flex items-center gap-3 font-black uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-60 ${
-        isOverview ? 'text-xs px-6 py-4 rounded-2xl' : 'text-[10px] px-4 py-2.5 rounded-xl'
+        isOverview ? 'text-xs px-6 py-4 rounded-2xl' : 'text-[11px] px-4 py-2.5 rounded-xl'
       } ${
         following
           ? 'bg-crimson-500/15 border border-crimson-500/50 text-crimson-200 hover:border-crimson-400'

@@ -16,7 +16,7 @@ const SupportersPage = () => {
           <h1 className="text-5xl sm:text-7xl font-black text-crimson-50 uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.2)]">
             Lumi's Favorite <span className="text-crimson-500">Mortals</span>
           </h1>
-          <p className="text-crimson-400 font-black uppercase tracking-[0.4em] text-[10px] sm:text-xs">
+          <p className="text-crimson-400 font-black uppercase tracking-[0.2em] text-[11px] sm:text-xs">
             The Blessed Contributors of the Haven
           </p>
         </div>
@@ -25,11 +25,11 @@ const SupportersPage = () => {
       {!loading && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/40 p-8 rounded-[2rem] text-center shadow-2xl group hover:border-crimson-500/30 transition-all">
-            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Active Mortals</p>
+            <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] mb-2 group-hover:text-crimson-200 transition-colors">Active Mortals</p>
             <p className="text-4xl font-black text-crimson-50 tracking-tighter">{stats.supporter_count}</p>
           </div>
           <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/40 p-8 rounded-[2rem] text-center shadow-2xl group hover:border-crimson-500/30 transition-all">
-            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Sanctuary Growth</p>
+            <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] mb-2 group-hover:text-crimson-200 transition-colors">Sanctuary Growth</p>
             <p className="text-4xl font-black text-crimson-50 tracking-tighter">
               {stats.total_raised} <span className="text-sm font-black text-crimson-400 ml-1">{stats.currency}</span>
             </p>
@@ -44,7 +44,7 @@ const SupportersPage = () => {
               <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
               <div className="absolute inset-0 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
-            <p className="text-crimson-400 font-black uppercase tracking-[0.4em] text-[10px] animate-pulse">Summoning Mortal Records</p>
+            <p className="text-crimson-400 font-black uppercase tracking-[0.2em] text-[11px] animate-pulse">Summoning Mortal Records</p>
           </div>
         ) : error ? (
           <div className="p-10 bg-crimson-950/80 border border-crimson-900 rounded-[2.5rem] text-center shadow-2xl">
@@ -70,7 +70,7 @@ const SupportersPage = () => {
                   {supporter.is_subscription && (
                     <div className="flex items-center gap-1.5 mb-1 text-crimson-500">
                        <Crown className="w-3.5 h-3.5 fill-current animate-pulse" />
-                       <span className="text-[8px] font-black uppercase tracking-[0.3em]">Eternal Rank</span>
+                       <span className="text-[11px] font-black uppercase tracking-[0.2em]">Eternal Rank</span>
                     </div>
                   )}
                   <h3 className={`text-xl font-black text-crimson-50 uppercase tracking-tight truncate transition-all duration-300 ${
@@ -82,10 +82,10 @@ const SupportersPage = () => {
                   </h3>
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-[9px] font-black px-2.5 py-1 bg-crimson-500/5 text-crimson-400 rounded-lg uppercase tracking-tighter border border-crimson-500/10">
+                      <span className="text-[11px] font-black px-2.5 py-1 bg-crimson-500/5 text-crimson-400 rounded-lg uppercase tracking-tighter border border-crimson-500/10">
                         {supporter.is_subscription ? 'Eternal Bond' : 'Soul Offering'}
                       </span>
-                      <span className="text-[9px] text-crimson-400 font-black uppercase tracking-widest">
+                      <span className="text-[11px] text-crimson-400 font-black uppercase tracking-widest">
                         {new Date(supporter.last_payment_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
@@ -116,7 +116,7 @@ const SupportersPage = () => {
         <div>
           <button
             onClick={() => navigate('/support')}
-            className="group relative inline-flex items-center gap-3 bg-crimson-500 hover:bg-crimson-400 text-white font-black uppercase tracking-[0.3em] text-[10px] px-10 py-4 rounded-2xl transition-all shadow-[0_15px_30px_rgba(255,0,60,0.3)] hover:shadow-[0_15px_40px_rgba(255,0,60,0.5)] active:scale-95"
+            className="group relative inline-flex items-center gap-3 bg-crimson-500 hover:bg-crimson-400 text-white font-black uppercase tracking-[0.2em] text-[11px] px-10 py-4 rounded-2xl transition-all shadow-[0_15px_30px_rgba(255,0,60,0.3)] hover:shadow-[0_15px_40px_rgba(255,0,60,0.5)] active:scale-95"
           >
             Join the Favored
             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

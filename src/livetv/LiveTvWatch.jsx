@@ -199,7 +199,7 @@ export default function LiveTvWatch() {
               <h1 className="text-xl sm:text-3xl font-black text-crimson-50 uppercase tracking-tighter leading-none truncate">
                 {channel.name}
               </h1>
-              <p className="text-crimson-400 font-black tracking-[0.2em] text-[10px] uppercase mt-1.5 flex items-center gap-2 flex-wrap">
+              <p className="text-crimson-400 font-black tracking-[0.2em] text-[11px] uppercase mt-1.5 flex items-center gap-2 flex-wrap">
                 <Globe2 className="w-3.5 h-3.5" /> {channel.country || 'Unknown Realm'}
                 {channel.network && <span className="text-crimson-400">· {channel.network}</span>}
                 {(channel.categories || []).map((c) => (
@@ -211,7 +211,7 @@ export default function LiveTvWatch() {
 
           {streams.length > 1 && (
             <div className="space-y-3">
-              <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">
+              <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">
                 <SatelliteDish className="w-3.5 h-3.5" /> Broadcast Feeds
               </p>
               <div className="flex flex-wrap gap-2">
@@ -219,7 +219,7 @@ export default function LiveTvWatch() {
                   <button
                     key={`${s.url}-${i}`}
                     onClick={() => setActiveIdx(i)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all active:scale-95 ${
                       i === activeIdx
                         ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.3)]'
                         : 'bg-crimson-950/40 border-crimson-900/40 text-crimson-400 hover:border-crimson-700 hover:bg-crimson-900/20'
@@ -231,7 +231,7 @@ export default function LiveTvWatch() {
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-crimson-400 font-bold tracking-wide">
+              <p className="text-[11px] text-crimson-400 font-bold tracking-wide">
                 A feed refuses to manifest? Free-to-air broadcasts flicker. Invoke another and Lumi shall re-tune. 🦇
               </p>
             </div>

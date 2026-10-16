@@ -326,11 +326,11 @@ const WatchView = ({
             <div className="space-y-6 w-full">
               <div className="flex flex-wrap gap-3 items-center">
                 {metadata?.status && (
-                  <span className="bg-crimson-500/10 text-crimson-400 text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-crimson-500/30 backdrop-blur-md">
+                  <span className="bg-crimson-500/10 text-crimson-400 text-[11px] px-3 py-1 rounded-full font-black uppercase tracking-widest border border-crimson-500/30 backdrop-blur-md">
                     {metadata.status}
                   </span>
                 )}
-                <span className="text-[10px] text-crimson-400 font-black tracking-widest uppercase">
+                <span className="text-[11px] text-crimson-400 font-black tracking-widest uppercase">
                   REF: {refLabel || 'UNK'}
                 </span>
                 {(saveAction || (isAuthenticated && watchlistItem)) && (
@@ -360,11 +360,11 @@ const WatchView = ({
             {!isMovie && (
               <div className="flex gap-3 w-full sm:w-auto">
                 <div className="flex-1 sm:flex-none bg-crimson-950/80 border border-crimson-900/60 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
-                  <p className="text-[10px] uppercase text-crimson-500 font-black tracking-[0.3em] mb-1">SN</p>
+                  <p className="text-[11px] uppercase text-crimson-500 font-black tracking-[0.2em] mb-1">SN</p>
                   <p className="text-2xl font-black text-crimson-50">{currentSeason}</p>
                 </div>
                 <div className="flex-1 sm:flex-none bg-crimson-900/20 border border-crimson-800/40 px-6 py-4 rounded-2xl text-center min-w-[90px] shadow-xl">
-                  <p className="text-[10px] uppercase text-crimson-400 font-black tracking-[0.3em] mb-1">EP</p>
+                  <p className="text-[11px] uppercase text-crimson-400 font-black tracking-[0.2em] mb-1">EP</p>
                   <p className="text-2xl font-black text-crimson-50">{currentEpisode}</p>
                 </div>
               </div>
@@ -387,7 +387,7 @@ const WatchView = ({
             Scraped Targets
             {!unaired && (
               <span className="ml-auto flex items-center gap-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 normal-nums">
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 normal-nums">
                   {streamLoading
                     ? `Scanning${streams.length ? ` · ${streams.length}` : '…'}`
                     : streams.length
@@ -411,7 +411,7 @@ const WatchView = ({
             {unaired ? (
               <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-2">
                 <CalendarClock className="w-6 h-6 text-crimson-400 mx-auto" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">
                   Awaiting transmission{unaired.airDate ? ` · ${formatAirDate(unaired.airDate)}` : ''}
                 </p>
               </div>
@@ -429,11 +429,11 @@ const WatchView = ({
               />
             ) : (
               <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">Zero transport nodes active</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">Zero transport nodes active</p>
                 {onReload && (
                   <button
                     onClick={onReload}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_10px_25px_rgba(255,0,60,0.2)]"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_10px_25px_rgba(255,0,60,0.2)]"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Rescan sources
                   </button>
@@ -445,7 +445,7 @@ const WatchView = ({
           {streamLoading && streams.length > 0 && (
             <div className="mt-6 flex items-center justify-center gap-2 animate-pulse">
                <div className="w-1.5 h-1.5 bg-crimson-500 rounded-full"></div>
-               <span className="text-[8px] font-black uppercase tracking-[0.3em] text-crimson-400">Probing more nodes</span>
+               <span className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">Probing more nodes</span>
             </div>
           )}
 
@@ -458,7 +458,7 @@ const WatchView = ({
                 <Link to="/extension" className="block text-[11px] font-black text-crimson-50 leading-snug hover:text-crimson-300 transition-colors">
                   Want more transport nodes? Claim the Companion. 🦇
                 </Link>
-                <p className="text-[10px] text-crimson-300 font-medium leading-snug mt-0.5">
+                <p className="text-[11px] text-crimson-300 font-medium leading-snug mt-0.5">
                   It resolves &amp; plays extra sources locally, straight from your browser.
                 </p>
               </div>

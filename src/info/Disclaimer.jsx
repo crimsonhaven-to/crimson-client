@@ -5,7 +5,7 @@ import PageHeading from '../shell/PageHeading';
 
 const Section = ({ icon, title, children }) => (
   <div className="space-y-6">
-    <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
+    <h3 className="text-[11px] font-black text-crimson-500 uppercase tracking-[0.2em] flex items-center gap-4">
       {icon}
       {title}
       <div className="h-px bg-crimson-900/30 flex-grow"></div>
@@ -79,7 +79,7 @@ const DisclaimerPage = () => {
         </p>
       </Section>
 
-      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] text-crimson-400 space-y-2 shadow-inner relative overflow-hidden">
+      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[11px] text-crimson-400 space-y-2 shadow-inner relative overflow-hidden">
         <div className="absolute top-0 right-0 p-3 opacity-5">
           <Scale className="w-12 h-12 text-crimson-500" />
         </div>

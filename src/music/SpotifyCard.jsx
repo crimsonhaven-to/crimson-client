@@ -50,7 +50,7 @@ function ConnectForm({ scopes }) {
   return (
     <div className="space-y-5">
       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-xs leading-relaxed text-amber-200/90">
-        <p className="font-black uppercase tracking-widest text-[10px] text-amber-300 mb-1">Spotify Premium needed</p>
+        <p className="font-black uppercase tracking-widest text-[11px] text-amber-300 mb-1">Spotify Premium needed</p>
         Spotify only opens its developer API to apps owned by a Premium account. Without Premium,
         add a <strong>public</strong> playlist by its link below (first 100 songs), or upload a CSV export.
       </div>
@@ -80,7 +80,7 @@ function ConnectForm({ scopes }) {
               className="flex-grow min-w-0 px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-mono focus:outline-none focus:border-crimson-500"
             />
             <button type="submit" disabled={!valid || starting}
-              className="px-5 bg-[#1db954] hover:bg-[#1ed760] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+              className="px-5 bg-[#1db954] hover:bg-[#1ed760] text-black rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
               {starting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Connect'}
             </button>
           </form>
@@ -120,7 +120,7 @@ function PlaylistPicker({ onImported }) {
   if (!list) {
     return (
       <div className="space-y-2">
-        <button onClick={load} className="px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">
+        <button onClick={load} className="px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest">
           Choose playlists
         </button>
         {error && <p className="text-xs font-bold text-amber-400">{error}</p>}
@@ -142,10 +142,10 @@ function PlaylistPicker({ onImported }) {
               </p>
             </div>
             {p.imported_id ? (
-              <Link to={`/music/playlist/${p.imported_id}`} className="text-[10px] font-black uppercase tracking-widest text-green-400 px-3">Added</Link>
+              <Link to={`/music/playlist/${p.imported_id}`} className="text-[11px] font-black uppercase tracking-widest text-green-400 px-3">Added</Link>
             ) : (
               <button onClick={() => add(p)} disabled={!!importing}
-                className="px-3 py-2 rounded-xl bg-crimson-900/50 hover:bg-crimson-700 text-crimson-100 text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+                className="px-3 py-2 rounded-xl bg-crimson-900/50 hover:bg-crimson-700 text-crimson-100 text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
                 {importing === p.spotify_id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
               </button>
             )}
@@ -175,11 +175,11 @@ export default function SpotifyCard({ status, onChanged }) {
     <section className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl p-5 sm:p-6 space-y-5">
       <div className="flex items-center gap-3">
         <span className="w-2.5 h-2.5 rounded-full" style={{ background: spotify.connected ? '#1db954' : '#6b1020' }} />
-        <h2 className="text-[10px] font-black uppercase tracking-widest text-crimson-400 flex-grow">
+        <h2 className="text-[11px] font-black uppercase tracking-widest text-crimson-400 flex-grow">
           {spotify.connected ? `Spotify: ${spotify.display_name || 'connected'}` : 'Connect Spotify'}
         </h2>
         {spotify.connected && (
-          <button onClick={disconnect} disabled={busy} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200">
+          <button onClick={disconnect} disabled={busy} className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200">
             <Unplug className="w-3.5 h-3.5" /> Disconnect
           </button>
         )}

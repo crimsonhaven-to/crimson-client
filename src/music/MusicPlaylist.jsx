@@ -24,12 +24,12 @@ function StatusCell({ track, onReview, onRetry }) {
     case 'ready':
       return null;
     case 'pending':
-      return <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-crimson-400"><Clock className="w-3 h-3" /> Queued</span>;
+      return <span className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-crimson-400"><Clock className="w-3 h-3" /> Queued</span>;
     case 'working':
-      return <span className="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-crimson-400"><Loader2 className="w-3 h-3 animate-spin" /> Fetching</span>;
+      return <span className="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-crimson-400"><Loader2 className="w-3 h-3 animate-spin" /> Fetching</span>;
     case 'review':
       return (
-        <button onClick={onReview} className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/40 text-amber-300 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500/20">
+        <button onClick={onReview} className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/40 text-amber-300 text-[11px] font-black uppercase tracking-widest hover:bg-amber-500/20">
           Pick recording
         </button>
       );
@@ -69,13 +69,13 @@ export default function MusicPlaylist() {
   }, [live.playlist, live.tracks]);
 
   if (loading) {
-    return <div className="py-32 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Opening the playlist...</div>;
+    return <div className="py-32 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Opening the playlist...</div>;
   }
   if ((error && !offline) || !playlist) {
     return (
       <div className="py-32 text-center space-y-4">
         <p className="text-crimson-400 text-sm font-bold">{error?.message || 'Playlist not found.'}</p>
-        <Link to="/music" className="text-crimson-500 text-[10px] font-black uppercase tracking-widest">Back to your music</Link>
+        <Link to="/music" className="text-crimson-500 text-[11px] font-black uppercase tracking-widest">Back to your music</Link>
       </div>
     );
   }
@@ -121,14 +121,14 @@ export default function MusicPlaylist() {
 
   return (
     <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10">
-      <Link to="/music" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300">
+      <Link to="/music" className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300">
         <ArrowLeft className="w-4 h-4" /> Your music
       </Link>
 
       <div className="flex flex-col sm:flex-row gap-6 sm:items-end">
         <Cover src={playlist.cover_url} className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl shadow-2xl flex-shrink-0" />
         <div className="min-w-0 space-y-3">
-          <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">{SOURCE_LABEL[playlist.source] || playlist.source}</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">{SOURCE_LABEL[playlist.source] || playlist.source}</p>
           <h1 className="text-3xl sm:text-5xl font-black text-crimson-50 tracking-tighter leading-none break-words">{playlist.name}</h1>
           <p className="text-xs font-bold text-crimson-400">
             {offline && <span className="inline-flex items-center gap-1 text-amber-300 mr-2"><WifiOff className="w-3.5 h-3.5" /> Offline, from this device ·</span>}
@@ -139,7 +139,7 @@ export default function MusicPlaylist() {
             <button
               disabled={!ready.length}
               onClick={() => (isThisPlaylist ? toggle() : playTracks(ready, 0, source, { shuffle: false }))}
-              className="flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+              className="flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40"
             >
               {isThisPlaylist && player.playing ? <Pause className="w-4 h-4" fill="currentColor" /> : <Play className="w-4 h-4" fill="currentColor" />}
               {isThisPlaylist && player.playing ? 'Pause' : 'Play'}
@@ -147,13 +147,13 @@ export default function MusicPlaylist() {
             <button
               disabled={!ready.length}
               onClick={() => playTracks(ready, Math.floor(Math.random() * ready.length), source, { shuffle: true })}
-              className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40"
             >
               <Shuffle className="w-4 h-4" /> Shuffle
             </button>
             {own && (
               <button onClick={() => setAdding(true)}
-                className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest">
+                className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest">
                 <Plus className="w-4 h-4" /> Add songs
               </button>
             )}
@@ -161,10 +161,10 @@ export default function MusicPlaylist() {
             {SYNCED_SOURCES.includes(playlist.source) && !offline && (
               <>
                 <button disabled={busy} onClick={() => run(() => musicApi.sync(playlist.id), 'Synced.')}
-                  className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+                  className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
                   <RefreshCw className={`w-4 h-4 ${busy ? 'animate-spin' : ''}`} /> Sync now
                 </button>
-                <label className="flex items-center gap-2 px-3 text-[10px] font-black uppercase tracking-widest text-crimson-500 cursor-pointer select-none">
+                <label className="flex items-center gap-2 px-3 text-[11px] font-black uppercase tracking-widest text-crimson-500 cursor-pointer select-none">
                   <input type="checkbox" className="accent-crimson-600" checked={playlist.sync_enabled} disabled={busy}
                     onChange={(e) => run(() => musicApi.setSync(playlist.id, e.target.checked))} />
                   Keep in sync
@@ -186,7 +186,7 @@ export default function MusicPlaylist() {
         <div className="py-16 text-center space-y-4 border-t border-crimson-900/30">
           <p className="text-crimson-500 text-sm">No songs yet.</p>
           <button onClick={() => setAdding(true)}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">
+            className="inline-flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest">
             <Plus className="w-4 h-4" /> Add songs
           </button>
         </div>
@@ -214,7 +214,7 @@ export default function MusicPlaylist() {
                   </span>
                   <span className="block text-xs text-crimson-400 truncate">
                     {track.artists.join(', ')}{track.album ? ` · ${track.album}` : ''}
-                    {track.removed_upstream && <span className="ml-2 text-[9px] font-black uppercase tracking-widest text-amber-400/80">Gone from Spotify</span>}
+                    {track.removed_upstream && <span className="ml-2 text-[11px] font-black uppercase tracking-widest text-amber-400/80">Gone from Spotify</span>}
                   </span>
                 </span>
                 {downloads.stored.has(track.id) && (

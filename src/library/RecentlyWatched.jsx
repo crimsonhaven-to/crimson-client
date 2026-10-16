@@ -121,7 +121,7 @@ const RecentlyWatchedPage = () => {
                 <button
                   key={f.key}
                   onClick={() => setStatusFilter(f.key)}
-                  className={`px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
+                  className={`px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 ${
                     active ? 'bg-crimson-600 text-white shadow-[0_4px_12px_rgba(255,0,60,0.25)]' : 'text-crimson-500 hover:text-white'
                   }`}
                 >
@@ -166,7 +166,7 @@ const RecentlyWatchedPage = () => {
           </div>
           <button
             onClick={() => navigate('/')}
-            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl"
           >
             Start Streaming
           </button>
@@ -184,7 +184,7 @@ const RecentlyWatchedPage = () => {
           </div>
           <button
             onClick={() => { setQuery(''); setStatusFilter('all'); }}
-            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl"
+            className="px-10 py-3 bg-crimson-950 border border-crimson-900 text-crimson-500 hover:border-crimson-500 hover:text-white transition-all rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-xl"
           >
             Clear Filters
           </button>
@@ -195,7 +195,7 @@ const RecentlyWatchedPage = () => {
             <section key={group.name} className="space-y-5">
               <div className="flex items-center gap-3">
                 <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-crimson-500">{group.name}</h2>
-                <span className="text-[10px] font-black text-crimson-400 tabular-nums">{group.items.length}</span>
+                <span className="text-[11px] font-black text-crimson-400 tabular-nums">{group.items.length}</span>
                 <div className="flex-1 h-px bg-gradient-to-r from-crimson-900/50 to-transparent"></div>
               </div>
               <div className={view === 'list' ? 'space-y-3' : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8'}>

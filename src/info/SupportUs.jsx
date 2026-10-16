@@ -72,7 +72,7 @@ const SupportUsPage = () => {
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-[10px] text-crimson-500 font-black uppercase tracking-[0.3em] flex items-center gap-3">
+        <h3 className="text-[11px] text-crimson-500 font-black uppercase tracking-[0.2em] flex items-center gap-3">
           <Wallet className="w-4 h-4" /> Crypto Channels
         </h3>
         {WALLETS.map((wallet) => (
@@ -80,7 +80,7 @@ const SupportUsPage = () => {
         ))}
       </div>
 
-      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] text-crimson-400 space-y-2 shadow-inner relative overflow-hidden">
+      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[11px] text-crimson-400 space-y-2 shadow-inner relative overflow-hidden">
         <div className="absolute top-0 right-0 p-3 opacity-5">
            <Heart className="w-12 h-12 text-crimson-500" />
         </div>

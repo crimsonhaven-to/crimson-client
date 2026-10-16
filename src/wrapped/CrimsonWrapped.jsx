@@ -83,7 +83,7 @@ const CrimsonWrapped = () => {
             <button
               key={y}
               onClick={() => setYear(y)}
-              className={`px-3.5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 tabular-nums ${
+              className={`px-3.5 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 tabular-nums ${
                 y === year
                   ? 'bg-crimson-600 text-white shadow-[0_4px_12px_rgba(255,0,60,0.25)]'
                   : 'text-crimson-500 hover:text-white'
@@ -109,7 +109,7 @@ const CrimsonWrapped = () => {
             <Info className="w-5 h-5 text-amber-500" />
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em]">
+            <p className="text-[11px] font-black text-amber-400 uppercase tracking-[0.2em]">
               Part of this year is an estimate
             </p>
             <p className="text-xs text-crimson-400 leading-relaxed font-medium">
@@ -221,7 +221,7 @@ const CrimsonWrapped = () => {
                           <span className="text-sm font-black text-crimson-50 truncate tracking-tight">
                             {t.title}
                           </span>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-crimson-500 shrink-0 tabular-nums">
+                          <span className="text-[11px] font-black uppercase tracking-widest text-crimson-500 shrink-0 tabular-nums">
                             {t.minutes >= 60 ? `${Math.round(t.minutes / 60)}h` : `${t.minutes}m`}
                           </span>
                         </div>
@@ -271,7 +271,7 @@ const CrimsonWrapped = () => {
             <div className="grid gap-4 sm:grid-cols-2">
               {data.first_title && (
                 <div className="bg-crimson-950/30 border border-crimson-900/40 p-7 rounded-[2rem] space-y-1">
-                  <div className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
+                  <div className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em]">
                     You opened the year with
                   </div>
                   <div className="text-xl font-black text-crimson-50 tracking-tighter">
@@ -281,7 +281,7 @@ const CrimsonWrapped = () => {
               )}
               {data.last_title && (
                 <div className="bg-crimson-950/30 border border-crimson-900/40 p-7 rounded-[2rem] space-y-1">
-                  <div className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
+                  <div className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em]">
                     And left it on
                   </div>
                   <div className="text-xl font-black text-crimson-50 tracking-tighter">
@@ -296,7 +296,7 @@ const CrimsonWrapped = () => {
 
       {listened && <MusicYear data={music.data} year={year} />}
 
-      <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
+      <p className="text-[11px] text-crimson-400 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
         Counted in your own timezone · Yours alone · Never shared
       </p>
     </div>

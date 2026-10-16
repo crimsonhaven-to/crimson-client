@@ -41,7 +41,7 @@ const eventMeta = (type) => EVENT_META[type] || { label: type || '-', tone: 'dim
 const EventChip = ({ type }) => {
   const m = eventMeta(type);
   return (
-    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border whitespace-nowrap ${TONE_CHIP[m.tone]}`}>
+    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border whitespace-nowrap ${TONE_CHIP[m.tone]}`}>
       {m.label}
     </span>
   );
@@ -56,7 +56,7 @@ const detailSummary = (detail) => {
 };
 
 const SectionHeading = ({ icon: Icon, children }) => (
-  <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+  <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
     <Icon className="w-4 h-4" /> {children} <div className="h-px bg-crimson-900/30 flex-grow" />
   </h3>
 );
@@ -87,7 +87,7 @@ const ActivityChart = ({ series }) => {
                   style={{ height: `${d.failures > 0 ? Math.max(failH, 2) : 0}%` }}
                 />
               </div>
-              <p className={`text-[8px] font-black text-crimson-400 text-center mt-1.5 truncate ${i % labelStep === 0 ? '' : 'invisible'}`}>
+              <p className={`text-[11px] font-black text-crimson-400 text-center mt-1.5 truncate ${i % labelStep === 0 ? '' : 'invisible'}`}>
                 {label}
               </p>
             </div>
@@ -95,10 +95,10 @@ const ActivityChart = ({ series }) => {
         })}
       </div>
       <div className="flex items-center gap-5 mt-4">
-        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-crimson-400">
+        <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-400">
           <span className="inline-block w-2.5 h-2.5 rounded-sm bg-crimson-900/60" /> All events
         </span>
-        <span className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-crimson-400">
+        <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-400">
           <span className="inline-block w-2.5 h-2.5 rounded-sm bg-crimson-500 shadow-[0_0_8px_rgba(255,0,60,0.4)]" /> Denials
         </span>
       </div>
@@ -170,7 +170,7 @@ export default function SecurityTab({ notify }) {
             <button
               key={w}
               onClick={() => setDays(w)}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${
                 days === w
                   ? 'bg-crimson-600 text-white shadow-[0_6px_18px_rgba(255,0,60,0.25)]'
                   : 'bg-crimson-950/40 border border-crimson-900/60 text-crimson-500 hover:text-white hover:border-crimson-600'
@@ -182,13 +182,13 @@ export default function SecurityTab({ notify }) {
         </div>
         <div className="flex items-center gap-4">
           {stats?.retention_days && (
-            <p className="text-[9px] font-black uppercase tracking-widest text-crimson-400">
+            <p className="text-[11px] font-black uppercase tracking-widest text-crimson-400">
               Ledger keeps {stats.retention_days} days
             </p>
           )}
           <button
             onClick={() => { loadStats(); loadLedger(); }}
-            className="group flex items-center gap-2 px-4 py-2 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[10px] font-black uppercase tracking-widest"
+            className="group flex items-center gap-2 px-4 py-2 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[11px] font-black uppercase tracking-widest"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${loadingStats ? 'animate-spin' : 'group-hover:rotate-90 transition-transform'}`} /> Refresh
           </button>
@@ -210,16 +210,16 @@ export default function SecurityTab({ notify }) {
       <section className="space-y-4">
         <SectionHeading icon={Gauge}>Activity at the Gates</SectionHeading>
         {loadingStats && !stats ? (
-          <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Consulting the ledger…</div>
+          <div className="py-16 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Consulting the ledger…</div>
         ) : (
           <ActivityChart series={stats?.series || []} />
         )}
         {failureTypes.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 pl-1">
-            <span className="text-[9px] font-black uppercase tracking-widest text-crimson-400">Denials by kind:</span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-crimson-400">Denials by kind:</span>
             {failureTypes.map((t) => (
               <button key={t.event_type} onClick={() => setType(t.event_type)} title="Filter the ledger to this kind" className="hover:scale-105 transition-transform">
-                <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${TONE_CHIP[eventMeta(t.event_type).tone]}`}>
+                <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${TONE_CHIP[eventMeta(t.event_type).tone]}`}>
                   {eventMeta(t.event_type).label} · {t.count}
                 </span>
               </button>
@@ -243,20 +243,20 @@ export default function SecurityTab({ notify }) {
                   <span className="text-sm font-black text-crimson-50 font-mono truncate">
                     <span className="text-crimson-400 mr-2">#{i + 1}</span>{o.ip}
                   </span>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-crimson-500 whitespace-nowrap">{o.count} denial{o.count === 1 ? '' : 's'}</span>
+                  <span className="text-[11px] font-black uppercase tracking-widest text-crimson-500 whitespace-nowrap">{o.count} denial{o.count === 1 ? '' : 's'}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 mt-2">
                   {Object.entries(o.types || {}).map(([t, n]) => (
-                    <span key={t} className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${TONE_CHIP[eventMeta(t).tone]}`}>
+                    <span key={t} className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${TONE_CHIP[eventMeta(t).tone]}`}>
                       {eventMeta(t).label} · {n}
                     </span>
                   ))}
-                  <span className="text-[9px] font-bold text-crimson-400 ml-auto">last seen {fmtDate(o.last_seen)}</span>
+                  <span className="text-[11px] font-bold text-crimson-400 ml-auto">last seen {fmtDate(o.last_seen)}</span>
                 </div>
               </button>
             ))}
             {(!stats?.top_ips || stats.top_ips.length === 0) && !loadingStats && (
-              <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No offenders in this window, the gates stand quiet</p>
+              <p className="py-10 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">No offenders in this window, the gates stand quiet</p>
             )}
           </div>
         </section>
@@ -267,13 +267,13 @@ export default function SecurityTab({ notify }) {
             {(stats?.top_identities || []).map((t) => (
               <div key={t.identity} className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl p-4 flex items-center justify-between gap-3">
                 <span className="text-sm font-bold text-crimson-50 truncate">{t.identity}</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-crimson-500 whitespace-nowrap">
+                <span className="text-[11px] font-black uppercase tracking-widest text-crimson-500 whitespace-nowrap">
                   {t.count} denial{t.count === 1 ? '' : 's'} · {fmtDate(t.last_seen)}
                 </span>
               </div>
             ))}
             {(!stats?.top_identities || stats.top_identities.length === 0) && !loadingStats && (
-              <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No souls under siege</p>
+              <p className="py-10 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">No souls under siege</p>
             )}
           </div>
         </section>
@@ -298,7 +298,7 @@ export default function SecurityTab({ notify }) {
           <select
             value={typeFilter}
             onChange={(e) => setType(e.target.value)}
-            className="px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-300 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-crimson-500"
+            className="px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-300 text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-crimson-500"
           >
             <option value="">All kinds</option>
             {typeOptions.map((t) => <option key={t} value={t}>{eventMeta(t).label}</option>)}
@@ -306,7 +306,7 @@ export default function SecurityTab({ notify }) {
           <select
             value={outcomeFilter}
             onChange={(e) => setOutcome(e.target.value)}
-            className="px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-300 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-crimson-500"
+            className="px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-300 text-[11px] font-black uppercase tracking-widest focus:outline-none focus:border-crimson-500"
           >
             <option value="">All outcomes</option>
             <option value="failure">Denials</option>
@@ -316,7 +316,7 @@ export default function SecurityTab({ notify }) {
           {ipFilter && (
             <button
               onClick={() => setIp('')}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-crimson-600/20 border border-crimson-500/50 text-crimson-300 text-[10px] font-black uppercase tracking-widest hover:bg-crimson-600/30 transition-all"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-crimson-600/20 border border-crimson-500/50 text-crimson-300 text-[11px] font-black uppercase tracking-widest hover:bg-crimson-600/30 transition-all"
             >
               IP {ipFilter} <X className="w-3 h-3" />
             </button>
@@ -324,26 +324,26 @@ export default function SecurityTab({ notify }) {
           {anyFilter && !ipFilter && (
             <button
               onClick={() => { setTypeFilter(''); setOutcomeFilter(''); setSearch(''); setQuery(''); setOffset(0); }}
-              className="text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200 transition-colors"
+              className="text-[11px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200 transition-colors"
             >
               Clear
             </button>
           )}
         </div>
 
-        <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400">
+        <p className="text-[11px] font-black uppercase tracking-widest text-crimson-400">
           {ledger.total} event{ledger.total === 1 ? '' : 's'} on record{anyFilter ? ' (filtered)' : ''}
         </p>
 
         {loadingLedger ? (
-          <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Consulting the ledger…</div>
+          <div className="py-16 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Consulting the ledger…</div>
         ) : (
           <div className="space-y-2">
             {ledger.events.map((ev) => (
               <div key={ev.id} className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 hover:border-crimson-900/80 transition-all">
                 <div className="flex items-center gap-3 flex-shrink-0 sm:w-56">
                   <EventChip type={ev.event_type} />
-                  <span className="text-[10px] font-bold text-crimson-400 whitespace-nowrap">{fmtDate(ev.ts)}</span>
+                  <span className="text-[11px] font-bold text-crimson-400 whitespace-nowrap">{fmtDate(ev.ts)}</span>
                 </div>
                 <div className="flex-grow min-w-0">
                   <p className="text-xs font-bold text-crimson-100 truncate">
@@ -351,7 +351,7 @@ export default function SecurityTab({ notify }) {
                     {ev.user_id != null && <span className="text-crimson-400 font-black ml-2">#{ev.user_id}</span>}
                   </p>
                   {detailSummary(ev.detail) && (
-                    <p className="text-[10px] font-bold text-crimson-400 truncate mt-0.5">{detailSummary(ev.detail)}</p>
+                    <p className="text-[11px] font-bold text-crimson-400 truncate mt-0.5">{detailSummary(ev.detail)}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-3 flex-shrink-0 text-right">
@@ -359,7 +359,7 @@ export default function SecurityTab({ notify }) {
                     <button
                       onClick={() => setIp(ev.ip)}
                       title="Filter the ledger to this IP"
-                      className="text-[10px] font-black font-mono text-crimson-500 hover:text-crimson-300 transition-colors"
+                      className="text-[11px] font-black font-mono text-crimson-500 hover:text-crimson-300 transition-colors"
                     >
                       {ev.ip}
                     </button>
@@ -368,7 +368,7 @@ export default function SecurityTab({ notify }) {
               </div>
             ))}
             {ledger.events.length === 0 && (
-              <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">
+              <p className="py-16 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">
                 {anyFilter ? 'Nothing matches these filters' : 'The ledger is spotless: no one has rattled the gates'}
               </p>
             )}
@@ -380,15 +380,15 @@ export default function SecurityTab({ notify }) {
             <button
               disabled={offset === 0}
               onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-              className="px-4 py-2 rounded-xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-30 disabled:hover:text-crimson-400 disabled:hover:border-crimson-900/60"
+              className="px-4 py-2 rounded-xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 transition-all text-[11px] font-black uppercase tracking-widest disabled:opacity-30 disabled:hover:text-crimson-400 disabled:hover:border-crimson-900/60"
             >
               Prev
             </button>
-            <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Page {page} / {pages}</span>
+            <span className="text-[11px] font-black uppercase tracking-widest text-crimson-400">Page {page} / {pages}</span>
             <button
               disabled={offset + PAGE_SIZE >= ledger.total}
               onClick={() => setOffset(offset + PAGE_SIZE)}
-              className="px-4 py-2 rounded-xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-30 disabled:hover:text-crimson-400 disabled:hover:border-crimson-900/60"
+              className="px-4 py-2 rounded-xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 transition-all text-[11px] font-black uppercase tracking-widest disabled:opacity-30 disabled:hover:text-crimson-400 disabled:hover:border-crimson-900/60"
             >
               Next
             </button>

@@ -84,7 +84,7 @@ function LocalBrowseView({ searchTerm, navigate }) {
                   <span className="text-crimson-50 font-bold group-hover:text-crimson-400 transition-colors truncate tracking-tight text-base">
                     {e.title || e.name}
                   </span>
-                  <div className="flex items-center gap-3 text-[10px] text-crimson-400 font-black uppercase tracking-widest">
+                  <div className="flex items-center gap-3 text-[11px] text-crimson-400 font-black uppercase tracking-widest">
                     {isFolder && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">Folder</span>}
                     {isTitle && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">{e.media_kind === 'movie' ? 'Movie' : `Show · ${e.episode_count} ep`}</span>}
                     {e.type === 'file' && <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">File</span>}
@@ -143,11 +143,11 @@ export default function LocalHub() {
   const ModeToggle = (
     <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-crimson-950/40 border border-crimson-900/50 backdrop-blur-md">
       <button onClick={() => setMode('library')}
-        className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'library' ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:text-crimson-200'}`}>
+        className={`px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'library' ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:text-crimson-200'}`}>
         <LayoutGrid className="w-3.5 h-3.5" /> Library
       </button>
       <button onClick={() => setMode('browse')}
-        className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'browse' ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:text-crimson-200'}`}>
+        className={`px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'browse' ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:text-crimson-200'}`}>
         <FolderTree className="w-3.5 h-3.5" /> Browse
       </button>
     </div>
@@ -211,7 +211,7 @@ export default function LocalHub() {
                         <span className="text-crimson-50 font-bold group-hover:text-crimson-400 transition-colors truncate tracking-tight text-base">
                           {it.title}
                         </span>
-                        <div className="flex items-center gap-3 text-[10px] text-crimson-400 font-black uppercase tracking-widest">
+                        <div className="flex items-center gap-3 text-[11px] text-crimson-400 font-black uppercase tracking-widest">
                           <span className="px-1.5 py-0.5 rounded bg-crimson-500/5 border border-crimson-500/20 text-crimson-400">
                             {it.media_kind === 'movie' ? 'Movie' : `Show · ${it.episode_count} ep`}
                           </span>

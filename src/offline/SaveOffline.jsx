@@ -11,7 +11,7 @@ import { saveOffline } from './queue';
 import { useVideoDownloads } from './store';
 import { supported } from './videoStore';
 
-const buttonClass = 'inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all';
+const buttonClass = 'inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border text-[11px] font-black uppercase tracking-widest transition-all';
 
 function SourceOption({ stream, label, selected, onSelect }) {
   return (
@@ -28,7 +28,7 @@ function SourceOption({ stream, label, selected, onSelect }) {
       <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${selected ? 'border-white bg-white/80' : 'border-crimson-700'}`} />
       <span className="min-w-0 flex-grow">
         <span className="block text-xs font-black text-crimson-50 truncate">{label}</span>
-        <span className="block text-[9px] font-black uppercase tracking-widest opacity-70">
+        <span className="block text-[11px] font-black uppercase tracking-widest opacity-70">
           {[stream.type, stream.language].filter(Boolean).join(' · ')}
         </span>
       </span>
@@ -63,7 +63,7 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
       ) : (
         <>
           <div className="space-y-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">Source</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">Source</p>
             <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
               {choices.map((group) => group.items.map(({ stream: s, idx }) => (
                 <SourceOption
@@ -79,7 +79,7 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
 
           {items.length > 1 && (
             <div className="space-y-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">What to save</p>
+              <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">What to save</p>
               <div className="flex flex-wrap gap-2">
                 {[[false, 'This episode'], [true, `This and the next ${items.length - 1}`]].map(([value, label]) => (
                   <button
@@ -87,7 +87,7 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
                     type="button"
                     onClick={() => setWholeSeason(value)}
                     aria-pressed={wholeSeason === value}
-                    className={`px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${
+                    className={`px-4 py-2 rounded-xl border text-[11px] font-black uppercase tracking-widest ${
                       wholeSeason === value
                         ? 'bg-crimson-600 border-crimson-400 text-white'
                         : 'border-crimson-900/60 text-crimson-400 hover:border-crimson-600'
@@ -113,14 +113,14 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
       )}
 
       <div className="flex justify-end gap-2">
-        <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl text-crimson-400 hover:text-white text-[10px] font-black uppercase tracking-widest">
+        <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl text-crimson-400 hover:text-white text-[11px] font-black uppercase tracking-widest">
           Cancel
         </button>
         <button
           type="button"
           onClick={save}
           disabled={!stream || busy}
-          className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40"
+          className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest disabled:opacity-40"
         >
           {busy ? <Loader2 className="w-4 h-4 animate-spin" />
             : items[0].kind === 'movie' ? 'Save movie'

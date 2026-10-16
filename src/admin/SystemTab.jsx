@@ -15,11 +15,11 @@ function ProxiesSection({ proxies }) {
   const routed = proxies?.routed_sources || [];
   return (
     <section className="space-y-4">
-      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+      <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
         <Radio className="w-4 h-4" /> CORS Proxies <div className="h-px bg-crimson-900/30 flex-grow" />
       </h3>
       {!proxies?.enabled ? (
-        <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
+        <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
           {proxies && !proxies.secret_set
             ? 'Disabled: PROXY_SECRET not set. Sources proxy their own segments.'
             : 'Not configured: set CRIMSON_PROXY_BASE to offload segments. Sources proxy their own.'}
@@ -35,13 +35,13 @@ function ProxiesSection({ proxies }) {
                     ? <Wifi className={`w-4 h-4 ${m.text}`} />
                     : <WifiOff className={`w-4 h-4 ${m.text}`} />}
                   <span className="font-mono text-[11px] text-crimson-300 truncate flex-grow normal-case">{h.base}</span>
-                  <span className={`text-[10px] font-black uppercase tracking-widest ${m.text}`}>{m.label}</span>
-                  <span className="text-[10px] font-bold text-crimson-400 normal-case font-mono">{h.detail || (h.code ? `HTTP ${h.code}` : '')}</span>
+                  <span className={`text-[11px] font-black uppercase tracking-widest ${m.text}`}>{m.label}</span>
+                  <span className="text-[11px] font-bold text-crimson-400 normal-case font-mono">{h.detail || (h.code ? `HTTP ${h.code}` : '')}</span>
                 </div>
               );
             })}
           </div>
-          <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
+          <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
             Routing: <span className="text-crimson-400 normal-case">{routed.length ? routed.join(', ') : '-'}</span>
             {hosts.length > 1 && <span className="text-crimson-400"> · round-robin across {hosts.length} hosts</span>}
           </p>
@@ -53,7 +53,7 @@ function ProxiesSection({ proxies }) {
 
 function RuntimeSection({ system }) {
   if (!system) {
-    return <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Reading the runes…</div>;
+    return <div className="py-10 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Reading the runes…</div>;
   }
   const f = system.flags || {};
   const p = system.db_pool || {};
@@ -61,7 +61,7 @@ function RuntimeSection({ system }) {
   return (
     <div className="space-y-10">
       <section className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <Cpu className="w-4 h-4" /> Runtime <div className="h-px bg-crimson-900/30 flex-grow" />
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -70,13 +70,13 @@ function RuntimeSection({ system }) {
           <StatCard label="Scrapers" value={reg.scrapers} sub={`${reg.resolvers ?? 0} resolvers`} icon={Boxes} />
           <StatCard label="Python" value={system.python_version} sub={system.hostname} icon={Cpu} />
         </div>
-        <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
+        <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
           Node: <span className="text-crimson-400 normal-case font-mono">{system.platform || '-'}</span>
         </p>
       </section>
 
       <section className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <Power className="w-4 h-4" /> Capabilities <div className="h-px bg-crimson-900/30 flex-grow" />
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -90,13 +90,13 @@ function RuntimeSection({ system }) {
           <FlagBadge on={f.require_login} label="Login Wall" onIcon={Shield} offIcon={ShieldOff} />
           <FlagBadge on={f.crimson_proxy_enabled} label="CORS Proxy" onIcon={Radio} offIcon={Radio} />
         </div>
-        <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
+        <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
           Rate-limit store: <span className="text-crimson-400 normal-case font-mono">{f.rate_limit_storage || '-'}</span>
         </p>
       </section>
 
       <section className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <Gauge className="w-4 h-4" /> Database Pool <div className="h-px bg-crimson-900/30 flex-grow" />
         </h3>
         {p.available ? (
@@ -107,12 +107,12 @@ function RuntimeSection({ system }) {
               <StatCard label="Waiting" value={p.waiting} sub="queued for a conn" icon={Clock} accent={p.waiting > 0 ? 'text-amber-400' : 'text-crimson-400'} />
               <StatCard label="Requests" value={p.requests_total} sub={`${p.requests_errors ?? 0} errors`} icon={Zap} accent={p.requests_errors > 0 ? 'text-crimson-500' : undefined} />
             </div>
-            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
+            <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
               Bounds: <span className="text-crimson-400">{p.min_size} … {p.max_size}</span> · Total connections opened: <span className="text-crimson-400">{p.connections_total ?? '-'}</span>
             </p>
           </>
         ) : (
-          <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">Pool not yet open on this node.</p>
+          <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">Pool not yet open on this node.</p>
         )}
       </section>
 
@@ -229,7 +229,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
           <Database className="w-7 h-7 text-crimson-500" />
           <div>
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Metadata Resync</h3>
-            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Forced AniList ↔ TMDB Fribb rebuild</p>
+            <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest">Forced AniList ↔ TMDB Fribb rebuild</p>
           </div>
         </div>
 
@@ -241,14 +241,14 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
           <button
             onClick={trigger}
             disabled={triggering || running}
-            className="px-7 py-4 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-[0_15px_30px_rgba(255,0,60,0.2)]"
+            className="px-7 py-4 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-[0_15px_30px_rgba(255,0,60,0.2)]"
           >
             <RefreshCw className={`w-4 h-4 ${(triggering || running) ? 'animate-spin' : ''}`} />
             {running ? 'Resync running…' : 'Trigger Resync'}
           </button>
 
           {resync && (resync.started_at || resync.finished_at) && (
-            <div className="text-[10px] font-bold text-crimson-400 uppercase tracking-wider space-y-0.5">
+            <div className="text-[11px] font-bold text-crimson-400 uppercase tracking-wider space-y-0.5">
               {running ? (
                 <p className="text-crimson-400 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-crimson-500 animate-pulse" /> Started {fmtDate(resync.started_at)}</p>
               ) : (
@@ -270,7 +270,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
           <DownloadCloud className="w-7 h-7 text-crimson-500" />
           <div>
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Catalogue Backfill</h3>
-            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Pre-seed non-anime shows &amp; movies from TMDB</p>
+            <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest">Pre-seed non-anime shows &amp; movies from TMDB</p>
           </div>
         </div>
 
@@ -280,7 +280,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
 
         <div className="flex flex-col sm:flex-row sm:items-end gap-4 relative z-10">
           <div className="space-y-2 sm:w-56">
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Pages per kind (1 to 500)</label>
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Pages per kind (1 to 500)</label>
             <input
               type="number" min="1" max="500" value={backfillPages}
               onChange={(e) => setBackfillPages(e.target.value)}
@@ -291,14 +291,14 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
           <button
             onClick={triggerBackfill}
             disabled={backfilling || backfillBusy}
-            className="px-7 py-4 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-[0_15px_30px_rgba(255,0,60,0.2)] h-[52px]"
+            className="px-7 py-4 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-[0_15px_30px_rgba(255,0,60,0.2)] h-[52px]"
           >
             <DownloadCloud className={`w-4 h-4 ${(backfilling || backfillBusy) ? 'animate-pulse' : ''}`} />
             {backfill?.running ? 'Backfill running…' : backfill?.queued ? 'Queued on sync node…' : 'Start Backfill'}
           </button>
 
           {backfill && (backfill.requested_at || backfill.finished_at) && (
-            <div className="text-[10px] font-bold text-crimson-400 uppercase tracking-wider space-y-0.5">
+            <div className="text-[11px] font-bold text-crimson-400 uppercase tracking-wider space-y-0.5">
               {backfill.queued ? (
                 <p className="text-amber-400 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" /> Queued {fmtDate(backfill.requested_at)} · waiting for sync node</p>
               ) : backfill.running ? (
@@ -319,7 +319,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
       </div>
 
       <section className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <Database className="w-4 h-4" /> Mapping Snapshot <div className="h-px bg-crimson-900/30 flex-grow" />
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -328,7 +328,7 @@ export default function SystemTab({ stats, system, notify, refreshStats }) {
           <StatCard label="TMDB Extras" value={c.tmdb_extras} icon={Database} />
           <StatCard label="Cache Rows" value={c.api_cache} icon={Database} />
         </div>
-        <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
+        <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
           ETag: <span className="text-crimson-400 font-mono normal-case">{c.mapping_etag || '-'}</span> · Last sync: <span className="text-crimson-400">{fmtDate(c.last_synced)}</span>
         </p>
       </section>

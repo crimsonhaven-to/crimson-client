@@ -24,7 +24,7 @@ const ListPickerDialog = ({ mode, item, bulkCount, lists, listsForItem, onPick, 
                 ? <Heart className="w-4 h-4 shrink-0 text-crimson-500 fill-crimson-700" />
                 : <ListPlus className="w-4 h-4 shrink-0 text-crimson-400" />}
               <span className="font-black text-sm text-crimson-100 truncate">{listLabel(l.name)}</span>
-              <span className="text-[10px] font-black text-crimson-400 tabular-nums">{l.count}</span>
+              <span className="text-[11px] font-black text-crimson-400 tabular-nums">{l.count}</span>
             </span>
             {mode === 'item'
               ? (inList

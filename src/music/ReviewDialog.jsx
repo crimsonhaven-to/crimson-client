@@ -57,7 +57,7 @@ export default function ReviewDialog({ track, onClose, onChosen }) {
     <Sheet label="Pick a recording" onClose={onClose} className="sm:max-w-2xl max-h-[90vh] flex flex-col">
       <div className="p-5 border-b border-crimson-900/40 flex items-start gap-4">
         <div className="min-w-0 flex-grow">
-          <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">Pick the recording</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">Pick the recording</p>
           <p className="text-crimson-50 font-bold truncate mt-1">{track.title}</p>
           <p className="text-xs text-crimson-400 truncate">
             {track.artists.join(', ')}{track.album ? ` · ${track.album}` : ''} · {formatTime(track.duration_ms / 1000)}
@@ -110,7 +110,7 @@ export default function ReviewDialog({ track, onClose, onChosen }) {
             className="w-full pl-9 pr-3 py-2.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-sm text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
         </div>
         <button type="submit" disabled={busy || !link.trim().startsWith('https://')}
-          className="px-4 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+          className="px-4 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
           Use
         </button>
       </form>

@@ -14,7 +14,7 @@ const BATCH = 3;
 const GroupPill = ({ active, label, onClick }) => (
   <button
     onClick={onClick}
-    className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+    className={`px-4 py-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
       active
         ? 'bg-crimson-600 text-white shadow-[0_8px_20px_rgba(255,0,60,0.2)]'
         : 'bg-crimson-950/40 border border-crimson-900/60 text-crimson-500 hover:text-white hover:border-crimson-600'
@@ -28,11 +28,11 @@ const PanelCard = ({ panel, payload }) => (
   <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl p-5 space-y-3">
     <div className="space-y-1">
       <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-200">{panel.title}</h4>
-      <p className="text-[10px] font-medium text-crimson-400 leading-relaxed">{panel.description}</p>
+      <p className="text-[11px] font-medium text-crimson-400 leading-relaxed">{panel.description}</p>
     </div>
 
     {!payload && (
-      <div className="h-40 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.25em] text-crimson-400 animate-pulse">
+      <div className="h-40 flex items-center justify-center text-[11px] font-black uppercase tracking-[0.25em] text-crimson-400 animate-pulse">
         Consulting the archives…
       </div>
     )}
@@ -40,8 +40,8 @@ const PanelCard = ({ panel, payload }) => (
     {payload?.ok === false && (
       <div className="h-40 flex flex-col items-center justify-center gap-2 text-center px-4">
         <AlertTriangle className="w-5 h-5 text-amber-500/70" />
-        <p className="text-[10px] font-bold text-amber-300/80">The archivist could not answer</p>
-        <p className="text-[10px] font-mono text-crimson-400 break-all">{payload.error}</p>
+        <p className="text-[11px] font-bold text-amber-300/80">The archivist could not answer</p>
+        <p className="text-[11px] font-mono text-crimson-400 break-all">{payload.error}</p>
       </div>
     )}
 
@@ -56,7 +56,7 @@ const PanelCard = ({ panel, payload }) => (
           step={payload.step}
         />
         {payload.truncated > 0 && (
-          <p className="text-[9px] font-bold text-crimson-400 ml-16">
+          <p className="text-[11px] font-bold text-crimson-400 ml-16">
             {payload.truncated} quieter {payload.truncated === 1 ? 'line' : 'lines'} hidden to keep the chart readable
           </p>
         )}
@@ -142,7 +142,7 @@ export default function MetricsHistory({ notify }) {
 
   if (loading) {
     return (
-      <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">
+      <div className="py-10 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">
         Asking whether anything was written down…
       </div>
     );
@@ -179,7 +179,7 @@ export default function MetricsHistory({ notify }) {
         ))}
         <button
           onClick={reload}
-          className="group ml-auto flex items-center gap-2 px-4 py-2 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-500 hover:text-white hover:border-crimson-500 transition-all text-[10px] font-black uppercase tracking-widest"
+          className="group ml-auto flex items-center gap-2 px-4 py-2 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-500 hover:text-white hover:border-crimson-500 transition-all text-[11px] font-black uppercase tracking-widest"
         >
           <RefreshCw className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform" /> Redraw
         </button>
@@ -191,7 +191,7 @@ export default function MetricsHistory({ notify }) {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold">
+      <div className="flex flex-wrap items-center gap-4 text-[11px] font-bold">
         {/* Otherwise "nothing happened" and "the scraper lost the fleet" look identical. */}
         {targets?.ok && (
           <span className={`flex items-center gap-1.5 ${targets.down ? 'text-amber-300' : 'text-crimson-400'}`}>
@@ -214,9 +214,9 @@ export default function MetricsHistory({ notify }) {
 
       {targets?.ok && targets.down > 0 && (
         <div className="bg-amber-950/20 border border-amber-800/40 rounded-2xl px-5 py-3.5 space-y-1.5">
-          <p className="text-[10px] font-black uppercase tracking-widest text-amber-300">Replicas not being scraped</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-amber-300">Replicas not being scraped</p>
           {targets.targets.filter((t) => t.health !== 'up').map((t) => (
-            <p key={t.instance} className="text-[10px] font-mono text-amber-200/70 break-all">
+            <p key={t.instance} className="text-[11px] font-mono text-amber-200/70 break-all">
               {t.instance} {t.last_error ? `· ${t.last_error}` : ''}
             </p>
           ))}

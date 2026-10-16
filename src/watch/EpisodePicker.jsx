@@ -10,7 +10,7 @@ const EpisodePicker = ({
   <div className="space-y-6">
     {seasons.length > 1 && (
       <div className="p-4 sm:p-5 bg-crimson-950/30 border border-crimson-900/30 rounded-3xl flex items-center gap-4 overflow-x-auto no-scrollbar backdrop-blur-sm">
-        <span className="text-[10px] font-black uppercase text-crimson-400 tracking-[0.3em] whitespace-nowrap pl-2">Archives</span>
+        <span className="text-[11px] font-black uppercase text-crimson-400 tracking-[0.2em] whitespace-nowrap pl-2">Archives</span>
         <div className="flex gap-2">
           {seasons.map((season) => {
             const active = expandedSeason === season.season_number;
@@ -44,7 +44,7 @@ const EpisodePicker = ({
         </h3>
         <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
         {!episodesLoading && episodes.length > 0 && (
-          <span className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-400 whitespace-nowrap">
+          <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-crimson-400 whitespace-nowrap">
             <Film className="w-3 h-3" /> {episodes.length} segments
           </span>
         )}
@@ -72,7 +72,7 @@ const EpisodePicker = ({
           <div className="w-12 h-12 mx-auto grid place-items-center rounded-full border-2 border-dashed border-crimson-900/50">
             <Film className="w-6 h-6 text-crimson-900" />
           </div>
-          <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400 italic">No segment data recorded for this season.</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-400 italic">No segment data recorded for this season.</p>
         </div>
       )}
     </div>

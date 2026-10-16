@@ -41,14 +41,14 @@ export default function MusicConnect() {
       {error ? (
         <>
           <p className="text-crimson-300 font-bold">{error}</p>
-          <Link to="/music" className="inline-block px-6 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest">
+          <Link to="/music" className="inline-block px-6 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest">
             Back to Music
           </Link>
         </>
       ) : (
         <>
           <Loader2 className="w-8 h-8 text-crimson-500 animate-spin mx-auto" />
-          <p className="text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em]">Connecting Spotify...</p>
+          <p className="text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em]">Connecting Spotify...</p>
         </>
       )}
     </div>

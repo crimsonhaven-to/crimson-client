@@ -39,7 +39,7 @@ const WatchlistCard = ({
           <h4 className="text-sm sm:text-base font-black text-crimson-50 truncate group-hover:text-crimson-400 transition-colors tracking-tight">
             {item.title}
           </h4>
-          <div className="mt-1 flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-400">
+          <div className="mt-1 flex items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-crimson-400">
             <span className="flex items-center gap-1 text-crimson-400"><KindIcon className="w-3 h-3" />{kindLabel}</span>
             <span className="text-crimson-400 normal-case tracking-normal">· Ref {item.anilist_id || item.tmdb_id}</span>
           </div>
@@ -85,7 +85,7 @@ const WatchlistCard = ({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/20 to-transparent opacity-80"></div>
 
-        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-950/80 backdrop-blur-md border border-crimson-900/60 text-[8px] font-black uppercase tracking-[0.15em] text-crimson-400">
+        <div className="absolute top-2.5 left-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-950/80 backdrop-blur-md border border-crimson-900/60 text-[11px] font-black uppercase tracking-[0.15em] text-crimson-400">
           <KindIcon className="w-2.5 h-2.5" />
           {kindLabel}
         </div>
@@ -114,7 +114,7 @@ const WatchlistCard = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={stop(onLists)}
-                className="flex items-center gap-2 px-3.5 py-1.5 bg-crimson-950/80 text-[10px] font-black uppercase tracking-widest text-crimson-400 rounded-full border border-crimson-900 hover:text-white hover:border-crimson-600 transition-all"
+                className="flex items-center gap-2 px-3.5 py-1.5 bg-crimson-950/80 text-[11px] font-black uppercase tracking-widest text-crimson-400 rounded-full border border-crimson-900 hover:text-white hover:border-crimson-600 transition-all"
               >
                 <FolderPlus className="w-3.5 h-3.5" />
                 <span>Lists</span>

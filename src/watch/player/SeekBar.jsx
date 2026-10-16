@@ -30,7 +30,7 @@ export default function SeekBar({ current, duration, buffered, seekTo }) {
     >
       {seekHover !== null && duration > 0 && (
         <div
-          className="cp-pop absolute -top-9 z-20 px-2.5 py-1 rounded-lg bg-crimson-950/95 border border-crimson-500/40 backdrop-blur-md text-[10px] font-black tabular-nums text-crimson-50 shadow-[0_10px_25px_rgba(0,0,0,0.6)] pointer-events-none"
+          className="cp-pop absolute -top-9 z-20 px-2.5 py-1 rounded-lg bg-crimson-950/95 border border-crimson-500/40 backdrop-blur-md text-[11px] font-black tabular-nums text-crimson-50 shadow-[0_10px_25px_rgba(0,0,0,0.6)] pointer-events-none"
           style={{ left: `${seekHover * 100}%`, transform: 'translateX(-50%)' }}
         >
           {formatPlaybackTime(seekHover * duration)}

@@ -45,7 +45,7 @@ export default function AddSongsDialog({ playlist, onClose, onAdded }) {
     <Sheet label="Add songs" onClose={onClose} className="sm:max-w-2xl max-h-[90vh] flex flex-col">
       <div className="p-5 border-b border-crimson-900/40 flex items-start gap-4">
         <div className="min-w-0 flex-grow">
-          <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">Add songs</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">Add songs</p>
           <p className="text-crimson-50 font-bold truncate mt-1">{playlist.name}</p>
         </div>
         <button onClick={onClose} aria-label="Close" className="p-1 text-crimson-400 hover:text-white"><X className="w-5 h-5" /></button>
@@ -86,7 +86,7 @@ export default function AddSongsDialog({ playlist, onClose, onAdded }) {
 
       <div className="p-4 border-t border-crimson-900/40 flex items-center justify-between gap-3">
         <p className="text-[11px] text-crimson-400">Added songs download in the background.</p>
-        <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest">
+        <button onClick={onClose} className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest">
           Done
         </button>
       </div>

@@ -94,7 +94,7 @@ export default function DownloadsTab({ notify }) {
           <Download className="w-7 h-7 text-crimson-500" />
           <div className="flex-grow">
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Downloader</h3>
-            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Fetch http / magnet links straight into your Local library</p>
+            <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest">Fetch http / magnet links straight into your Local library</p>
           </div>
         </div>
         <p className="text-xs text-crimson-400 font-medium leading-relaxed relative z-10 max-w-3xl">
@@ -115,15 +115,15 @@ export default function DownloadsTab({ notify }) {
         <form onSubmit={submit} className="space-y-4 relative z-10">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="space-y-2 flex-1">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">URL or magnet link</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">URL or magnet link</label>
               <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://…  or  magnet:?xt=urn:btih:…" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold font-mono placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="space-y-2 sm:w-56">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Name (optional)</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Name (optional)</label>
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Dune (2021)" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="flex items-end">
-              <button type="submit" disabled={adding} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
+              <button type="submit" disabled={adding} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
                 {adding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Fetch</>}
               </button>
             </div>
@@ -146,17 +146,17 @@ export default function DownloadsTab({ notify }) {
           <div className="flex items-center gap-3 relative z-10">
             <HardDrive className="w-6 h-6 text-crimson-500" />
             <h3 className="text-base font-black text-crimson-50 uppercase tracking-tighter">Download Targets</h3>
-            <span className="text-[9px] font-bold text-crimson-400 uppercase tracking-widest">tried top-to-bottom</span>
+            <span className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest">tried top-to-bottom</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 relative z-10">
             {targets.map((t, i) => (
               <div key={t.id} className="p-3 rounded-xl bg-crimson-950/40 border border-crimson-900/60 flex items-center gap-3">
-                <span className="text-[10px] font-black text-crimson-400 w-5">{i + 1}</span>
+                <span className="text-[11px] font-black text-crimson-400 w-5">{i + 1}</span>
                 <span className="min-w-0 flex-grow">
                   <span className="block text-xs font-bold text-crimson-100 truncate">{t.label}</span>
-                  <span className="block font-mono text-[10px] text-crimson-400 truncate">{t.path}</span>
+                  <span className="block font-mono text-[11px] text-crimson-400 truncate">{t.path}</span>
                 </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-green-500/80 flex-shrink-0">{formatBytes(t.free_bytes)} free</span>
+                <span className="text-[11px] font-black uppercase tracking-widest text-green-500/80 flex-shrink-0">{formatBytes(t.free_bytes)} free</span>
               </div>
             ))}
           </div>
@@ -170,7 +170,7 @@ export default function DownloadsTab({ notify }) {
           <div className="flex items-center gap-1.5 flex-wrap">
             {['', 'active', 'pending', 'paused', 'complete', 'failed'].map((s) => (
               <button key={s || 'all'} onClick={() => setFilter(s)}
-                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${filter === s ? 'bg-crimson-600 border-crimson-500 text-white' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-500 hover:border-crimson-600'}`}>
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all ${filter === s ? 'bg-crimson-600 border-crimson-500 text-white' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-500 hover:border-crimson-600'}`}>
                 {s || 'All'}
               </button>
             ))}
@@ -178,9 +178,9 @@ export default function DownloadsTab({ notify }) {
         </div>
 
         {loading ? (
-          <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading…</div>
+          <div className="py-10 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Loading…</div>
         ) : jobs.length === 0 ? (
-          <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No downloads yet</p>
+          <p className="py-10 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">No downloads yet</p>
         ) : (
           <div className="space-y-2 relative z-10">
             {jobs.map((j) => {
@@ -193,9 +193,9 @@ export default function DownloadsTab({ notify }) {
                       <div className="flex items-center gap-2 flex-wrap">
                         {isTorrent ? <Magnet className="w-3.5 h-3.5 text-crimson-500 flex-shrink-0" /> : <Link2 className="w-3.5 h-3.5 text-crimson-500 flex-shrink-0" />}
                         <span className="text-xs font-bold text-crimson-50 truncate max-w-[16rem] sm:max-w-md">{j.name || j.source_url}</span>
-                        <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${STATUS_STYLES[j.status] || 'bg-crimson-900/40 border-crimson-800/50 text-crimson-400'}`}>{j.status}</span>
+                        <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${STATUS_STYLES[j.status] || 'bg-crimson-900/40 border-crimson-800/50 text-crimson-400'}`}>{j.status}</span>
                       </div>
-                      <p className="text-[10px] font-medium text-crimson-400 mt-1 truncate">
+                      <p className="text-[11px] font-medium text-crimson-400 mt-1 truncate">
                         {formatBytes(j.bytes_done)}{j.bytes_total ? ` / ${formatBytes(j.bytes_total)}` : ''}
                         {j.status === 'active' && j.download_speed ? ` · ${formatBytes(j.download_speed)}/s` : ''}
                         {pct != null ? ` · ${pct}%` : ''}

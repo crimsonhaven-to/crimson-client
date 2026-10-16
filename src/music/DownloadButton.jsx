@@ -4,7 +4,7 @@ import { formatBytes } from '../formatBytes';
 import { downloadPlaylist, isDownloaded, removeDownload, useDownloads } from './downloads';
 import { supported } from './trackStore';
 
-const BUTTON = 'flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40';
+const BUTTON = 'flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40';
 
 export default function DownloadButton({ playlist, tracks }) {
   const downloads = useDownloads();

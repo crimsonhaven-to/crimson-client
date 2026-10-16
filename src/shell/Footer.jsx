@@ -15,9 +15,9 @@ export default function Footer() {
             Your regal sanctuary for seamless anime streaming, curated by Lumi, your crimson curator. ✨
           </p>
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">v{CLIENT_VERSION}</div>
-            <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">Members Only</div>
-            <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[10px] font-black text-crimson-500 uppercase tracking-widest">Hosted in {HOSTED_IN}</div>
+            <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[11px] font-black text-crimson-500 uppercase tracking-widest">v{CLIENT_VERSION}</div>
+            <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[11px] font-black text-crimson-500 uppercase tracking-widest">Members Only</div>
+            <div className="px-3 py-1 bg-crimson-950/40 border border-crimson-900/60 rounded-lg text-[11px] font-black text-crimson-500 uppercase tracking-widest">Hosted in {HOSTED_IN}</div>
           </div>
         </div>
 
@@ -55,8 +55,8 @@ export default function Footer() {
         </p>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 flex-wrap">
-            <p className="text-crimson-400 text-[10px] font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Crimsonhaven. All rites reserved.</p>
-            <span className="px-2.5 py-0.5 bg-crimson-950/40 border border-crimson-900/60 rounded-full text-[9px] font-black text-crimson-400 uppercase tracking-widest">Hosted in {HOSTED_IN}</span>
+            <p className="text-crimson-400 text-[11px] font-bold uppercase tracking-widest">&copy; {new Date().getFullYear()} Crimsonhaven. All rites reserved.</p>
+            <span className="px-2.5 py-0.5 bg-crimson-950/40 border border-crimson-900/60 rounded-full text-[11px] font-black text-crimson-400 uppercase tracking-widest">Hosted in {HOSTED_IN}</span>
           </div>
           <div className="flex items-center gap-4 text-crimson-400">
             <Shield className="w-4 h-4" />

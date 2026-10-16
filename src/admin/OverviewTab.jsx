@@ -14,7 +14,7 @@ export default function OverviewTab({ stats, health, system }) {
     <div className="space-y-10">
       {system && (
         <section className="space-y-4">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+          <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
             <Activity className="w-4 h-4" /> At a Glance <div className="h-px bg-crimson-900/30 flex-grow" />
           </h3>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -27,7 +27,7 @@ export default function OverviewTab({ stats, health, system }) {
       )}
 
       <section className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <Users className="w-4 h-4" /> Members <div className="h-px bg-crimson-900/30 flex-grow" />
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -44,7 +44,7 @@ export default function OverviewTab({ stats, health, system }) {
       </section>
 
       <section className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <Database className="w-4 h-4" /> Content Catalogue <div className="h-px bg-crimson-900/30 flex-grow" />
         </h3>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -53,13 +53,13 @@ export default function OverviewTab({ stats, health, system }) {
           <StatCard label="TMDB Extras" value={c.tmdb_extras} icon={Database} />
           <StatCard label="Cached Shows" value={c.tmdb_shows} sub={`${c.tmdb_movies ?? 0} movies · ${c.api_cache ?? 0} cache rows`} icon={Database} />
         </div>
-        <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
+        <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest pl-1">
           Last mapping sync: <span className="text-crimson-400">{fmtDate(c.last_synced)}</span>
         </p>
       </section>
 
       <section className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-crimson-500 flex items-center gap-3">
+        <h3 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <Server className="w-4 h-4" /> Node Health <div className="h-px bg-crimson-900/30 flex-grow" />
         </h3>
         <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[11px] space-y-2 shadow-inner">

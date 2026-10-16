@@ -51,12 +51,12 @@ export default function AboutPage() {
         </div>
 
         <div className="relative bg-crimson-500/5 backdrop-blur-md border border-crimson-500/20 p-8 rounded-[2.5rem] shadow-xl">
-          <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
+          <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[11px] font-black uppercase tracking-[0.2em] text-white">Queen's Decree</div>
           <p className="italic text-crimson-100/90 leading-relaxed text-lg tracking-tight">
             "And a little secret between us, darling~ Ironically, this totally <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">morally correct</span> webpage
             keeps all your data tucked away in <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">{HOSTED_IN}</span>. Funny, isn't it?~"
           </p>
-          <p className="mt-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
+          <p className="mt-6 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
              <span className="block w-8 h-px bg-crimson-500/50"></span>
              Luminas, the Vampire Queen
           </p>
@@ -65,7 +65,7 @@ export default function AboutPage() {
 
       {!changelogUnavailable && (
         <div className="space-y-6">
-          <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
+          <h3 className="text-[11px] font-black text-crimson-500 uppercase tracking-[0.2em] flex items-center gap-4">
             <ScrollText className="w-4 h-4" /> Latest Chronicle
             <div className="h-px bg-crimson-900/30 flex-grow"></div>
           </h3>
@@ -76,7 +76,7 @@ export default function AboutPage() {
             </div>
 
             {changelogLoading && (
-              <p className="text-crimson-500 animate-pulse flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em]">
+              <p className="text-crimson-500 animate-pulse flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em]">
                 <RefreshCw className="w-3 h-3 animate-spin" /> Unsealing the latest decree...
               </p>
             )}
@@ -89,7 +89,7 @@ export default function AboutPage() {
                     {latestRelease.tag || latestRelease.name}
                   </span>
                   {latestRelease.published_at && (
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400">
+                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">
                       {formatReleaseDate(latestRelease.published_at)}
                     </span>
                   )}
@@ -111,7 +111,7 @@ export default function AboutPage() {
 
             <Link
               to="/changelog"
-              className="inline-flex items-center gap-2 mt-6 text-[10px] font-black uppercase tracking-[0.25em] text-crimson-500 hover:text-crimson-400 transition-colors group"
+              className="inline-flex items-center gap-2 mt-6 text-[11px] font-black uppercase tracking-[0.25em] text-crimson-500 hover:text-crimson-400 transition-colors group"
             >
               Read the Full Chronicle
               <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -121,7 +121,7 @@ export default function AboutPage() {
       )}
 
       <div className="space-y-6">
-        <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
+        <h3 className="text-[11px] font-black text-crimson-500 uppercase tracking-[0.2em] flex items-center gap-4">
            Invoke Social Nodes
            <div className="h-px bg-crimson-900/30 flex-grow"></div>
         </h3>
@@ -142,11 +142,11 @@ export default function AboutPage() {
       </div>
 
       <div className="space-y-6">
-        <h3 className="text-[10px] font-black text-crimson-500 uppercase tracking-[0.4em] flex items-center gap-4">
+        <h3 className="text-[11px] font-black text-crimson-500 uppercase tracking-[0.2em] flex items-center gap-4">
           <Server className="w-4 h-4" /> Node Status
           <div className="h-px bg-crimson-900/30 flex-grow"></div>
         </h3>
-        <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] space-y-2 shadow-inner">
+        <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[11px] space-y-2 shadow-inner">
           {healthLoading && (
             <p className="text-crimson-500 animate-pulse flex items-center gap-2">
                <RefreshCw className="w-3 h-3 animate-spin" /> Probing system nodes...

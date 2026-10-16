@@ -98,7 +98,7 @@ export default function Navbar({ musicEnabled }) {
           {health && (
             <div className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl">
               <div className={`w-2 h-2 rounded-full ${health?.status === 'ok' ? 'bg-green-500' : 'bg-crimson-600'} animate-pulse`}></div>
-              <span className="text-[10px] font-black text-crimson-400 uppercase tracking-widest">{health?.mode || 'ONLINE'}</span>
+              <span className="text-[11px] font-black text-crimson-400 uppercase tracking-widest">{health?.mode || 'ONLINE'}</span>
             </div>
           )}
 

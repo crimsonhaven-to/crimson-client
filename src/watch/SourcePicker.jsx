@@ -15,13 +15,13 @@ const StreamTile = ({ stream, label, active, nested = false, onClick }) => (
   >
     <div className="flex flex-col min-w-0 pr-4">
       <div className="flex items-center gap-2 mb-1.5 leading-none">
-        <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
+        <span className={`text-[11px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
           active ? 'bg-white/20 border-white/20 text-crimson-50' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
         }`}>
           {stream.type}
         </span>
         {stream.language && (
-          <span className={`text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md ${
+          <span className={`text-[11px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md ${
             active ? 'bg-crimson-950/40 text-crimson-50' : 'bg-crimson-900 text-crimson-400'
           }`}>
             {stream.language}
@@ -57,7 +57,7 @@ const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle })
       >
         <div className="flex flex-col min-w-0 pr-4">
           <div className="flex items-center gap-2 mb-1.5 leading-none">
-            <span className={`flex items-center gap-1 text-[8px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
+            <span className={`flex items-center gap-1 text-[11px] uppercase tracking-[0.2em] font-black px-2 py-0.5 rounded-md border ${
               containsActive ? 'bg-white/20 border-white/20 text-crimson-50' : 'bg-crimson-500/10 border-crimson-500/20 text-crimson-500'
             }`}>
               <Layers className="w-2.5 h-2.5" /> {count} sources

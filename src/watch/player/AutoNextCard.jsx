@@ -12,7 +12,7 @@ export default function AutoNextCard({ countdown, nextLabel, onPlayNow, onCancel
       </div>
       <div className="flex items-center gap-2 mb-2">
         <div className="w-1.5 h-1.5 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c] animate-pulse" />
-        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">Up Next</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500">Up Next</p>
       </div>
       <p className="text-sm font-black text-crimson-50 truncate mb-1.5">{nextLabel || 'Next Episode'}</p>
       <p className="text-[11px] font-bold text-crimson-400 mb-4">
@@ -21,13 +21,13 @@ export default function AutoNextCard({ countdown, nextLabel, onPlayNow, onCancel
       <div className="flex items-center gap-2">
         <button
           onClick={onPlayNow}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_8px_20px_rgba(255,0,60,0.3)]"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-[0_8px_20px_rgba(255,0,60,0.3)]"
         >
           <SkipForward className="w-3.5 h-3.5 fill-current" /> Play Now
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2.5 rounded-xl bg-crimson-950/60 border border-white/5 text-crimson-300 hover:text-white hover:border-crimson-500/50 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+          className="px-4 py-2.5 rounded-xl bg-crimson-950/60 border border-white/5 text-crimson-300 hover:text-white hover:border-crimson-500/50 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
         >
           Cancel
         </button>

@@ -25,11 +25,11 @@ const EpisodeCard = ({ ep, active = false, onSelect }) => {
             <Play className="w-5 h-5 text-white fill-white" />
           </div>
         </div>
-        <span className="absolute top-2 left-2 bg-crimson-950/90 text-crimson-400 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border border-crimson-800/50 backdrop-blur-md">
+        <span className="absolute top-2 left-2 bg-crimson-950/90 text-crimson-400 text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border border-crimson-800/50 backdrop-blur-md">
           E{ep.episode_number}
         </span>
         {active && (
-          <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-600 text-[8px] font-black uppercase tracking-widest text-white shadow-[0_0_10px_rgba(255,0,60,0.6)]">
+          <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-600 text-[11px] font-black uppercase tracking-widest text-white shadow-[0_0_10px_rgba(255,0,60,0.6)]">
             <span className="w-1 h-1 rounded-full bg-white animate-pulse" /> Now
           </span>
         )}
@@ -40,7 +40,7 @@ const EpisodeCard = ({ ep, active = false, onSelect }) => {
           {hasTitle ? ep.title : `Episode ${ep.episode_number}`}
         </h4>
         {ep.air_date && (
-          <span className="flex items-center gap-1 text-[10px] text-crimson-400 font-black uppercase tracking-widest mt-1">
+          <span className="flex items-center gap-1 text-[11px] text-crimson-400 font-black uppercase tracking-widest mt-1">
             <Calendar className="w-3 h-3" /> {ep.air_date}
           </span>
         )}

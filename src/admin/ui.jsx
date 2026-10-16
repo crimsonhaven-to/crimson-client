@@ -10,7 +10,7 @@ export const StatusDot = ({ status }) => {
 };
 
 export const FlagBadge = ({ on, label, onIcon: OnIcon = Wifi, offIcon: OffIcon = WifiOff }) => (
-  <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest ${
+  <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-[11px] font-black uppercase tracking-widest ${
     on ? 'bg-green-950/30 border-green-800/40 text-green-300' : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-400'
   }`}>
     {on ? <OnIcon className="w-3.5 h-3.5" /> : <OffIcon className="w-3.5 h-3.5" />}
@@ -22,18 +22,18 @@ export const StatCard = ({ label, value, sub, icon: Icon, accent }) => (
   <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/50 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden group hover:border-crimson-500/30 transition-all">
     <div className="absolute -top-10 -right-10 w-32 h-32 bg-crimson-500/5 blur-3xl rounded-full" />
     <div className="flex items-center justify-between mb-3 relative z-10">
-      <p className="text-[9px] font-black uppercase tracking-[0.25em] text-crimson-400 group-hover:text-crimson-200 transition-colors">{label}</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.25em] text-crimson-400 group-hover:text-crimson-200 transition-colors">{label}</p>
       {Icon && <Icon className={`w-4 h-4 ${accent || 'text-crimson-400'}`} />}
     </div>
     <p className="text-3xl sm:text-4xl font-black text-crimson-50 tracking-tighter relative z-10">{value ?? '-'}</p>
-    {sub && <p className="text-[10px] font-bold text-crimson-400 mt-1.5 relative z-10">{sub}</p>}
+    {sub && <p className="text-[11px] font-bold text-crimson-400 mt-1.5 relative z-10">{sub}</p>}
   </div>
 );
 
 export const TabButton = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+    className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
       active
         ? 'bg-crimson-600 text-white shadow-[0_10px_25px_rgba(255,0,60,0.25)]'
         : 'bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600'

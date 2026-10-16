@@ -8,7 +8,7 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
           <ListVideo className="w-5 h-5" />
         </div>
         <div className="min-w-0">
-          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">Manifest Index</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500">Manifest Index</p>
           <h3 className="text-sm sm:text-base font-black uppercase tracking-tight text-crimson-50 truncate">{title || 'Episodes'}</h3>
         </div>
         <button
@@ -22,7 +22,7 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
 
       {picker.seasons.length > 1 && (
         <div className="flex items-center gap-2 px-4 sm:px-8 py-3 shrink-0 overflow-x-auto no-scrollbar border-b border-white/5">
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-400 whitespace-nowrap pr-1">Archives</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 whitespace-nowrap pr-1">Archives</span>
           {picker.seasons.map((s) => {
             const active = picker.expandedSeason === s.season_number;
             const playing = picker.currentSeason === s.season_number;
@@ -30,7 +30,7 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
               <button
                 key={s.season_number}
                 onClick={() => picker.onExpandSeason(s.season_number)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border whitespace-nowrap transition-all active:scale-95 ${
+                className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border whitespace-nowrap transition-all active:scale-95 ${
                   active
                     ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.25)]'
                     : 'bg-crimson-950/50 border-crimson-900/50 text-crimson-400 hover:border-crimson-600 hover:bg-crimson-900/30'
@@ -75,11 +75,11 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
                       <Play className="w-4 h-4 text-white fill-white" />
                     </div>
                   </div>
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-crimson-950/90 border border-crimson-800/50 backdrop-blur-md text-[9px] font-black uppercase tracking-widest text-crimson-400">
+                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-crimson-950/90 border border-crimson-800/50 backdrop-blur-md text-[11px] font-black uppercase tracking-widest text-crimson-400">
                     E{ep.episode_number}
                   </span>
                   {isNow && (
-                    <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-600 text-[8px] font-black uppercase tracking-widest text-white shadow-[0_0_10px_rgba(255,0,60,0.6)]">
+                    <span className="absolute top-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-md bg-crimson-600 text-[11px] font-black uppercase tracking-widest text-white shadow-[0_0_10px_rgba(255,0,60,0.6)]">
                       <span className="w-1 h-1 rounded-full bg-white animate-pulse" /> Now
                     </span>
                   )}
@@ -89,7 +89,7 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
                     {hasTitle ? ep.title : `Episode ${ep.episode_number}`}
                   </h4>
                   {ep.air_date && (
-                    <span className="flex items-center gap-1 text-[9px] text-crimson-400 font-black uppercase tracking-widest mt-1">
+                    <span className="flex items-center gap-1 text-[11px] text-crimson-400 font-black uppercase tracking-widest mt-1">
                       <Calendar className="w-3 h-3" /> {ep.air_date}
                     </span>
                   )}
@@ -107,7 +107,7 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
             <div className="w-12 h-12 mx-auto grid place-items-center rounded-full border-2 border-dashed border-crimson-900/50">
               <Film className="w-6 h-6 text-crimson-900" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400 italic">No segment data recorded for this season.</p>
+            <p className="text-[11px] font-black uppercase tracking-widest text-crimson-400 italic">No segment data recorded for this season.</p>
           </div>
         )}
       </div>

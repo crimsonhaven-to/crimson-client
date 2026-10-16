@@ -150,7 +150,7 @@ function OfflineCopy({ id }) {
 
       {entry && (
         <div className="space-y-2">
-          <p className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+          <p className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-emerald-300">
             <WifiOff className="w-3.5 h-3.5" /> Playing from this device{entry.source ? ` · ${entry.source}` : ''}
           </p>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-crimson-50">{entry.titleName}</h1>

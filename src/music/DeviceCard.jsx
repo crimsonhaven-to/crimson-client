@@ -40,7 +40,7 @@ export default function DeviceCard() {
     <section className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl p-5 sm:p-6 space-y-5">
       <div className="flex items-center gap-3">
         <Smartphone className="w-4 h-4 text-crimson-500" />
-        <h2 className="text-[10px] font-black uppercase tracking-widest text-crimson-400 flex-grow">On this device</h2>
+        <h2 className="text-[11px] font-black uppercase tracking-widest text-crimson-400 flex-grow">On this device</h2>
       </div>
 
       <div className="space-y-2">
@@ -54,7 +54,7 @@ export default function DeviceCard() {
               key={count}
               onClick={() => choosePreload(count)}
               aria-pressed={preload === count}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-colors ${
+              className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-colors ${
                 preload === count
                   ? 'bg-crimson-600 border-crimson-600 text-white'
                   : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-300 hover:border-crimson-600'
@@ -87,7 +87,7 @@ export default function DeviceCard() {
         )}
         <DownloadFolder />
         {playlistCount > 0 && (
-          <button onClick={removeAll} className="text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200">
+          <button onClick={removeAll} className="text-[11px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200">
             Remove all downloads
           </button>
         )}

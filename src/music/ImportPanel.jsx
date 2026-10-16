@@ -47,7 +47,7 @@ export default function ImportPanel({ connected }) {
 
   return (
     <section className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl p-5 sm:p-6 space-y-5">
-      <h2 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Import from Spotify</h2>
+      <h2 className="text-[11px] font-black uppercase tracking-widest text-crimson-400">Import from Spotify</h2>
 
       <form onSubmit={addLink} className="space-y-2">
         <div className="flex gap-2">
@@ -61,7 +61,7 @@ export default function ImportPanel({ connected }) {
             />
           </div>
           <button type="submit" disabled={!!busy || !link.trim()}
-            className="px-5 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+            className="px-5 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
             {busy === 'link' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
           </button>
         </div>
@@ -75,7 +75,7 @@ export default function ImportPanel({ connected }) {
       <div className="border-t border-crimson-900/30 pt-5 space-y-2">
         <input ref={fileRef} type="file" accept=".csv,text/csv" onChange={addCsv} className="hidden" />
         <button onClick={() => fileRef.current?.click()} disabled={!!busy}
-          className="flex items-center gap-2 px-5 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+          className="flex items-center gap-2 px-5 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
           {busy === 'csv' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />} Upload a CSV
         </button>
         <p className="text-[11px] text-crimson-400 leading-relaxed">

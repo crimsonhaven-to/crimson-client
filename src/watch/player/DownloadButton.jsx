@@ -10,7 +10,7 @@ export default function DownloadButton({ downloading, progress, onClick }) {
     >
       {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
       {downloading && (
-        <span className="text-[10px] font-black tabular-nums tracking-tighter">
+        <span className="text-[11px] font-black tabular-nums tracking-tighter">
           {progress == null ? '…' : `${Math.round(progress * 100)}%`}
         </span>
       )}

@@ -50,7 +50,7 @@ function Bubble({ msg, onOpen }) {
           <button
             key={a.route}
             onClick={() => onOpen(a.route)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_8px_20px_rgba(255,0,60,0.2)]"
+            className="flex items-center gap-2 px-4 py-2.5 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_8px_20px_rgba(255,0,60,0.2)]"
           >
             <Play className="w-3.5 h-3.5" />
             <span className="truncate max-w-[14rem]">{a.label}</span>
@@ -138,7 +138,7 @@ export default function Lumi() {
         <div className="fixed inset-y-0 right-0 z-[90] w-full sm:w-[26rem] bg-crimson-950/95 backdrop-blur-xl border-l border-crimson-900/60 shadow-2xl flex flex-col">
           <div className="flex items-center gap-2.5 px-5 py-4 border-b border-crimson-900/60 flex-shrink-0">
             <Bot className="w-4 h-4 text-crimson-500" />
-            <h2 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Luminas Crimsonveil</h2>
+            <h2 className="text-[11px] font-black uppercase tracking-widest text-crimson-400">Luminas Crimsonveil</h2>
             <button
               onClick={reset}
               title="Start a new conversation"

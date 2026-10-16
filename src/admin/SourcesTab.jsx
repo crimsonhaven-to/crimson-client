@@ -125,7 +125,7 @@ export default function SourcesTab({ notify }) {
           <HardDrive className="w-7 h-7 text-crimson-500" />
           <div>
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Local Media Sources</h3>
-            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Direct-play streaming from a NAS / mounted directory</p>
+            <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest">Direct-play streaming from a NAS / mounted directory</p>
           </div>
         </div>
         <p className="text-xs text-crimson-400 font-medium leading-relaxed relative z-10 max-w-3xl">
@@ -138,21 +138,21 @@ export default function SourcesTab({ notify }) {
         <form onSubmit={add} className="space-y-4 relative z-10">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="space-y-2 sm:w-64">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Label</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Label</label>
               <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="e.g. Movies NAS" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="space-y-2 flex-1">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">In-container path</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">In-container path</label>
               <input value={path} onChange={(e) => setPath(e.target.value)} placeholder="/crimson/movies1" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold font-mono placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="flex items-end">
-              <button type="submit" disabled={adding} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
+              <button type="submit" disabled={adding} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
                 {adding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add</>}
               </button>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" onClick={discover} disabled={discovering} className="flex items-center gap-2 px-4 py-2.5 bg-crimson-950/60 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+            <button type="button" onClick={discover} disabled={discovering} className="flex items-center gap-2 px-4 py-2.5 bg-crimson-950/60 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all">
               <FolderSearch className={`w-4 h-4 ${discovering ? 'animate-pulse' : ''}`} /> {discovering ? 'Scanning…' : 'Discover mounts'}
             </button>
             {encodingSupported ? (
@@ -160,12 +160,12 @@ export default function SourcesTab({ notify }) {
                 type="button"
                 onClick={() => setEncoding((v) => !v)}
                 title="When on, this source will transcode non-web containers (MKV, HEVC…) to HLS on the fly"
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${encoding ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-300' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-400 hover:text-crimson-200 hover:border-crimson-600'}`}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border ${encoding ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-300' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-400 hover:text-crimson-200 hover:border-crimson-600'}`}
               >
                 <Film className="w-4 h-4" /> Transcoding {encoding ? 'on' : 'off'}
               </button>
             ) : (
-              <span title="ffmpeg/ffprobe not found in the backend image" className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest border bg-crimson-950/30 border-crimson-900/40 text-crimson-400 cursor-not-allowed">
+              <span title="ffmpeg/ffprobe not found in the backend image" className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest border bg-crimson-950/30 border-crimson-900/40 text-crimson-400 cursor-not-allowed">
                 <Film className="w-4 h-4" /> Transcoding unavailable
               </span>
             )}
@@ -173,7 +173,7 @@ export default function SourcesTab({ notify }) {
               type="button"
               onClick={() => setDownloadEnabled((v) => !v)}
               title="When on, the background downloader may write finished media into this source under /crimson-downloads"
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${downloadEnabled ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-300' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-400 hover:text-crimson-200 hover:border-crimson-600'}`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all border ${downloadEnabled ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-300' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-400 hover:text-crimson-200 hover:border-crimson-600'}`}
             >
               <Download className="w-4 h-4" /> Downloads {downloadEnabled ? 'on' : 'off'}
             </button>
@@ -199,7 +199,7 @@ export default function SourcesTab({ notify }) {
                       <FolderOpen className="w-4 h-4 text-crimson-500 flex-shrink-0" />
                       <span className="min-w-0 flex-grow">
                         <span className="block font-mono text-xs text-crimson-200 truncate">{m.path}</span>
-                        <span className={`block text-[9px] font-black uppercase tracking-widest ${st.ok ? 'text-green-500/80' : 'text-crimson-400'}`}>
+                        <span className={`block text-[11px] font-black uppercase tracking-widest ${st.ok ? 'text-green-500/80' : 'text-crimson-400'}`}>
                           {m.fstype} · {st.text}{m.already_added ? ' · added' : ''}
                         </span>
                       </span>
@@ -213,9 +213,9 @@ export default function SourcesTab({ notify }) {
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading sources…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Loading sources…</div>
       ) : sources.length === 0 ? (
-        <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No local sources registered yet</p>
+        <p className="py-16 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">No local sources registered yet</p>
       ) : (
         <div className="space-y-3">
           {sources.map((s) => {
@@ -226,16 +226,16 @@ export default function SourcesTab({ notify }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-bold text-crimson-50 truncate">{s.label}</span>
                     {s.enabled
-                      ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Enabled</span>
-                      : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Disabled</span>}
-                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${st.ok ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-crimson-500/10 border-crimson-500/30 text-crimson-500'}`}>{st.text}</span>
+                      ? <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Enabled</span>
+                      : <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Disabled</span>}
+                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${st.ok ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-crimson-500/10 border-crimson-500/30 text-crimson-500'}`}>{st.text}</span>
                     {s.encoding && (
-                      <span title="Transcoding non-web containers to HLS on the fly" className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-300 flex items-center gap-1">
+                      <span title="Transcoding non-web containers to HLS on the fly" className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-300 flex items-center gap-1">
                         <Film className="w-2.5 h-2.5" /> Transcoding
                       </span>
                     )}
                     {s.download_enabled && (
-                      <span title={s.downloads?.free_bytes != null ? `${formatBytes(s.downloads.free_bytes)} free · ${s.downloads.titles ?? 0} downloaded title(s)` : 'Downloads land here under /crimson-downloads'} className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-300 flex items-center gap-1">
+                      <span title={s.downloads?.free_bytes != null ? `${formatBytes(s.downloads.free_bytes)} free · ${s.downloads.titles ?? 0} downloaded title(s)` : 'Downloads land here under /crimson-downloads'} className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-300 flex items-center gap-1">
                         <Download className="w-2.5 h-2.5" /> Downloads{s.downloads?.free_bytes != null ? ` · ${formatBytes(s.downloads.free_bytes)} free` : ''}
                       </span>
                     )}

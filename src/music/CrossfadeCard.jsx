@@ -35,7 +35,7 @@ export default function CrossfadeCard() {
 
       <div className={`relative z-10 space-y-3 transition-opacity ${setting.on ? '' : 'opacity-40'}`}>
         <div className="flex items-baseline justify-between">
-          <label htmlFor="crossfade-seconds" className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
+          <label htmlFor="crossfade-seconds" className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em]">
             Blend length
           </label>
           <span className="text-sm font-black text-crimson-50 tabular-nums">{setting.seconds}s</span>
@@ -51,7 +51,7 @@ export default function CrossfadeCard() {
           onChange={(e) => change({ seconds: Number(e.target.value) })}
           className="w-full accent-crimson-500"
         />
-        <div className="flex justify-between text-[10px] font-black text-crimson-400 uppercase tracking-widest tabular-nums">
+        <div className="flex justify-between text-[11px] font-black text-crimson-400 uppercase tracking-widest tabular-nums">
           <span>{MIN_SECONDS}s</span>
           <span>{MAX_SECONDS}s</span>
         </div>
@@ -62,7 +62,7 @@ export default function CrossfadeCard() {
           {works ? <Blend className="w-5 h-5 text-crimson-500" /> : <Info className="w-5 h-5 text-amber-500" />}
         </div>
         <div className="space-y-1">
-          <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+          <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
             <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
           </p>
           <p className="text-xs text-crimson-400 leading-relaxed font-medium">

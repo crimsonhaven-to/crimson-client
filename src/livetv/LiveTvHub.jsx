@@ -35,17 +35,17 @@ function ChannelCard({ channel, onSelect }) {
             <span className="absolute inline-flex w-full h-full rounded-full bg-crimson-500 opacity-60 animate-ping" />
             <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-crimson-500" />
           </span>
-          <span className="text-[8px] font-black uppercase tracking-[0.18em] text-crimson-200">Live</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.18em] text-crimson-200">Live</span>
         </span>
 
         {channel.best_quality && (
-          <span className="absolute top-2 right-2 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-crimson-950/70 backdrop-blur-sm border border-crimson-800/60 text-crimson-200 uppercase">
+          <span className="absolute top-2 right-2 text-[11px] font-black px-1.5 py-0.5 rounded-md bg-crimson-950/70 backdrop-blur-sm border border-crimson-800/60 text-crimson-200 uppercase">
             {channel.best_quality}
           </span>
         )}
 
         {channel.country && (
-          <span className="absolute bottom-2 left-2.5 text-[10px] font-black text-crimson-100/80 tracking-[0.18em] uppercase">
+          <span className="absolute bottom-2 left-2.5 text-[11px] font-black text-crimson-100/80 tracking-[0.18em] uppercase">
             {channel.country}
           </span>
         )}
@@ -155,7 +155,7 @@ export default function LiveTvHub() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900 text-white font-black uppercase tracking-widest text-[10px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900 text-white font-black uppercase tracking-widest text-[11px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
               >
                 {loadingMore ? (
                   <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Unsealing…</>

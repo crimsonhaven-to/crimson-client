@@ -59,9 +59,9 @@ function EmailSender({ notify }) {
     <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl p-4 sm:p-5 space-y-4">
       <div className="flex items-center gap-2">
         <Send className="w-4 h-4 text-crimson-500" />
-        <h3 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">E-Mail Sender</h3>
+        <h3 className="text-[11px] font-black uppercase tracking-widest text-crimson-400">E-Mail Sender</h3>
         {status && configured && (
-          <span className="ml-auto text-[10px] font-bold text-crimson-400 tracking-wide">
+          <span className="ml-auto text-[11px] font-bold text-crimson-400 tracking-wide">
             reaches {recipients} member{recipients === 1 ? '' : 's'}
           </span>
         )}
@@ -74,12 +74,12 @@ function EmailSender({ notify }) {
       )}
 
       {running && (
-        <p className="text-[10px] font-black uppercase tracking-widest text-amber-400 animate-pulse">
+        <p className="text-[11px] font-black uppercase tracking-widest text-amber-400 animate-pulse">
           Sending “{broadcast.subject}”… {broadcast.sent + broadcast.failed}/{broadcast.total}
         </p>
       )}
       {!running && broadcast?.finished_at && (
-        <p className="text-[10px] font-bold text-crimson-400 tracking-wide">
+        <p className="text-[11px] font-bold text-crimson-400 tracking-wide">
           Last broadcast “{broadcast.subject}”: {broadcast.sent} sent{broadcast.failed ? `, ${broadcast.failed} failed` : ''} · {fmtDate(broadcast.finished_at)}
         </p>
       )}
@@ -103,7 +103,7 @@ function EmailSender({ notify }) {
           className="w-full px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all resize-y disabled:opacity-40"
         />
         <div className="flex items-center gap-4 flex-wrap">
-          <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-crimson-500 cursor-pointer select-none">
+          <label className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-500 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={verifiedOnly}
@@ -116,7 +116,7 @@ function EmailSender({ notify }) {
           <button
             type="submit"
             disabled={disabled || !subject.trim() || !message.trim() || recipients === 0}
-            className="ml-auto flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:hover:bg-crimson-600"
+            className="ml-auto flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all disabled:opacity-40 disabled:hover:bg-crimson-600"
           >
             <Send className="w-3.5 h-3.5" />
             {sending || running ? 'Sending…' : 'Send'}
@@ -146,7 +146,7 @@ function AccessToggles({ user, disabled, onToggle }) {
             aria-pressed={granted}
             title={`${granted ? 'Revoke' : 'Grant'} ${label} access`}
             onClick={() => onToggle(key, label, !granted)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-40 ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-black uppercase tracking-widest transition-all disabled:opacity-40 ${
               granted ? on : 'border-transparent text-crimson-400 hover:text-crimson-300'
             }`}
           >
@@ -203,15 +203,15 @@ export default function UsersTab({ notify }) {
             className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all"
           />
         </div>
-        <button type="submit" className="px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Search</button>
+        <button type="submit" className="px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all">Search</button>
       </form>
 
       <EmailSender notify={notify} />
 
-      <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400">{data.total} member{data.total === 1 ? '' : 's'} total</p>
+      <p className="text-[11px] font-black uppercase tracking-widest text-crimson-400">{data.total} member{data.total === 1 ? '' : 's'} total</p>
 
       {loading ? (
-        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Summoning members…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Summoning members…</div>
       ) : (
         <div className="space-y-3">
           {data.users.map((u) => {
@@ -224,13 +224,13 @@ export default function UsersTab({ notify }) {
                     {(u.username || u.display_name) && (
                       <span className="text-xs font-bold text-crimson-400 italic truncate max-w-[12rem]">“{u.username || u.display_name}”</span>
                     )}
-                    {u.is_admin && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400">Admin</span>}
+                    {u.is_admin && <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400">Admin</span>}
                     {u.email_verified
-                      ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Verified</span>
-                      : u.email ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-500">Unverified</span> : null}
-                    {u.has_mnemonic && <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/30 border border-crimson-800/50 text-crimson-400">Mnemonic</span>}
+                      ? <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Verified</span>
+                      : u.email ? <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-500">Unverified</span> : null}
+                    {u.has_mnemonic && <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/30 border border-crimson-800/50 text-crimson-400">Mnemonic</span>}
                   </div>
-                  <p className="text-[10px] font-bold text-crimson-400 mt-1.5 tracking-wide">
+                  <p className="text-[11px] font-bold text-crimson-400 mt-1.5 tracking-wide">
                     #{u.user_id} · {u.favorites_count} favs · {u.progress_count} watched · {u.sessions_count} session{u.sessions_count === 1 ? '' : 's'} · joined {fmtDate(u.created_at)}
                   </p>
                 </div>
@@ -287,7 +287,7 @@ export default function UsersTab({ notify }) {
             );
           })}
           {data.users.length === 0 && (
-            <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No members found</p>
+            <p className="py-16 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">No members found</p>
           )}
         </div>
       )}

@@ -149,7 +149,7 @@ const LoginWall = () => {
             </button>
             <button
               onClick={() => switchMode('login')}
-              className="w-full text-center text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]"
+              className="w-full text-center text-[11px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]"
             >
               Back to sign in
             </button>
@@ -174,7 +174,7 @@ const LoginWall = () => {
             {busy ? <RefreshCw className="w-5 h-5 animate-spin" /> : <>Send Reset Link <KeyRound className="w-4 h-4" /></>}
           </button>
           <button type="button" onClick={() => switchMode('login')}
-            className="w-full flex items-center justify-center gap-2 text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
+            className="w-full flex items-center justify-center gap-2 text-[11px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
           </button>
         </form>
@@ -189,7 +189,7 @@ const LoginWall = () => {
       <div className="grid grid-cols-3 gap-2 p-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl mb-8">
         {[['login', 'Sign In'], ['register', 'Register'], ['mnemonic', 'Mnemonic']].map(([key, label]) => (
           <button key={key} onClick={() => switchMode(key)}
-            className={`py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.12em] transition-all ${
+            className={`py-2.5 rounded-xl text-[11px] font-black uppercase tracking-[0.12em] transition-all ${
               mode === key ? 'bg-crimson-600 text-white shadow-[0_5px_15px_rgba(255,0,60,0.25)]' : 'text-crimson-500 hover:text-crimson-300'
             }`}>
             {label}
@@ -222,19 +222,19 @@ const LoginWall = () => {
             </button>
 
             <button type="button" onClick={handleGenerateIdentity}
-              className="w-full text-center text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
+              className="w-full text-center text-[11px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
               No mnemonic yet? Create a new identity
             </button>
           </form>
         ) : (
           <form onSubmit={handleMnemonicRegister} className="space-y-5">
             <div className="space-y-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500">Your new mnemonic</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500">Your new mnemonic</p>
               <div className="p-5 bg-crimson-950/80 border border-crimson-900/60 rounded-2xl text-crimson-100 font-mono text-sm leading-relaxed break-words select-all shadow-inner">
                 {genMnemonic}
               </div>
               <button type="button" onClick={copyMnemonic}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-crimson-900/20 hover:bg-crimson-900/40 text-crimson-100 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest border border-crimson-800/50">
+                className="w-full flex items-center justify-center gap-2 py-3 bg-crimson-900/20 hover:bg-crimson-900/40 text-crimson-100 rounded-2xl transition-all text-[11px] font-black uppercase tracking-widest border border-crimson-800/50">
                 {copied ? <><CheckCircle2 className="w-4 h-4 text-green-500" /> Copied</> : <><Copy className="w-4 h-4" /> Copy mnemonic</>}
               </button>
               <p className="text-[11px] text-crimson-400 leading-relaxed font-medium">
@@ -257,7 +257,7 @@ const LoginWall = () => {
             </button>
 
             <button type="button" onClick={() => switchMode('mnemonic')}
-              className="w-full flex items-center justify-center gap-2 text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
+              className="w-full flex items-center justify-center gap-2 text-[11px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to mnemonic sign in
             </button>
           </form>
@@ -308,7 +308,7 @@ const LoginWall = () => {
       )}
 
       {mode === 'login' && (
-        <div className="mt-8 text-center text-[10px] font-black uppercase tracking-[0.2em]">
+        <div className="mt-8 text-center text-[11px] font-black uppercase tracking-[0.2em]">
           <button onClick={() => switchMode('forgot')} className="text-crimson-400 hover:text-crimson-200 transition-colors">
             Forgot password?
           </button>
@@ -321,7 +321,7 @@ const LoginWall = () => {
 function Banner({ kind, text }) {
   const ok = kind === 'ok';
   return (
-    <div className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl duration-300 ${
+    <div className={`p-4 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl duration-300 ${
  ok ? 'bg-green-500/5 border border-green-500/20 text-green-300'
          : 'bg-crimson-500/5 border border-crimson-500/20 text-crimson-400'
     }`}>
@@ -338,7 +338,7 @@ export function Shell({ subtitle, children }) {
         <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-crimson-50 uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
           crimson<span className="text-crimson-500 font-light">haven</span>
         </h1>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">{subtitle}</p>
+        <p className="text-[11px] text-crimson-400 font-black uppercase tracking-[0.2em]">{subtitle}</p>
       </div>
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/50 p-7 sm:p-9 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full pointer-events-none" />

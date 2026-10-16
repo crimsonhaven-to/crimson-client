@@ -6,7 +6,7 @@ export default function PlayerTitle({ title, visible }) {
           <span className="absolute inline-flex w-full h-full rounded-full bg-crimson-500 opacity-60 animate-ping" />
           <span className="relative inline-flex w-2 h-2 rounded-full bg-crimson-500 shadow-[0_0_8px_#ff003c]" />
         </span>
-        <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-crimson-50 truncate drop-shadow-lg">
+        <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-crimson-50 truncate drop-shadow-lg">
           {title || 'Crimson Haven Manifest'}
         </span>
       </div>

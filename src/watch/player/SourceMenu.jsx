@@ -12,7 +12,7 @@ export default function SourceMenu({ sources, activeSourceIdx, onPick, onReportB
 
   return (
     <div className="p-2">
-      <p className="flex items-center gap-2 px-2 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-crimson-500">
+      <p className="flex items-center gap-2 px-2 py-2 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500">
         <MonitorPlay className="w-3.5 h-3.5" /> Sources
       </p>
       <div className="space-y-1">
@@ -23,7 +23,7 @@ export default function SourceMenu({ sources, activeSourceIdx, onPick, onReportB
               <button
                 key={group.key}
                 onClick={() => onPick(idx)}
-                className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSourceIdx === idx ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeSourceIdx === idx ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
               >
                 <span className="truncate">{stream.source}</span>
                 {activeSourceIdx === idx && <Check className="w-3.5 h-3.5 shrink-0" />}
@@ -36,7 +36,7 @@ export default function SourceMenu({ sources, activeSourceIdx, onPick, onReportB
             <div key={group.key}>
               <button
                 onClick={() => setOpenGroup(open ? null : group.key)}
-                className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${containsActive && !open ? 'bg-crimson-600/80 text-crimson-50' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${containsActive && !open ? 'bg-crimson-600/80 text-crimson-50' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
               >
                 <span className="flex items-center gap-2 truncate">
                   <Layers className="w-3 h-3 shrink-0 text-crimson-500" />
@@ -51,11 +51,11 @@ export default function SourceMenu({ sources, activeSourceIdx, onPick, onReportB
                     <button
                       key={idx}
                       onClick={() => onPick(idx)}
-                      className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2 rounded-lg text-[10px] font-bold tracking-wide transition-all ${activeSourceIdx === idx ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
+                      className={`w-full flex items-center justify-between gap-2 text-left px-3 py-2 rounded-lg text-[11px] font-bold tracking-wide transition-all ${activeSourceIdx === idx ? 'bg-crimson-600 text-white' : 'text-crimson-300 hover:bg-crimson-500/20 hover:text-white'}`}
                     >
                       <span className="flex items-center gap-1.5 truncate">
-                        <span className="text-[8px] uppercase font-black px-1.5 py-0.5 rounded bg-crimson-500/10 border border-crimson-500/20 text-crimson-500">{stream.type}</span>
-                        {stream.language && <span className="text-[8px] uppercase font-black px-1.5 py-0.5 rounded bg-crimson-900 text-crimson-400">{stream.language}</span>}
+                        <span className="text-[11px] uppercase font-black px-1.5 py-0.5 rounded bg-crimson-500/10 border border-crimson-500/20 text-crimson-500">{stream.type}</span>
+                        {stream.language && <span className="text-[11px] uppercase font-black px-1.5 py-0.5 rounded bg-crimson-900 text-crimson-400">{stream.language}</span>}
                         <span className="truncate">{streamVariantLabel(stream)}</span>
                       </span>
                       {activeSourceIdx === idx && <Check className="w-3.5 h-3.5 shrink-0" />}
@@ -71,7 +71,7 @@ export default function SourceMenu({ sources, activeSourceIdx, onPick, onReportB
         <button
           onClick={() => { onReportBroken(activeSourceIdx); onClose(); }}
           title="This source won't play: report it and switch to the next"
-          className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-500/20 transition-all"
+          className="mt-2 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest text-crimson-400 hover:text-white hover:bg-crimson-500/20 transition-all"
         >
           <AlertTriangle className="w-3.5 h-3.5" /> Report broken · try next
         </button>

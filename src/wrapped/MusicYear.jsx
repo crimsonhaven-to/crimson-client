@@ -58,7 +58,7 @@ export default function MusicYear({ data, year }) {
                       <div className="text-sm font-black text-crimson-50 truncate tracking-tight">{track.title}</div>
                       <div className="text-xs text-crimson-400 truncate">{(track.artists || []).join(', ')}</div>
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-crimson-500 shrink-0 tabular-nums">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-crimson-500 shrink-0 tabular-nums">
                       {plural(plays, 'play', 'plays')}
                     </span>
                   </button>
@@ -80,7 +80,7 @@ export default function MusicYear({ data, year }) {
                     <div className="flex-grow min-w-0">
                       <div className="flex items-baseline justify-between gap-4">
                         <span className="text-sm font-black text-crimson-50 truncate tracking-tight">{artist.name}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-crimson-500 shrink-0 tabular-nums">
+                        <span className="text-[11px] font-black uppercase tracking-widest text-crimson-500 shrink-0 tabular-nums">
                           {artist.minutes.toLocaleString()} min
                         </span>
                       </div>

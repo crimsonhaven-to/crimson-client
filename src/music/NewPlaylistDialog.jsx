@@ -30,7 +30,7 @@ export default function NewPlaylistDialog({ onClose }) {
     <Sheet as="form" onSubmit={create} label="New playlist" onClose={onClose} className="sm:max-w-md p-5 space-y-4">
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-grow">
-          <p className="text-[10px] font-black uppercase tracking-widest text-crimson-500">New playlist</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">New playlist</p>
           <p className="text-[11px] text-crimson-400 mt-1">Kept only here. Add songs to it by searching, no Spotify needed.</p>
         </div>
         <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-crimson-400 hover:text-white"><X className="w-5 h-5" /></button>
@@ -46,11 +46,11 @@ export default function NewPlaylistDialog({ onClose }) {
       {error && <p className="text-xs font-bold text-amber-400">{error}</p>}
       <div className="flex justify-end gap-2">
         <button type="button" onClick={onClose}
-          className="px-5 py-2.5 rounded-xl text-crimson-400 hover:text-white text-[10px] font-black uppercase tracking-widest">
+          className="px-5 py-2.5 rounded-xl text-crimson-400 hover:text-white text-[11px] font-black uppercase tracking-widest">
           Cancel
         </button>
         <button type="submit" disabled={busy || !name.trim()}
-          className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+          className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create'}
         </button>
       </div>

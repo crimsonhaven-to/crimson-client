@@ -224,12 +224,12 @@ const WelcomeTour = ({ musicEnabled, onClose }) => {
                 <h3 className="text-base font-black text-crimson-50 tracking-tight truncate">Luminas Crimsonveil</h3>
                 <Crown className="w-3.5 h-3.5 text-crimson-500 shrink-0" />
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-400 mt-0.5">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 mt-0.5">
                 {isFirst ? "The Queen's Welcome" : `Rite ${step} of ${steps.length - 1}`}
               </p>
             </div>
             {current.isNew && (
-              <span className="ml-auto px-3 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white animate-pulse">
+              <span className="ml-auto px-3 py-1 bg-crimson-500 rounded-full text-[11px] font-black uppercase tracking-[0.2em] text-white animate-pulse">
                 New
               </span>
             )}
@@ -252,7 +252,7 @@ const WelcomeTour = ({ musicEnabled, onClose }) => {
               {current.cta && (
                 <button
                   onClick={goToCta}
-                  className="inline-flex items-center gap-2 mt-1 px-5 py-2.5 rounded-2xl bg-crimson-600/10 border border-crimson-500/30 text-crimson-300 hover:text-white hover:bg-crimson-600/20 transition-all text-[10px] font-black uppercase tracking-widest"
+                  className="inline-flex items-center gap-2 mt-1 px-5 py-2.5 rounded-2xl bg-crimson-600/10 border border-crimson-500/30 text-crimson-300 hover:text-white hover:bg-crimson-600/20 transition-all text-[11px] font-black uppercase tracking-widest"
                 >
                   {current.cta.label} <ChevronRight className="w-4 h-4" />
                 </button>
@@ -276,13 +276,13 @@ const WelcomeTour = ({ musicEnabled, onClose }) => {
           <div className="flex items-center justify-between gap-4 pt-1">
             <button
               onClick={() => (isFirst ? close() : setStep((s) => s - 1))}
-              className="flex items-center gap-2 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300 transition-colors"
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300 transition-colors"
             >
               {isFirst ? 'Skip the pleasantries' : (<><ChevronLeft className="w-4 h-4" /> Back</>)}
             </button>
             <button
               onClick={() => (isLast ? close() : setStep((s) => s + 1))}
-              className="flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-[0.2em] text-[10px] shadow-[0_12px_30px_rgba(255,0,60,0.25)] transition-all active:scale-95"
+              className="flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-[0.2em] text-[11px] shadow-[0_12px_30px_rgba(255,0,60,0.25)] transition-all active:scale-95"
             >
               {isLast ? (<>Enter the Haven <Sparkles className="w-4 h-4" /></>) : (<>Next <ChevronRight className="w-4 h-4" /></>)}
             </button>

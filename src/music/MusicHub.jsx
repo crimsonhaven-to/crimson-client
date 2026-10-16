@@ -114,7 +114,7 @@ export default function MusicHub() {
   const [creating, setCreating] = useState(false);
 
   if (status.loading) {
-    return <div className="py-32 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Tuning the strings...</div>;
+    return <div className="py-32 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Tuning the strings...</div>;
   }
   // A request that never reached the server has no status: that is being offline.
   if (status.error && !status.error.status) return <OfflineHub downloads={downloads} />;

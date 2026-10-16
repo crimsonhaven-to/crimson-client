@@ -9,7 +9,7 @@ const SelectionBar = ({ selectedCount, allSelected, onToggleAll, onAddToList, on
       </span>
       <button
         onClick={onToggleAll}
-        className="text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-300 transition-colors"
+        className="text-[11px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-300 transition-colors"
       >
         {allSelected ? 'Clear' : 'Select all'}
       </button>
@@ -19,7 +19,7 @@ const SelectionBar = ({ selectedCount, allSelected, onToggleAll, onAddToList, on
       <button
         onClick={() => selectedCount && onAddToList()}
         disabled={!selectedCount}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-crimson-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-crimson-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_8px_20px_rgba(255,0,60,0.3)] transition-all active:scale-95"
+        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-crimson-600 text-white text-[11px] font-black uppercase tracking-widest hover:bg-crimson-500 disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_8px_20px_rgba(255,0,60,0.3)] transition-all active:scale-95"
       >
         <FolderPlus className="w-4 h-4" />
         <span>Add to list</span>
@@ -28,7 +28,7 @@ const SelectionBar = ({ selectedCount, allSelected, onToggleAll, onAddToList, on
         <button
           onClick={onRemove}
           disabled={!selectedCount}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-300 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-300 text-[11px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
         >
           <Trash2 className="w-4 h-4" />
           <span>Remove</span>

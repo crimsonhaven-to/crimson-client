@@ -68,7 +68,7 @@ const AdminPage = () => {
     <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-16 sm:py-20 space-y-10">
       <div className="border-b border-crimson-900/30 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <PageHeading icon={Shield} title="Admin" accent="Sanctum" subtitle="Keeper controls for the dark network" />
-        <button onClick={() => { setLoading(true); loadStats(); }} className="group flex items-center gap-2.5 px-5 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[10px] font-black uppercase tracking-widest self-start sm:self-auto">
+        <button onClick={() => { setLoading(true); loadStats(); }} className="group flex items-center gap-2.5 px-5 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[11px] font-black uppercase tracking-widest self-start sm:self-auto">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : 'group-hover:rotate-90 transition-transform'}`} /> Refresh
         </button>
       </div>
@@ -91,7 +91,7 @@ const AdminPage = () => {
 
       <div>
         {tab === 'overview' && (loading && !stats
-          ? <div className="py-24 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Gathering diagnostics…</div>
+          ? <div className="py-24 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Gathering diagnostics…</div>
           : <OverviewTab stats={stats} health={health} system={system} />)}
         {tab === 'health' && <HealthTab notify={notify} />}
         {tab === 'metrics' && <MetricsTab notify={notify} />}

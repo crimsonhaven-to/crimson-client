@@ -43,7 +43,7 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
   const isOverview = variant === 'overview';
   const triggerBase = isOverview
     ? 'group inline-flex items-center gap-3 font-black uppercase tracking-[0.2em] text-xs px-8 py-4 rounded-2xl border transition-all active:scale-95'
-    : 'ml-auto flex items-center gap-2.5 px-5 py-2 rounded-xl border transition-all text-[10px] font-black uppercase tracking-widest';
+    : 'ml-auto flex items-center gap-2.5 px-5 py-2 rounded-xl border transition-all text-[11px] font-black uppercase tracking-widest';
   const triggerActive = isOverview
     ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_15px_30px_rgba(255,0,60,0.3)] hover:bg-crimson-500'
     : 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.3)]';
@@ -78,7 +78,7 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
             shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden`}
         >
           <div className="px-4 py-3 border-b border-crimson-900/50">
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-crimson-500">Add to Watchlist</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-crimson-500">Add to Watchlist</p>
           </div>
 
           <div className="max-h-60 overflow-y-auto py-1">

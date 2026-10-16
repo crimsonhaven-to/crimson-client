@@ -54,7 +54,7 @@ const Section = ({ icon: Icon, title, note, children }) => (
     <div className="flex items-baseline gap-2.5 flex-wrap">
       {Icon && <Icon className="w-4 h-4 text-crimson-500 self-center" />}
       <h3 className="text-[11px] font-black uppercase tracking-[0.25em] text-crimson-300">{title}</h3>
-      {note && <span className="text-[10px] font-bold text-crimson-400">{note}</span>}
+      {note && <span className="text-[11px] font-bold text-crimson-400">{note}</span>}
     </div>
     {children}
   </div>
@@ -79,7 +79,7 @@ const RatioRow = ({ label, ratio, right, sub }) => (
     <div className="h-1.5 rounded-full bg-crimson-950 border border-crimson-900/60 overflow-hidden">
       <div className={`h-full ${barTone(ratio)} transition-all`} style={{ width: `${Math.round((ratio ?? 0) * 100)}%` }} />
     </div>
-    {sub && <p className="text-[10px] font-bold text-crimson-400 mt-1.5">{sub}</p>}
+    {sub && <p className="text-[11px] font-bold text-crimson-400 mt-1.5">{sub}</p>}
   </div>
 );
 
@@ -87,7 +87,7 @@ const Facts = ({ rows }) => (
   <div className="bg-crimson-950/40 border border-crimson-900/50 rounded-2xl divide-y divide-crimson-900/40">
     {rows.map(([label, value]) => (
       <div key={label} className="flex items-center justify-between gap-4 px-4 py-2.5">
-        <span className="text-[10px] font-black uppercase tracking-widest text-crimson-400">{label}</span>
+        <span className="text-[11px] font-black uppercase tracking-widest text-crimson-400">{label}</span>
         <span className="text-[11px] font-black tabular-nums text-crimson-100">{value ?? 'n/a'}</span>
       </div>
     ))}
@@ -140,7 +140,7 @@ function LiveSnapshot({ notify }) {
   useEffect(() => { load(); }, [load]);
 
   if (loading && !parsed && !unavailable) {
-    return <div className="py-24 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Counting the empress's ledgers…</div>;
+    return <div className="py-24 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Counting the empress's ledgers…</div>;
   }
 
   if (unavailable) {
@@ -243,7 +243,7 @@ function LiveSnapshot({ notify }) {
       <div className="flex justify-end">
         <button
           onClick={load}
-          className="group flex items-center gap-2.5 px-5 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[10px] font-black uppercase tracking-widest"
+          className="group flex items-center gap-2.5 px-5 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[11px] font-black uppercase tracking-widest"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : 'group-hover:rotate-90 transition-transform'}`} /> Re-read
         </button>
@@ -276,7 +276,7 @@ function LiveSnapshot({ notify }) {
         {byStatus.length ? (
           <div className="flex flex-wrap gap-2.5">
             {byStatus.map((s) => (
-              <div key={s.key} className={`px-3.5 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest ${
+              <div key={s.key} className={`px-3.5 py-2 rounded-2xl border text-[11px] font-black uppercase tracking-widest ${
                 s.key.startsWith('2') ? 'bg-green-950/30 border-green-800/40 text-green-300'
                   : s.key.startsWith('4') ? 'bg-amber-950/20 border-amber-800/40 text-amber-300'
                     : 'bg-crimson-950/40 border-crimson-700/50 text-crimson-300'

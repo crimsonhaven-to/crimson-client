@@ -236,7 +236,7 @@ const UserSettings = () => {
             {prefs.type === 'Sub' ? <Subtitles className="w-5 h-5 text-crimson-500" /> : <Info className="w-5 h-5 text-crimson-500" />}
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved automatically
             </p>
             <p className="text-xs text-crimson-400 leading-relaxed font-medium">{summary}</p>
@@ -270,7 +270,7 @@ const UserSettings = () => {
               <Download className="w-5 h-5 text-crimson-400" />
             </div>
             <div className="space-y-2">
-              <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
+              <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em]">
                 Summon the Crimson Bridge
               </p>
               <p className="text-xs text-crimson-400 leading-relaxed font-medium">
@@ -310,7 +310,7 @@ const UserSettings = () => {
             <Gamepad2 className="w-5 h-5 text-crimson-500" />
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved automatically
             </p>
             <p className="text-xs text-crimson-400 leading-relaxed font-medium">
@@ -375,7 +375,7 @@ const UserSettings = () => {
             <Palette className="w-5 h-5 text-crimson-500" />
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
             </p>
             <p className="text-xs text-crimson-400 leading-relaxed font-medium">
@@ -412,7 +412,7 @@ const UserSettings = () => {
             <Gauge className="w-5 h-5 text-crimson-500" />
           </div>
           <div className="space-y-1">
-            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
+            <p className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
             </p>
             <p className="text-xs text-crimson-400 leading-relaxed font-medium">
@@ -424,7 +424,7 @@ const UserSettings = () => {
         </div>
       </div>
 
-      <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
+      <p className="text-[11px] text-crimson-400 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
         Stored privately on this device · You can still pick any source manually while watching
       </p>
     </div>

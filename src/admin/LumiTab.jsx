@@ -23,9 +23,9 @@ const compactTokens = (n) => {
 function Field({ label, hint, children }) {
   return (
     <label className="block space-y-2">
-      <span className="block text-[10px] font-black uppercase tracking-widest text-crimson-500">{label}</span>
+      <span className="block text-[11px] font-black uppercase tracking-widest text-crimson-500">{label}</span>
       {children}
-      {hint && <span className="block text-[10px] font-bold text-crimson-400 leading-relaxed">{hint}</span>}
+      {hint && <span className="block text-[11px] font-bold text-crimson-400 leading-relaxed">{hint}</span>}
     </label>
   );
 }
@@ -57,7 +57,7 @@ export default function LumiTab({ notify }) {
   useEffect(() => { load(); }, [load]);
 
   if (loading || !draft) {
-    return <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Rousing the empress…</div>;
+    return <div className="py-16 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Rousing the empress…</div>;
   }
 
   const keyPresent = data.keys?.[draft.provider];
@@ -107,7 +107,7 @@ export default function LumiTab({ notify }) {
       <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl p-4 sm:p-5 space-y-5">
         <div className="flex items-center gap-2">
           <Bot className="w-4 h-4 text-crimson-500" />
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Configuration</h3>
+          <h3 className="text-[11px] font-black uppercase tracking-widest text-crimson-400">Configuration</h3>
           <button
             onClick={load}
             className="ml-auto p-2 rounded-xl bg-crimson-950/60 border border-crimson-900/60 text-crimson-400 hover:border-crimson-500/50 transition-all"
@@ -122,7 +122,7 @@ export default function LumiTab({ notify }) {
           {PROVIDERS.map((p) => (
             <div
               key={p.id}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-[10px] font-black uppercase tracking-widest ${
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-[11px] font-black uppercase tracking-widest ${
                 data.keys?.[p.id]
                   ? 'bg-green-950/30 border-green-800/40 text-green-300'
                   : 'bg-crimson-950/40 border-crimson-900/50 text-crimson-400'
@@ -150,7 +150,7 @@ export default function LumiTab({ notify }) {
             className="accent-crimson-600 w-4 h-4"
           />
           <span className="text-sm font-bold text-crimson-50">Lumi is awake</span>
-          <span className="text-[10px] font-bold text-crimson-400">
+          <span className="text-[11px] font-bold text-crimson-400">
             Master switch. Members still need an individual grant on the Users tab.
           </span>
         </label>
@@ -229,7 +229,7 @@ export default function LumiTab({ notify }) {
         <button
           onClick={save}
           disabled={saving}
-          className="flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-40"
+          className="flex items-center gap-2 px-5 py-3 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all disabled:opacity-40"
         >
           <Save className="w-3.5 h-3.5" />
           {saving ? 'Saving…' : 'Save'}
@@ -239,7 +239,7 @@ export default function LumiTab({ notify }) {
       <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-2xl p-4 sm:p-5 space-y-3">
         <div className="flex items-center gap-2">
           <Coins className="w-4 h-4 text-crimson-500" />
-          <h3 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Spend by member · last 30 days</h3>
+          <h3 className="text-[11px] font-black uppercase tracking-widest text-crimson-400">Spend by member · last 30 days</h3>
         </div>
         {usage?.per_user?.length ? (
           usage.per_user.map((u) => (
@@ -247,7 +247,7 @@ export default function LumiTab({ notify }) {
               <span className="text-sm font-bold text-crimson-50 truncate flex-grow">
                 {u.username || u.email || `User #${u.user_id}`}
               </span>
-              <span className="text-[10px] font-bold text-crimson-400 tracking-wide flex-shrink-0">
+              <span className="text-[11px] font-bold text-crimson-400 tracking-wide flex-shrink-0">
                 {u.calls} calls · {compactTokens(u.tokens)} tokens
               </span>
               <span className="text-sm font-black text-amber-400 tabular-nums flex-shrink-0 w-16 text-right">
@@ -256,11 +256,11 @@ export default function LumiTab({ notify }) {
             </div>
           ))
         ) : (
-          <p className="py-8 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">
+          <p className="py-8 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">
             Nobody has spoken to her yet
           </p>
         )}
-        <p className="text-[10px] font-bold text-crimson-400 leading-relaxed pt-1">
+        <p className="text-[11px] font-bold text-crimson-400 leading-relaxed pt-1">
           Costs are estimated from published per-million rates at call time, not read from a vendor invoice, so they track spend closely but will not match a bill to the cent.
         </p>
       </div>

@@ -78,12 +78,12 @@ const SessionsCard = () => {
                   {deviceLabel(s.user_agent)}
                 </span>
                 {s.current && (
-                  <span className="shrink-0 px-2 py-0.5 rounded-md bg-crimson-500 text-white text-[9px] font-black uppercase tracking-widest">
+                  <span className="shrink-0 px-2 py-0.5 rounded-md bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest">
                     This device
                   </span>
                 )}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-400">
+              <div className="mt-1 flex flex-wrap items-center gap-2.5 text-[11px] font-black uppercase tracking-widest text-crimson-400">
                 <span>{s.ip || 'Unknown address'}</span>
                 <span className="text-crimson-800">·</span>
                 <span>Last used {when(s.last_seen_at)}</span>
@@ -105,7 +105,7 @@ const SessionsCard = () => {
         <button
           onClick={handleRevokeOthers}
           disabled={busy === 'others'}
-          className="w-full py-4 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
+          className="w-full py-4 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50"
         >
           {busy === 'others' ? 'Signing out…' : `Sign out ${others} other device${others === 1 ? '' : 's'}`}
         </button>
@@ -145,10 +145,10 @@ const ActivityCard = () => {
             <span className="flex-grow min-w-0 text-xs font-bold text-crimson-100 truncate">
               {eventLabel(e.event_type)}
             </span>
-            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-400">
+            <span className="shrink-0 text-[11px] font-black uppercase tracking-widest text-crimson-400">
               {e.ip || '-'}
             </span>
-            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-400 tabular-nums">
+            <span className="shrink-0 text-[11px] font-black uppercase tracking-widest text-crimson-400 tabular-nums">
               {when(e.ts)}
             </span>
           </div>
@@ -182,7 +182,7 @@ const ExportCard = () => {
       <button
         onClick={run}
         disabled={state === 'working'}
-        className="w-full py-4 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-300 hover:text-white hover:border-crimson-600 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+        className="w-full py-4 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-300 hover:text-white hover:border-crimson-600 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
       >
         {state === 'working' && <Loader2 className="w-4 h-4 animate-spin" />}
         {state === 'done' && <Check className="w-4 h-4 text-green-500" />}
@@ -238,7 +238,7 @@ const DeleteCard = ({ hasEmail }) => {
       {!armed ? (
         <button
           onClick={() => setArmed(true)}
-          className="w-full py-4 rounded-2xl bg-red-950/40 border border-red-900/60 text-red-400 hover:text-white hover:border-red-500 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3"
+          className="w-full py-4 rounded-2xl bg-red-950/40 border border-red-900/60 text-red-400 hover:text-white hover:border-red-500 text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3"
         >
           <Trash2 className="w-4 h-4" /> Delete my account
         </button>
@@ -283,14 +283,14 @@ const DeleteCard = ({ hasEmail }) => {
             <button
               onClick={() => { setArmed(false); setPassword(''); setMnemonic(''); setTyped(''); setError(null); }}
               disabled={busy}
-              className="flex-1 py-4 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95"
+              className="flex-1 py-4 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white text-[11px] font-black uppercase tracking-widest transition-all active:scale-95"
             >
               Keep it
             </button>
             <button
               onClick={run}
               disabled={!ready || busy}
-              className="flex-1 py-4 rounded-2xl bg-red-600 hover:bg-red-500 disabled:bg-red-950/50 disabled:text-red-800 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3"
+              className="flex-1 py-4 rounded-2xl bg-red-600 hover:bg-red-500 disabled:bg-red-950/50 disabled:text-red-800 text-white text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-3"
             >
               {busy && <Loader2 className="w-4 h-4 animate-spin" />}
               {busy ? 'Deleting…' : 'Delete forever'}

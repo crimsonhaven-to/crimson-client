@@ -164,12 +164,12 @@ function ReleaseEntry({ entry, latest }) {
           {entry.tag || entry.name}
         </span>
         {latest && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-crimson-500/15 border border-crimson-500/30 rounded-full text-[9px] font-black uppercase tracking-[0.25em] text-crimson-400">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-crimson-500/15 border border-crimson-500/30 rounded-full text-[11px] font-black uppercase tracking-[0.25em] text-crimson-400">
             <Sparkles className="w-3 h-3" /> Latest Decree
           </span>
         )}
         {entry.prerelease && (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-crimson-900/40 border border-crimson-800/50 rounded-full text-[9px] font-black uppercase tracking-[0.25em] text-crimson-500">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-crimson-900/40 border border-crimson-800/50 rounded-full text-[11px] font-black uppercase tracking-[0.25em] text-crimson-500">
             <FlaskConical className="w-3 h-3" /> Pre-release
           </span>
         )}
@@ -179,7 +179,7 @@ function ReleaseEntry({ entry, latest }) {
         <h3 className="text-xl sm:text-2xl font-black text-crimson-50 tracking-tight mb-3 leading-tight">{entry.name}</h3>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 mb-6">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 mb-6">
         {entry.published_at && (
           <span className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5" /> {formatReleaseDate(entry.published_at)}</span>
         )}
@@ -195,7 +195,7 @@ function ReleaseEntry({ entry, latest }) {
           href={entry.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 mt-7 text-[10px] font-black uppercase tracking-[0.25em] text-crimson-500 hover:text-crimson-400 transition-colors group"
+          className="inline-flex items-center gap-2 mt-7 text-[11px] font-black uppercase tracking-[0.25em] text-crimson-500 hover:text-crimson-400 transition-colors group"
         >
           View on GitHub
           <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
@@ -214,7 +214,7 @@ export default function ChangelogPage() {
       <div className="border-b border-crimson-900/30 pb-8 space-y-3">
         <Link
           to="/about"
-          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 hover:text-crimson-200 transition-colors mb-2"
+          className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 hover:text-crimson-200 transition-colors mb-2"
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to the Haven
         </Link>
@@ -222,19 +222,19 @@ export default function ChangelogPage() {
       </div>
 
       <div className="relative bg-crimson-500/5 backdrop-blur-md border border-crimson-500/20 p-7 sm:p-8 rounded-[2.5rem] shadow-xl">
-        <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[8px] font-black uppercase tracking-[0.3em] text-white">Queen's Decree</div>
+        <div className="absolute -top-3 left-10 px-4 py-1 bg-crimson-500 rounded-full text-[11px] font-black uppercase tracking-[0.2em] text-white">Queen's Decree</div>
         <p className="italic text-crimson-100/90 leading-relaxed text-base sm:text-lg tracking-tight">
           "Every refinement to my Haven is recorded here, darling~ Each version a little ritual,
           each fix a drop of my centuries-old devotion. Scroll, and witness how I keep our sanctuary <span className="text-crimson-50 not-italic font-black border-b-2 border-crimson-500/50">flawless</span> for you."
         </p>
-        <p className="mt-5 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 flex items-center gap-3">
+        <p className="mt-5 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 flex items-center gap-3">
           <span className="block w-8 h-px bg-crimson-500/50"></span>
           Luminas Crimsonveil, the Vampire Queen
         </p>
       </div>
 
       {meta?.stale && entries.length > 0 && (
-        <div className="flex items-center gap-3 px-5 py-3 bg-crimson-900/20 border border-crimson-900/50 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-500">
+        <div className="flex items-center gap-3 px-5 py-3 bg-crimson-900/20 border border-crimson-900/50 rounded-2xl text-[11px] font-black uppercase tracking-widest text-crimson-500">
           <AlertCircle className="w-4 h-4 shrink-0" />
           These are the last-known chronicles. The archive could not be refreshed just now.
         </div>
@@ -246,7 +246,7 @@ export default function ChangelogPage() {
             <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
             <div className="absolute inset-0 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
           </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 animate-pulse">Unsealing the chronicle</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 animate-pulse">Unsealing the chronicle</p>
         </div>
       )}
 
@@ -265,7 +265,7 @@ export default function ChangelogPage() {
       {!loading && !notConfigured && error && (
         <div className="text-center py-16 space-y-4 bg-crimson-500/5 border border-crimson-500/20 rounded-[2.5rem] px-8">
           <AlertCircle className="w-10 h-10 text-crimson-500 mx-auto" />
-          <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400">System Message: {error}</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-400">System Message: {error}</p>
           <p className="text-sm text-crimson-400 italic">The chronicle could not be summoned. Try again in a moment.</p>
         </div>
       )}

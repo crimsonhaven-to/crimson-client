@@ -397,11 +397,11 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                 <>
                   <button onClick={() => skip(-SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Back ${SKIP_SECONDS} seconds`}>
                     <RotateCcw className="w-5 h-5" />
-                    <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
+                    <span className="absolute inset-0 grid place-items-center text-[11px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
                   </button>
                   <button onClick={() => skip(SKIP_SECONDS)} className="relative p-2 rounded-xl hover:bg-crimson-500/20 hover:text-white transition-all active:scale-90" aria-label={`Forward ${SKIP_SECONDS} seconds`}>
                     <RotateCw className="w-5 h-5" />
-                    <span className="absolute inset-0 grid place-items-center text-[7px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
+                    <span className="absolute inset-0 grid place-items-center text-[11px] font-black tabular-nums pointer-events-none">{SKIP_SECONDS}</span>
                   </button>
                 </>
               )}
@@ -424,7 +424,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                 title={autoNext ? 'Auto-Next: on' : 'Auto-Next: off'}
               >
                 <SkipForward className={`w-4 h-4 ${autoNext ? 'text-crimson-400' : 'text-crimson-500'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+                <span className="text-[11px] font-black uppercase tracking-widest hidden sm:inline">
                   Auto {autoNext ? 'On' : 'Off'}
                 </span>
               </button>
@@ -441,7 +441,7 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
                 title="Seasons &amp; Episodes"
               >
                 <ListVideo className={`w-4 h-4 ${showEpisodes ? 'text-crimson-400' : 'text-crimson-500'}`} />
-                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Episodes</span>
+                <span className="text-[11px] font-black uppercase tracking-widest hidden sm:inline">Episodes</span>
               </button>
             )}
 

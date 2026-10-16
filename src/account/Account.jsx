@@ -44,7 +44,7 @@ const AccountPage = () => {
           <PageHeading title="Your" accent="Sanctuary" subtitle="Synchronized with the dark network" className="text-center sm:text-left" />
           <button 
             onClick={logout}
-            className="group flex items-center gap-2.5 px-6 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-500 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/40 transition-all text-[10px] font-black uppercase tracking-widest shadow-xl"
+            className="group flex items-center gap-2.5 px-6 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-500 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/40 transition-all text-[11px] font-black uppercase tracking-widest shadow-xl"
           >
             <LogOut className="w-4 h-4 group-hover:translate-x-1 transition-transform" /> Logout
           </button>
@@ -61,7 +61,7 @@ const AccountPage = () => {
             
             <div className="space-y-8 font-mono text-xs relative z-10">
               <div className="space-y-3">
-                <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.2em] mb-1">
+                <p className="text-[11px] text-crimson-400 font-black uppercase tracking-[0.2em] mb-1">
                   {profile?.email ? 'Email (Account ID)' : 'Public Signature (Account ID)'}
                 </p>
                 <div className="p-5 bg-crimson-950/80 border border-crimson-900/60 rounded-2xl text-crimson-400 break-all select-all font-mono shadow-inner">
@@ -71,11 +71,11 @@ const AccountPage = () => {
 
               <div className="grid grid-cols-2 gap-6">
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
-                  <p className="text-[9px] text-crimson-400 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Favorites</p>
+                  <p className="text-[11px] text-crimson-400 font-black uppercase tracking-[0.2em] mb-2 group-hover:text-crimson-200 transition-colors">Favorites</p>
                   <p className="text-4xl font-black text-crimson-50 tracking-tighter">{profile?.favorites_count || 0}</p>
                 </div>
                 <div className="p-6 bg-crimson-950/40 border border-crimson-900/40 rounded-2xl shadow-lg group hover:border-crimson-500/30 transition-all">
-                  <p className="text-[9px] text-crimson-400 font-black uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Manifests</p>
+                  <p className="text-[11px] text-crimson-400 font-black uppercase tracking-[0.2em] mb-2 group-hover:text-crimson-200 transition-colors">Manifests</p>
                   <p className="text-4xl font-black text-crimson-50 tracking-tighter">{profile?.progress_count || 0}</p>
                 </div>
               </div>
@@ -113,7 +113,7 @@ const AccountPage = () => {
         <div className="space-y-8">
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500 ml-1">12-Word Mnemonic Manifest</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 ml-1">12-Word Mnemonic Manifest</label>
               <textarea 
                 placeholder="word1 word2 word3..." 
                 value={mnemonic}
@@ -135,7 +135,7 @@ const AccountPage = () => {
           </form>
 
           {error && (
-            <div className="p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl shake">
+            <div className="p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[11px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl shake">
               <AlertCircle className="w-5 h-5 text-crimson-500 shrink-0" />
               <span>Link Error: {error}</span>
             </div>
@@ -143,12 +143,12 @@ const AccountPage = () => {
 
           <div className="relative py-4">
             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-crimson-900/30"></div></div>
-            <div className="relative flex justify-center"><span className="bg-crimson-950 px-6 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">New Vessel</span></div>
+            <div className="relative flex justify-center"><span className="bg-crimson-950 px-6 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">New Vessel</span></div>
           </div>
 
           <button 
             onClick={handleGenerateMnemonic}
-            className="w-full py-5 bg-crimson-950/40 border border-crimson-900/60 hover:border-crimson-600 hover:bg-crimson-900/20 text-crimson-500 hover:text-crimson-400 rounded-3xl transition-all font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 shadow-xl"
+            className="w-full py-5 bg-crimson-950/40 border border-crimson-900/60 hover:border-crimson-600 hover:bg-crimson-900/20 text-crimson-500 hover:text-crimson-400 rounded-3xl transition-all font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 shadow-xl"
           >
             Generate New Identity <User className="w-4 h-4" />
           </button>
@@ -171,7 +171,7 @@ const AccountPage = () => {
             <div className="flex gap-3 relative z-10">
               <button 
                 onClick={copyToClipboard}
-                className="flex-1 flex items-center justify-center gap-3 py-4 bg-crimson-900/20 hover:bg-crimson-900/40 text-crimson-100 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest border border-crimson-800/50"
+                className="flex-1 flex items-center justify-center gap-3 py-4 bg-crimson-900/20 hover:bg-crimson-900/40 text-crimson-100 rounded-2xl transition-all text-[11px] font-black uppercase tracking-widest border border-crimson-800/50"
               >
                 {copied ? <><CheckCircle2 className="w-4 h-4 text-green-500" /> Copied</> : <><Copy className="w-4 h-4" /> Copy Mnemonic</>}
               </button>
@@ -187,7 +187,7 @@ const AccountPage = () => {
           
           <button 
             onClick={() => setShowNewMnemonic(false)}
-            className="w-full text-center text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]"
+            className="w-full text-center text-[11px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]"
           >
             Return to Link Establishment
           </button>

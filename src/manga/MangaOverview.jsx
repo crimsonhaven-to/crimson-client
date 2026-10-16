@@ -41,7 +41,7 @@ function ChapterRow({ anilistId, chapter, active }) {
           {number}
           {chapter.title ? <span className="text-crimson-400 font-bold"> · {chapter.title}</span> : null}
         </p>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 mt-0.5">
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 mt-0.5">
           {vol ? `${vol}${meta ? ' · ' : ''}` : ''}{meta || ''}
         </p>
       </div>
@@ -83,7 +83,7 @@ const MangaOverview = () => {
           <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
           <div className="absolute inset-0 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 animate-pulse">Unsealing the tome</p>
+        <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 animate-pulse">Unsealing the tome</p>
       </div>
     );
   }
@@ -93,7 +93,7 @@ const MangaOverview = () => {
       <div className="max-w-md mx-auto my-32 p-8 text-center space-y-4">
         <AlertTriangle className="w-10 h-10 text-crimson-500 mx-auto" />
         <p className="text-crimson-300 font-bold">This tome could not be summoned from the archives.</p>
-        <button onClick={() => navigate(-1)} className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400">Go Back</button>
+        <button onClick={() => navigate(-1)} className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 hover:text-crimson-400">Go Back</button>
       </div>
     );
   }
@@ -112,7 +112,7 @@ const MangaOverview = () => {
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 pt-8 pb-20">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 hover:text-crimson-200 transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 hover:text-crimson-200 transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
@@ -128,7 +128,7 @@ const MangaOverview = () => {
 
           <div className="min-w-0 flex-grow space-y-4">
             <div>
-              <span className="inline-block text-[9px] font-black uppercase tracking-[0.3em] px-2.5 py-1 rounded-md bg-crimson-500/10 border border-crimson-500/25 text-crimson-400 mb-3">
+              <span className="inline-block text-[11px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-md bg-crimson-500/10 border border-crimson-500/25 text-crimson-400 mb-3">
                 Manga
               </span>
               <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-crimson-50 leading-tight">{overview.title}</h1>
@@ -137,7 +137,7 @@ const MangaOverview = () => {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-black uppercase tracking-widest">
+            <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-black uppercase tracking-widest">
               {STATUS_LABEL[overview.status] && (
                 <span className="px-2.5 py-1 rounded-lg bg-crimson-950/50 border border-crimson-900/60 text-crimson-300">{STATUS_LABEL[overview.status]}</span>
               )}
@@ -159,7 +159,7 @@ const MangaOverview = () => {
             {overview.genres?.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {overview.genres.slice(0, 6).map(g => (
-                  <span key={g} className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-crimson-900/30 border border-crimson-800/40 text-crimson-400">{g}</span>
+                  <span key={g} className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-crimson-900/30 border border-crimson-800/40 text-crimson-400">{g}</span>
                 ))}
               </div>
             )}
@@ -188,7 +188,7 @@ const MangaOverview = () => {
 
         {synopsis && (
           <div className="mt-10 max-w-3xl">
-            <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-500 mb-3">Synopsis</h2>
+            <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-500 mb-3">Synopsis</h2>
             <p className="text-sm sm:text-base text-crimson-100/70 leading-relaxed font-medium">{synopsis}</p>
           </div>
         )}
@@ -199,7 +199,7 @@ const MangaOverview = () => {
               <BookOpen className="w-5 h-5 text-crimson-500" /> Chapters
             </h2>
             {chapters.length > 0 && (
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400">{chapters.length} available</span>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400">{chapters.length} available</span>
             )}
           </div>
 
@@ -211,7 +211,7 @@ const MangaOverview = () => {
                   <button
                     key={s.sourceId}
                     onClick={() => setActiveSourceId(s.sourceId)}
-                    className={`text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border transition-all ${
+                    className={`text-[11px] font-black uppercase tracking-[0.2em] px-3 py-1.5 rounded-lg border transition-all ${
                       on
                         ? 'bg-crimson-600/20 border-crimson-500/50 text-crimson-200'
                         : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-500 hover:text-crimson-300 hover:border-crimson-700'

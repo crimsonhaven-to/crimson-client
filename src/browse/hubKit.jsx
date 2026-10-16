@@ -9,7 +9,7 @@ export const Chip = ({ active, onClick, children, small = false }) => (
   <button
     onClick={onClick}
     className={`rounded-xl font-black uppercase tracking-widest border transition-all duration-300 ${
-      small ? 'px-4 py-1.5 text-[9px] sm:text-[10px]' : 'px-5 py-2 text-[10px] sm:text-xs'
+      small ? 'px-4 py-1.5 text-[11px] sm:text-[11px]' : 'px-5 py-2 text-[11px] sm:text-xs'
     } ${
       active
         ? 'bg-crimson-600 border-crimson-400 text-white shadow-[0_5px_15px_rgba(255,0,60,0.3)]'
@@ -26,7 +26,7 @@ export const SectionHeader = ({ title, count, icon }) => (
       {icon}{title}
     </h3>
     <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
-    <span className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.3em] whitespace-nowrap">{count}</span>
+    <span className="text-[11px] font-black text-crimson-400 uppercase tracking-[0.2em] whitespace-nowrap">{count}</span>
   </div>
 );
 
@@ -83,7 +83,7 @@ export function PosterCard({ item, onSelect, showKind = true }) {
             className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 px-2 text-center">
+          <div className="w-full h-full flex items-center justify-center text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 px-2 text-center">
             No Sigil
           </div>
         )}
@@ -91,13 +91,13 @@ export function PosterCard({ item, onSelect, showKind = true }) {
         <div className="absolute inset-0 bg-gradient-to-t from-crimson-950 via-crimson-950/10 to-transparent opacity-80"></div>
 
         {showKind && item.kind && (
-          <span className={`absolute top-2 left-2 text-[8px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded-md border backdrop-blur-sm ${kindStyle(item.kind).badge}`}>
+          <span className={`absolute top-2 left-2 text-[11px] font-black uppercase tracking-[0.18em] px-2 py-0.5 rounded-md border backdrop-blur-sm ${kindStyle(item.kind).badge}`}>
             {kindStyle(item.kind).label}
           </span>
         )}
 
         {rating && (
-          <span className="absolute top-2 right-2 flex items-center gap-1 text-[9px] font-black px-1.5 py-0.5 rounded-md bg-crimson-950/70 backdrop-blur-sm border border-crimson-800/60 text-crimson-200">
+          <span className="absolute top-2 right-2 flex items-center gap-1 text-[11px] font-black px-1.5 py-0.5 rounded-md bg-crimson-950/70 backdrop-blur-sm border border-crimson-800/60 text-crimson-200">
             <Star className="w-2.5 h-2.5 fill-crimson-400 text-crimson-400" /> {rating}
           </span>
         )}
@@ -109,7 +109,7 @@ export function PosterCard({ item, onSelect, showKind = true }) {
         </div>
 
         {item.year && (
-          <span className="absolute bottom-2 left-2.5 text-[10px] font-black text-crimson-100/80 tracking-wide">
+          <span className="absolute bottom-2 left-2.5 text-[11px] font-black text-crimson-100/80 tracking-wide">
             {item.year}
           </span>
         )}
@@ -143,7 +143,7 @@ export function ChipRow({ icon, label, options, value, onChange, all = true, all
   return (
     <div className="flex flex-wrap items-center gap-2">
       {label && (
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 mr-2 flex items-center gap-1.5">
+        <span className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 mr-2 flex items-center gap-1.5">
           {icon || <Filter className="w-3.5 h-3.5" />} {label}
         </span>
       )}
@@ -158,7 +158,7 @@ export function ChipRow({ icon, label, options, value, onChange, all = true, all
           onClick={() => onChange(value === o.value ? null : o.value)}
         >
           {o.label}
-          {typeof o.count === 'number' && <span className="opacity-40 ml-1 font-mono text-[8px]">({o.count})</span>}
+          {typeof o.count === 'number' && <span className="opacity-40 ml-1 font-mono text-[11px]">({o.count})</span>}
         </Chip>
       ))}
     </div>
@@ -279,7 +279,7 @@ export function PaginatedBrowseHub({
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900 text-white font-black uppercase tracking-widest text-[10px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900 text-white font-black uppercase tracking-widest text-[11px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
               >
                 {loadingMore ? (
                   <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Unsealing…</>
@@ -303,7 +303,7 @@ export function ViewToggle({ options, value, onChange }) {
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
-          className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+          className={`px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
             value === o.value ? 'bg-crimson-600 text-white' : 'text-crimson-400 hover:text-crimson-200'
           }`}
         >
@@ -315,7 +315,7 @@ export function ViewToggle({ options, value, onChange }) {
 }
 
 export const SeeAll = ({ children }) => (
-  <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 hover:text-crimson-200 transition-colors shrink-0">
+  <span className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 hover:text-crimson-200 transition-colors shrink-0">
     {children}
     <ChevronRight className="w-4 h-4" />
   </span>
@@ -390,7 +390,7 @@ export function PosterBrowseHub({
             <div className="flex justify-center pt-6">
               <button
                 onClick={() => setVisible((v) => v + pageSize)}
-                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-widest text-[10px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-2xl bg-crimson-600 hover:bg-crimson-500 text-white font-black uppercase tracking-widest text-[11px] sm:text-xs transition-all shadow-[0_5px_15px_rgba(255,0,60,0.3)]"
               >
                 Reveal More <ChevronDown className="w-4 h-4" />
               </button>

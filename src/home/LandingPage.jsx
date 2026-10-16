@@ -30,7 +30,7 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
       <span className="text-base font-semibold text-crimson-300 truncate max-w-[240px]">{title}</span>
     </div>
     <div className="flex items-center gap-2 flex-shrink-0">
-      <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${kindStyle(kind).badge}`}>
+      <span className={`text-[11px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${kindStyle(kind).badge}`}>
         {kindStyle(kind).label}
       </span>
       <ChevronRight className="w-4 h-4 text-crimson-400" />
@@ -64,7 +64,7 @@ function ExtensionBanner() {
           A featherlight browser familiar that resolves &amp; plays your sources locally, straight from your own hands.
         </span>
       </span>
-      <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-400 group-hover:text-crimson-300 transition-colors shrink-0">
+      <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest text-crimson-400 group-hover:text-crimson-300 transition-colors shrink-0">
         Summon
         <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
       </span>
@@ -194,7 +194,7 @@ export default function LandingPage() {
             className="absolute right-2 top-2 bottom-2 bg-crimson-600 hover:bg-crimson-500 text-white px-6 rounded-2xl transition-all shadow-lg flex items-center justify-center group/btn"
           >
             <div className="flex items-center gap-2">
-              <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Invoke</span>
+              <span className="hidden sm:inline text-[11px] font-black uppercase tracking-widest">Invoke</span>
               <ChevronRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
             </div>
           </button>
@@ -224,7 +224,7 @@ export default function LandingPage() {
       </div>
 
       {apiError && (
-        <div className="max-w-md mx-auto p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl shake">
+        <div className="max-w-md mx-auto p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[11px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl shake">
           <AlertTriangle className="w-5 h-5 text-crimson-500 shrink-0" />
           <span className="text-left leading-relaxed">System Message: {apiError}</span>
         </div>

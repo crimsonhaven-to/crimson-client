@@ -152,12 +152,12 @@ export default function CacheTab({ notify }) {
           <DownloadCloud className="w-7 h-7 text-crimson-500" />
           <div className="flex-grow">
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Video Cache</h3>
-            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Download played episodes to a NAS &amp; replay from disk</p>
+            <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest">Download played episodes to a NAS &amp; replay from disk</p>
           </div>
           <button
             onClick={toggleGlobal}
             disabled={togglingGlobal || !overview}
-            className={`px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${overview?.enabled ? 'bg-green-500/10 border-green-500/40 text-green-400 hover:bg-green-500/20' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-500 hover:border-crimson-600'}`}
+            className={`px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border ${overview?.enabled ? 'bg-green-500/10 border-green-500/40 text-green-400 hover:bg-green-500/20' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-500 hover:border-crimson-600'}`}
           >
             {togglingGlobal ? <RefreshCw className="w-4 h-4 animate-spin" /> : (overview?.enabled ? <Power className="w-4 h-4" /> : <PowerOff className="w-4 h-4" />)}
             {overview?.enabled ? 'Caching On' : 'Caching Off'}
@@ -190,20 +190,20 @@ export default function CacheTab({ notify }) {
         <form onSubmit={add} className="space-y-4 relative z-10">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="space-y-2 sm:w-64">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Name (shown as source)</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Name (shown as source)</label>
               <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Crimson Vault" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="space-y-2 flex-1">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">In-container path</label>
+              <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">In-container path</label>
               <input value={path} onChange={(e) => setPath(e.target.value)} placeholder="/crimson/cache" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold font-mono placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="flex items-end">
-              <button type="submit" disabled={adding} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
+              <button type="submit" disabled={adding} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
                 {adding ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Add</>}
               </button>
             </div>
           </div>
-          <button type="button" onClick={discover} disabled={discovering} className="flex items-center gap-2 px-4 py-2.5 bg-crimson-950/60 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
+          <button type="button" onClick={discover} disabled={discovering} className="flex items-center gap-2 px-4 py-2.5 bg-crimson-950/60 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all">
             <FolderSearch className={`w-4 h-4 ${discovering ? 'animate-pulse' : ''}`} /> {discovering ? 'Scanning…' : 'Discover mounts'}
           </button>
         </form>
@@ -222,7 +222,7 @@ export default function CacheTab({ notify }) {
                       <FolderOpen className="w-4 h-4 text-crimson-500 flex-shrink-0" />
                       <span className="min-w-0 flex-grow">
                         <span className="block font-mono text-xs text-crimson-200 truncate">{m.path}</span>
-                        <span className={`block text-[9px] font-black uppercase tracking-widest ${st.ok ? 'text-green-500/80' : 'text-crimson-400'}`}>
+                        <span className={`block text-[11px] font-black uppercase tracking-widest ${st.ok ? 'text-green-500/80' : 'text-crimson-400'}`}>
                           {m.fstype} · {st.text}{m.already_added ? ' · added' : ''}
                         </span>
                       </span>
@@ -235,9 +235,9 @@ export default function CacheTab({ notify }) {
         )}
 
         {loading ? (
-          <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading…</div>
+          <div className="py-10 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Loading…</div>
         ) : targets.length === 0 ? (
-          <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No cache targets registered yet</p>
+          <p className="py-10 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">No cache targets registered yet</p>
         ) : (
           <div className="space-y-3 relative z-10">
             {targets.map((t) => {
@@ -248,9 +248,9 @@ export default function CacheTab({ notify }) {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-bold text-crimson-50 truncate">{t.name}</span>
                       {t.enabled
-                        ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Enabled</span>
-                        : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Disabled</span>}
-                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${st.ok ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-crimson-500/10 border-crimson-500/30 text-crimson-500'}`}>{st.text}</span>
+                        ? <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Enabled</span>
+                        : <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Disabled</span>}
+                      <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${st.ok ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-crimson-500/10 border-crimson-500/30 text-crimson-500'}`}>{st.text}</span>
                     </div>
                     <p className="text-[11px] font-mono text-crimson-400 mt-1.5 truncate">{t.path}</p>
                   </div>
@@ -282,16 +282,16 @@ export default function CacheTab({ notify }) {
           <div className="flex items-center gap-1.5">
             {['', 'ready', 'downloading', 'pending', 'failed'].map((s) => (
               <button key={s || 'all'} onClick={() => setEpFilter(s)}
-                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all ${epFilter === s ? 'bg-crimson-600 border-crimson-500 text-white' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-500 hover:border-crimson-600'}`}>
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-black uppercase tracking-widest border transition-all ${epFilter === s ? 'bg-crimson-600 border-crimson-500 text-white' : 'bg-crimson-950/60 border-crimson-900/60 text-crimson-500 hover:border-crimson-600'}`}>
                 {s || 'All'}
               </button>
             ))}
           </div>
         </div>
         {loading ? (
-          <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading…</div>
+          <div className="py-10 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Loading…</div>
         ) : episodes.length === 0 ? (
-          <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">Nothing cached yet</p>
+          <p className="py-10 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">Nothing cached yet</p>
         ) : (
           <div className="space-y-2 relative z-10">
             {episodes.map((ep) => (
@@ -300,13 +300,13 @@ export default function CacheTab({ notify }) {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-crimson-50">TMDB {ep.tmdb_id} · {ep.media_type === 'movie' ? 'Movie' : `S${ep.season_number}E${ep.episode_number}`}</span>
                     {ep.language && (
-                      <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-400 flex items-center gap-1">
+                      <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-500/10 border border-crimson-500/30 text-crimson-400 flex items-center gap-1">
                         <Languages className="w-3 h-3" /> {ep.language}
                       </span>
                     )}
-                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${CACHE_STATUS_STYLES[ep.status] || 'bg-crimson-900/40 border-crimson-800/50 text-crimson-400'}`}>{ep.status}</span>
+                    <span className={`text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${CACHE_STATUS_STYLES[ep.status] || 'bg-crimson-900/40 border-crimson-800/50 text-crimson-400'}`}>{ep.status}</span>
                   </div>
-                  <p className="text-[10px] font-medium text-crimson-400 mt-1 truncate">
+                  <p className="text-[11px] font-medium text-crimson-400 mt-1 truncate">
                     {ep.target_name ? `${ep.target_name} · ` : ''}{ep.source_origin || '-'}
                     {ep.file_size ? ` · ${formatBytes(ep.file_size)}` : ''}
                     {ep.status === 'failed' && ep.error ? ` · ${ep.error}` : ''}

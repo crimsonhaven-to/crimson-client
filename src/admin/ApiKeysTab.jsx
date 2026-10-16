@@ -71,7 +71,7 @@ export default function ApiKeysTab({ notify }) {
           <Plug className="w-7 h-7 text-crimson-500" />
           <div>
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Movie-Web Bridge Keys</h3>
-            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Machine sigils that let an outer vessel speak to the haven</p>
+            <p className="text-[11px] font-bold text-crimson-400 uppercase tracking-widest">Machine sigils that let an outer vessel speak to the haven</p>
           </div>
         </div>
         <p className="text-xs text-crimson-400 font-medium leading-relaxed relative z-10 max-w-3xl">
@@ -80,7 +80,7 @@ export default function ApiKeysTab({ notify }) {
 
         <div className="flex flex-col sm:flex-row gap-4 relative z-10">
           <div className="space-y-2 flex-1">
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Label (optional)</label>
+            <label className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Label (optional)</label>
             <input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -90,7 +90,7 @@ export default function ApiKeysTab({ notify }) {
             />
           </div>
           <div className="flex items-end">
-            <button type="submit" disabled={creating} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
+            <button type="submit" disabled={creating} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
               {creating ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><Plus className="w-4 h-4" /> Forge Key</>}
             </button>
           </div>
@@ -128,9 +128,9 @@ export default function ApiKeysTab({ notify }) {
       )}
 
       {loading ? (
-        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Reading the keyring…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Reading the keyring…</div>
       ) : keys.length === 0 ? (
-        <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No bridge keys forged yet</p>
+        <p className="py-16 text-center text-crimson-400 text-[11px] font-black uppercase tracking-[0.2em] italic">No bridge keys forged yet</p>
       ) : (
         <div className="space-y-3">
           {keys.map((k) => (
@@ -139,11 +139,11 @@ export default function ApiKeysTab({ notify }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-bold text-crimson-50 truncate">{k.label || 'Unlabelled key'}</span>
                   {k.revoked
-                    ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Revoked</span>
-                    : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Active</span>}
+                    ? <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Revoked</span>
+                    : <span className="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Active</span>}
                   <code className="text-[11px] font-mono text-crimson-400 bg-crimson-950/60 border border-crimson-900/60 rounded-md px-2 py-0.5 select-all">{k.key_prefix}…</code>
                 </div>
-                <p className="text-[10px] font-bold text-crimson-400 mt-1.5 tracking-wide truncate">
+                <p className="text-[11px] font-bold text-crimson-400 mt-1.5 tracking-wide truncate">
                   by {k.created_by || '-'} · forged {fmtDate(k.created_at)} · last seen {fmtDate(k.last_used_at)}
                   {k.revoked && k.revoked_at ? ` · revoked ${fmtDate(k.revoked_at)}` : ''}
                 </p>

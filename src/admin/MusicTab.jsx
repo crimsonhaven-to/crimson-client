@@ -121,7 +121,7 @@ export default function MusicTab({ notify }) {
             <button
               key={option.id}
               onClick={() => chooseStatus(option.id)}
-              className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
+              className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${
                 status === option.id
                   ? 'bg-crimson-600 border-crimson-600 text-white'
                   : 'bg-crimson-950/40 border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600'
@@ -138,7 +138,7 @@ export default function MusicTab({ notify }) {
       </div>
 
       {loading && !tracks.length ? (
-        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Counting the records…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Counting the records…</div>
       ) : tracks.length === 0 ? (
         <div className="py-16 text-center space-y-3">
           <Disc3 className="w-8 h-8 text-crimson-800 mx-auto" />
@@ -146,7 +146,7 @@ export default function MusicTab({ notify }) {
         </div>
       ) : (
         <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl overflow-hidden">
-          <p className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-crimson-400 border-b border-crimson-900/40">
+          <p className="px-5 py-3 text-[11px] font-black uppercase tracking-widest text-crimson-400 border-b border-crimson-900/40">
             {data.total} song{data.total === 1 ? '' : 's'}{search || status ? ' match' : ''}
           </p>
           <ul className="divide-y divide-crimson-900/30">
@@ -184,7 +184,7 @@ export default function MusicTab({ notify }) {
                   <span title={track.mirrored ? 'Copied to the CDN' : 'Not on the CDN'} className="hidden sm:block w-5">
                     {track.mirrored ? <Cloud className="w-4 h-4 text-green-500/80" /> : <CloudOff className="w-4 h-4 text-crimson-400" />}
                   </span>
-                  <span className={`px-2 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest flex-shrink-0 ${STATUS_STYLES[track.status] || STATUS_STYLES.pending}`}>
+                  <span className={`px-2 py-1 rounded-lg border text-[11px] font-black uppercase tracking-widest flex-shrink-0 ${STATUS_STYLES[track.status] || STATUS_STYLES.pending}`}>
                     {track.status}
                   </span>
                 </li>
@@ -194,7 +194,7 @@ export default function MusicTab({ notify }) {
           {tracks.length < data.total && (
             <div className="p-4 border-t border-crimson-900/40 text-center">
               <button onClick={showMore} disabled={more}
-                className="px-5 py-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
+                className="px-5 py-2.5 rounded-xl bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
                 {more ? 'Loading…' : `Show more (${data.total - tracks.length} left)`}
               </button>
             </div>
