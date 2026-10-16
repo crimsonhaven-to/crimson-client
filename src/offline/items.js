@@ -17,6 +17,12 @@ export function episodeTitle(ep) {
   return ep.title && ep.title !== `Episode ${ep.episode_number}` ? ep.title : null;
 }
 
+// The credits are rarely watched, so the last stretch counts as the end.
+export const watched = (entry) => !!entry.duration && entry.position > entry.duration - 15;
+
+// Somewhere past the opening and before the end: worth resuming.
+export const partWatched = (entry) => entry.position > 5 && !watched(entry);
+
 export function itemLabel(item) {
   if (item.kind === 'movie') return item.titleName;
   return [`S${item.season}E${item.episode}`, item.episodeTitle].filter(Boolean).join(' · ');

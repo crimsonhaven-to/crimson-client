@@ -19,7 +19,7 @@ vi.mock('../sources/clientSources', () => ({
     return () => sources.listeners.delete(listener);
   },
 }));
-vi.mock('./resolve', () => ({ resolveStream: vi.fn() }));
+vi.mock('./resolve', () => ({ NotFoundError: class NotFoundError extends Error {}, resolveStream: vi.fn() }));
 vi.mock('./storeVideo', () => ({
   FatalDownloadError: class FatalDownloadError extends Error {},
   storeVideo: vi.fn(),
@@ -37,8 +37,10 @@ vi.mock('./videoStore', () => ({
 
 import { resolveStream } from './resolve';
 import { storeVideo } from './storeVideo';
-import { forgetVideoDownloads, removeDownload, saveOffline } from './queue';
-import { getState } from './store';
+import {
+  failureReason, forgetVideoDownloads, removeDownload, removeIfWatched, retryFailed, saveOffline, setAutoDelete, setPaused,
+} from './queue';
+import { getState, patchEntry } from './store';
 
 const item = (episode) => ({
   id: `tv-1-s1-e${episode}`, titleKey: 'tv-1', titleName: 'Show', kind: 'episode', season: 1, episode,
@@ -57,6 +59,8 @@ describe('queue', () => {
     vi.clearAllMocks();
     sources.watching = false;
     await forgetVideoDownloads();
+    await setPaused(false);
+    await setAutoDelete(false);
     storeVideo.mockResolvedValue({ format: 'hls', bytes: 10 });
   });
 
@@ -93,6 +97,32 @@ describe('queue', () => {
     await saveOffline([item(4)], { stream: null, wanted });
     expect(await settled('tv-1-s1-e4')).toBe('failed');
     expect(resolveStream).toHaveBeenCalledTimes(1 + 3);
+    expect(getState().entries['tv-1-s1-e4'].error).toMatch(/blocked/);
+
+    storeVideo.mockResolvedValue({ format: 'hls', bytes: 10 });
+    retryFailed();
+    expect(await settled('tv-1-s1-e4')).toBe('done');
+  });
+
+  it('holds the queue while paused and carries on when resumed', async () => {
+    await setPaused(true);
+    await saveOffline([item(6)], { stream: { source: 'PlayIMDb', url: 'u' }, wanted });
+    expect(getState().entries['tv-1-s1-e6'].status).toBe('queued');
+    expect(storeVideo).not.toHaveBeenCalled();
+
+    await setPaused(false);
+    expect(await settled('tv-1-s1-e6')).toBe('done');
+  });
+
+  it('removes a watched copy only when asked to', async () => {
+    await saveOffline([item(7)], { stream: { source: 'PlayIMDb', url: 'u' }, wanted });
+    await settled('tv-1-s1-e7');
+    patchEntry('tv-1-s1-e7', { position: 1390, duration: 1400 });
+
+    await removeIfWatched('tv-1-s1-e7');
+    expect(getState().entries['tv-1-s1-e7']).toBeDefined();
+    await setAutoDelete(true);
+    expect(getState().entries['tv-1-s1-e7']).toBeUndefined();
   });
 
   it('cancels a running download when it is removed', async () => {
@@ -103,5 +133,15 @@ describe('queue', () => {
     await vi.waitFor(() => expect(storeVideo).toHaveBeenCalled());
     await removeDownload('tv-1-s1-e5');
     expect(getState().entries['tv-1-s1-e5']).toBeUndefined();
+  });
+});
+
+describe('failureReason', () => {
+  it('turns hoster status codes into what to do', () => {
+    expect(failureReason(new Error('HTTP 403'))).toMatch(/blocked/);
+    expect(failureReason(new Error('HTTP 404'))).toMatch(/no longer has/);
+    expect(failureReason(new Error('HTTP 502'))).toMatch(/trouble/);
+    expect(failureReason(new TypeError('Failed to fetch'))).toMatch(/connection/);
+    expect(failureReason(new Error('something else'))).toBe('something else');
   });
 });

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { episodeTitle, episodesFrom, itemLabel } from './items';
+import { episodeTitle, episodesFrom, itemLabel, partWatched, watched } from './items';
 
 describe('episodesFrom', () => {
   const list = [
@@ -29,5 +29,16 @@ describe('labels', () => {
   it('names movies and episodes', () => {
     expect(itemLabel({ kind: 'movie', titleName: 'Film' })).toBe('Film');
     expect(itemLabel({ kind: 'episode', season: 1, episode: 4, episodeTitle: 'Rest' })).toBe('S1E4 · Rest');
+  });
+});
+
+describe('watched', () => {
+  it('counts the credits as the end, and the opening as not started', () => {
+    expect(watched({ position: 1390, duration: 1400 })).toBe(true);
+    expect(watched({ position: 600, duration: 1400 })).toBe(false);
+    expect(watched({ position: 600 })).toBe(false);
+    expect(partWatched({ position: 600, duration: 1400 })).toBe(true);
+    expect(partWatched({ position: 3, duration: 1400 })).toBe(false);
+    expect(partWatched({ position: 1390, duration: 1400 })).toBe(false);
   });
 });

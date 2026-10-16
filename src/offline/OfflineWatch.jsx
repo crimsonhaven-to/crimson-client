@@ -5,8 +5,8 @@ import { AlertTriangle, ArrowLeft, WifiOff } from 'lucide-react';
 import { useTitle } from '../useTitle';
 import { clearVideo, showVideo } from '../watch/videoMediaSession';
 import CacheLoader from './CacheLoader';
-import { itemLabel } from './items';
-import { savePosition } from './queue';
+import { itemLabel, partWatched } from './items';
+import { removeIfWatched, savePosition } from './queue';
 import { getState, nextKept, useVideoDownloads } from './store';
 import { servesFiles } from '../deviceCache';
 import { fileKey, playlistKey, read, subtitleKey } from './videoStore';
@@ -69,10 +69,7 @@ function useOfflineMedia(entry) {
   return { media, error };
 }
 
-function resumePoint(entry) {
-  const unfinished = entry?.position > 5 && !(entry.duration && entry.position > entry.duration - 15);
-  return unfinished ? entry.position : 0;
-}
+const resumePoint = (entry) => (entry && partWatched(entry) ? entry.position : 0);
 
 // Keyed by the copy, so moving to the next episode starts from a clean slate.
 export default function OfflineWatch() {
@@ -109,6 +106,7 @@ function OfflineCopy({ id }) {
   }, [id]);
   useEffect(() => () => {
     if (latest.current) savePosition(id, latest.current.position, latest.current.duration);
+    removeIfWatched(id);
   }, [id]);
 
   const label = entry ? itemLabel(entry) : '';

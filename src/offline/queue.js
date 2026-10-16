@@ -10,13 +10,14 @@
 import { isWatching, onWatchingChange } from '../sources/clientSources';
 import { getPlaybackPrefs } from '../account/playbackPrefs';
 import { fetchSubtitles } from '../watch/media';
-import { resolveStream } from './resolve';
+import { watched } from './items';
+import { NotFoundError, resolveStream } from './resolve';
 import {
   FatalDownloadError, storePoster, storeSubtitles, storeVideo,
 } from './storeVideo';
 import { forgetAll, forgetEntry, forgetPoster, posterKey, read, supported } from './videoStore';
 import {
-  dropEntry, getState, nextQueued, patchEntry, putEntries, resetAll, setProgress, setWaiting,
+  dropEntry, getState, nextQueued, patchEntry, putEntries, resetAll, setPrefs, setProgress, setWaiting,
 } from './store';
 
 // A link a watch page just resolved is used as is for this long; older ones
@@ -128,8 +129,20 @@ async function download(id, signal) {
   }
 }
 
+// What went wrong, in words that say what to do about it. The hosters answer
+// with bare status codes, which mean little on their own.
+export function failureReason(err) {
+  if (err instanceof FatalDownloadError || err instanceof NotFoundError) return err.message;
+  const status = Number(/HTTP (\d+)/.exec(err?.message || '')?.[1]);
+  if (status === 401 || status === 403 || status === 429) return 'The hoster blocked the download. Try again later or pick another source.';
+  if (status === 404 || status === 410) return 'The hoster no longer has this file. Pick another source.';
+  if (status >= 500) return 'The hoster is having trouble. Try again later.';
+  if (err?.name === 'TypeError') return 'Lost the connection to the hoster. Try again.';
+  return err?.message || 'Download failed.';
+}
+
 function kick() {
-  if (current || !supported()) return;
+  if (current || !supported() || getState().prefs.paused) return;
   const entry = nextQueued(getState().entries);
   if (!entry) return;
   const controller = new AbortController();
@@ -140,7 +153,7 @@ function kick() {
     .catch((err) => {
       if (controller.signal.aborted) return;
       console.warn('[offline] download failed:', err);
-      patchEntry(id, { status: 'failed', error: err.message || 'Download failed.' });
+      patchEntry(id, { status: 'failed', error: failureReason(err) });
     })
     .finally(() => {
       setProgress(id, null);
@@ -190,6 +203,39 @@ export function retryDownload(id) {
   kick();
 }
 
+export function retryFailed() {
+  for (const entry of Object.values(getState().entries)) {
+    if (entry.status === 'failed') patchEntry(entry.id, { status: 'queued', error: null });
+  }
+  kick();
+}
+
+// A paused download stops right away and later carries on from the segment it
+// reached, like one a closed tab left behind.
+export async function setPaused(paused) {
+  setPrefs({ paused });
+  if (!paused) {
+    kick();
+    return;
+  }
+  const running = current;
+  if (!running) return;
+  running.controller.abort();
+  await running.done;
+  patchEntry(running.id, { status: 'queued' });
+}
+
+export async function setAutoDelete(autoDelete) {
+  setPrefs({ autoDelete });
+  if (!autoDelete) return;
+  for (const entry of Object.values(getState().entries)) await removeIfWatched(entry.id);
+}
+
+export async function removeIfWatched(id) {
+  const entry = getState().entries[id];
+  if (getState().prefs.autoDelete && entry?.status === 'done' && watched(entry)) await removeDownload(id);
+}
+
 export async function removeDownload(id) {
   if (current?.id === id) {
     current.controller.abort();
@@ -201,11 +247,6 @@ export async function removeDownload(id) {
   await forgetEntry(id);
   const titleLeft = entry && Object.values(getState().entries).some((e) => e.titleKey === entry.titleKey);
   if (entry && !titleLeft) await forgetPoster(entry.titleKey);
-}
-
-export async function removeTitle(titleKey) {
-  const ids = Object.values(getState().entries).filter((e) => e.titleKey === titleKey).map((e) => e.id);
-  for (const id of ids) await removeDownload(id);
 }
 
 export function savePosition(id, position, duration) {
