@@ -429,7 +429,10 @@ const WatchView = ({
               />
             ) : (
               <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-4">
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">Zero transport nodes active</p>
+                <div className="space-y-1">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">Zero transport nodes active</p>
+                  <p className="text-sm text-crimson-100">No source has this right now. Rescan, or check back later.</p>
+                </div>
                 {onReload && (
                   <button
                     onClick={onReload}

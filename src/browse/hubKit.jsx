@@ -42,9 +42,10 @@ export const ArchiveError = ({ error }) => (
     <div className="bg-crimson-900/20 border border-crimson-500/50 p-8 rounded-2xl">
       <Hash className="w-12 h-12 text-crimson-500 mx-auto mb-4" />
       <h2 className="text-2xl font-black text-crimson-50 uppercase">Archive Link Severed</h2>
-      <p className="text-crimson-300 mt-2">The librarians cannot reach the requested records: {error}</p>
-      <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-crimson-500 hover:bg-crimson-400 text-white font-bold rounded-xl transition-all">
-        Retry Ritual
+      <p className="text-crimson-100 mt-2">Could not load this page. Check your connection and try again.</p>
+      <p className="text-crimson-400 text-xs mt-2 break-words">{error}</p>
+      <button onClick={() => window.location.reload()} className="mt-6 px-6 py-2 bg-crimson-600 hover:bg-crimson-500 text-white font-bold rounded-xl transition-all">
+        Try again
       </button>
     </div>
   </div>
@@ -59,12 +60,18 @@ export const FallbackBanner = ({ children }) => (
   </div>
 );
 
-export const EmptyState = ({ label = 'No manifestation matches your search ritual' }) => (
+export const EmptyState = ({
+  label = 'No manifestation matches your search ritual',
+  hint = 'Nothing matches. Try a shorter search or clear the filters.',
+}) => (
   <div className="py-32 text-center space-y-6">
     <div className="w-16 h-16 border-2 border-dashed border-crimson-900/40 rounded-full mx-auto flex items-center justify-center opacity-40">
       <Search className="w-8 h-8 text-crimson-900" />
     </div>
-    <p className="text-crimson-400 font-black uppercase tracking-[0.2em] text-sm">{label}</p>
+    <div className="space-y-2">
+      <p className="text-crimson-400 font-black uppercase tracking-[0.2em] text-sm">{label}</p>
+      <p className="text-crimson-100 text-sm">{hint}</p>
+    </div>
   </div>
 );
 
