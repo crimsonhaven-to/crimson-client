@@ -59,6 +59,15 @@ body {
   background-color: var(--color-crimson-950);
 }
 
+/* Keyboard and TV remote users need to see where they are. Unlayered, so it wins
+   over the focus:outline-none utilities that buttons carry for mouse users. Text
+   fields are left out: their border already lights up on focus. */
+:where(a, button, summary, select, [role="button"], [role="switch"], [role="tab"],
+  [role="menuitem"], [tabindex]:not([tabindex="-1"]), input[type="checkbox"],
+  input[type="radio"], input[type="range"]):focus-visible {
+  outline: 2px solid var(--color-crimson-300);
+  outline-offset: 2px;
+}
 /* Brightness/saturation boost for foreground art (e.g. the 404 Lumi). */
 .wallpaper-img {
   filter: brightness(1.25) saturate(1.08);
