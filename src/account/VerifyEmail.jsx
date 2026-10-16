@@ -44,7 +44,7 @@ const VerifyEmail = () => {
           </div>
         )}
         {status === 'ok' && (
-          <div className="space-y-5 py-4 animate-in zoom-in-95 duration-500">
+          <div className="space-y-5 py-4">
             <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto" />
             <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Email verified</h3>
             <p className="text-xs text-crimson-400 font-medium">Welcome to the haven. Taking you inside…</p>

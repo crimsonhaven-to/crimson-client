@@ -120,7 +120,7 @@ export default function MusicPlaylist() {
   };
 
   return (
-    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10 animate-in fade-in duration-700">
+    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10">
       <Link to="/music" className="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300">
         <ArrowLeft className="w-4 h-4" /> Your music
       </Link>

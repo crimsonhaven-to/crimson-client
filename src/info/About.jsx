@@ -26,7 +26,7 @@ export default function AboutPage() {
   }, []);
 
   return (
-    <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto">
       <PageHeading title="About" accent="CrimsonHaven" subtitle="The architectural design manifest" className="border-b border-crimson-900/30 pb-8" />
 
       <div className="space-y-8 text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium">

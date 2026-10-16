@@ -35,7 +35,7 @@ const ResetPassword = () => {
   if (done) {
     return (
       <Shell subtitle="Your key has been reforged">
-        <div className="space-y-6 text-center py-4 animate-in zoom-in-95 duration-500">
+        <div className="space-y-6 text-center py-4">
           <CheckCircle2 className="w-14 h-14 text-green-500 mx-auto" />
           <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Password updated</h3>
           <p className="text-xs text-crimson-400 font-medium">Sign in with your new password to continue.</p>

@@ -101,7 +101,7 @@ const MangaOverview = () => {
   const rating = overview.average_score ? (overview.average_score / 10).toFixed(1) : null;
 
   return (
-    <div className="relative min-h-screen animate-in fade-in duration-700">
+    <div className="relative min-h-screen">
       {overview.banner && (
         <div className="absolute inset-x-0 top-0 h-72 sm:h-96 overflow-hidden -z-0">
           <img src={overview.banner} alt="" className="w-full h-full object-cover opacity-30" />

@@ -28,7 +28,7 @@ export default function MusicNowPlaying() {
   const RepeatIcon = state.repeat === REPEAT_ONE ? Repeat1 : Repeat;
 
   return (
-    <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-14 grid lg:grid-cols-[minmax(0,26rem)_1fr] gap-10 lg:gap-14 animate-in fade-in duration-500">
+    <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-14 grid lg:grid-cols-[minmax(0,26rem)_1fr] gap-10 lg:gap-14">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)} aria-label="Close" className="p-2 -ml-2 text-crimson-400 hover:text-white">

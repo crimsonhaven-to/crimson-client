@@ -188,14 +188,14 @@ const WelcomeTour = ({ musicEnabled, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex overflow-y-auto p-4 sm:p-6 bg-crimson-950/80 backdrop-blur-md animate-in fade-in duration-300"
+      className="fixed inset-0 z-[100] flex overflow-y-auto p-4 sm:p-6 bg-crimson-950/80 backdrop-blur-md"
       onClick={close}
       role="dialog"
       aria-modal="true"
       aria-label="Welcome to CrimsonHaven"
     >
       <div
-        className="relative m-auto w-full max-w-lg bg-crimson-950/95 border border-crimson-900 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-4 duration-500"
+        className="relative m-auto w-full max-w-lg bg-crimson-950/95 border border-crimson-900 rounded-[2.5rem] shadow-[0_30px_100px_rgba(0,0,0,0.8)] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="absolute -top-24 -right-24 w-56 h-56 bg-crimson-500/10 blur-[90px] rounded-full pointer-events-none" />

@@ -67,7 +67,7 @@ function LocalOverview() {
   const description = stripHtml(overview.description) || 'No summary recorded for this local title.';
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10 animate-in fade-in duration-700">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-10 sm:py-16 space-y-10">
       <button
         onClick={() => navigate(-1)}
         className="group inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 hover:bg-crimson-900/30 transition-all text-[11px] font-black uppercase tracking-widest backdrop-blur-sm"

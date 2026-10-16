@@ -112,7 +112,7 @@ export default function Navbar({ musicEnabled }) {
             </button>
 
             {userMenuOpen && (
-              <div className="absolute top-full right-0 mt-4 w-64 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 rounded-2xl z-50">
+              <div className="absolute top-full right-0 mt-4 w-64 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-2xl overflow-hidden rounded-2xl z-50">
                 <div className="p-4 border-b border-crimson-900/20 bg-crimson-600/5">
                   <p className="text-xs font-black text-crimson-400 uppercase tracking-widest mb-1">Session</p>
                   <p className="text-crimson-50 font-bold truncate">{profile?.username || 'Sanctuary Dweller'}</p>
@@ -180,7 +180,7 @@ export default function Navbar({ musicEnabled }) {
       </div>
 
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden animate-in slide-in-from-top duration-300">
+        <div className="absolute top-full left-0 right-0 bg-crimson-950/95 backdrop-blur-xl border-b border-crimson-900 shadow-2xl md:hidden">
           <div className="flex flex-col p-4 space-y-4">
             {[...browseLinks, ...personalLinks].map(link => (
               <Link

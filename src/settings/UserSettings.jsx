@@ -162,7 +162,7 @@ const UserSettings = () => {
     : `Sources tagged ${[prefs.language, prefs.type].filter(Boolean).join(' ')} auto-play whenever one is available; otherwise the first source to load plays.`;
 
   return (
-    <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto">
       <PageHeading icon={SlidersHorizontal} title="Your" accent="Preferences" subtitle="Tune how the haven picks your stream" className="border-b border-crimson-900/30 pb-8" />
 
       <DisplayNameCard />

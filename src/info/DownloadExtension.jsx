@@ -50,7 +50,7 @@ export default function DownloadExtension() {
   const [store, other] = isFirefox() ? [STORES.firefox, STORES.chrome] : [STORES.chrome, STORES.firefox];
 
   return (
-    <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto">
       <div className="border-b border-crimson-900/30 pb-8 space-y-3">
         <div className="flex items-center gap-3 text-crimson-500">
           <Puzzle className="w-6 h-6" />

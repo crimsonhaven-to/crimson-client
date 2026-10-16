@@ -68,7 +68,7 @@ const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle })
         <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${containsActive ? 'text-crimson-50' : 'text-crimson-400'}`} />
       </button>
       {open && (
-        <div className="mt-2 pl-3 ml-1.5 border-l border-crimson-900/50 space-y-2 animate-in slide-in-from-top-1 fade-in duration-300">
+        <div className="mt-2 pl-3 ml-1.5 border-l border-crimson-900/50 space-y-2">
           {group.items.map(({ stream, idx }) => (
             <StreamTile
               key={idx}

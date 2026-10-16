@@ -75,7 +75,7 @@ const WatchlistButton = ({ item, variant = 'overview' }) => {
           role="menu"
           className={`absolute z-50 mt-2 w-64 max-w-[80vw] ${isOverview ? 'left-0' : 'right-0'}
             rounded-2xl border border-crimson-900/60 bg-crimson-950/95 backdrop-blur-xl
-            shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
+            shadow-[0_20px_50px_rgba(0,0,0,0.6)] overflow-hidden`}
         >
           <div className="px-4 py-3 border-b border-crimson-900/50">
             <p className="text-[10px] font-black uppercase tracking-[0.25em] text-crimson-500">Add to Watchlist</p>

@@ -131,7 +131,7 @@ const LoginWall = () => {
   if (awaitingVerify) {
     return (
       <Shell subtitle="One step away from the dark network">
-        <div className="space-y-8 text-center animate-in zoom-in-95 duration-500">
+        <div className="space-y-8 text-center">
           <div className="mx-auto w-16 h-16 rounded-3xl bg-crimson-500/10 border border-crimson-500/30 flex items-center justify-center">
             <MailCheck className="w-8 h-8 text-crimson-500" />
           </div>
@@ -321,8 +321,8 @@ const LoginWall = () => {
 function Banner({ kind, text }) {
   const ok = kind === 'ok';
   return (
-    <div className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl animate-in fade-in duration-300 ${
-      ok ? 'bg-green-500/5 border border-green-500/20 text-green-300'
+    <div className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl duration-300 ${
+ ok ? 'bg-green-500/5 border border-green-500/20 text-green-300'
          : 'bg-crimson-500/5 border border-crimson-500/20 text-crimson-400'
     }`}>
       {ok ? <CheckCircle2 className="w-4 h-4 shrink-0 text-green-500" /> : <AlertCircle className="w-4 h-4 shrink-0 text-crimson-500" />}
@@ -333,7 +333,7 @@ function Banner({ kind, text }) {
 
 export function Shell({ subtitle, children }) {
   return (
-    <div className="max-w-md w-full mx-auto px-6 py-16 sm:py-24 my-auto animate-in fade-in slide-in-from-bottom-6 duration-700">
+    <div className="max-w-md w-full mx-auto px-6 py-16 sm:py-24 my-auto">
       <div className="text-center space-y-3 mb-10">
         <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-crimson-50 uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
           crimson<span className="text-crimson-500 font-light">haven</span>

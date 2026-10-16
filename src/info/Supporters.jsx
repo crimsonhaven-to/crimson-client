@@ -7,7 +7,7 @@ const SupportersPage = () => {
   useTitle("Lumi's Favorite Mortals");
 
   return (
-    <div className="max-w-4xl w-full mx-auto px-6 py-20 space-y-16 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-4xl w-full mx-auto px-6 py-20 space-y-16 my-auto">
       <div className="text-center space-y-6">
         <div className="inline-flex items-center justify-center p-4 bg-crimson-500/10 rounded-[2rem] border border-crimson-500/20 mb-4 shadow-[0_0_30px_rgba(255,0,60,0.1)]">
           <Sparkles className="w-10 h-10 text-crimson-500 animate-pulse" />

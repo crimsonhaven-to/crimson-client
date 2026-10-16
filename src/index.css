@@ -170,10 +170,9 @@ body {
   will-change: auto;
 }
 
-/* CrimsonPlayer flourishes. The app has no tailwindcss-animate plugin, so the
-   `animate-in`/`fade-in` utilities around the tree are silent no-ops and these
-   keyframes are what actually move. Transform/opacity only, so they never contend
-   with video decode. */
+/* CrimsonPlayer flourishes. The app has no tailwindcss-animate plugin, so these
+   keyframes are the only entrance motion there is. Transform/opacity only, so they
+   never contend with video decode. */
 @keyframes cp-ring-rot { to { transform: rotate(360deg); } }
 .cp-ring { animation: cp-ring-rot 14s linear infinite; }
 .cp-ring-rev { animation: cp-ring-rot 9s linear infinite reverse; }

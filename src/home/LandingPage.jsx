@@ -51,7 +51,7 @@ function ExtensionBanner() {
   return (
     <Link
       to="/extension"
-      className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 hover:border-crimson-500/50 hover:bg-crimson-500/[0.12] transition-all shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-700"
+      className="group flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 hover:border-crimson-500/50 hover:bg-crimson-500/[0.12] transition-all shadow-lg backdrop-blur-sm duration-700"
     >
       <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
         <Puzzle className="w-5 h-5" />
@@ -86,7 +86,7 @@ function AdblockerNotice() {
   return (
     <div
       role="alert"
-      className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 shadow-lg backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-700"
+      className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-crimson-500/[0.07] border border-crimson-500/25 shadow-lg backdrop-blur-sm"
     >
       <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-crimson-500/15 border border-crimson-500/30 text-crimson-400 shrink-0">
         <AlertTriangle className="w-5 h-5" />
@@ -157,7 +157,7 @@ export default function LandingPage() {
     : 'Curated by Luminas from what you adore';
 
   return (
-    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-16 sm:space-y-20 animate-in fade-in duration-1000">
+    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-14 sm:py-20 space-y-16 sm:space-y-20">
       <div className="max-w-2xl mx-auto !mt-0">
         <AdblockerNotice />
       </div>
@@ -201,7 +201,7 @@ export default function LandingPage() {
         </form>
 
         {showSuggestions && (
-          <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-h-[400px] overflow-y-auto z-50 text-left rounded-3xl animate-in slide-in-from-top-4 duration-300">
+          <div className="absolute top-full left-2 right-2 sm:left-0 sm:right-0 mt-3 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-[0_20px_60px_rgba(0,0,0,0.8)] max-h-[400px] overflow-y-auto z-50 text-left rounded-3xl">
             {searchResults.length > 0 ? (
               <div className="p-2">
                 {searchResults.map((suggestion, index) => (
@@ -224,7 +224,7 @@ export default function LandingPage() {
       </div>
 
       {apiError && (
-        <div className="max-w-md mx-auto p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl animate-in shake duration-500">
+        <div className="max-w-md mx-auto p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl shake">
           <AlertTriangle className="w-5 h-5 text-crimson-500 shrink-0" />
           <span className="text-left leading-relaxed">System Message: {apiError}</span>
         </div>

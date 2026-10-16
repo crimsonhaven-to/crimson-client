@@ -2,7 +2,7 @@ import { Trash2, X, FolderPlus } from 'lucide-react';
 
 // onRemove is omitted on the "All" view, which has no single list to remove from.
 const SelectionBar = ({ selectedCount, allSelected, onToggleAll, onAddToList, onRemove, onDone }) => (
-  <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl animate-in slide-in-from-bottom-4 duration-200">
+  <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-2xl">
     <div className="flex items-center gap-3 p-2.5 pl-4 rounded-2xl border border-crimson-700/50 bg-crimson-950/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.6)]">
       <span className="text-xs font-black uppercase tracking-widest text-crimson-300 tabular-nums">
         {selectedCount} selected

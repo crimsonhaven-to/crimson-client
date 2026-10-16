@@ -56,7 +56,7 @@ const AdminPage = () => {
   // The API would 403 anyway; this is just nicer.
   if (profile && !profile.is_admin) {
     return (
-      <div className="max-w-md w-full mx-auto px-6 py-32 text-center space-y-6 animate-in fade-in duration-700">
+      <div className="max-w-md w-full mx-auto px-6 py-32 text-center space-y-6">
         <ShieldOff className="w-14 h-14 text-crimson-400 mx-auto" />
         <h2 className="text-3xl font-black text-crimson-50 uppercase tracking-tighter">Access <span className="text-crimson-500">Denied</span></h2>
         <p className="text-xs text-crimson-400 font-medium leading-relaxed">This sanctum is reserved for the haven's keepers. Your vessel lacks the crimson seal.</p>
@@ -65,7 +65,7 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-16 sm:py-20 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-16 sm:py-20 space-y-10">
       <div className="border-b border-crimson-900/30 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <PageHeading icon={Shield} title="Admin" accent="Sanctum" subtitle="Keeper controls for the dark network" />
         <button onClick={() => { setLoading(true); loadStats(); }} className="group flex items-center gap-2.5 px-5 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[10px] font-black uppercase tracking-widest self-start sm:self-auto">

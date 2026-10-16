@@ -39,7 +39,7 @@ const AccountPage = () => {
 
   if (isAuthenticated) {
     return (
-      <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto">
         <div className="border-b border-crimson-900/30 pb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
           <PageHeading title="Your" accent="Sanctuary" subtitle="Synchronized with the dark network" className="text-center sm:text-left" />
           <button 
@@ -106,7 +106,7 @@ const AccountPage = () => {
   }
 
   return (
-    <div className="max-w-md w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-md w-full mx-auto px-6 py-20 space-y-12 my-auto">
       <PageHeading title="Establish" accent="Link" subtitle="Access your personal archives via mnemonic" className="text-center" />
 
       {!showNewMnemonic ? (
@@ -135,7 +135,7 @@ const AccountPage = () => {
           </form>
 
           {error && (
-            <div className="p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl animate-in shake duration-500">
+            <div className="p-5 bg-crimson-500/5 border border-crimson-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest text-crimson-400 flex items-center gap-4 shadow-2xl shake">
               <AlertCircle className="w-5 h-5 text-crimson-500 shrink-0" />
               <span>Link Error: {error}</span>
             </div>
@@ -154,7 +154,7 @@ const AccountPage = () => {
           </button>
         </div>
       ) : (
-        <div className="space-y-8 animate-in zoom-in-95 duration-700">
+        <div className="space-y-8">
           <div className="p-8 sm:p-10 bg-crimson-950/40 backdrop-blur-xl border border-crimson-500/30 border-dashed rounded-[2.5rem] space-y-6 shadow-2xl relative overflow-hidden">
              <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/10 blur-[80px] rounded-full"></div>
 

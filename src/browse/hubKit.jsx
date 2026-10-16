@@ -186,7 +186,7 @@ export function HubShell({
   right, children,
 }) {
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-12 my-auto animate-in fade-in duration-1000">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-12 my-auto">
       <div className="space-y-8 border-b border-crimson-900/30 pb-12">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
           <HubHeading title={title} accent={accent} icon={icon} subtitle={subtitle} />

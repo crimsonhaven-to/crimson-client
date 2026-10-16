@@ -210,7 +210,7 @@ const WatchlistsPage = () => {
   const totalCount = items.length;
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10">
       <div className="border-b border-crimson-900/30 pb-10 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <HubHeading title="Your" accent="Favorites" icon={<Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />}

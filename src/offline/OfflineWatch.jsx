@@ -112,7 +112,7 @@ function OfflineCopy({ id }) {
   const label = entry ? itemLabel(entry) : '';
 
   return (
-    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
       <Link
         to="/downloads"
         className="group inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl bg-crimson-950/40 border border-crimson-900/60 text-crimson-400 hover:text-white hover:border-crimson-600 transition-all text-[11px] font-black uppercase tracking-widest"

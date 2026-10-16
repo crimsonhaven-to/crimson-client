@@ -87,7 +87,7 @@ const RecentlyWatchedPage = () => {
   const hasHistory = totalCount > 0;
 
   return (
-    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
+    <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10">
       <div className="border-b border-crimson-900/30 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <HubHeading title="Recent" accent="Echoes" icon={<History className="w-4 h-4 text-crimson-500" />}
           subtitle={hasHistory ? `${totalCount} title${totalCount === 1 ? '' : 's'} in your history` : 'Picking up where you left off'} />

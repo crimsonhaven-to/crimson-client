@@ -47,8 +47,8 @@ export const Toast = ({ toast, onClose }) => {
   if (!toast) return null;
   const ok = toast.type === 'ok';
   return (
-    <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border animate-in slide-in-from-bottom-4 duration-300 ${
-      ok ? 'bg-green-950/80 border-green-700/50 text-green-200' : 'bg-crimson-950/90 border-crimson-600/50 text-crimson-200'
+    <div className={`fixed bottom-6 right-6 z-[100] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border duration-300 ${
+ ok ? 'bg-green-950/80 border-green-700/50 text-green-200' : 'bg-crimson-950/90 border-crimson-600/50 text-crimson-200'
     }`}>
       {ok ? <CheckCircle2 className="w-5 h-5 text-green-400" /> : <AlertCircle className="w-5 h-5 text-crimson-500" />}
       <span className="text-xs font-bold max-w-xs">{toast.msg}</span>

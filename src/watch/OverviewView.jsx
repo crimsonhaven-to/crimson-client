@@ -69,7 +69,7 @@ const OverviewView = ({
   const currentSeason = seasons.find(s => s.season_number === activeSeason);
 
   return (
-    <div className="w-full animate-in fade-in duration-1000">
+    <div className="w-full">
       <div className="relative min-h-[500px] sm:min-h-[600px] flex flex-col">
         {overview.backdrop && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none">

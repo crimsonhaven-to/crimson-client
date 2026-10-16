@@ -210,7 +210,7 @@ export default function ChangelogPage() {
   useTitle('The Crimson Chronicle');
 
   return (
-    <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
+    <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto">
       <div className="border-b border-crimson-900/30 pb-8 space-y-3">
         <Link
           to="/about"

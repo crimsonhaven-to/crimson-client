@@ -64,7 +64,7 @@ export default function LumiSecret() {
           key={art}
           src={LUMI_ART[art]}
           alt="Luminas Crimsonveil"
-          className="max-h-[48vh] w-auto select-none drop-shadow-[0_0_40px_rgba(225,29,72,0.45)] animate-in fade-in zoom-in-95 duration-700"
+          className="max-h-[48vh] w-auto select-none drop-shadow-[0_0_40px_rgba(225,29,72,0.45)]"
           draggable={false}
         />
       </button>

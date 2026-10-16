@@ -98,7 +98,7 @@ export default function ApiKeysTab({ notify }) {
       </form>
 
       {minted && (
-        <div className="bg-amber-950/20 border border-amber-700/40 rounded-[2rem] p-6 sm:p-7 space-y-4 relative overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+        <div className="bg-amber-950/20 border border-amber-700/40 rounded-[2rem] p-6 sm:p-7 space-y-4 relative overflow-hidden">
           <div className="flex items-start gap-3">
             <KeyRound className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" />
             <div className="flex-grow min-w-0">

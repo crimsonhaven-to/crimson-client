@@ -135,7 +135,7 @@ export default function Lumi() {
       )}
 
       {open && (
-        <div className="fixed inset-y-0 right-0 z-[90] w-full sm:w-[26rem] bg-crimson-950/95 backdrop-blur-xl border-l border-crimson-900/60 shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="fixed inset-y-0 right-0 z-[90] w-full sm:w-[26rem] bg-crimson-950/95 backdrop-blur-xl border-l border-crimson-900/60 shadow-2xl flex flex-col">
           <div className="flex items-center gap-2.5 px-5 py-4 border-b border-crimson-900/60 flex-shrink-0">
             <Bot className="w-4 h-4 text-crimson-500" />
             <h2 className="text-[10px] font-black uppercase tracking-widest text-crimson-400">Luminas Crimsonveil</h2>

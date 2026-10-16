@@ -73,7 +73,7 @@ const WatchlistTransfer = ({ exportWatchlists, importWatchlists, canExport, onIm
           </button>
 
           {importOpen && (
-            <div className="absolute right-0 mt-2 w-52 z-20 rounded-xl border border-crimson-900/60 bg-crimson-950 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="absolute right-0 mt-2 w-52 z-20 rounded-xl border border-crimson-900/60 bg-crimson-950 shadow-2xl overflow-hidden">
               <button
                 onClick={() => handlePickImport('merge')}
                 className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors"
@@ -104,7 +104,7 @@ const WatchlistTransfer = ({ exportWatchlists, importWatchlists, canExport, onIm
           </button>
 
           {exportOpen && (
-            <div className="absolute right-0 mt-2 w-44 z-20 rounded-xl border border-crimson-900/60 bg-crimson-950 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+            <div className="absolute right-0 mt-2 w-44 z-20 rounded-xl border border-crimson-900/60 bg-crimson-950 shadow-2xl overflow-hidden">
               <button
                 onClick={() => handleExport('csv')}
                 className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors"

@@ -189,7 +189,7 @@ export default function LocalHub() {
       ) : (
         <div className="space-y-20 pb-24 pt-2">
           {grouped.length > 0 ? grouped.map(group => (
-            <div key={group.name} className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+            <div key={group.name} className="space-y-8">
               <SectionHeader title={group.name} icon={<HardDrive className="w-5 h-5" />} count={`${group.items.length} Titles`} />
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-3">
                 {group.items.map(it => {
