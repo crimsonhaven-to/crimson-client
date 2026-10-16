@@ -3,6 +3,7 @@ import { ScrollText, Tag, Calendar, ExternalLink, Sparkles, AlertCircle, Moon, A
 import { useChangelog } from './hooks';
 import { useTitle } from '../useTitle';
 import { formatReleaseDate } from './changelogFormat';
+import PageHeading from '../shell/PageHeading';
 
 // Release notes render as React elements, never dangerouslySetInnerHTML, so nothing
 // in a note can inject markup. Only the subset release notes use is supported;
@@ -217,13 +218,7 @@ export default function ChangelogPage() {
         >
           <ArrowLeft className="w-3.5 h-3.5" /> Back to the Haven
         </Link>
-        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4 leading-none">
-          <ScrollText className="w-10 h-10 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]" />
-          The <span className="text-crimson-500">Chronicle</span>
-        </h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">
-          Every decree the Queen has etched into the Haven
-        </p>
+        <PageHeading icon={ScrollText} title="The" accent="Chronicle" subtitle="Every decree the Queen has etched into the Haven" />
       </div>
 
       <div className="relative bg-crimson-500/5 backdrop-blur-md border border-crimson-500/20 p-7 sm:p-8 rounded-[2.5rem] shadow-xl">

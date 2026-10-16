@@ -14,6 +14,7 @@ import ListPickerDialog from './ListPickerDialog';
 import DeleteListDialog from './DeleteListDialog';
 import { useAuth } from '../account/useAuth';
 import { useTitle } from '../useTitle';
+import { HubHeading } from '../browse/hubKit';
 import { setWatchlistActivity, clearActivity } from '../presence/discordPresence';
 
 const VIEW_KEY = 'crimson:watchlist-view';
@@ -212,15 +213,8 @@ const WatchlistsPage = () => {
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
       <div className="border-b border-crimson-900/30 pb-10 space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-          <div className="space-y-3">
-            <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
-              Your <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Favorites</span>
-            </h1>
-            <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
-              <Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />
-              {totalCount} item{totalCount === 1 ? '' : 's'} across {lists.length} list{lists.length === 1 ? '' : 's'}
-            </p>
-          </div>
+          <HubHeading title="Your" accent="Favorites" icon={<Heart className="w-4 h-4 text-crimson-500 fill-crimson-500" />}
+          subtitle={<>{totalCount} item{totalCount === 1 ? '' : 's'} across {lists.length} list{lists.length === 1 ? '' : 's'}</>} />
 
           <WatchlistTransfer
             exportWatchlists={exportWatchlists}

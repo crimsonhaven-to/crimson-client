@@ -7,6 +7,7 @@ import { useTitle } from '../useTitle';
 import { BUCKETS, bucketOf } from './historyDates';
 import { resumeInfo } from './historyResume';
 import HistoryCard from './HistoryCard';
+import { HubHeading } from '../browse/hubKit';
 import ConfirmDialog from './ConfirmDialog';
 
 const VIEW_KEY = 'crimson:history-view';
@@ -88,15 +89,8 @@ const RecentlyWatchedPage = () => {
   return (
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-3">
-          <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
-            Recent <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Echoes</span>
-          </h1>
-          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
-            <History className="w-4 h-4 text-crimson-500" />
-            {hasHistory ? `${totalCount} title${totalCount === 1 ? '' : 's'} in your history` : 'Picking up where you left off'}
-          </p>
-        </div>
+        <HubHeading title="Recent" accent="Echoes" icon={<History className="w-4 h-4 text-crimson-500" />}
+          subtitle={hasHistory ? `${totalCount} title${totalCount === 1 ? '' : 's'} in your history` : 'Picking up where you left off'} />
       </div>
 
       {hasHistory && (

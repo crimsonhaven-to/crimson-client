@@ -165,6 +165,21 @@ export function ChipRow({ icon, label, options, value, onChange, all = true, all
   );
 }
 
+export function HubHeading({ title, accent, icon, subtitle }) {
+  return (
+    <div className="space-y-3">
+      <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
+        {title} <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">{accent}</span>
+      </h1>
+      {subtitle && (
+        <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-xs uppercase">
+          {icon} {subtitle}
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function HubShell({
   title, accent, icon, subtitle,
   search, onSearch, searchPlaceholder = 'Search...',
@@ -174,16 +189,7 @@ export function HubShell({
     <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-12 my-auto animate-in fade-in duration-1000">
       <div className="space-y-8 border-b border-crimson-900/30 pb-12">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-          <div className="space-y-3">
-            <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
-              {title} <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">{accent}</span>
-            </h1>
-            {subtitle && (
-              <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
-                {icon} {subtitle}
-              </p>
-            )}
-          </div>
+          <HubHeading title={title} accent={accent} icon={icon} subtitle={subtitle} />
 
           {onSearch && (
             <div className="relative group max-w-lg w-full">

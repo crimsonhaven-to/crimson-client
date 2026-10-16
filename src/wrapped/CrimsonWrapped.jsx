@@ -8,6 +8,7 @@ import { useMusicAccess } from '../music/hooks';
 import { useSessionToken } from '../api/client';
 import { useTitle } from '../useTitle';
 import MusicYear from './MusicYear';
+import { HubHeading } from '../browse/hubKit';
 import StatCard from './StatCard';
 
 // The page must not present a reconstruction as a measurement: `approximate` is set
@@ -74,15 +75,8 @@ const CrimsonWrapped = () => {
   return (
     <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-12 sm:py-20 space-y-10 animate-in fade-in duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-3">
-          <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
-            Crimson <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Wrapped</span>
-          </h1>
-          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
-            <Sparkles className="w-4 h-4 text-crimson-500" />
-            Everything you {musicAccess ? 'watched and listened to' : 'watched'} in {year}
-          </p>
-        </div>
+        <HubHeading title="Crimson" accent="Wrapped" icon={<Sparkles className="w-4 h-4 text-crimson-500" />}
+          subtitle={<>Everything you {musicAccess ? 'watched and listened to' : 'watched'} in {year}</>} />
 
         <div className="flex items-center gap-1.5 p-1 rounded-xl bg-crimson-950/40 border border-crimson-900/60 shrink-0">
           {YEARS.map((y) => (

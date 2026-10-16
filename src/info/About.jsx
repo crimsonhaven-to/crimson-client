@@ -8,6 +8,7 @@ import { apiFetch } from '../api/client';
 import { CLIENT_VERSION, HOSTED_IN } from '../api/config';
 import { changelogExcerpt, formatReleaseDate } from './changelogFormat';
 import { SOCIAL_LINKS } from './socialLinks';
+import PageHeading from '../shell/PageHeading';
 
 export default function AboutPage() {
   const { health, healthLoading, healthError } = useHealthStatus();
@@ -26,10 +27,7 @@ export default function AboutPage() {
 
   return (
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <div className="border-b border-crimson-900/30 pb-8 space-y-2">
-        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter leading-none">About <span className="text-crimson-500">CrimsonHaven</span></h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">The architectural design manifest</p>
-      </div>
+      <PageHeading title="About" accent="CrimsonHaven" subtitle="The architectural design manifest" className="border-b border-crimson-900/30 pb-8" />
 
       <div className="space-y-8 text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium">
         <p><strong className="text-crimson-50 font-black tracking-tight">crimsonhaven</strong> is a performance-optimized high-fidelity user application frame, engineered for the most discerning mortals.</p>

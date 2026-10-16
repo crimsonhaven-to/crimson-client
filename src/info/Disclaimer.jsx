@@ -1,6 +1,7 @@
 import { Scale, Shield, Eye, Cookie, FileText, RefreshCw } from 'lucide-react';
 import { useTitle } from '../useTitle';
 import { DMCA_MAIL } from '../api/config';
+import PageHeading from '../shell/PageHeading';
 
 const Section = ({ icon, title, children }) => (
   <div className="space-y-6">
@@ -20,12 +21,7 @@ const DisclaimerPage = () => {
 
   return (
     <div className="max-w-3xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <div className="border-b border-crimson-900/30 pb-8 space-y-3">
-        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4 leading-none">
-          <Scale className="w-10 h-10 text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]" /> Disclaimer
-        </h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Protocol: Legal &amp; Privacy Manifest</p>
-      </div>
+      <PageHeading icon={Scale} title="Disclaimer" subtitle="Protocol: Legal & Privacy Manifest" className="border-b border-crimson-900/30 pb-8" />
 
       <Section icon={<Shield className="w-4 h-4" />} title="DMCA / Disclaimer Policy">
         <p>

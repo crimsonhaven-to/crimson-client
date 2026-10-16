@@ -11,6 +11,7 @@ import CrossfadeCard from '../music/CrossfadeCard';
 import { hasDownloads } from '../music/downloads';
 import DesktopAppCard from './DesktopAppCard';
 import NativeBackendCard from './NativeBackendCard';
+import PageHeading from '../shell/PageHeading';
 
 // Served same-origin from /helper because the repo is private, so GitHub Releases
 // wouldn't be reachable.
@@ -162,13 +163,7 @@ const UserSettings = () => {
 
   return (
     <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <div className="border-b border-crimson-900/30 pb-8 space-y-2">
-        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4">
-          <SlidersHorizontal className="w-9 h-9 text-crimson-500 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
-          <span>Your <span className="text-crimson-500">Preferences</span></span>
-        </h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Tune how the haven picks your stream</p>
-      </div>
+      <PageHeading icon={SlidersHorizontal} title="Your" accent="Preferences" subtitle="Tune how the haven picks your stream" className="border-b border-crimson-900/30 pb-8" />
 
       <DisplayNameCard />
 

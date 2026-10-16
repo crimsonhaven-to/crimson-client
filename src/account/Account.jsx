@@ -5,6 +5,7 @@ import { useAuth } from './useAuth';
 import { useAccount } from './useAccount';
 import { useTitle } from '../useTitle';
 import AccountSecurity from './AccountSecurity';
+import PageHeading from '../shell/PageHeading';
 
 const AccountPage = () => {
   const { login, logout, createNewMnemonic, isAuthenticated, publicKey, loading, error } = useAuth();
@@ -40,10 +41,7 @@ const AccountPage = () => {
     return (
       <div className="max-w-2xl w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
         <div className="border-b border-crimson-900/30 pb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
-          <div className="space-y-2 text-center sm:text-left">
-            <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Your <span className="text-crimson-500">Sanctuary</span></h2>
-            <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Synchronized with the dark network</p>
-          </div>
+          <PageHeading title="Your" accent="Sanctuary" subtitle="Synchronized with the dark network" className="text-center sm:text-left" />
           <button 
             onClick={logout}
             className="group flex items-center gap-2.5 px-6 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-500 hover:text-white hover:border-crimson-500 hover:bg-crimson-900/40 transition-all text-[10px] font-black uppercase tracking-widest shadow-xl"
@@ -109,10 +107,7 @@ const AccountPage = () => {
 
   return (
     <div className="max-w-md w-full mx-auto px-6 py-20 space-y-12 my-auto animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <div className="text-center space-y-3">
-        <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Establish <span className="text-crimson-500">Link</span></h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Access your personal archives via mnemonic</p>
-      </div>
+      <PageHeading title="Establish" accent="Link" subtitle="Access your personal archives via mnemonic" className="text-center" />
 
       {!showNewMnemonic ? (
         <div className="space-y-8">

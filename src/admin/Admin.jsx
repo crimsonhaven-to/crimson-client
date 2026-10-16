@@ -21,6 +21,7 @@ import SystemTab from './SystemTab';
 import MetricsTab from './MetricsTab';
 import LumiTab from './LumiTab';
 import MusicTab from './MusicTab';
+import PageHeading from '../shell/PageHeading';
 
 const AdminPage = () => {
   useTitle('Admin Sanctum');
@@ -66,13 +67,7 @@ const AdminPage = () => {
   return (
     <div className="max-w-6xl w-full mx-auto px-4 sm:px-6 py-16 sm:py-20 space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <div className="border-b border-crimson-900/30 pb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <Shield className="w-8 h-8 text-crimson-500 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
-            <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter">Admin <span className="text-crimson-500">Sanctum</span></h2>
-          </div>
-          <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] ml-1">Keeper controls for the dark network</p>
-        </div>
+        <PageHeading icon={Shield} title="Admin" accent="Sanctum" subtitle="Keeper controls for the dark network" />
         <button onClick={() => { setLoading(true); loadStats(); }} className="group flex items-center gap-2.5 px-5 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-400 hover:text-white hover:border-crimson-500 transition-all text-[10px] font-black uppercase tracking-widest self-start sm:self-auto">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : 'group-hover:rotate-90 transition-transform'}`} /> Refresh
         </button>
