@@ -52,12 +52,12 @@ export default function ImportPanel({ connected }) {
       <form onSubmit={addLink} className="space-y-2">
         <div className="flex gap-2">
           <div className="relative flex-grow min-w-0">
-            <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700" />
+            <Link2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-400" />
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
               placeholder="https://open.spotify.com/playlist/..."
-              className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm focus:outline-none focus:border-crimson-500"
+              className="w-full pl-11 pr-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm focus:outline-none focus:border-crimson-500"
             />
           </div>
           <button type="submit" disabled={!!busy || !link.trim()}
@@ -65,7 +65,7 @@ export default function ImportPanel({ connected }) {
             {busy === 'link' ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
           </button>
         </div>
-        <p className="text-[11px] text-crimson-600 leading-relaxed">
+        <p className="text-[11px] text-crimson-400 leading-relaxed">
           {connected
             ? 'Read through your Spotify connection: private playlists work, and every song comes across.'
             : 'Without a Spotify connection only public playlists can be read, and only their first 100 songs, without album names.'}
@@ -78,7 +78,7 @@ export default function ImportPanel({ connected }) {
           className="flex items-center gap-2 px-5 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
           {busy === 'csv' ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />} Upload a CSV
         </button>
-        <p className="text-[11px] text-crimson-600 leading-relaxed">
+        <p className="text-[11px] text-crimson-400 leading-relaxed">
           Export a playlist with <a href={EXPORTIFY} target="_blank" rel="noopener noreferrer" className="text-crimson-400 underline underline-offset-2 hover:text-white">Exportify <ExternalLink className="w-3 h-3 inline" /></a>{' '}
           and upload the file as it is. A CSV is a one-off: it does not sync.
         </p>

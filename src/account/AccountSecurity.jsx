@@ -28,7 +28,7 @@ const Card = ({ icon: Icon, title, blurb, children, tone = 'crimson' }) => (
         <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">{title}</h3>
       </div>
       {blurb && (
-        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">{blurb}</p>
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">{blurb}</p>
       )}
     </div>
     <div className="relative z-10 space-y-4">{children}</div>
@@ -83,7 +83,7 @@ const SessionsCard = () => {
                   </span>
                 )}
               </div>
-              <div className="mt-1 flex flex-wrap items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-600">
+              <div className="mt-1 flex flex-wrap items-center gap-2.5 text-[10px] font-black uppercase tracking-widest text-crimson-400">
                 <span>{s.ip || 'Unknown address'}</span>
                 <span className="text-crimson-800">·</span>
                 <span>Last used {when(s.last_seen_at)}</span>
@@ -93,7 +93,7 @@ const SessionsCard = () => {
               onClick={() => handleRevoke(s.id)}
               disabled={busy === s.id}
               aria-label="Sign this device out"
-              className="shrink-0 p-2.5 rounded-full text-crimson-600 hover:text-white hover:bg-crimson-900/50 transition-all active:scale-90 disabled:opacity-50"
+              className="shrink-0 p-2.5 rounded-full text-crimson-400 hover:text-white hover:bg-crimson-900/50 transition-all active:scale-90 disabled:opacity-50"
             >
               {busy === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
             </button>
@@ -129,7 +129,7 @@ const ActivityCard = () => {
     >
       {loading && <p className="text-xs text-crimson-500 font-bold uppercase tracking-widest">Reading…</p>}
       {!loading && events.length === 0 && (
-        <p className="text-xs text-crimson-300/60 font-medium">Nothing recorded yet.</p>
+        <p className="text-xs text-crimson-400 font-medium">Nothing recorded yet.</p>
       )}
       <div className="space-y-1.5">
         {events.map((e, i) => (
@@ -145,10 +145,10 @@ const ActivityCard = () => {
             <span className="flex-grow min-w-0 text-xs font-bold text-crimson-100 truncate">
               {eventLabel(e.event_type)}
             </span>
-            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-700">
+            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-400">
               {e.ip || '-'}
             </span>
-            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-600 tabular-nums">
+            <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-crimson-400 tabular-nums">
               {when(e.ts)}
             </span>
           </div>
@@ -246,7 +246,7 @@ const DeleteCard = ({ hasEmail }) => {
         <div className="space-y-4">
           <div className="flex items-start gap-4 p-5 rounded-2xl bg-red-500/5 border border-red-500/30">
             <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-crimson-300/80 leading-relaxed font-medium">
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium">
               {hasEmail
                 ? 'Confirm with your password, then type DELETE to be certain.'
                 : 'Confirm by signing with your 12-word mnemonic, then type DELETE to be certain. It is never sent anywhere: only the signature it produces is.'}
@@ -259,14 +259,14 @@ const DeleteCard = ({ hasEmail }) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Your password"
-              className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-700 text-sm font-bold focus:outline-none focus:border-red-600 transition-colors"
+              className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-400 text-sm font-bold focus:outline-none focus:border-red-600 transition-colors"
             />
           ) : (
             <textarea
               value={mnemonic}
               onChange={(e) => setMnemonic(e.target.value)}
               placeholder="word1 word2 word3…"
-              className="w-full h-24 px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-700 text-sm font-bold resize-none focus:outline-none focus:border-red-600 transition-colors"
+              className="w-full h-24 px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-400 text-sm font-bold resize-none focus:outline-none focus:border-red-600 transition-colors"
             />
           )}
 
@@ -274,7 +274,7 @@ const DeleteCard = ({ hasEmail }) => {
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
             placeholder="Type DELETE"
-            className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-700 text-sm font-black tracking-widest uppercase focus:outline-none focus:border-red-600 transition-colors"
+            className="w-full px-5 py-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder:text-crimson-400 text-sm font-black tracking-widest uppercase focus:outline-none focus:border-red-600 transition-colors"
           />
 
           {error && <p className="text-xs text-amber-400 font-medium">{error}</p>}

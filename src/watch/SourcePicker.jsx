@@ -65,7 +65,7 @@ const SourceGroup = ({ group, activeStreamIdx, onSelectStream, open, onToggle })
           </div>
           <span className="text-xs font-black tracking-wide text-crimson-50 truncate">{group.label}</span>
         </div>
-        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${containsActive ? 'text-crimson-50' : 'text-crimson-700'}`} />
+        <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${containsActive ? 'text-crimson-50' : 'text-crimson-400'}`} />
       </button>
       {open && (
         <div className="mt-2 pl-3 ml-1.5 border-l border-crimson-900/50 space-y-2 animate-in slide-in-from-top-1 fade-in duration-300">

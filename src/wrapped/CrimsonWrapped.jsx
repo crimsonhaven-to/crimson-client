@@ -78,7 +78,7 @@ const CrimsonWrapped = () => {
           <h1 className="text-4xl sm:text-6xl font-black text-crimson-50 uppercase tracking-tighter leading-none">
             Crimson <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">Wrapped</span>
           </h1>
-          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
+          <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
             <Sparkles className="w-4 h-4 text-crimson-500" />
             Everything you {musicAccess ? 'watched and listened to' : 'watched'} in {year}
           </p>
@@ -118,7 +118,7 @@ const CrimsonWrapped = () => {
             <p className="text-[10px] font-black text-amber-400 uppercase tracking-[0.2em]">
               Part of this year is an estimate
             </p>
-            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium">
               {data.events_since
                 ? `Day-by-day history has only been kept since ${prettyDay(data.events_since.slice(0, 10))}. Anything before that is reconstructed from when a title was last touched, so dates and streaks from that span are approximate.`
                 : 'Day-by-day history was not being kept during this year, so all of this is reconstructed from when each title was last touched. The totals are close; the dates are not exact.'}
@@ -129,11 +129,11 @@ const CrimsonWrapped = () => {
 
       {nothingWatched && !listened && !error && (
         <div className="text-center py-20 space-y-3">
-          <Sparkles className="w-10 h-10 text-crimson-700 mx-auto" />
+          <Sparkles className="w-10 h-10 text-crimson-400 mx-auto" />
           <p className="text-crimson-500 font-black uppercase tracking-widest text-sm">
             Nothing recorded for {year}
           </p>
-          <p className="text-crimson-700 text-xs font-medium max-w-sm mx-auto leading-relaxed">
+          <p className="text-crimson-400 text-xs font-medium max-w-sm mx-auto leading-relaxed">
             {musicAccess ? 'Watch or listen to something' : 'Watch something'} and come back. The year fills itself in as you go.
           </p>
         </div>
@@ -199,7 +199,7 @@ const CrimsonWrapped = () => {
                 <p className="text-2xl sm:text-3xl font-black text-crimson-50 tracking-tighter">
                   {prettyDay(data.busiest_day.day)}
                 </p>
-                <p className="text-xs text-crimson-300/60 font-medium">
+                <p className="text-xs text-crimson-400 font-medium">
                   {data.busiest_day.items} thing{data.busiest_day.items === 1 ? '' : 's'} watched, in your own timezone
                 </p>
               </div>
@@ -219,7 +219,7 @@ const CrimsonWrapped = () => {
                   const widest = data.top_titles[0].minutes || 1;
                   return (
                     <div key={t.title} className="flex items-center gap-4">
-                      <span className="w-6 text-right text-sm font-black text-crimson-700 tabular-nums">
+                      <span className="w-6 text-right text-sm font-black text-crimson-400 tabular-nums">
                         {i + 1}
                       </span>
                       <div className="flex-grow min-w-0">
@@ -254,7 +254,7 @@ const CrimsonWrapped = () => {
                     What you were drawn to
                   </h3>
                 </div>
-                <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+                <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
                   One vote per title, not per episode, so a long-running series does not
                   drown out everything else.
                 </p>
@@ -266,7 +266,7 @@ const CrimsonWrapped = () => {
                     className="px-5 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest border bg-crimson-950/40 border-crimson-900/60 text-crimson-300"
                   >
                     {g.genre}
-                    <span className="ml-2 text-crimson-600 tabular-nums">{g.count}</span>
+                    <span className="ml-2 text-crimson-400 tabular-nums">{g.count}</span>
                   </span>
                 ))}
               </div>
@@ -302,7 +302,7 @@ const CrimsonWrapped = () => {
 
       {listened && <MusicYear data={music.data} year={year} />}
 
-      <p className="text-[10px] text-crimson-700 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
+      <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
         Counted in your own timezone · Yours alone · Never shared
       </p>
     </div>

@@ -22,14 +22,14 @@ const ListPickerDialog = ({ mode, item, bulkCount, lists, listsForItem, onPick, 
             <span className="flex items-center gap-2.5 min-w-0">
               {l.name === DEFAULT_LIST
                 ? <Heart className="w-4 h-4 shrink-0 text-crimson-500 fill-crimson-700" />
-                : <ListPlus className="w-4 h-4 shrink-0 text-crimson-600" />}
+                : <ListPlus className="w-4 h-4 shrink-0 text-crimson-400" />}
               <span className="font-black text-sm text-crimson-100 truncate">{listLabel(l.name)}</span>
-              <span className="text-[10px] font-black text-crimson-700 tabular-nums">{l.count}</span>
+              <span className="text-[10px] font-black text-crimson-400 tabular-nums">{l.count}</span>
             </span>
             {mode === 'item'
               ? (inList
                   ? <CircleCheck className="w-5 h-5 shrink-0 text-crimson-400" />
-                  : <Circle className="w-5 h-5 shrink-0 text-crimson-800" />)
+                  : <Circle className="w-5 h-5 shrink-0 text-crimson-400" />)
               : <Plus className="w-4 h-4 shrink-0 text-crimson-500" strokeWidth={3} />}
           </button>
         );

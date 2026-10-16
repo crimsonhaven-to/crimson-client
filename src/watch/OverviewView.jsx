@@ -125,16 +125,16 @@ const OverviewView = ({
                   </span>
                 )}
                 {overview.year && (
-                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-300 font-black uppercase tracking-widest opacity-70">
+                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-400 font-black uppercase tracking-widest">
                     <Calendar className="w-3.5 h-3.5 text-crimson-500" /> {overview.year}
                   </span>
                 )}
                 {isMovie ? (
-                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-300 font-black uppercase tracking-widest opacity-70">
+                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-400 font-black uppercase tracking-widest">
                     <Clapperboard className="w-3.5 h-3.5 text-crimson-500" /> Movie{runtime ? ` • ${Math.floor(runtime / 60)}h ${runtime % 60}m` : ''}
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-300 font-black uppercase tracking-widest opacity-70">
+                  <span className="flex items-center gap-1.5 text-[10px] text-crimson-400 font-black uppercase tracking-widest">
                     <Layers className="w-3.5 h-3.5 text-crimson-500" /> {overview.total_seasons} Season{overview.total_seasons === 1 ? '' : 's'}
                   </span>
                 )}
@@ -145,7 +145,7 @@ const OverviewView = ({
                   {overview.title}
                 </h1>
                 {overview.title_romaji && overview.title_romaji !== overview.title && (
-                  <p className="text-sm sm:text-lg text-crimson-400/60 font-bold tracking-tight italic opacity-80">{overview.title_romaji}</p>
+                  <p className="text-sm sm:text-lg text-crimson-400 font-bold tracking-tight italic">{overview.title_romaji}</p>
                 )}
               </div>
 
@@ -155,7 +155,7 @@ const OverviewView = ({
                   {genres.map(g => (
                     <span
                       key={g}
-                      className="px-3 py-1 rounded-full bg-crimson-500/10 backdrop-blur-md border border-crimson-500/20 text-[10px] font-black uppercase tracking-widest text-crimson-300/80 hover:border-crimson-500/40 hover:text-crimson-300 transition-colors"
+                      className="px-3 py-1 rounded-full bg-crimson-500/10 backdrop-blur-md border border-crimson-500/20 text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:border-crimson-500/40 hover:text-crimson-300 transition-colors"
                     >
                       {g}
                     </span>
@@ -273,7 +273,7 @@ const OverviewView = ({
                 <h2 className="text-2xl sm:text-4xl font-black text-crimson-50 uppercase tracking-tighter">
                   {currentSeason.name || `Season ${currentSeason.season_number}`}
                 </h2>
-                <div className="flex items-center gap-2 text-[10px] text-crimson-500 font-black uppercase tracking-widest opacity-70">
+                <div className="flex items-center gap-2 text-[10px] text-crimson-500 font-black uppercase tracking-widest">
                   <Film className="w-3 h-3" />
                   <span>{episodes.length || currentSeason.episode_count || 0} manifest segments</span>
                 </div>
@@ -302,7 +302,7 @@ const OverviewView = ({
               <div className="w-12 h-12 border-2 border-dashed border-crimson-900/50 rounded-full mx-auto flex items-center justify-center">
                 <Film className="w-6 h-6 text-crimson-900" />
               </div>
-              <p className="text-crimson-600 font-bold uppercase tracking-widest text-[10px] italic">No segment data recorded for this season.</p>
+              <p className="text-crimson-400 font-bold uppercase tracking-widest text-[10px] italic">No segment data recorded for this season.</p>
             </div>
           )}
         </div>
@@ -326,7 +326,7 @@ const OverviewView = ({
                     <span className="text-sm font-black text-crimson-50 group-hover:text-crimson-400 transition-colors truncate">
                       {x.title_english || x.title_romaji || `Entry ${x.anilist_id}`}
                     </span>
-                    <span className="text-[9px] text-crimson-600 font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
+                    <span className="text-[9px] text-crimson-400 font-black uppercase tracking-[0.2em] mt-1.5 flex items-center gap-1.5">
                       <div className="w-1 h-1 rounded-full bg-crimson-500"></div>
                       {x.anime_type || 'Special'}{x.start_year ? ` • ${x.start_year}` : ''}
                     </span>

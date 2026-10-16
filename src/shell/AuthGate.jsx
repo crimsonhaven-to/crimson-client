@@ -23,7 +23,7 @@ export default function AuthGate() {
       </div>
       <footer className="w-full text-center py-6 px-4 z-10 relative space-y-3">
         <SwitchBackendLink />
-        <p className="text-[10px] font-medium tracking-wide text-crimson-700 uppercase">
+        <p className="text-[10px] font-medium tracking-wide text-crimson-400 uppercase">
           crimsonhaven · members only · your data stays in {HOSTED_IN}
         </p>
       </footer>

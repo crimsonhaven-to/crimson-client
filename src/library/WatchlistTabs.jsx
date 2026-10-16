@@ -42,7 +42,7 @@ const WatchlistTabs = ({ lists, collageByList, activeList, onSwitch, onCreate, o
               {l.name === ALL_LIST && <Layers className={`w-3.5 h-3.5 ${active ? 'text-crimson-50' : 'text-crimson-500'}`} />}
               {l.name === DEFAULT_LIST && <Heart className={`w-3.5 h-3.5 ${active ? 'fill-white' : 'fill-crimson-700 text-crimson-500'}`} />}
               <span>{listLabel(l.name)}</span>
-              <span className={`text-[10px] tabular-nums ${active ? 'text-crimson-100/90' : 'text-crimson-600'}`}>{l.count}</span>
+              <span className={`text-[10px] tabular-nums ${active ? 'text-crimson-100/90' : 'text-crimson-400'}`}>{l.count}</span>
             </span>
           </button>
         );
@@ -51,7 +51,7 @@ const WatchlistTabs = ({ lists, collageByList, activeList, onSwitch, onCreate, o
       {creating ? (
         <form onSubmit={handleCreate} className="inline-flex items-center gap-2">
           <div className="relative">
-            <ListPlus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-crimson-700 pointer-events-none" />
+            <ListPlus className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-crimson-400 pointer-events-none" />
             <input
               autoFocus
               value={newName}
@@ -59,7 +59,7 @@ const WatchlistTabs = ({ lists, collageByList, activeList, onSwitch, onCreate, o
               onBlur={() => { if (!newName.trim()) setCreating(false); }}
               maxLength={100}
               placeholder="List name…"
-              className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-700 focus:outline-none focus:border-crimson-600 transition-colors"
+              className="w-40 pl-8 pr-2 py-2 text-xs font-bold bg-crimson-950/60 border border-crimson-900/60 rounded-xl text-crimson-50 placeholder:text-crimson-400 focus:outline-none focus:border-crimson-600 transition-colors"
             />
           </div>
           <button type="submit" disabled={!newName.trim()} aria-label="Create list"
@@ -80,7 +80,7 @@ const WatchlistTabs = ({ lists, collageByList, activeList, onSwitch, onCreate, o
       {activeList !== DEFAULT_LIST && activeList !== ALL_LIST && (
         <button
           onClick={() => onDelete(activeList)}
-          className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-600 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 hover:bg-crimson-900/30 transition-all active:scale-95"
+          className="ml-auto inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-crimson-900/60 text-crimson-400 text-[10px] font-black uppercase tracking-widest hover:text-white hover:border-crimson-500 hover:bg-crimson-900/30 transition-all active:scale-95"
         >
           <X className="w-3.5 h-3.5" strokeWidth={3} />
           <span>Delete "{listLabel(activeList)}"</span>

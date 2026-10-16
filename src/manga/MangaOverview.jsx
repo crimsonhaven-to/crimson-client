@@ -39,13 +39,13 @@ function ChapterRow({ anilistId, chapter, active }) {
       <div className="min-w-0">
         <p className="text-sm font-black text-crimson-50 tracking-tight truncate">
           {number}
-          {chapter.title ? <span className="text-crimson-400/70 font-bold"> · {chapter.title}</span> : null}
+          {chapter.title ? <span className="text-crimson-400 font-bold"> · {chapter.title}</span> : null}
         </p>
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 mt-0.5">
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 mt-0.5">
           {vol ? `${vol}${meta ? ' · ' : ''}` : ''}{meta || ''}
         </p>
       </div>
-      <ChevronRight className="w-4 h-4 text-crimson-700 group-hover:text-crimson-400 group-hover:translate-x-1 transition-all shrink-0" />
+      <ChevronRight className="w-4 h-4 text-crimson-400 group-hover:text-crimson-200 group-hover:translate-x-1 transition-all shrink-0" />
     </Link>
   );
 }
@@ -83,7 +83,7 @@ const MangaOverview = () => {
           <div className="absolute inset-0 border-4 border-crimson-900 rounded-full opacity-20"></div>
           <div className="absolute inset-0 border-4 border-crimson-500 border-t-transparent rounded-full animate-spin"></div>
         </div>
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-600 animate-pulse">Unsealing the tome</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400 animate-pulse">Unsealing the tome</p>
       </div>
     );
   }
@@ -122,7 +122,7 @@ const MangaOverview = () => {
             {overview.poster ? (
               <img src={overview.poster} alt={`${overview.title} cover`} className="w-44 sm:w-52 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.6)] border border-crimson-900/50" />
             ) : (
-              <div className="w-44 sm:w-52 h-64 sm:h-72 rounded-2xl bg-crimson-900/30 flex items-center justify-center text-crimson-600 text-xs font-black uppercase">No Cover</div>
+              <div className="w-44 sm:w-52 h-64 sm:h-72 rounded-2xl bg-crimson-900/30 flex items-center justify-center text-crimson-400 text-xs font-black uppercase">No Cover</div>
             )}
           </div>
 
@@ -133,7 +133,7 @@ const MangaOverview = () => {
               </span>
               <h1 className="text-2xl sm:text-4xl font-black tracking-tighter text-crimson-50 leading-tight">{overview.title}</h1>
               {overview.title_native && overview.title_native !== overview.title && (
-                <p className="text-crimson-400/70 font-bold mt-1 text-sm">{overview.title_native}</p>
+                <p className="text-crimson-400 font-bold mt-1 text-sm">{overview.title_native}</p>
               )}
             </div>
 
@@ -199,7 +199,7 @@ const MangaOverview = () => {
               <BookOpen className="w-5 h-5 text-crimson-500" /> Chapters
             </h2>
             {chapters.length > 0 && (
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600">{chapters.length} available</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400">{chapters.length} available</span>
             )}
           </div>
 
@@ -218,7 +218,7 @@ const MangaOverview = () => {
                     }`}
                   >
                     {s.sourceLabel}
-                    <span className="ml-1.5 text-crimson-600/80">{s.chapters.length}</span>
+                    <span className="ml-1.5 text-crimson-400">{s.chapters.length}</span>
                   </button>
                 );
               })}

@@ -87,7 +87,7 @@ const DisplayNameCard = () => {
           <UserRound className="w-6 h-6" />
           <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Your Name</h3>
         </div>
-        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
           What shall Luminas call you, darling? She'll whisper it when she lays your
           curated cravings before you: <span className="text-crimson-300">"Recommended for you, {name.trim() || 'mortal'}"</span>.
           Leave it empty to stay a nameless wanderer of the haven.
@@ -102,7 +102,7 @@ const DisplayNameCard = () => {
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter' && dirty && !saving) save(); }}
           placeholder="A name for the Queen to know you by…"
-          className="flex-grow px-5 py-4 rounded-2xl bg-crimson-950/50 border border-crimson-900/60 text-crimson-50 placeholder-crimson-700 font-bold tracking-wide focus:outline-none focus:border-crimson-500/60 transition-colors"
+          className="flex-grow px-5 py-4 rounded-2xl bg-crimson-950/50 border border-crimson-900/60 text-crimson-50 placeholder-crimson-400 font-bold tracking-wide focus:outline-none focus:border-crimson-500/60 transition-colors"
         />
         <button
           onClick={save}
@@ -167,7 +167,7 @@ const UserSettings = () => {
           <SlidersHorizontal className="w-9 h-9 text-crimson-500 drop-shadow-[0_0_10px_rgba(255,0,60,0.5)]" />
           <span>Your <span className="text-crimson-500">Preferences</span></span>
         </h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Tune how the haven picks your stream</p>
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Tune how the haven picks your stream</p>
       </div>
 
       <DisplayNameCard />
@@ -183,7 +183,7 @@ const UserSettings = () => {
             <Languages className="w-6 h-6" />
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Preferred Language</h3>
           </div>
-          <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
+          <p className="text-xs text-crimson-400 font-medium leading-relaxed">
             Sources in this language are auto-selected when available.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -199,7 +199,7 @@ const UserSettings = () => {
             <Mic className="w-6 h-6" />
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Dub or Sub</h3>
           </div>
-          <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
+          <p className="text-xs text-crimson-400 font-medium leading-relaxed">
             Whether you prefer dubbed audio or subtitled originals.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -220,7 +220,7 @@ const UserSettings = () => {
             <Subtitles className="w-6 h-6" />
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Subtitle Languages</h3>
           </div>
-          <p className="text-xs text-crimson-300/60 font-medium leading-relaxed">
+          <p className="text-xs text-crimson-400 font-medium leading-relaxed">
             Pull matching subtitles from OpenSubtitles into the player's caption menu,
             handy when a source ships none. Pick any number; leave all off to skip them.
           </p>
@@ -244,7 +244,7 @@ const UserSettings = () => {
             <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved automatically
             </p>
-            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">{summary}</p>
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium">{summary}</p>
           </div>
         </div>
       </div>
@@ -258,7 +258,7 @@ const UserSettings = () => {
               <Gamepad2 className="w-6 h-6" />
               <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Discord Presence</h3>
             </div>
-            <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+            <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
               Let Luminas whisper to Discord what you're watching or listening to (a little rich-presence
               card on your profile). Nothing leaves your machine, and you can banish it anytime.
               {window.CrimsonNative
@@ -278,7 +278,7 @@ const UserSettings = () => {
               <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em]">
                 Summon the Crimson Bridge
               </p>
-              <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+              <p className="text-xs text-crimson-400 leading-relaxed font-medium">
                 For Luminas' whispers to reach Discord, a small familiar must keep watch on your
                 machine. Call the little bridge down{' '}
                 <a
@@ -291,11 +291,11 @@ const UserSettings = () => {
                 ({helper.label}) and let it dwell in your taskbar beside Discord. Without it, the
                 toggle stirs but your profile stays silent.
               </p>
-              <p className="text-[11px] text-crimson-400/70 leading-relaxed font-medium">
+              <p className="text-[11px] text-crimson-400 leading-relaxed font-medium">
                 Another machine?{' '}
                 {HELPER_BUILDS.map((b, i) => (
                   <span key={b.key}>
-                    {i > 0 && <span className="text-crimson-700"> · </span>}
+                    {i > 0 && <span className="text-crimson-400"> · </span>}
                     <a
                       href={helperHref(b.file)}
                       download
@@ -318,7 +318,7 @@ const UserSettings = () => {
             <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved automatically
             </p>
-            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium">
               {prefs.discordPresence
                 ? 'Your Discord now flaunts "Watching …" while you stream, "Listening to …" while music plays, and "Browsing the archives…" while you wander.'
                 : 'Your viewing stays unseen. No presence is broadcast to Discord.'}
@@ -338,7 +338,7 @@ const UserSettings = () => {
             <Palette className="w-6 h-6" />
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Theme</h3>
           </div>
-          <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+          <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
             Dress the haven to your taste. The choice lives on this device alone:
             it never leaves it, and never touches your account.
           </p>
@@ -369,7 +369,7 @@ const UserSettings = () => {
                     {active && <Check className="w-3 h-3 text-white" />}
                   </span>
                 </div>
-                <p className="mt-1.5 text-xs text-crimson-300/70 font-medium leading-relaxed">{t.tagline}</p>
+                <p className="mt-1.5 text-xs text-crimson-400 font-medium leading-relaxed">{t.tagline}</p>
               </button>
             );
           })}
@@ -383,7 +383,7 @@ const UserSettings = () => {
             <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
             </p>
-            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium">
               The haven currently wears{' '}
               <span className="text-crimson-300 font-bold">
                 {(THEME_LIST.find((t) => t.id === theme) || THEME_LIST[0]).label}
@@ -403,7 +403,7 @@ const UserSettings = () => {
               <Gauge className="w-6 h-6" />
               <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Lite Background</h3>
             </div>
-            <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+            <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
               The living crimson mist is beautiful but hungry on weaker machines. Still it,
               and Luminas lets the glow rest as a calm, static gradient, gentler on the GPU
               and your battery. This choice stays on this device alone.
@@ -420,7 +420,7 @@ const UserSettings = () => {
             <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.2em] flex items-center gap-2">
               <Check className="w-3.5 h-3.5 text-green-500" /> Saved on this device
             </p>
-            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium">
               {lite
                 ? 'The mist lies still: a calm crimson gradient, lightest on your hardware.'
                 : "The crimson mist drifts as Luminas intended: full, living, and aglow."}
@@ -429,7 +429,7 @@ const UserSettings = () => {
         </div>
       </div>
 
-      <p className="text-[10px] text-crimson-700 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
+      <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.25em] text-center leading-relaxed">
         Stored privately on this device · You can still pick any source manually while watching
       </p>
     </div>

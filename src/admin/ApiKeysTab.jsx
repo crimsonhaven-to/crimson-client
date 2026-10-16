@@ -71,22 +71,22 @@ export default function ApiKeysTab({ notify }) {
           <Plug className="w-7 h-7 text-crimson-500" />
           <div>
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Movie-Web Bridge Keys</h3>
-            <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Machine sigils that let an outer vessel speak to the haven</p>
+            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Machine sigils that let an outer vessel speak to the haven</p>
           </div>
         </div>
-        <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-3xl">
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed relative z-10 max-w-3xl">
           A bridge key lets a modified <span className="text-crimson-400 font-bold">movie-web</span> fork pull streams from the haven instead of scraping on its own. The key is baked into that fork's <span className="text-crimson-400 font-bold">cors-proxy</span> (never the browser) and is scoped to the <code className="font-mono text-crimson-400">/mw</code> bridge alone. It can summon streams and <span className="text-crimson-400 font-bold">nothing else</span>: no members, no sanctum, no catalogue.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 relative z-10">
           <div className="space-y-2 flex-1">
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">Label (optional)</label>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Label (optional)</label>
             <input
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               maxLength={100}
               placeholder="e.g. movie-web prod"
-              className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-700 focus:outline-none focus:border-crimson-500"
+              className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-400 focus:outline-none focus:border-crimson-500"
             />
           </div>
           <div className="flex items-end">
@@ -128,9 +128,9 @@ export default function ApiKeysTab({ notify }) {
       )}
 
       {loading ? (
-        <div className="py-16 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Reading the keyring…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Reading the keyring…</div>
       ) : keys.length === 0 ? (
-        <p className="py-16 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No bridge keys forged yet</p>
+        <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No bridge keys forged yet</p>
       ) : (
         <div className="space-y-3">
           {keys.map((k) => (
@@ -139,11 +139,11 @@ export default function ApiKeysTab({ notify }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-bold text-crimson-50 truncate">{k.label || 'Unlabelled key'}</span>
                   {k.revoked
-                    ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-600">Revoked</span>
+                    ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Revoked</span>
                     : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Active</span>}
                   <code className="text-[11px] font-mono text-crimson-400 bg-crimson-950/60 border border-crimson-900/60 rounded-md px-2 py-0.5 select-all">{k.key_prefix}…</code>
                 </div>
-                <p className="text-[10px] font-bold text-crimson-700 mt-1.5 tracking-wide truncate">
+                <p className="text-[10px] font-bold text-crimson-400 mt-1.5 tracking-wide truncate">
                   by {k.created_by || '-'} · forged {fmtDate(k.created_at)} · last seen {fmtDate(k.last_used_at)}
                   {k.revoked && k.revoked_at ? ` · revoked ${fmtDate(k.revoked_at)}` : ''}
                 </p>

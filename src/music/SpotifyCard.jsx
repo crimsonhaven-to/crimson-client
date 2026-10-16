@@ -77,7 +77,7 @@ function ConnectForm({ scopes }) {
               onChange={(e) => setClientId(e.target.value)}
               placeholder="32 character Client ID"
               spellCheck={false}
-              className="flex-grow min-w-0 px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-mono focus:outline-none focus:border-crimson-500"
+              className="flex-grow min-w-0 px-4 py-3 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-mono focus:outline-none focus:border-crimson-500"
             />
             <button type="submit" disabled={!valid || starting}
               className="px-5 bg-[#1db954] hover:bg-[#1ed760] text-black rounded-2xl text-[10px] font-black uppercase tracking-widest disabled:opacity-40">
@@ -137,7 +137,7 @@ function PlaylistPicker({ onImported }) {
             <Cover src={p.cover_url} className="w-10 h-10 rounded-md flex-shrink-0" />
             <div className="min-w-0 flex-grow">
               <p className="text-sm font-bold text-crimson-100 truncate">{p.name}</p>
-              <p className="text-xs text-crimson-600 truncate">
+              <p className="text-xs text-crimson-400 truncate">
                 {[p.owner, p.track_count != null && `${p.track_count} songs`].filter(Boolean).join(' · ')}
               </p>
             </div>
@@ -179,7 +179,7 @@ export default function SpotifyCard({ status, onChanged }) {
           {spotify.connected ? `Spotify: ${spotify.display_name || 'connected'}` : 'Connect Spotify'}
         </h2>
         {spotify.connected && (
-          <button onClick={disconnect} disabled={busy} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-700 hover:text-crimson-400">
+          <button onClick={disconnect} disabled={busy} className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200">
             <Unplug className="w-3.5 h-3.5" /> Disconnect
           </button>
         )}

@@ -64,7 +64,7 @@ export default function Navbar({ musicEnabled }) {
   const navLinkClass = (to) => `flex items-center gap-1.5 rounded-xl px-2.5 py-2 transition-all ${
     isCurrent(to)
       ? 'text-crimson-500 bg-crimson-500/10'
-      : 'text-crimson-200/50 hover:text-crimson-400 hover:bg-crimson-900/30'
+      : 'text-crimson-300 hover:text-crimson-100 hover:bg-crimson-900/30'
   }`;
 
   return (
@@ -98,7 +98,7 @@ export default function Navbar({ musicEnabled }) {
           {health && (
             <div className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl">
               <div className={`w-2 h-2 rounded-full ${health?.status === 'ok' ? 'bg-green-500' : 'bg-crimson-600'} animate-pulse`}></div>
-              <span className="text-[10px] font-black text-crimson-700 uppercase tracking-widest">{health?.mode || 'ONLINE'}</span>
+              <span className="text-[10px] font-black text-crimson-400 uppercase tracking-widest">{health?.mode || 'ONLINE'}</span>
             </div>
           )}
 
@@ -114,39 +114,39 @@ export default function Navbar({ musicEnabled }) {
             {userMenuOpen && (
               <div className="absolute top-full right-0 mt-4 w-64 bg-crimson-950/95 backdrop-blur-2xl border border-crimson-900 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 rounded-2xl z-50">
                 <div className="p-4 border-b border-crimson-900/20 bg-crimson-600/5">
-                  <p className="text-xs font-black text-crimson-600 uppercase tracking-widest mb-1">Session</p>
+                  <p className="text-xs font-black text-crimson-400 uppercase tracking-widest mb-1">Session</p>
                   <p className="text-crimson-50 font-bold truncate">{profile?.username || 'Sanctuary Dweller'}</p>
                 </div>
                 <div className="p-2">
                   <Link
                     to="/account"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-300 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
                   >
                     <User className="w-4 h-4" /> Profile
                   </Link>
                   <Link
                     to="/settings"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-300 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
                   >
                     <SlidersHorizontal className="w-4 h-4" /> Preferences
                   </Link>
                   <Link
                     to="/wrapped"
                     onClick={() => setUserMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-300 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
                   >
                     <Sparkles className="w-4 h-4" /> Crimson Wrapped
                   </Link>
                   <div className="my-2 border-t border-crimson-900/20" />
-                  <Link to="/support" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
+                  <Link to="/support" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-300 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
                     <Wallet className="w-4 h-4" /> Support Us
                   </Link>
-                  <Link to="/supporters" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
+                  <Link to="/supporters" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-300 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
                     <Sparkles className="w-4 h-4" /> Mortals
                   </Link>
-                  <Link to="/about" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
+                  <Link to="/about" onClick={() => setUserMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-300 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all">
                     <HelpCircle className="w-4 h-4" /> About Us
                   </Link>
                   <div className="my-2 border-t border-crimson-900/20" />
@@ -154,7 +154,7 @@ export default function Navbar({ musicEnabled }) {
                     <Link
                       to="/admin"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-200/50 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
+                      className="flex items-center gap-3 px-4 py-3 text-sm font-bold text-crimson-300 hover:text-white hover:bg-crimson-900/20 rounded-xl transition-all"
                     >
                       <Shield className="w-4 h-4" /> Admin Dashboard
                     </Link>

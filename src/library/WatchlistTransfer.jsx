@@ -79,14 +79,14 @@ const WatchlistTransfer = ({ exportWatchlists, importWatchlists, canExport, onIm
                 className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors"
               >
                 <span>Merge</span>
-                <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Add to lists</span>
+                <span className="text-[9px] text-crimson-400 uppercase tracking-wider">Add to lists</span>
               </button>
               <button
                 onClick={() => handlePickImport('replace')}
                 className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors border-t border-crimson-900/40"
               >
                 <span>Replace</span>
-                <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Wipe &amp; restore</span>
+                <span className="text-[9px] text-crimson-400 uppercase tracking-wider">Wipe &amp; restore</span>
               </button>
             </div>
           )}
@@ -110,14 +110,14 @@ const WatchlistTransfer = ({ exportWatchlists, importWatchlists, canExport, onIm
                 className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors"
               >
                 <span>CSV</span>
-                <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Spreadsheet</span>
+                <span className="text-[9px] text-crimson-400 uppercase tracking-wider">Spreadsheet</span>
               </button>
               <button
                 onClick={() => handleExport('json')}
                 className="w-full flex items-center justify-between px-4 py-3 text-left text-xs font-bold text-crimson-200 hover:bg-crimson-900/50 hover:text-white transition-colors border-t border-crimson-900/40"
               >
                 <span>JSON</span>
-                <span className="text-[9px] text-crimson-600 uppercase tracking-wider">Backup</span>
+                <span className="text-[9px] text-crimson-400 uppercase tracking-wider">Backup</span>
               </button>
             </div>
           )}

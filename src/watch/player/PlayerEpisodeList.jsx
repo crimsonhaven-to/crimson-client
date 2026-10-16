@@ -22,7 +22,7 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
 
       {picker.seasons.length > 1 && (
         <div className="flex items-center gap-2 px-4 sm:px-8 py-3 shrink-0 overflow-x-auto no-scrollbar border-b border-white/5">
-          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-700 whitespace-nowrap pr-1">Archives</span>
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-400 whitespace-nowrap pr-1">Archives</span>
           {picker.seasons.map((s) => {
             const active = picker.expandedSeason === s.season_number;
             const playing = picker.currentSeason === s.season_number;
@@ -89,12 +89,12 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
                     {hasTitle ? ep.title : `Episode ${ep.episode_number}`}
                   </h4>
                   {ep.air_date && (
-                    <span className="flex items-center gap-1 text-[9px] text-crimson-600 font-black uppercase tracking-widest mt-1 opacity-80">
+                    <span className="flex items-center gap-1 text-[9px] text-crimson-400 font-black uppercase tracking-widest mt-1">
                       <Calendar className="w-3 h-3" /> {ep.air_date}
                     </span>
                   )}
                   {ep.overview && (
-                    <p className="text-[11px] sm:text-xs text-crimson-200/50 leading-relaxed line-clamp-2 sm:line-clamp-3 mt-1.5 font-medium">
+                    <p className="text-[11px] sm:text-xs text-crimson-300 leading-relaxed line-clamp-2 sm:line-clamp-3 mt-1.5 font-medium">
                       {ep.overview}
                     </p>
                   )}
@@ -107,7 +107,7 @@ export default function PlayerEpisodeList({ picker, title, onClose }) {
             <div className="w-12 h-12 mx-auto grid place-items-center rounded-full border-2 border-dashed border-crimson-900/50">
               <Film className="w-6 h-6 text-crimson-900" />
             </div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-crimson-700 italic">No segment data recorded for this season.</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-crimson-400 italic">No segment data recorded for this season.</p>
           </div>
         )}
       </div>

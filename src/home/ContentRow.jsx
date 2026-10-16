@@ -26,7 +26,7 @@ export default function ContentRow({ icon, title, accent, subtitle, items, loadi
             <span className="truncate">{title} {accent && <span className="text-crimson-500">{accent}</span>}</span>
           </h2>
           {subtitle && (
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-crimson-600 truncate">{subtitle}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-crimson-400 truncate">{subtitle}</p>
           )}
         </div>
         {cta}

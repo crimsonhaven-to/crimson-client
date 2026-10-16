@@ -28,11 +28,11 @@ const PanelCard = ({ panel, payload }) => (
   <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl p-5 space-y-3">
     <div className="space-y-1">
       <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-crimson-200">{panel.title}</h4>
-      <p className="text-[10px] font-medium text-crimson-600/80 leading-relaxed">{panel.description}</p>
+      <p className="text-[10px] font-medium text-crimson-400 leading-relaxed">{panel.description}</p>
     </div>
 
     {!payload && (
-      <div className="h-40 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.25em] text-crimson-700 animate-pulse">
+      <div className="h-40 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.25em] text-crimson-400 animate-pulse">
         Consulting the archives…
       </div>
     )}
@@ -41,7 +41,7 @@ const PanelCard = ({ panel, payload }) => (
       <div className="h-40 flex flex-col items-center justify-center gap-2 text-center px-4">
         <AlertTriangle className="w-5 h-5 text-amber-500/70" />
         <p className="text-[10px] font-bold text-amber-300/80">The archivist could not answer</p>
-        <p className="text-[10px] font-mono text-crimson-700 break-all">{payload.error}</p>
+        <p className="text-[10px] font-mono text-crimson-400 break-all">{payload.error}</p>
       </div>
     )}
 
@@ -56,7 +56,7 @@ const PanelCard = ({ panel, payload }) => (
           step={payload.step}
         />
         {payload.truncated > 0 && (
-          <p className="text-[9px] font-bold text-crimson-700 ml-16">
+          <p className="text-[9px] font-bold text-crimson-400 ml-16">
             {payload.truncated} quieter {payload.truncated === 1 ? 'line' : 'lines'} hidden to keep the chart readable
           </p>
         )}
@@ -142,7 +142,7 @@ export default function MetricsHistory({ notify }) {
 
   if (loading) {
     return (
-      <div className="py-10 text-center text-crimson-700 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">
+      <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">
         Asking whether anything was written down…
       </div>
     );
@@ -155,7 +155,7 @@ export default function MetricsHistory({ notify }) {
       <div className="bg-crimson-950/30 border border-crimson-900/40 rounded-3xl px-6 py-8 text-center space-y-3">
         <LineChart className="w-9 h-9 text-crimson-800 mx-auto" />
         <h4 className="text-[11px] font-black uppercase tracking-[0.25em] text-crimson-300">No history is being kept</h4>
-        <p className="text-[11px] text-crimson-600/80 font-medium leading-relaxed max-w-lg mx-auto">
+        <p className="text-[11px] text-crimson-400 font-medium leading-relaxed max-w-lg mx-auto">
           {failed
             ? 'The history endpoints could not be reached. The live snapshot below is unaffected.'
             : meta?.reason || 'No Prometheus is configured.'}
@@ -194,14 +194,14 @@ export default function MetricsHistory({ notify }) {
       <div className="flex flex-wrap items-center gap-4 text-[10px] font-bold">
         {/* Otherwise "nothing happened" and "the scraper lost the fleet" look identical. */}
         {targets?.ok && (
-          <span className={`flex items-center gap-1.5 ${targets.down ? 'text-amber-300' : 'text-crimson-600'}`}>
+          <span className={`flex items-center gap-1.5 ${targets.down ? 'text-amber-300' : 'text-crimson-400'}`}>
             <Server className="w-3.5 h-3.5" />
             Scraping {targets.up} {targets.up === 1 ? 'replica' : 'replicas'}
             {targets.down > 0 && `, ${targets.down} unreachable`}
           </span>
         )}
         {meta.retention && (
-          <span className="flex items-center gap-1.5 text-crimson-600">
+          <span className="flex items-center gap-1.5 text-crimson-400">
             <Clock className="w-3.5 h-3.5" /> Keeps {meta.retention}
           </span>
         )}

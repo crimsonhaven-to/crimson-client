@@ -9,7 +9,7 @@ export function Cover({ src, className = '', alt = '' }) {
   if (!src || failedSrc === src) {
     return (
       <div className={`bg-crimson-900/40 border border-crimson-900/60 flex items-center justify-center ${className}`}>
-        <Disc3 className="w-1/2 h-1/2 text-crimson-700" />
+        <Disc3 className="w-1/2 h-1/2 text-crimson-400" />
       </div>
     );
   }

@@ -16,7 +16,7 @@ const SupportersPage = () => {
           <h1 className="text-5xl sm:text-7xl font-black text-crimson-50 uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.2)]">
             Lumi's Favorite <span className="text-crimson-500">Mortals</span>
           </h1>
-          <p className="text-crimson-400 font-black uppercase tracking-[0.4em] text-[10px] sm:text-xs opacity-80">
+          <p className="text-crimson-400 font-black uppercase tracking-[0.4em] text-[10px] sm:text-xs">
             The Blessed Contributors of the Haven
           </p>
         </div>
@@ -25,13 +25,13 @@ const SupportersPage = () => {
       {!loading && stats && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
           <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/40 p-8 rounded-[2rem] text-center shadow-2xl group hover:border-crimson-500/30 transition-all">
-            <p className="text-[10px] font-black text-crimson-700 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Active Mortals</p>
+            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Active Mortals</p>
             <p className="text-4xl font-black text-crimson-50 tracking-tighter">{stats.supporter_count}</p>
           </div>
           <div className="bg-crimson-950/40 backdrop-blur-xl border border-crimson-900/40 p-8 rounded-[2rem] text-center shadow-2xl group hover:border-crimson-500/30 transition-all">
-            <p className="text-[10px] font-black text-crimson-700 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-500 transition-colors">Sanctuary Growth</p>
+            <p className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.3em] mb-2 group-hover:text-crimson-200 transition-colors">Sanctuary Growth</p>
             <p className="text-4xl font-black text-crimson-50 tracking-tighter">
-              {stats.total_raised} <span className="text-sm font-black text-crimson-600 ml-1">{stats.currency}</span>
+              {stats.total_raised} <span className="text-sm font-black text-crimson-400 ml-1">{stats.currency}</span>
             </p>
           </div>
         </div>
@@ -49,7 +49,7 @@ const SupportersPage = () => {
         ) : error ? (
           <div className="p-10 bg-crimson-950/80 border border-crimson-900 rounded-[2.5rem] text-center shadow-2xl">
             <p className="text-crimson-500 font-black uppercase tracking-widest text-sm">Synchronization Failed</p>
-            <p className="text-xs text-crimson-700 mt-4 font-mono opacity-60">{error}</p>
+            <p className="text-xs text-crimson-400 mt-4 font-mono">{error}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -63,7 +63,7 @@ const SupportersPage = () => {
                 </div>
                 
                 <div className="w-16 h-16 rounded-2xl bg-crimson-500/10 border border-crimson-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 group-hover:bg-crimson-500/20 transition-all duration-500">
-                  <User className="w-8 h-8 text-crimson-600 group-hover:text-crimson-500" />
+                  <User className="w-8 h-8 text-crimson-400 group-hover:text-crimson-200" />
                 </div>
 
                 <div className="space-y-2 relative min-w-0">
@@ -82,15 +82,15 @@ const SupportersPage = () => {
                   </h3>
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                      <span className="text-[9px] font-black px-2.5 py-1 bg-crimson-500/5 text-crimson-600 rounded-lg uppercase tracking-tighter border border-crimson-500/10">
+                      <span className="text-[9px] font-black px-2.5 py-1 bg-crimson-500/5 text-crimson-400 rounded-lg uppercase tracking-tighter border border-crimson-500/10">
                         {supporter.is_subscription ? 'Eternal Bond' : 'Soul Offering'}
                       </span>
-                      <span className="text-[9px] text-crimson-700 font-black uppercase tracking-widest opacity-60">
+                      <span className="text-[9px] text-crimson-400 font-black uppercase tracking-widest">
                         {new Date(supporter.last_payment_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                     </div>
                     {supporter.message && supporter.message !== (supporter.is_subscription ? 'Eternal Bond' : 'Soul Offering') && (
-                      <p className="text-[11px] text-crimson-100/40 italic line-clamp-1 font-medium group-hover:text-crimson-100/60 transition-colors">
+                      <p className="text-[11px] text-crimson-300 italic line-clamp-1 font-medium group-hover:text-crimson-100/60 transition-colors">
                         "{supporter.message}"
                       </p>
                     )}
@@ -108,7 +108,7 @@ const SupportersPage = () => {
       </div>
 
       <div className="max-w-xl mx-auto text-center space-y-8 pt-10">
-        <p className="text-sm sm:text-base text-crimson-100/50 italic leading-relaxed font-medium">
+        <p className="text-sm sm:text-base text-crimson-300 italic leading-relaxed font-medium">
           "Your offerings fuel the sanctuary's fires and keep the dark network nodes humming. 
           Every mortal listed here has earned a special place in the Haven."
         </p>

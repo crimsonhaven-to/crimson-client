@@ -9,7 +9,7 @@ const SelectionBar = ({ selectedCount, allSelected, onToggleAll, onAddToList, on
       </span>
       <button
         onClick={onToggleAll}
-        className="text-[10px] font-black uppercase tracking-widest text-crimson-600 hover:text-crimson-300 transition-colors"
+        className="text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-300 transition-colors"
       >
         {allSelected ? 'Clear' : 'Select all'}
       </button>
@@ -37,7 +37,7 @@ const SelectionBar = ({ selectedCount, allSelected, onToggleAll, onAddToList, on
       <button
         onClick={onDone}
         aria-label="Done selecting"
-        className="p-2 rounded-xl text-crimson-600 hover:text-white hover:bg-crimson-900/50 transition-all"
+        className="p-2 rounded-xl text-crimson-400 hover:text-white hover:bg-crimson-900/50 transition-all"
       >
         <X className="w-4 h-4" />
       </button>

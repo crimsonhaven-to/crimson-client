@@ -7,7 +7,7 @@ export const STATUS_META = {
   empty:     { label: 'Empty',    dot: 'bg-amber-400',  text: 'text-amber-300',  ring: 'border-amber-700/40',  glow: 'shadow-[0_0_10px_rgba(251,191,36,0.5)]' },
   idle:      { label: 'Idle',     dot: 'bg-amber-400',  text: 'text-amber-300',  ring: 'border-amber-700/40',  glow: 'shadow-[0_0_10px_rgba(251,191,36,0.5)]' },
   error:     { label: 'Down',     dot: 'bg-crimson-500', text: 'text-crimson-400', ring: 'border-crimson-600/50', glow: 'shadow-[0_0_10px_rgba(255,0,60,0.5)]' },
-  disabled:  { label: 'Dormant',  dot: 'bg-crimson-900', text: 'text-crimson-600', ring: 'border-crimson-900/50', glow: '' },
+  disabled:  { label: 'Dormant',  dot: 'bg-crimson-900', text: 'text-crimson-400', ring: 'border-crimson-900/50', glow: '' },
 };
 
 export const statusMeta = (s) => STATUS_META[s] || { label: s || '-', dot: 'bg-crimson-700', text: 'text-crimson-500', ring: 'border-crimson-900/50', glow: '' };

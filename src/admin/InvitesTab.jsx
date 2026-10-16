@@ -56,12 +56,12 @@ export default function InvitesTab({ notify }) {
         <h3 className="text-sm font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-2"><Ticket className="w-5 h-5 text-crimson-500" /> Mint Invite Codes</h3>
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="space-y-2 flex-1">
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">How many (1 to 50)</label>
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">How many (1 to 50)</label>
             <input type="number" min="1" max="50" value={count} onChange={(e) => setCount(e.target.value)} className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold focus:outline-none focus:border-crimson-500" />
           </div>
           <div className="space-y-2 flex-1">
-            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">Expires after (hours, optional)</label>
-            <input type="number" min="1" value={ttl} onChange={(e) => setTtl(e.target.value)} placeholder="Never" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-700 focus:outline-none focus:border-crimson-500" />
+            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Expires after (hours, optional)</label>
+            <input type="number" min="1" value={ttl} onChange={(e) => setTtl(e.target.value)} placeholder="Never" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
           </div>
           <div className="flex items-end">
             <button type="submit" disabled={creating} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
@@ -69,11 +69,11 @@ export default function InvitesTab({ notify }) {
             </button>
           </div>
         </div>
-        <p className="text-[10px] text-crimson-700 font-bold leading-relaxed">Single-use codes: recipients paste them into the signup form's invite field. Same contract as the Discord bot.</p>
+        <p className="text-[10px] text-crimson-400 font-bold leading-relaxed">Single-use codes: recipients paste them into the signup form's invite field. Same contract as the Discord bot.</p>
       </form>
 
       {loading ? (
-        <div className="py-16 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading ledger…</div>
+        <div className="py-16 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading ledger…</div>
       ) : (
         <div className="space-y-3">
           {invites.map((inv) => (
@@ -82,10 +82,10 @@ export default function InvitesTab({ notify }) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <code className="text-sm font-black text-crimson-300 tracking-wider font-mono select-all">{inv.code}</code>
                   {inv.used_at
-                    ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-600">Used</span>
+                    ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Used</span>
                     : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Unused</span>}
                 </div>
-                <p className="text-[10px] font-bold text-crimson-700 mt-1 tracking-wide truncate">
+                <p className="text-[10px] font-bold text-crimson-400 mt-1 tracking-wide truncate">
                   by {inv.created_by || '-'} · {fmtDate(inv.created_at)}
                   {inv.expires_at ? ` · expires ${fmtDate(inv.expires_at)}` : ''}
                   {inv.used_by ? ` · used by ${inv.used_by}` : ''}
@@ -106,7 +106,7 @@ export default function InvitesTab({ notify }) {
             </div>
           ))}
           {invites.length === 0 && (
-            <p className="py-16 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No invites minted yet</p>
+            <p className="py-16 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No invites minted yet</p>
           )}
         </div>
       )}

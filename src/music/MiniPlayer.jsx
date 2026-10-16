@@ -63,7 +63,7 @@ export default function MiniPlayer() {
           <button onClick={next} aria-label="Next" className="p-2 text-crimson-300 hover:text-white transition-colors flex-shrink-0">
             <SkipForward className="w-5 h-5" fill="currentColor" />
           </button>
-          <button onClick={close} aria-label="Stop and close" className="hidden sm:block p-2 text-crimson-700 hover:text-crimson-300 transition-colors flex-shrink-0">
+          <button onClick={close} aria-label="Stop and close" className="hidden sm:block p-2 text-crimson-400 hover:text-crimson-300 transition-colors flex-shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>

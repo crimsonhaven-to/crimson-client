@@ -33,7 +33,7 @@ const AnimeCard = ({ title, poster, kind, onSelect }) => (
       <span className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 py-0.5 rounded-md border ${kindStyle(kind).badge}`}>
         {kindStyle(kind).label}
       </span>
-      <ChevronRight className="w-4 h-4 text-crimson-700" />
+      <ChevronRight className="w-4 h-4 text-crimson-400" />
     </div>
   </div>
 );
@@ -60,7 +60,7 @@ function ExtensionBanner() {
         <span className="block text-sm font-black text-crimson-50 tracking-tight">
           Psst, darling, claim the Crimson Companion. 🦇
         </span>
-        <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
+        <span className="block text-[11px] sm:text-xs text-crimson-300 font-medium leading-snug">
           A featherlight browser familiar that resolves &amp; plays your sources locally, straight from your own hands.
         </span>
       </span>
@@ -72,7 +72,7 @@ function ExtensionBanner() {
         type="button"
         onClick={onDismiss}
         aria-label="Dismiss"
-        className="p-1.5 rounded-lg text-crimson-600 hover:text-crimson-300 hover:bg-crimson-900/40 transition-all shrink-0"
+        className="p-1.5 rounded-lg text-crimson-400 hover:text-crimson-300 hover:bg-crimson-900/40 transition-all shrink-0"
       >
         <X className="w-4 h-4" />
       </button>
@@ -95,7 +95,7 @@ function AdblockerNotice() {
         <span className="block text-sm font-black text-crimson-50 tracking-tight">
           Lower your wards on the haven, darling. 🩸
         </span>
-        <span className="block text-[11px] sm:text-xs text-crimson-100/60 font-medium leading-snug">
+        <span className="block text-[11px] sm:text-xs text-crimson-300 font-medium leading-snug">
           Crimson now conjures &amp; resolves your sources right here in your own browser, and a hungry adblocker
           mistakes that ritual for prey, severing the threads before the stream can breathe. Whitelist this page
           so the magic may flow.
@@ -170,7 +170,7 @@ export default function LandingPage() {
         <h1 className="text-[clamp(1.75rem,10vw,6rem)] font-black tracking-tighter text-crimson-50 uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)] whitespace-nowrap">
           crimson<span className="text-crimson-500 font-light opacity-90">haven</span>
         </h1>
-        <p className="text-crimson-400 text-sm sm:text-base tracking-[0.4em] font-black uppercase opacity-70 px-4">
+        <p className="text-crimson-400 text-sm sm:text-base tracking-[0.4em] font-black uppercase px-4">
           Seamlessly Streaming the Dark Network
         </p>
       </div>
@@ -187,7 +187,7 @@ export default function LandingPage() {
             onFocus={() => { if (queryName.length >= 3) setShowSuggestions(true); }} 
             onChange={(e) => { setQueryName(e.target.value); if (e.target.value.length >= 3) setShowSuggestions(true); }} 
             onBlur={() => { setTimeout(() => setShowSuggestions(false), 200); }} 
-            className="w-full py-5 sm:py-6 pl-16 pr-24 focus:outline-none font-bold tracking-wide appearance-none bg-transparent text-crimson-50 placeholder-crimson-500/50 text-sm sm:text-lg"
+            className="w-full py-5 sm:py-6 pl-16 pr-24 focus:outline-none font-bold tracking-wide appearance-none bg-transparent text-crimson-50 placeholder-crimson-400 text-sm sm:text-lg"
           />
           <button 
             type="submit" 
@@ -215,7 +215,7 @@ export default function LandingPage() {
                 ))}
               </div>
             ) : (
-              <div className="p-8 text-xs font-black uppercase tracking-[0.2em] text-crimson-700 text-center italic">
+              <div className="p-8 text-xs font-black uppercase tracking-[0.2em] text-crimson-400 text-center italic">
                 No tracked manifestations found
               </div>
             )}

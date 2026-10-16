@@ -48,7 +48,7 @@ export default function TimeChart({ series, unit, stacked, start, end, step }) {
 
   if (!rows.length || !columns) {
     return (
-      <div className="h-40 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.25em] text-crimson-700">
+      <div className="h-40 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.25em] text-crimson-400">
         Nothing recorded in this window
       </div>
     );
@@ -62,7 +62,7 @@ export default function TimeChart({ series, unit, stacked, start, end, step }) {
     <div className="space-y-2">
       <div className="flex gap-2">
         {/* HTML rather than <text>, so labels are not distorted by the stretched SVG. */}
-        <div className="w-14 shrink-0 h-40 flex flex-col justify-between items-end py-0 text-[9px] font-black tabular-nums text-crimson-700">
+        <div className="w-14 shrink-0 h-40 flex flex-col justify-between items-end py-0 text-[9px] font-black tabular-nums text-crimson-400">
           {ticks.map((t, i) => <span key={i}>{formatValue(unit, t)}</span>)}
         </div>
 
@@ -133,7 +133,7 @@ export default function TimeChart({ series, unit, stacked, start, end, step }) {
         </div>
       </div>
 
-      <div className="ml-16 flex justify-between text-[9px] font-black tabular-nums text-crimson-700">
+      <div className="ml-16 flex justify-between text-[9px] font-black tabular-nums text-crimson-400">
         <span>{formatTime(times[0], span)}</span>
         {columns > 2 && <span>{formatTime(times[Math.floor(columns / 2)], span)}</span>}
         <span>{formatTime(times[columns - 1], span)}</span>
@@ -152,7 +152,7 @@ export default function TimeChart({ series, unit, stacked, start, end, step }) {
             </div>
           );
         })}
-        <span className="text-[9px] font-bold text-crimson-700 ml-auto tabular-nums">
+        <span className="text-[9px] font-bold text-crimson-400 ml-auto tabular-nums">
           {hoveredAt != null ? formatTimestamp(hoveredAt) : 'latest'}
         </span>
       </div>

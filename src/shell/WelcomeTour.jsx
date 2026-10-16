@@ -204,7 +204,7 @@ const WelcomeTour = ({ musicEnabled, onClose }) => {
         <button
           onClick={close}
           aria-label="Close"
-          className="absolute top-5 right-5 z-10 p-2 rounded-xl text-crimson-600 hover:text-white hover:bg-crimson-900/40 transition-all"
+          className="absolute top-5 right-5 z-10 p-2 rounded-xl text-crimson-400 hover:text-white hover:bg-crimson-900/40 transition-all"
         >
           <X className="w-5 h-5" />
         </button>
@@ -224,7 +224,7 @@ const WelcomeTour = ({ musicEnabled, onClose }) => {
                 <h3 className="text-base font-black text-crimson-50 tracking-tight truncate">Luminas Crimsonveil</h3>
                 <Crown className="w-3.5 h-3.5 text-crimson-500 shrink-0" />
               </div>
-              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-600 mt-0.5">
+              <p className="text-[9px] font-black uppercase tracking-[0.3em] text-crimson-400 mt-0.5">
                 {isFirst ? "The Queen's Welcome" : `Rite ${step} of ${steps.length - 1}`}
               </p>
             </div>

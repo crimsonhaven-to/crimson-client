@@ -14,12 +14,12 @@ const NotFound = () => {
              <Ghost className="w-3 h-3" /> Ethereal Error
           </div>
           <h1 className="text-5xl sm:text-8xl font-black text-crimson-50 uppercase tracking-tighter drop-shadow-[0_10px_30px_rgba(255,0,60,0.3)] leading-none">
-            404 <span className="text-crimson-500">.</span> <span className="font-light opacity-50">Lost</span>
+            404 <span className="text-crimson-500">.</span> <span className="font-light">Lost</span>
           </h1>
           <p className="text-xl sm:text-2xl text-crimson-100/90 font-medium italic leading-relaxed tracking-tight">
             "Oh dear… you’ve wandered into a forgotten corridor of my castle."
           </p>
-          <p className="text-[10px] sm:text-xs text-crimson-600 font-black uppercase tracking-[0.4em] flex items-center justify-center md:justify-start gap-4">
+          <p className="text-[10px] sm:text-xs text-crimson-400 font-black uppercase tracking-[0.4em] flex items-center justify-center md:justify-start gap-4">
             <span className="w-12 h-px bg-crimson-900/50 hidden md:block"></span>
             Luminas, the Vampire Queen
           </p>
@@ -33,9 +33,9 @@ const NotFound = () => {
             <div className="w-2.5 h-2.5 rounded-full bg-crimson-500 shadow-[0_0_15px_#ff003c]"></div>
             What happened?
           </h2>
-          <p className="text-crimson-200/70 leading-relaxed text-sm sm:text-lg font-medium">
+          <p className="text-crimson-300 leading-relaxed text-sm sm:text-lg font-medium">
             Either my royal librarians misplaced a link, or you tried to sneak into a room that doesn’t exist. 
-            <span className="block mt-2 italic text-crimson-500/60 text-xs sm:text-sm">(Don’t worry, I do that sometimes too.)</span>
+            <span className="block mt-2 italic text-crimson-400 text-xs sm:text-sm">(Don’t worry, I do that sometimes too.)</span>
           </p>
         </div>
 
@@ -59,18 +59,18 @@ const NotFound = () => {
           </div>
         </div>
 
-        <div className="pt-10 italic text-crimson-300/40 text-sm sm:text-base border-t border-crimson-900/30 relative">
+        <div className="pt-10 italic text-crimson-400 text-sm sm:text-base border-t border-crimson-900/30 relative">
           <p className="mb-3 leading-relaxed font-medium">
             "I’ve ruled for centuries, and even I get lost in my own domain. <br className="hidden sm:block" />
             Don’t blush. Click the pretty button above and I’ll pretend this never happened."
           </p>
-          <p className="text-crimson-600 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs flex items-center gap-3">
+          <p className="text-crimson-400 font-black uppercase tracking-[0.3em] text-[10px] sm:text-xs flex items-center gap-3">
              <span className="block w-6 h-px bg-crimson-900"></span>
              Lumi, adjusting her tiny velvet cape
           </p>
         </div>
 
-        <div className="text-[9px] font-mono text-crimson-900 font-black uppercase tracking-[0.4em] pt-8 opacity-40">
+        <div className="text-[9px] font-mono text-crimson-400 font-black uppercase tracking-[0.4em] pt-8">
           SYSTEM_ERROR: 0x404 <span className="mx-2">//</span> LINK_SEVERED
         </div>
       </div>

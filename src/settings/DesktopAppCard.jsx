@@ -48,7 +48,7 @@ export default function DesktopAppCard() {
           <MonitorDown className="w-6 h-6" />
           <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">The App</h3>
         </div>
-        <p className="text-xs text-crimson-300/60 font-medium leading-relaxed max-w-md">
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed max-w-md">
           Version {release.version}, for desktop and Android. Every source works without the browser extension,
           and downloads become real files that are never evicted. The desktop app updates itself and needs no
           Discord helper.
@@ -72,7 +72,7 @@ export default function DesktopAppCard() {
           </li>
         ))}
       </ul>
-      <p className="relative z-10 text-[11px] text-crimson-400/70 leading-relaxed font-medium max-w-md">
+      <p className="relative z-10 text-[11px] text-crimson-400 leading-relaxed font-medium max-w-md">
         The app is not code signed. Windows may warn on first start: choose <em>More info</em>, then{' '}
         <em>Run anyway</em>. On Android, allow installing from your browser when asked.
       </p>

@@ -46,7 +46,7 @@ export default function MusicNowPlaying() {
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl font-black text-crimson-50 leading-tight">{track.title}</h1>
           <p className="text-crimson-400 font-bold mt-1">{track.artists.join(', ')}</p>
-          {track.album && <p className="text-crimson-700 text-sm mt-0.5">{track.album}</p>}
+          {track.album && <p className="text-crimson-400 text-sm mt-0.5">{track.album}</p>}
           {state.error && <p className="text-amber-400 text-xs font-bold mt-2">{state.error}</p>}
         </div>
 
@@ -61,7 +61,7 @@ export default function MusicNowPlaying() {
             aria-label="Seek"
             className="w-full accent-crimson-500"
           />
-          <div className="flex justify-between text-[11px] font-bold text-crimson-600 tabular-nums">
+          <div className="flex justify-between text-[11px] font-bold text-crimson-400 tabular-nums">
             <span>{formatTime(state.currentTime)}</span>
             <span>{formatTime(state.duration)}</span>
           </div>
@@ -69,7 +69,7 @@ export default function MusicNowPlaying() {
 
         <div className="flex items-center justify-between px-2">
           <button onClick={toggleShuffle} aria-label="Shuffle" aria-pressed={state.shuffle}
-            className={`p-2 transition-colors ${state.shuffle ? 'text-crimson-400' : 'text-crimson-800 hover:text-crimson-500'}`}>
+            className={`p-2 transition-colors ${state.shuffle ? 'text-crimson-500' : 'text-crimson-100/50 hover:text-crimson-200'}`}>
             <Shuffle className="w-5 h-5" />
           </button>
           <button onClick={previous} aria-label="Previous" className="p-2 text-crimson-200 hover:text-white">
@@ -85,7 +85,7 @@ export default function MusicNowPlaying() {
             <SkipForward className="w-7 h-7" fill="currentColor" />
           </button>
           <button onClick={toggleRepeat} aria-label={`Repeat: ${state.repeat}`}
-            className={`p-2 transition-colors ${state.repeat !== REPEAT_OFF ? 'text-crimson-400' : 'text-crimson-800 hover:text-crimson-500'}`}>
+            className={`p-2 transition-colors ${state.repeat !== REPEAT_OFF ? 'text-crimson-500' : 'text-crimson-100/50 hover:text-crimson-200'}`}>
             <RepeatIcon className="w-5 h-5" />
           </button>
         </div>
@@ -96,7 +96,7 @@ export default function MusicNowPlaying() {
           <ListMusic className="w-4 h-4" /> Up next
         </h2>
         {upcoming.length === 0 ? (
-          <p className="text-crimson-700 text-sm italic">The queue ends after this track.</p>
+          <p className="text-crimson-400 text-sm italic">The queue ends after this track.</p>
         ) : (
           <ol className="space-y-1">
             {upcoming.map((index, offset) => {
@@ -110,7 +110,7 @@ export default function MusicNowPlaying() {
                       <p className="text-sm font-bold text-crimson-100 truncate">{t.title}</p>
                       <p className="text-xs text-crimson-500 truncate">{t.artists.join(', ')}</p>
                     </div>
-                    <span className="text-[11px] text-crimson-700 tabular-nums">{formatTime(t.duration_ms / 1000)}</span>
+                    <span className="text-[11px] text-crimson-400 tabular-nums">{formatTime(t.duration_ms / 1000)}</span>
                   </button>
                 </li>
               );

@@ -63,12 +63,12 @@ export default function ReviewDialog({ track, onClose, onChosen }) {
             {track.artists.join(', ')}{track.album ? ` · ${track.album}` : ''} · {formatTime(track.duration_ms / 1000)}
           </p>
         </div>
-        <button onClick={onClose} aria-label="Close" className="p-1 text-crimson-600 hover:text-white"><X className="w-5 h-5" /></button>
+        <button onClick={onClose} aria-label="Close" className="p-1 text-crimson-400 hover:text-white"><X className="w-5 h-5" /></button>
       </div>
 
       <form onSubmit={search} className="p-4 flex gap-2 border-b border-crimson-900/30">
         <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search again..."
-          className="flex-grow min-w-0 px-4 py-2.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-sm text-crimson-50 placeholder-crimson-700 focus:outline-none focus:border-crimson-500" />
+          className="flex-grow min-w-0 px-4 py-2.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-sm text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
         <button type="submit" disabled={busy} className="px-4 rounded-xl bg-crimson-900/60 hover:bg-crimson-800 text-crimson-200 disabled:opacity-40" aria-label="Search">
           <Search className="w-4 h-4" />
         </button>
@@ -77,9 +77,9 @@ export default function ReviewDialog({ track, onClose, onChosen }) {
       <div className="overflow-y-auto flex-grow p-2">
         {error && <p className="px-3 py-2 text-xs font-bold text-amber-400">{error}</p>}
         {candidates === null || busy ? (
-          <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 text-crimson-600 animate-spin" /></div>
+          <div className="py-12 flex justify-center"><Loader2 className="w-6 h-6 text-crimson-400 animate-spin" /></div>
         ) : candidates.length === 0 ? (
-          <p className="py-12 text-center text-crimson-700 text-sm italic">Nothing found. Search again or paste a link below.</p>
+          <p className="py-12 text-center text-crimson-400 text-sm italic">Nothing found. Search again or paste a link below.</p>
         ) : (
           <ul className="space-y-1">
             {candidates.map((c) => {
@@ -105,9 +105,9 @@ export default function ReviewDialog({ track, onClose, onChosen }) {
       <form onSubmit={(e) => { e.preventDefault(); if (link.trim()) choose(link.trim()); }}
         className="p-4 border-t border-crimson-900/40 flex gap-2">
         <div className="relative flex-grow min-w-0">
-          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-700" />
+          <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-crimson-400" />
           <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="Or paste a YouTube, SoundCloud or Bandcamp link"
-            className="w-full pl-9 pr-3 py-2.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-sm text-crimson-50 placeholder-crimson-700 focus:outline-none focus:border-crimson-500" />
+            className="w-full pl-9 pr-3 py-2.5 bg-crimson-950/40 border border-crimson-900/60 rounded-xl text-sm text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
         </div>
         <button type="submit" disabled={busy || !link.trim().startsWith('https://')}
           className="px-4 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[10px] font-black uppercase tracking-widest disabled:opacity-40">

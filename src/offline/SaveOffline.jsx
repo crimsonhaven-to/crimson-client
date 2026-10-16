@@ -57,7 +57,7 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
   return (
     <Dialog icon={ArrowDownToLine} title="Save offline" subtitle={itemLabel(items[0])} onClose={onClose}>
       {choices.length === 0 ? (
-        <p className="text-xs text-crimson-300/70 font-medium">
+        <p className="text-xs text-crimson-400 font-medium">
           None of these sources can be saved. Embedded players never hand over their video; try a rescan or another episode.
         </p>
       ) : (
@@ -98,7 +98,7 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
                 ))}
               </div>
               {wholeSeason && (
-                <p className="text-[11px] text-crimson-300/60 font-medium">
+                <p className="text-[11px] text-crimson-400 font-medium">
                   Each later episode is looked up on {stream?.source || 'this source'} when its turn comes.
                   That lookup would interrupt a video you are watching, so it waits until no player is open.
                 </p>
@@ -106,7 +106,7 @@ function SaveDialog({ streams, activeStreamIdx, items, onClose }) {
             </div>
           )}
 
-          <p className="text-[11px] text-crimson-300/60 font-medium">
+          <p className="text-[11px] text-crimson-400 font-medium">
             Downloads run in this tab while Crimson Haven is open and continue the next time you open it.
           </p>
         </>

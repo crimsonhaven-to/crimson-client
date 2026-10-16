@@ -33,13 +33,13 @@ function Notice({ icon: Icon, children }) {
 
 function Status({ entry, progress }) {
   if (entry.status === 'done') {
-    return <span className="text-[10px] text-crimson-600 font-bold">{[entry.source, formatBytes(entry.bytes)].filter(Boolean).join(' · ')}</span>;
+    return <span className="text-[10px] text-crimson-400 font-bold">{[entry.source, formatBytes(entry.bytes)].filter(Boolean).join(' · ')}</span>;
   }
   if (entry.status === 'failed') {
     return <span className="text-[10px] text-amber-400 font-bold">{entry.error || 'Download failed.'}</span>;
   }
   if (entry.status === 'queued') {
-    return <span className="text-[10px] text-crimson-600 font-bold">Queued · {entry.wanted.source}</span>;
+    return <span className="text-[10px] text-crimson-400 font-bold">Queued · {entry.wanted.source}</span>;
   }
   const fraction = progress?.total ? progress.done / progress.total : null;
   return (
@@ -69,7 +69,7 @@ function EntryRow({ entry, progress }) {
           <Play className="w-4 h-4 translate-x-px" fill="currentColor" />
         </Link>
       ) : (
-        <span className="w-10 h-10 rounded-full border border-crimson-900/60 text-crimson-600 flex items-center justify-center flex-shrink-0">
+        <span className="w-10 h-10 rounded-full border border-crimson-900/60 text-crimson-400 flex items-center justify-center flex-shrink-0">
           {entry.status === 'failed' ? <AlertTriangle className="w-4 h-4 text-amber-400" />
             : entry.status === 'queued' ? <Clock className="w-4 h-4" />
               : <Loader2 className="w-4 h-4 animate-spin" />}
@@ -89,7 +89,7 @@ function EntryRow({ entry, progress }) {
         </button>
       )}
       <button onClick={() => removeDownload(entry.id)} aria-label="Remove from this device" title="Remove from this device"
-        className="p-2 text-crimson-700 hover:text-crimson-400">
+        className="p-2 text-crimson-400 hover:text-crimson-200">
         <Trash2 className="w-4 h-4" />
       </button>
     </li>
@@ -105,10 +105,10 @@ function TitleCard({ title, progress }) {
         <div className="flex items-start gap-3">
           <div className="min-w-0 flex-grow">
             <Link to={title.href} className="text-lg font-black text-crimson-50 hover:text-crimson-300 tracking-tight">{title.name}</Link>
-            <p className="text-[11px] text-crimson-600 font-bold">{formatBytes(kept)} on this device</p>
+            <p className="text-[11px] text-crimson-400 font-bold">{formatBytes(kept)} on this device</p>
           </div>
           <button onClick={() => removeTitle(title.key)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-crimson-600 hover:text-crimson-300 hover:bg-crimson-900/30">
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-300 hover:bg-crimson-900/30">
             <Trash2 className="w-3.5 h-3.5" /> Remove all
           </button>
         </div>
@@ -152,7 +152,7 @@ export default function Downloads() {
         </div>
       )}
 
-      <p className="text-[11px] text-crimson-700 font-medium max-w-2xl">
+      <p className="text-[11px] text-crimson-400 font-medium max-w-2xl">
         Downloads live {window.CrimsonNative ? 'in a folder on this device' : 'in this browser only'}. They run while
         Crimson Haven is open, pick up where they stopped the next time you open it, and are deleted from the device
         when you sign out.

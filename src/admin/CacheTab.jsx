@@ -152,7 +152,7 @@ export default function CacheTab({ notify }) {
           <DownloadCloud className="w-7 h-7 text-crimson-500" />
           <div className="flex-grow">
             <h3 className="text-lg font-black text-crimson-50 uppercase tracking-tighter">Video Cache</h3>
-            <p className="text-[10px] font-bold text-crimson-700 uppercase tracking-widest">Download played episodes to a NAS &amp; replay from disk</p>
+            <p className="text-[10px] font-bold text-crimson-400 uppercase tracking-widest">Download played episodes to a NAS &amp; replay from disk</p>
           </div>
           <button
             onClick={toggleGlobal}
@@ -163,7 +163,7 @@ export default function CacheTab({ notify }) {
             {overview?.enabled ? 'Caching On' : 'Caching Off'}
           </button>
         </div>
-        <p className="text-xs text-crimson-300/70 font-medium leading-relaxed relative z-10 max-w-3xl">
+        <p className="text-xs text-crimson-400 font-medium leading-relaxed relative z-10 max-w-3xl">
           With caching on, the first time an episode is played the backend downloads the whole stream (remuxed to mp4) to the first enabled, writable target below, tagged with its audio/subtitle language. On the next play it surfaces as a source named after that target, served straight off the NAS. The path is the one <span className="text-crimson-400 font-bold">inside the backend container</span>: bind-mount your NAS share (e.g. <code className="font-mono text-crimson-400">- /nas/cache:/crimson/cache</code>) and register <code className="font-mono text-crimson-400">/crimson/cache</code>.
         </p>
         {overview && !overview.ffmpeg_available && (
@@ -190,12 +190,12 @@ export default function CacheTab({ notify }) {
         <form onSubmit={add} className="space-y-4 relative z-10">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="space-y-2 sm:w-64">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">Name (shown as source)</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Crimson Vault" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-700 focus:outline-none focus:border-crimson-500" />
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">Name (shown as source)</label>
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Crimson Vault" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="space-y-2 flex-1">
-              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 ml-1">In-container path</label>
-              <input value={path} onChange={(e) => setPath(e.target.value)} placeholder="/crimson/cache" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold font-mono placeholder-crimson-700 focus:outline-none focus:border-crimson-500" />
+              <label className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 ml-1">In-container path</label>
+              <input value={path} onChange={(e) => setPath(e.target.value)} placeholder="/crimson/cache" className="w-full px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 text-sm font-bold font-mono placeholder-crimson-400 focus:outline-none focus:border-crimson-500" />
             </div>
             <div className="flex items-end">
               <button type="submit" disabled={adding} className="px-6 py-3 bg-crimson-600 hover:bg-crimson-500 disabled:bg-crimson-900/50 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 h-[46px]">
@@ -211,7 +211,7 @@ export default function CacheTab({ notify }) {
         {mounts && (
           <div className="relative z-10 space-y-2">
             {mounts.length === 0 ? (
-              <p className="text-[11px] text-crimson-700 font-bold italic">No candidate mounts detected. Type the in-container path above.</p>
+              <p className="text-[11px] text-crimson-400 font-bold italic">No candidate mounts detected. Type the in-container path above.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {mounts.map((m) => {
@@ -222,7 +222,7 @@ export default function CacheTab({ notify }) {
                       <FolderOpen className="w-4 h-4 text-crimson-500 flex-shrink-0" />
                       <span className="min-w-0 flex-grow">
                         <span className="block font-mono text-xs text-crimson-200 truncate">{m.path}</span>
-                        <span className={`block text-[9px] font-black uppercase tracking-widest ${st.ok ? 'text-green-500/80' : 'text-crimson-600'}`}>
+                        <span className={`block text-[9px] font-black uppercase tracking-widest ${st.ok ? 'text-green-500/80' : 'text-crimson-400'}`}>
                           {m.fstype} · {st.text}{m.already_added ? ' · added' : ''}
                         </span>
                       </span>
@@ -235,9 +235,9 @@ export default function CacheTab({ notify }) {
         )}
 
         {loading ? (
-          <div className="py-10 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading…</div>
+          <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading…</div>
         ) : targets.length === 0 ? (
-          <p className="py-10 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">No cache targets registered yet</p>
+          <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">No cache targets registered yet</p>
         ) : (
           <div className="space-y-3 relative z-10">
             {targets.map((t) => {
@@ -249,10 +249,10 @@ export default function CacheTab({ notify }) {
                       <span className="text-sm font-bold text-crimson-50 truncate">{t.name}</span>
                       {t.enabled
                         ? <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/30 text-green-400">Enabled</span>
-                        : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-600">Disabled</span>}
+                        : <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-crimson-900/40 border border-crimson-800/50 text-crimson-400">Disabled</span>}
                       <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${st.ok ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-crimson-500/10 border-crimson-500/30 text-crimson-500'}`}>{st.text}</span>
                     </div>
-                    <p className="text-[11px] font-mono text-crimson-500/80 mt-1.5 truncate">{t.path}</p>
+                    <p className="text-[11px] font-mono text-crimson-400 mt-1.5 truncate">{t.path}</p>
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button title="Rename" disabled={busyId === t.id} onClick={() => renameTarget(t)}
@@ -289,9 +289,9 @@ export default function CacheTab({ notify }) {
           </div>
         </div>
         {loading ? (
-          <div className="py-10 text-center text-crimson-600 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading…</div>
+          <div className="py-10 text-center text-crimson-400 animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Loading…</div>
         ) : episodes.length === 0 ? (
-          <p className="py-10 text-center text-crimson-700 text-[10px] font-black uppercase tracking-[0.3em] italic">Nothing cached yet</p>
+          <p className="py-10 text-center text-crimson-400 text-[10px] font-black uppercase tracking-[0.3em] italic">Nothing cached yet</p>
         ) : (
           <div className="space-y-2 relative z-10">
             {episodes.map((ep) => (
@@ -304,9 +304,9 @@ export default function CacheTab({ notify }) {
                         <Languages className="w-3 h-3" /> {ep.language}
                       </span>
                     )}
-                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${CACHE_STATUS_STYLES[ep.status] || 'bg-crimson-900/40 border-crimson-800/50 text-crimson-600'}`}>{ep.status}</span>
+                    <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${CACHE_STATUS_STYLES[ep.status] || 'bg-crimson-900/40 border-crimson-800/50 text-crimson-400'}`}>{ep.status}</span>
                   </div>
-                  <p className="text-[10px] font-medium text-crimson-600 mt-1 truncate">
+                  <p className="text-[10px] font-medium text-crimson-400 mt-1 truncate">
                     {ep.target_name ? `${ep.target_name} · ` : ''}{ep.source_origin || '-'}
                     {ep.file_size ? ` · ${formatBytes(ep.file_size)}` : ''}
                     {ep.status === 'failed' && ep.error ? ` · ${ep.error}` : ''}

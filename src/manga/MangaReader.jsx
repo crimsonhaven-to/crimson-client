@@ -224,7 +224,7 @@ const MangaReader = () => {
         </Link>
         <div className="min-w-0 flex-grow">
           <p className="text-xs sm:text-sm font-black text-crimson-50 truncate tracking-tight">{title}</p>
-          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 truncate">
+          <p className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 truncate">
             {currentChapter ? chapterLabel(currentChapter) : 'Chapter'}
           </p>
         </div>
@@ -330,7 +330,7 @@ const MangaReader = () => {
       {(pagesLoading || resolvingResume) ? (
         <div className="flex flex-col items-center justify-center py-40 gap-4">
           <Loader2 className="w-8 h-8 text-crimson-500 animate-spin" />
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-600">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">
             {resolvingResume ? 'Finding your place' : 'Summoning pages'}
           </p>
         </div>
@@ -370,7 +370,7 @@ const MangaReader = () => {
 function ChapterFooter({ prevChapter, nextChapter, onGo, chapterLabel }) {
   if (!prevChapter && !nextChapter) {
     return (
-      <div className="text-center py-12 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-700">
+      <div className="text-center py-12 text-[10px] font-black uppercase tracking-[0.3em] text-crimson-400">
         <BookOpen className="w-6 h-6 mx-auto mb-3 text-crimson-800" />
         The end, for now
       </div>
@@ -382,7 +382,7 @@ function ChapterFooter({ prevChapter, nextChapter, onGo, chapterLabel }) {
         <button onClick={() => onGo(prevChapter)} className="flex-1 flex items-center gap-3 px-4 py-4 rounded-xl bg-crimson-950/50 border border-crimson-900/60 hover:border-crimson-600/60 transition-all text-left group">
           <ChevronLeft className="w-5 h-5 text-crimson-500 shrink-0 group-hover:-translate-x-1 transition-transform" />
           <span className="min-w-0">
-            <span className="block text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600">Previous</span>
+            <span className="block text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400">Previous</span>
             <span className="block text-xs font-bold text-crimson-200 truncate">{chapterLabel(prevChapter)}</span>
           </span>
         </button>

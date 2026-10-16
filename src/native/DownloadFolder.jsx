@@ -35,7 +35,7 @@ export default function DownloadFolder({ onMoved }) {
   return (
     <div className="space-y-1">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="text-[11px] text-crimson-600 font-bold break-all">Saved in {root || '...'}</span>
+        <span className="text-[11px] text-crimson-400 font-bold break-all">Saved in {root || '...'}</span>
         {media.chooseRoot && <button onClick={change} disabled={moving}
           className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-500 hover:text-crimson-300 disabled:opacity-50">
           {moving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FolderOpen className="w-3.5 h-3.5" />}

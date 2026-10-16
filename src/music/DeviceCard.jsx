@@ -45,7 +45,7 @@ export default function DeviceCard() {
 
       <div className="space-y-2">
         <p className="text-sm font-bold text-crimson-100">Preload upcoming songs</p>
-        <p className="text-xs text-crimson-600">
+        <p className="text-xs text-crimson-400">
           Keeps the next songs of the queue here, so a patchy connection does not stop the music.
         </p>
         <div className="flex flex-wrap gap-2 pt-1">
@@ -68,7 +68,7 @@ export default function DeviceCard() {
 
       <div className="space-y-2">
         <p className="text-sm font-bold text-crimson-100">Downloads</p>
-        <p className="text-xs text-crimson-600">
+        <p className="text-xs text-crimson-400">
           {playlistCount === 0
             ? 'Open a playlist and press Download to play it without a connection.'
             : `${playlistCount} ${playlistCount === 1 ? 'playlist' : 'playlists'}, ${downloads.stored.size} songs`}
@@ -87,7 +87,7 @@ export default function DeviceCard() {
         )}
         <DownloadFolder />
         {playlistCount > 0 && (
-          <button onClick={removeAll} className="text-[10px] font-black uppercase tracking-widest text-crimson-700 hover:text-crimson-400">
+          <button onClick={removeAll} className="text-[10px] font-black uppercase tracking-widest text-crimson-400 hover:text-crimson-200">
             Remove all downloads
           </button>
         )}

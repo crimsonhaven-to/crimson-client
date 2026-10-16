@@ -11,7 +11,7 @@ import { usePublicConfig } from '../api/client';
 function Field({ icon: Icon, children }) {
   return (
     <div className="relative flex items-center">
-      <Icon className="absolute left-5 w-4 h-4 text-crimson-500/60 pointer-events-none" />
+      <Icon className="absolute left-5 w-4 h-4 text-crimson-400 pointer-events-none" />
       {children}
     </div>
   );
@@ -19,7 +19,7 @@ function Field({ icon: Icon, children }) {
 
 const inputCls =
   'w-full py-4 pl-12 pr-4 bg-crimson-950/40 border border-crimson-900/60 rounded-2xl ' +
-  'text-crimson-50 placeholder-crimson-500/40 focus:outline-none focus:border-crimson-500 ' +
+  'text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-500 ' +
   'focus:shadow-[0_0_30px_rgba(255,0,60,0.12)] transition-all font-semibold text-sm backdrop-blur-md';
 
 const primaryBtn =
@@ -137,7 +137,7 @@ const LoginWall = () => {
           </div>
           <div className="space-y-2">
             <h3 className="text-xl font-black text-crimson-50 uppercase tracking-tighter">Verify your email</h3>
-            <p className="text-xs text-crimson-300/70 leading-relaxed font-medium">
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium">
               We sent a confirmation link to <span className="text-crimson-400 font-bold break-all">{email}</span>.
               Click it to activate your account, then sign in.
             </p>
@@ -149,7 +149,7 @@ const LoginWall = () => {
             </button>
             <button
               onClick={() => switchMode('login')}
-              className="w-full text-center text-[10px] text-crimson-700 hover:text-crimson-500 transition-colors font-black uppercase tracking-[0.2em]"
+              className="w-full text-center text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]"
             >
               Back to sign in
             </button>
@@ -174,7 +174,7 @@ const LoginWall = () => {
             {busy ? <RefreshCw className="w-5 h-5 animate-spin" /> : <>Send Reset Link <KeyRound className="w-4 h-4" /></>}
           </button>
           <button type="button" onClick={() => switchMode('login')}
-            className="w-full flex items-center justify-center gap-2 text-[10px] text-crimson-700 hover:text-crimson-500 transition-colors font-black uppercase tracking-[0.2em]">
+            className="w-full flex items-center justify-center gap-2 text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to sign in
           </button>
         </form>
@@ -207,7 +207,7 @@ const LoginWall = () => {
       {isMnemonic ? (
         mnemonicView === 'signin' ? (
           <form onSubmit={handleMnemonicLogin} className="space-y-5">
-            <p className="text-xs text-crimson-300/60 leading-relaxed font-medium text-center">
+            <p className="text-xs text-crimson-400 leading-relaxed font-medium text-center">
               Paste your 12-word mnemonic to sign in. No email, no password. Your
               key never leaves this device.
             </p>
@@ -222,7 +222,7 @@ const LoginWall = () => {
             </button>
 
             <button type="button" onClick={handleGenerateIdentity}
-              className="w-full text-center text-[10px] text-crimson-700 hover:text-crimson-500 transition-colors font-black uppercase tracking-[0.2em]">
+              className="w-full text-center text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
               No mnemonic yet? Create a new identity
             </button>
           </form>
@@ -237,7 +237,7 @@ const LoginWall = () => {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-crimson-900/20 hover:bg-crimson-900/40 text-crimson-100 rounded-2xl transition-all text-[10px] font-black uppercase tracking-widest border border-crimson-800/50">
                 {copied ? <><CheckCircle2 className="w-4 h-4 text-green-500" /> Copied</> : <><Copy className="w-4 h-4" /> Copy mnemonic</>}
               </button>
-              <p className="text-[11px] text-crimson-300/60 leading-relaxed font-medium">
+              <p className="text-[11px] text-crimson-400 leading-relaxed font-medium">
                 Save these 12 words somewhere safe. They are the <span className="text-crimson-400 font-bold">only</span> way
                 back into this account. We never store them; lose them and the account is gone forever.
               </p>
@@ -257,7 +257,7 @@ const LoginWall = () => {
             </button>
 
             <button type="button" onClick={() => switchMode('mnemonic')}
-              className="w-full flex items-center justify-center gap-2 text-[10px] text-crimson-700 hover:text-crimson-500 transition-colors font-black uppercase tracking-[0.2em]">
+              className="w-full flex items-center justify-center gap-2 text-[10px] text-crimson-400 hover:text-crimson-200 transition-colors font-black uppercase tracking-[0.2em]">
               <ArrowLeft className="w-3.5 h-3.5" /> Back to mnemonic sign in
             </button>
           </form>
@@ -274,7 +274,7 @@ const LoginWall = () => {
             onChange={(e) => setPassword(e.target.value)} className={inputCls}
             autoComplete={isRegister ? 'new-password' : 'current-password'} minLength={8} />
           <button type="button" onClick={() => setShowPw((v) => !v)}
-            className="absolute right-4 text-crimson-500/60 hover:text-crimson-400 transition-colors" tabIndex={-1}>
+            className="absolute right-4 text-crimson-400 hover:text-crimson-200 transition-colors" tabIndex={-1}>
             {showPw ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </Field>
@@ -309,7 +309,7 @@ const LoginWall = () => {
 
       {mode === 'login' && (
         <div className="mt-8 text-center text-[10px] font-black uppercase tracking-[0.2em]">
-          <button onClick={() => switchMode('forgot')} className="text-crimson-700 hover:text-crimson-500 transition-colors">
+          <button onClick={() => switchMode('forgot')} className="text-crimson-400 hover:text-crimson-200 transition-colors">
             Forgot password?
           </button>
         </div>
@@ -338,7 +338,7 @@ export function Shell({ subtitle, children }) {
         <h1 className="text-4xl sm:text-5xl font-black tracking-tighter text-crimson-50 uppercase drop-shadow-[0_10px_40px_rgba(255,0,60,0.3)]">
           crimson<span className="text-crimson-500 font-light">haven</span>
         </h1>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">{subtitle}</p>
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">{subtitle}</p>
       </div>
       <div className="bg-crimson-950/30 backdrop-blur-xl border border-crimson-900/50 p-7 sm:p-9 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-crimson-500/5 blur-[80px] rounded-full pointer-events-none" />

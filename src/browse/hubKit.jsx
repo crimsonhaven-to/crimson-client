@@ -26,7 +26,7 @@ export const SectionHeader = ({ title, count, icon }) => (
       {icon}{title}
     </h3>
     <div className="h-px bg-gradient-to-r from-crimson-900/50 to-transparent flex-grow" />
-    <span className="text-[10px] font-black text-crimson-700 uppercase tracking-[0.3em] whitespace-nowrap">{count}</span>
+    <span className="text-[10px] font-black text-crimson-400 uppercase tracking-[0.3em] whitespace-nowrap">{count}</span>
   </div>
 );
 
@@ -64,7 +64,7 @@ export const EmptyState = ({ label = 'No manifestation matches your search ritua
     <div className="w-16 h-16 border-2 border-dashed border-crimson-900/40 rounded-full mx-auto flex items-center justify-center opacity-40">
       <Search className="w-8 h-8 text-crimson-900" />
     </div>
-    <p className="text-crimson-700 font-black uppercase tracking-[0.2em] text-sm">{label}</p>
+    <p className="text-crimson-400 font-black uppercase tracking-[0.2em] text-sm">{label}</p>
   </div>
 );
 
@@ -83,7 +83,7 @@ export function PosterCard({ item, onSelect, showKind = true }) {
             className="w-full h-full object-cover transform-gpu transition-transform duration-700 group-hover:scale-110"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 px-2 text-center">
+          <div className="w-full h-full flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 px-2 text-center">
             No Sigil
           </div>
         )}
@@ -143,7 +143,7 @@ export function ChipRow({ icon, label, options, value, onChange, all = true, all
   return (
     <div className="flex flex-wrap items-center gap-2">
       {label && (
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 mr-2 flex items-center gap-1.5">
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 mr-2 flex items-center gap-1.5">
           {icon || <Filter className="w-3.5 h-3.5" />} {label}
         </span>
       )}
@@ -179,7 +179,7 @@ export function HubShell({
               {title} <span className="text-crimson-500 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]">{accent}</span>
             </h1>
             {subtitle && (
-              <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase opacity-80">
+              <p className="text-crimson-400 font-black tracking-[0.2em] flex items-center gap-2 text-[10px] sm:text-xs uppercase">
                 {icon} {subtitle}
               </p>
             )}
@@ -195,7 +195,7 @@ export function HubShell({
                 placeholder={searchPlaceholder}
                 value={search}
                 onChange={(e) => onSearch(e.target.value)}
-                className="w-full bg-crimson-950/30 border border-crimson-900/50 rounded-2xl py-4 pl-14 pr-6 text-crimson-50 placeholder-crimson-800 focus:outline-none focus:border-crimson-500 focus:shadow-[0_0_30px_rgba(255,0,60,0.1)] transition-all font-bold tracking-wide backdrop-blur-md text-sm sm:text-base"
+                className="w-full bg-crimson-950/30 border border-crimson-900/50 rounded-2xl py-4 pl-14 pr-6 text-crimson-50 placeholder-crimson-400 focus:outline-none focus:border-crimson-500 focus:shadow-[0_0_30px_rgba(255,0,60,0.1)] transition-all font-bold tracking-wide backdrop-blur-md text-sm sm:text-base"
               />
             </div>
           )}
@@ -309,7 +309,7 @@ export function ViewToggle({ options, value, onChange }) {
 }
 
 export const SeeAll = ({ children }) => (
-  <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-600 hover:text-crimson-400 transition-colors shrink-0">
+  <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 hover:text-crimson-200 transition-colors shrink-0">
     {children}
     <ChevronRight className="w-4 h-4" />
   </span>

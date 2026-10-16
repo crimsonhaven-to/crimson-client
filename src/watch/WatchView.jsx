@@ -257,7 +257,7 @@ const WatchView = ({
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-crimson-950/70 backdrop-blur-sm">
               <CalendarClock className="w-16 h-16 text-crimson-500 mb-5 opacity-70" />
               <p className="text-crimson-50 font-black uppercase tracking-[0.2em] text-base sm:text-lg">Not Yet Manifested</p>
-              <p className="text-crimson-300/80 mt-3 max-w-md font-medium text-sm leading-relaxed">
+              <p className="text-crimson-400 mt-3 max-w-md font-medium text-sm leading-relaxed">
                 This segment hasn't crossed into our dimension yet.
                 {unaired.airDate && (
                   <> It materialises <span className="text-crimson-400 font-black">{formatAirDate(unaired.airDate)}</span>.</>
@@ -330,7 +330,7 @@ const WatchView = ({
                     {metadata.status}
                   </span>
                 )}
-                <span className="text-[10px] text-crimson-600 font-black tracking-widest uppercase opacity-70">
+                <span className="text-[10px] text-crimson-400 font-black tracking-widest uppercase">
                   REF: {refLabel || 'UNK'}
                 </span>
                 {(saveAction || (isAuthenticated && watchlistItem)) && (
@@ -344,16 +344,16 @@ const WatchView = ({
                 <h1 className="text-3xl sm:text-5xl font-black tracking-tighter text-crimson-50 leading-[1.1]">
                   {displayTitle || 'Unknown Cluster'}
                   {totalSeasons > 1 && (
-                    <span className="text-xl text-crimson-500 ml-3 opacity-80">S{currentSeason}</span>
+                    <span className="text-xl text-crimson-500 ml-3">S{currentSeason}</span>
                   )}
                 </h1>
                 {episodeTitle && (
                   <p className="text-base sm:text-xl font-bold text-crimson-400 tracking-tight leading-snug">
-                    <span className="text-crimson-600 font-black uppercase text-sm mr-2 opacity-60">E{currentEpisode}</span> {episodeTitle}
+                    <span className="text-crimson-400 font-black uppercase text-sm mr-2">E{currentEpisode}</span> {episodeTitle}
                   </p>
                 )}
               </div>
-              <p className="text-sm sm:text-base text-crimson-100/60 leading-relaxed text-justify line-clamp-4 sm:line-clamp-none font-medium">
+              <p className="text-sm sm:text-base text-crimson-300 leading-relaxed text-justify line-clamp-4 sm:line-clamp-none font-medium">
                 {episodeDescription}
               </p>
             </div>
@@ -387,7 +387,7 @@ const WatchView = ({
             Scraped Targets
             {!unaired && (
               <span className="ml-auto flex items-center gap-2">
-                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-600 normal-nums">
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-crimson-400 normal-nums">
                   {streamLoading
                     ? `Scanning${streams.length ? ` · ${streams.length}` : '…'}`
                     : streams.length
@@ -399,7 +399,7 @@ const WatchView = ({
                     onClick={onReload}
                     title="Rescan: re-resolve sources from scratch"
                     aria-label="Rescan sources"
-                    className="text-crimson-700 hover:text-crimson-400 transition-colors"
+                    className="text-crimson-400 hover:text-crimson-200 transition-colors"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
@@ -410,8 +410,8 @@ const WatchView = ({
           <div className="grid grid-cols-1 gap-3 relative z-10">
             {unaired ? (
               <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-2">
-                <CalendarClock className="w-6 h-6 text-crimson-700 mx-auto" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-700 italic">
+                <CalendarClock className="w-6 h-6 text-crimson-400 mx-auto" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">
                   Awaiting transmission{unaired.airDate ? ` · ${formatAirDate(unaired.airDate)}` : ''}
                 </p>
               </div>
@@ -429,7 +429,7 @@ const WatchView = ({
               />
             ) : (
               <div className="col-span-full p-8 bg-crimson-950/80 rounded-2xl text-center border border-dashed border-crimson-900/40 space-y-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-800 italic">Zero transport nodes active</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-crimson-400 italic">Zero transport nodes active</p>
                 {onReload && (
                   <button
                     onClick={onReload}
@@ -445,7 +445,7 @@ const WatchView = ({
           {streamLoading && streams.length > 0 && (
             <div className="mt-6 flex items-center justify-center gap-2 animate-pulse">
                <div className="w-1.5 h-1.5 bg-crimson-500 rounded-full"></div>
-               <span className="text-[8px] font-black uppercase tracking-[0.3em] text-crimson-600">Probing more nodes</span>
+               <span className="text-[8px] font-black uppercase tracking-[0.3em] text-crimson-400">Probing more nodes</span>
             </div>
           )}
 
@@ -458,14 +458,14 @@ const WatchView = ({
                 <Link to="/extension" className="block text-[11px] font-black text-crimson-50 leading-snug hover:text-crimson-300 transition-colors">
                   Want more transport nodes? Claim the Companion. 🦇
                 </Link>
-                <p className="text-[10px] text-crimson-100/50 font-medium leading-snug mt-0.5">
+                <p className="text-[10px] text-crimson-300 font-medium leading-snug mt-0.5">
                   It resolves &amp; plays extra sources locally, straight from your browser.
                 </p>
               </div>
               <button
                 onClick={dismissNudge}
                 aria-label="Dismiss"
-                className="shrink-0 text-crimson-700 hover:text-crimson-400 transition-colors"
+                className="shrink-0 text-crimson-400 hover:text-crimson-200 transition-colors"
               >
                 <X className="w-3.5 h-3.5" />
               </button>

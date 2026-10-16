@@ -35,7 +35,7 @@ const WalletRow = ({ symbol, name, address }) => {
         <h3 className="text-base sm:text-lg font-black text-crimson-50 uppercase tracking-tight group-hover:text-crimson-400 transition-colors">
           {name}
         </h3>
-        <p className="font-mono text-[11px] sm:text-xs text-crimson-300/70 break-all mt-1 leading-relaxed">
+        <p className="font-mono text-[11px] sm:text-xs text-crimson-400 break-all mt-1 leading-relaxed">
           {address}
         </p>
       </div>
@@ -60,7 +60,7 @@ const SupportUsPage = () => {
         <h2 className="text-4xl sm:text-5xl font-black text-crimson-50 uppercase tracking-tighter flex items-center gap-4 leading-none">
           <Heart className="w-10 h-10 text-crimson-500 fill-crimson-500/20 drop-shadow-[0_0_15px_rgba(255,0,60,0.4)]" /> Support Us
         </h2>
-        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em] opacity-80">Protocol: Sustaining the Sanctuary</p>
+        <p className="text-[10px] text-crimson-400 font-black uppercase tracking-[0.3em]">Protocol: Sustaining the Sanctuary</p>
       </div>
 
       <div className="space-y-8 text-sm sm:text-base text-crimson-100/70 leading-relaxed text-justify font-medium">
@@ -84,7 +84,7 @@ const SupportUsPage = () => {
         ))}
       </div>
 
-      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] text-crimson-400/80 space-y-2 shadow-inner relative overflow-hidden">
+      <div className="bg-crimson-950/30 backdrop-blur-md border border-crimson-900/40 p-6 rounded-3xl font-mono text-[10px] text-crimson-400 space-y-2 shadow-inner relative overflow-hidden">
         <div className="absolute top-0 right-0 p-3 opacity-5">
            <Heart className="w-12 h-12 text-crimson-500" />
         </div>
@@ -92,9 +92,9 @@ const SupportUsPage = () => {
            <div className="w-1.5 h-1.5 rounded-full bg-crimson-500"></div>
            Contribution Diagnostics
         </h3>
-        <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> All manifestations are voluntary and non-reversible.</p>
-        <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> Double-check the address before broadcasting any transaction.</p>
-        <p className="flex items-center gap-2"><span className="text-crimson-700 font-black">•</span> Your support strengthens the dark network bonds.</p>
+        <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">•</span> All manifestations are voluntary and non-reversible.</p>
+        <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">•</span> Double-check the address before broadcasting any transaction.</p>
+        <p className="flex items-center gap-2"><span className="text-crimson-400 font-black">•</span> Your support strengthens the dark network bonds.</p>
       </div>
     </div>
   );

@@ -178,7 +178,7 @@ export default function Lumi() {
               placeholder="Ask the empress…"
               maxLength={2000}
               disabled={busy}
-              className="flex-grow px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-700 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all disabled:opacity-40"
+              className="flex-grow px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 rounded-2xl text-crimson-50 placeholder-crimson-400 text-sm font-bold focus:outline-none focus:border-crimson-500 transition-all disabled:opacity-40"
             />
             <button
               type="submit"
