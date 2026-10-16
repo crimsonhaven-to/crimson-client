@@ -27,6 +27,12 @@ export default defineConfig([
       'react-hooks/refs': 'warn',
       'react-hooks/immutability': 'warn',
       'react-hooks/preserve-manual-memoization': 'warn',
+      // Crimson 600 and 700 as text measure under 4.5:1 on the crimson surfaces.
+      // The boundary is a character class because selector regexes cannot escape.
+      'no-restricted-syntax': ['error', ...['Literal', 'TemplateElement'].map((node) => ({
+        selector: `${node}[value${node === 'Literal' ? '' : '.raw'}=/(^|[^:a-z-])text-crimson-(600|700)/]`,
+        message: 'Text this dark is unreadable on crimson. Use text-crimson-400 for muted text.',
+      }))],
     },
   },
 ])
