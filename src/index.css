@@ -101,11 +101,13 @@ body {
   will-change: transform, opacity;
 }
 
+/* Sits right behind the page headings, so it glows deep rather than vivid: at its
+   brightest, muted text keeps 4.4:1 and the accent word 3.8:1. */
 .mesh-blob-1 {
   top: -22vmax;
   left: -15vmax;
-  background: radial-gradient(circle at center, var(--color-crimson-500), transparent 82%);
-  opacity: 0.7;
+  background: radial-gradient(circle at center, var(--color-crimson-700), transparent 82%);
+  opacity: 0.5;
   animation: mesh-drift-1 26s ease-in-out infinite;
 }
 
@@ -123,8 +125,8 @@ body {
   right: 5%;
   width: 50vmax;
   height: 50vmax;
-  background: radial-gradient(circle at center, var(--color-crimson-500), transparent 80%);
-  opacity: 0.4;
+  background: radial-gradient(circle at center, var(--color-crimson-600), transparent 80%);
+  opacity: 0.35;
 }
 
 .mesh-blob-4 {
@@ -149,9 +151,9 @@ body {
 /* Breathing lives in opacity, not scale() (see .mesh-blob). Each blob's keyframe
    opacity brackets its static base opacity. */
 @keyframes mesh-drift-1 {
-  0%, 100% { transform: translate(0, 0);          opacity: 0.60; }
-  33%      { transform: translate(10vmax, 7vmax);  opacity: 0.80; }
-  66%      { transform: translate(5vmax, 12vmax);  opacity: 0.66; }
+  0%, 100% { transform: translate(0, 0);          opacity: 0.45; }
+  33%      { transform: translate(10vmax, 7vmax);  opacity: 0.55; }
+  66%      { transform: translate(5vmax, 12vmax);  opacity: 0.50; }
 }
 @keyframes mesh-drift-2 {
   0%, 100% { transform: translate(0, 0);            opacity: 0.70; }
