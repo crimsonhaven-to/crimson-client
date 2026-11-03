@@ -2,8 +2,10 @@
 // viewer chat (deny-by-default), so for most accounts it costs one small request.
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bot, ChevronLeft, Play, RotateCcw, Send, Sparkles, X } from 'lucide-react';
+import { Bot, ChevronLeft, Loader2, Music, Play, RotateCcw, Send, Sparkles, X } from 'lucide-react';
 
+import { musicApi } from '../music/hooks';
+import { playTracks } from '../music/player';
 import { useLumiChat, useLumiStatus } from './hooks';
 
 // The watch pages own the whole viewport and their controls sit exactly where
@@ -16,6 +18,39 @@ const HIDDEN_ON = [/^\/watch/, /^\/watch-show/, /^\/watch-movie/, /^\/watch-loca
 // button tucks itself off the right edge once it has been ignored this long,
 // leaving a sliver to tap when she is actually wanted.
 const TUCK_AFTER_MS = 4000;
+
+const ACTION_BUTTON = 'flex items-center gap-2 px-4 py-2.5 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_8px_20px_rgba(255,0,60,0.2)] disabled:opacity-60';
+
+function startPlaylist(data, action) {
+  const ready = data.tracks.filter((t) => t.status === 'ready');
+  const picked = ready.findIndex((t) => t.id === action.track_id);
+  const start = picked >= 0 ? picked : action.shuffle ? Math.floor(Math.random() * ready.length) : 0;
+  const source = { name: data.playlist.name, path: `/music/playlist/${data.playlist.id}` };
+  playTracks(ready, start, source, { shuffle: action.shuffle });
+}
+
+// The playlist is fetched as soon as the button appears: Safari only lets audio
+// start inside the tap itself, and a network wait in between would lose it.
+function PlayMusicButton({ action }) {
+  const [data, setData] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    musicApi.playlist(action.playlist_id).then(
+      (d) => { if (live) setData(d); },
+      () => { if (live) setFailed(true); },
+    );
+    return () => { live = false; };
+  }, [action.playlist_id]);
+
+  return (
+    <button disabled={!data} onClick={() => startPlaylist(data, action)} className={ACTION_BUTTON}>
+      {data ? <Music className="w-3.5 h-3.5" /> : !failed && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+      <span className="truncate max-w-[14rem]">{failed ? 'That playlist would not load' : action.label}</span>
+    </button>
+  );
+}
 
 function Bubble({ msg, onOpen }) {
   const mine = msg.role === 'user';
@@ -46,16 +81,20 @@ function Bubble({ msg, onOpen }) {
 
         {/* Tool results that resolved to something playable. The backend hands
             over a route, never a navigation: the client owns its own router. */}
-        {(msg.actions || []).filter((a) => a.type === 'open').map((a) => (
-          <button
-            key={a.route}
-            onClick={() => onOpen(a.route)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-crimson-600 hover:bg-crimson-500 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-[0_8px_20px_rgba(255,0,60,0.2)]"
-          >
-            <Play className="w-3.5 h-3.5" />
-            <span className="truncate max-w-[14rem]">{a.label}</span>
-          </button>
-        ))}
+        {(msg.actions || []).map((a) => {
+          if (a.type === 'open') {
+            return (
+              <button key={a.route} onClick={() => onOpen(a.route)} className={ACTION_BUTTON}>
+                <Play className="w-3.5 h-3.5" />
+                <span className="truncate max-w-[14rem]">{a.label}</span>
+              </button>
+            );
+          }
+          if (a.type === 'play_music') {
+            return <PlayMusicButton key={`${a.playlist_id}:${a.track_id}`} action={a} />;
+          }
+          return null;
+        })}
       </div>
     </div>
   );

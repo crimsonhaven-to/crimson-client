@@ -42,6 +42,11 @@ export const musicApi = {
     call(`/music/playlists/${id}`, { method: 'PATCH', json: { sync_enabled: syncEnabled } }),
   sync: (id) => call(`/music/playlists/${id}/sync`, { method: 'POST' }),
   deletePlaylist: (id) => call(`/music/playlists/${id}`, { method: 'DELETE' }),
+  clonePlaylist: (id, name) => call(`/music/playlists/${id}/clone`, { json: { name } }),
+  setCover: (id, blob) => call(`/music/playlists/${id}/cover`, {
+    method: 'PUT', headers: { 'Content-Type': blob.type }, body: blob,
+  }),
+  removeCover: (id) => call(`/music/playlists/${id}/cover`, { method: 'DELETE' }),
   candidates: (trackId) => call(`/music/tracks/${trackId}/candidates`),
   chooseMatch: (trackId, url) => call(`/music/tracks/${trackId}/match`, { json: { url } }),
   retry: (trackId) => call(`/music/tracks/${trackId}/retry`, { method: 'POST' }),
