@@ -3,14 +3,16 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowLeft, ArrowDownToLine, CircleAlert, Clock, Loader2, Pause, Play, Plus, RefreshCw, RotateCw, Search, Shuffle,
-  Trash2, WifiOff, X,
+  ArrowLeft, ArrowDownToLine, CircleAlert, Clock, CopyPlus, Loader2, Pause, Play, Plus, RefreshCw, RotateCw, Search,
+  Shuffle, Trash2, WifiOff, X,
 } from 'lucide-react';
 
 import { musicApi, useMusicPlaylist } from './hooks';
 import { Cover } from './Cover';
 import AddSongsDialog from './AddSongsDialog';
+import CoverEditor from './CoverEditor';
 import DownloadButton from './DownloadButton';
+import NewPlaylistDialog from './NewPlaylistDialog';
 import { refreshDownload, savedPlaylist, useDownloads } from './downloads';
 import ReviewDialog from './ReviewDialog';
 import { formatTime } from './queue';
@@ -60,6 +62,7 @@ export default function MusicPlaylist() {
   const [reviewing, setReviewing] = useState(null);
   // A playlist that was just created opens straight into the song search.
   const [adding, setAdding] = useState(!!location.state?.addSongs);
+  const [copying, setCopying] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
 
@@ -126,7 +129,9 @@ export default function MusicPlaylist() {
       </Link>
 
       <div className="flex flex-col sm:flex-row gap-6 sm:items-end">
-        <Cover src={playlist.cover_url} className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl shadow-2xl flex-shrink-0" />
+        {offline
+          ? <Cover src={playlist.cover_url} className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl shadow-2xl flex-shrink-0" />
+          : <CoverEditor playlist={playlist} className="w-44 h-44 sm:w-52 sm:h-52" onChanged={reload} onError={setNotice} />}
         <div className="min-w-0 space-y-3">
           <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">{SOURCE_LABEL[playlist.source] || playlist.source}</p>
           <h1 className="text-3xl sm:text-5xl font-black text-crimson-50 tracking-tighter leading-none break-words">{playlist.name}</h1>
@@ -158,6 +163,12 @@ export default function MusicPlaylist() {
               </button>
             )}
             {!offline && <DownloadButton playlist={playlist} tracks={tracks} />}
+            {!offline && (
+              <button onClick={() => setCopying(true)} title={own ? 'Duplicate this playlist' : 'Make a copy you can edit'}
+                className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest">
+                <CopyPlus className="w-4 h-4" /> {own ? 'Duplicate' : 'Copy to edit'}
+              </button>
+            )}
             {SYNCED_SOURCES.includes(playlist.source) && !offline && (
               <>
                 <button disabled={busy} onClick={() => run(() => musicApi.sync(playlist.id), 'Synced.')}
@@ -238,6 +249,8 @@ export default function MusicPlaylist() {
           );
         })}
       </ol>
+
+      {copying && <NewPlaylistDialog from={playlist} onClose={() => setCopying(false)} />}
 
       {adding && (
         <AddSongsDialog playlist={playlist} onClose={closeAdding} onAdded={reload} />

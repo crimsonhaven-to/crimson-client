@@ -1,4 +1,6 @@
-// Opens straight into the song search, since an empty playlist is only a first step.
+// A new playlist opens straight into the song search, since an empty one is only a
+// first step. Given `from`, it copies that playlist instead, which is how an import
+// becomes something the member can edit.
 import { useState } from 'react';
 import { Loader2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -6,9 +8,9 @@ import { useNavigate } from 'react-router-dom';
 import { musicApi } from './hooks';
 import Sheet from './Sheet';
 
-export default function NewPlaylistDialog({ onClose }) {
+export default function NewPlaylistDialog({ from = null, onClose }) {
   const navigate = useNavigate();
-  const [name, setName] = useState('');
+  const [name, setName] = useState(from ? `${from.name} (copy)` : '');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -18,8 +20,14 @@ export default function NewPlaylistDialog({ onClose }) {
     setBusy(true);
     setError(null);
     try {
-      const { playlist } = await musicApi.createPlaylist(name.trim());
-      navigate(`/music/playlist/${playlist.id}`, { state: { addSongs: true } });
+      if (from) {
+        const { playlist } = await musicApi.clonePlaylist(from.id, name.trim());
+        onClose();
+        navigate(`/music/playlist/${playlist.id}`);
+      } else {
+        const { playlist } = await musicApi.createPlaylist(name.trim());
+        navigate(`/music/playlist/${playlist.id}`, { state: { addSongs: true } });
+      }
     } catch (err) {
       setError(err.message);
       setBusy(false);
@@ -27,11 +35,15 @@ export default function NewPlaylistDialog({ onClose }) {
   };
 
   return (
-    <Sheet as="form" onSubmit={create} label="New playlist" onClose={onClose} className="sm:max-w-md p-5 space-y-4">
+    <Sheet as="form" onSubmit={create} label={from ? 'Copy playlist' : 'New playlist'} onClose={onClose} className="sm:max-w-md p-5 space-y-4">
       <div className="flex items-start gap-4">
         <div className="min-w-0 flex-grow">
-          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">New playlist</p>
-          <p className="text-[11px] text-crimson-400 mt-1">Kept only here. Add songs to it by searching, no Spotify needed.</p>
+          <p className="text-[11px] font-black uppercase tracking-widest text-crimson-500">{from ? 'Copy playlist' : 'New playlist'}</p>
+          <p className="text-[11px] text-crimson-400 mt-1">
+            {from
+              ? 'Your own copy with the same songs, to edit freely. The original keeps following its source.'
+              : 'Kept only here. Add songs to it by searching, no Spotify needed.'}
+          </p>
         </div>
         <button type="button" onClick={onClose} aria-label="Close" className="p-1 text-crimson-400 hover:text-white"><X className="w-5 h-5" /></button>
       </div>
@@ -51,7 +63,7 @@ export default function NewPlaylistDialog({ onClose }) {
         </button>
         <button type="submit" disabled={busy || !name.trim()}
           className="px-5 py-2.5 rounded-xl bg-crimson-600 hover:bg-crimson-500 text-white text-[11px] font-black uppercase tracking-widest disabled:opacity-40">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Create'}
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : from ? 'Copy' : 'Create'}
         </button>
       </div>
     </Sheet>
