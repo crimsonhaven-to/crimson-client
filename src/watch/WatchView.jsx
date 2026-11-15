@@ -97,6 +97,13 @@ const WatchView = ({
   const playerStream = attachedPlay?.stream || null;
   const playerKey = attachedPlay?.key ?? null;
 
+  // Fullscreen is requested on this frame, not on the player inside it. Auto-Next
+  // can swap the player out without unmounting the page (the next episode resolves
+  // to an iframe embed, is unaired, or has no transport at all), and the browser
+  // fully exits fullscreen once the fullscreened element leaves the document. Held
+  // by the frame, fullscreen survives every swap.
+  const frameRef = useRef(null);
+
   const episodePicker = useEpisodePicker({
     isMovie, currentSeason, currentEpisode, episodesList, availableSeasons,
     onEpisodeChange, onSelectEpisode,
@@ -242,7 +249,10 @@ const WatchView = ({
           <ArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
           Back to Overview
         </Link>
-        <div className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black border border-crimson-900/60 shadow-[0_30px_100px_rgba(0,0,0,0.8)]">
+        <div
+          ref={frameRef}
+          className="relative aspect-video w-full rounded-3xl overflow-hidden bg-black border border-crimson-900/60 shadow-[0_30px_100px_rgba(0,0,0,0.8)] [&:fullscreen]:rounded-none [&:fullscreen]:border-0"
+        >
           {streamLoading && !unaired && (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-crimson-950/95 z-20 p-6 text-center backdrop-blur-md">
               <div className="relative w-16 h-16 mb-6">
@@ -289,6 +299,7 @@ const WatchView = ({
                 <CrimsonPlayer
                   // No `key` on purpose: a remount would drop fullscreen on every
                   // episode advance. The player reloads sources in place.
+                  fullscreenTarget={frameRef}
                   src={playerStream.url}
                   mediaKey={playerKey}
                   type={playerStream.type}

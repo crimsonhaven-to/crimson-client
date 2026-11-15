@@ -28,7 +28,7 @@ import PlayerEpisodeList from './player/PlayerEpisodeList';
 // `mediaKey` identifies the episode `src` belongs to. Capture endpoints can serve
 // every episode from the SAME url, so reloading on `src` alone would keep the old
 // episode's position.
-export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null, canDownload = true }) {
+export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitles = [], poster = '', title = '', downloadName = '', autoPlay = true, startAt = 0, onProgress, onNext, hasNext = false, nextLabel = '', skipTimes = null, sources = [], activeSourceIdx = -1, onSelectSource, onReportBroken, episodePicker = null, live = false, onFatalError = null, hlsLoader = null, canDownload = true, fullscreenTarget = null }) {
   const wrapRef = useRef(null);
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
@@ -215,7 +215,10 @@ export default function CrimsonPlayer({ src, mediaKey = null, type = '', subtitl
     }
   }, [subtitleIdx, tracks.length, reloadKey]);
 
-  const { fullscreen, toggleFullscreen } = useFullscreen(wrapRef, videoRef);
+  // The page passes its player frame so fullscreen outlives a player swap; callers
+  // that render the player standalone keep fullscreening their own wrapper. The
+  // video ref still rides along for the iPhone-only <video> fullscreen path.
+  const { fullscreen, toggleFullscreen } = useFullscreen(fullscreenTarget ?? wrapRef, videoRef);
   const { controlsVisible, setControlsVisible, revealControls } = useAutoHideControls(videoRef);
 
   // Capture phase so Esc closes the overlay before the browser exits fullscreen.
