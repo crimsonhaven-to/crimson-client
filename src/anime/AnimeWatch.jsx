@@ -6,6 +6,7 @@ import { useAuth } from '../account/useAuth';
 import { useTitle } from '../useTitle';
 import { startsFresh } from '../watch/resumeRules';
 import WatchView from '../watch/WatchView';
+import { overviewSeasonUrl } from '../watch/seasonParam';
 import SaveOffline from '../offline/SaveOffline';
 import { episodeTitle, episodesFrom } from '../offline/items';
 
@@ -166,7 +167,7 @@ export default function AnimeWatch() {
       saveAction={!unaired && (
         <SaveOffline streams={streamData?.streams || []} activeStreamIdx={activeStreamIdx} items={offlineItems} />
       )}
-      backUrl={`/anime/${anilistId}`}
+      backUrl={overviewSeasonUrl(`/anime/${anilistId}`, currentSeason)}
     />
   );
 }

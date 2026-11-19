@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Play, Film, Tv, HardDrive, Calendar, Hash, ListVideo, AlertTriangle } from 'lucide-react';
 import { useLocalOverview } from './hooks';
 import { useTitle } from '../useTitle';
+import { overviewSeasonUrl, pickSeason, useSeasonParam } from '../watch/seasonParam';
 import { API_BASE_URL } from '../api/config';
 import { stripHtml } from '../stripHtml';
 
@@ -18,14 +19,14 @@ function LocalOverview() {
   useTitle(overview?.title || 'Local Media');
 
   const seasons = overview?.seasons || [];
-  const [activeSeason, setActiveSeason] = useState(null);
-  const currentSeason = activeSeason ?? seasons[0]?.season_number ?? null;
+  const [requestedSeason, setActiveSeason] = useSeasonParam();
+  const currentSeason = pickSeason(seasons, requestedSeason);
   const seasonData = useMemo(
     () => seasons.find((s) => s.season_number === currentSeason) || seasons[0],
     [seasons, currentSeason],
   );
 
-  const backUrl = `/local/${token}`;
+  const backUrl = overviewSeasonUrl(`/local/${token}`, currentSeason);
   const poster = posterSrc(overview?.poster);
 
   // `localId` is the TITLE token so every episode dedups as one show in history. The

@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { clientSourcesEnabled, streamLocalSources } from '../sources/clientSources';
 import { apiFetch } from '../api/client';
 import { memGet, memSet } from '../api/memCache';
+import { pickSeason } from '../watch/seasonParam';
 import { getPlaybackPrefs } from '../account/playbackPrefs';
 import { streamWatchNdjson } from '../api/ndjson';
 import { mergeStreamLine, pickBestIdx } from '../watch/streamMerge';
@@ -36,22 +37,21 @@ export function useTrendingShows() {
   return { trendingShows, trendLoading };
 }
 
-export function useShowOverview(tmdbId) {
+export function useShowOverview(tmdbId, requestedSeason) {
   const [overview, setOverview] = useState(() => (tmdbId ? memGet(`show-overview:${tmdbId}`) : null));
   const [loading, setLoading] = useState(() => !(tmdbId && memGet(`show-overview:${tmdbId}`)));
   const [error, setError] = useState(null);
 
-  const [activeSeason, setActiveSeason] = useState(null);
   const [episodes, setEpisodes] = useState([]);
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const episodeCache = useRef(new Map());
+  const activeSeason = pickSeason(overview?.seasons, requestedSeason);
 
   useEffect(() => {
     if (!tmdbId) return;
     const cached = memGet(`show-overview:${tmdbId}`);
     if (cached) {
       setOverview(cached);
-      setActiveSeason(cached.seasons?.[0]?.season_number ?? null);
       setLoading(false);
       return;
     }
@@ -66,7 +66,6 @@ export function useShowOverview(tmdbId) {
         if (cancelled) return;
         setOverview(data);
         memSet(`show-overview:${tmdbId}`, data);
-        setActiveSeason(data.seasons?.[0]?.season_number ?? null);
       } catch (e) {
         if (!cancelled) setError(e.message);
       } finally {
@@ -108,7 +107,7 @@ export function useShowOverview(tmdbId) {
     return () => { cancelled = true; };
   }, [overview, activeSeason]);
 
-  return { overview, loading, error, activeSeason, setActiveSeason, episodes, episodesLoading };
+  return { overview, loading, error, activeSeason, episodes, episodesLoading };
 }
 
 export function useShowStreamer(tmdbId, season, episode) {

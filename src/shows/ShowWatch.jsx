@@ -7,6 +7,7 @@ import { useTitle } from '../useTitle';
 import { apiFetch } from '../api/client';
 import { startsFresh } from '../watch/resumeRules';
 import WatchView from '../watch/WatchView';
+import { overviewSeasonUrl } from '../watch/seasonParam';
 import SaveOffline from '../offline/SaveOffline';
 import { episodeTitle, episodesFrom } from '../offline/items';
 
@@ -163,7 +164,7 @@ function ShowWatch() {
       saveAction={!unaired && (
         <SaveOffline streams={streamData?.streams || []} activeStreamIdx={activeStreamIdx} items={offlineItems} />
       )}
-      backUrl={`/show/${tmdbId}`}
+      backUrl={overviewSeasonUrl(`/show/${tmdbId}`, currentSeason)}
     />
   );
 }

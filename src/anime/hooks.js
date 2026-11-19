@@ -2,25 +2,25 @@ import { useEffect, useRef, useState } from 'react';
 
 import { apiFetch } from '../api/client';
 import { memGet, memSet } from '../api/memCache';
+import { pickSeason } from '../watch/seasonParam';
 
 // Episodes load lazily per active season rather than all up front, and are
 // memoised so flipping back to a season is instant.
-export function useAnimeOverview(anilistId) {
+export function useAnimeOverview(anilistId, requestedSeason) {
   const [overview, setOverview] = useState(() => (anilistId ? memGet(`overview:${anilistId}`) : null));
   const [loading, setLoading] = useState(() => !(anilistId && memGet(`overview:${anilistId}`)));
   const [error, setError] = useState(null);
 
-  const [activeSeason, setActiveSeason] = useState(null);
   const [episodes, setEpisodes] = useState([]);
   const [episodesLoading, setEpisodesLoading] = useState(false);
   const episodeCache = useRef(new Map());
+  const activeSeason = pickSeason(overview?.seasons, requestedSeason, Number(anilistId));
 
   useEffect(() => {
     if (!anilistId) return;
     const cached = memGet(`overview:${anilistId}`);
     if (cached) {
       setOverview(cached);
-      setActiveSeason(cached.seasons?.[0]?.season_number ?? null);
       setLoading(false);
       return;
     }
@@ -35,7 +35,6 @@ export function useAnimeOverview(anilistId) {
         if (cancelled) return;
         setOverview(data);
         memSet(`overview:${anilistId}`, data);
-        setActiveSeason(data.seasons?.[0]?.season_number ?? null);
       } catch (e) {
         if (!cancelled) setError(e.message);
       } finally {
@@ -79,7 +78,7 @@ export function useAnimeOverview(anilistId) {
 
   return {
     overview, loading, error,
-    activeSeason, setActiveSeason,
+    activeSeason,
     episodes, episodesLoading,
   };
 }

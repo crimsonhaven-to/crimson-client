@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useShowOverview } from './hooks';
+import { useSeasonParam } from '../watch/seasonParam';
 import { useShowResume } from '../watch/resume';
 import { useTitle } from '../useTitle';
 import OverviewView from '../watch/OverviewView';
@@ -7,11 +8,12 @@ import OverviewView from '../watch/OverviewView';
 const ShowOverview = () => {
   const { tmdbId } = useParams();
   const navigate = useNavigate();
+  const [requestedSeason, setActiveSeason] = useSeasonParam();
   const {
     overview, loading, error,
-    activeSeason, setActiveSeason,
+    activeSeason,
     episodes, episodesLoading,
-  } = useShowOverview(tmdbId);
+  } = useShowOverview(tmdbId, requestedSeason);
 
   useTitle(overview?.title || 'Overview');
 
