@@ -18,8 +18,9 @@ const AnimeOverview = () => {
   useTitle(overview?.title || 'Overview');
 
   const favId = overview?.anilist_id ?? Number(anilistId);
+  // Lists hold the show under its first season, whichever season this page is.
   const watchlistItem = overview
-    ? { anilist_id: favId, title: overview.title, poster: overview.poster }
+    ? { anilist_id: overview.show_anilist_id ?? favId, title: overview.title, poster: overview.poster }
     : undefined;
 
   const resume = useShowResume({ anilistId: favId });

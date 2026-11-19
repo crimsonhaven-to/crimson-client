@@ -66,7 +66,7 @@ export default function AnimeWatch() {
   
   useTitle(animeMetadata?.title ? `Watch ${animeMetadata.title}` : 'Streaming Manifestation');
 
-  const watchlistItem = { ...animeMetadata, anilist_id: parseInt(anilistId) };
+  const watchlistItem = { ...animeMetadata, anilist_id: seasonGroups?.showAnilistId ?? parseInt(anilistId) };
 
   const displayTitle = seasonGroups?.title || animeMetadata?.title;
   // Keyed by the season's own AniList id, which is what the backend resolves by.

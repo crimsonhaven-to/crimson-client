@@ -96,7 +96,8 @@ const fetchAvailableSeasons = useCallback(async (anilistId) => {
             }
             setSeasonGroups({
                 title: title || 'Unknown Anime',
-                totalSeasons: data.total_seasons
+                totalSeasons: data.total_seasons,
+                showAnilistId: data.show_anilist_id,
             });
             return data.seasons;
         }
