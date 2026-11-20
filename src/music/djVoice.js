@@ -6,21 +6,30 @@ let voice = null;
 
 export function hush() {
   if (!voice) return;
-  const clip = voice;
+  const { clip, url } = voice;
   voice = null;
   clip.pause();
+  URL.revokeObjectURL(url);
   setDucked(false);
 }
 
 export const isSpeaking = () => voice !== null;
 
+// The CSP's media-src allows blob: but not data:, so the WAV plays from an object URL.
+export function wavBlob(base64) {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  return new Blob([bytes], { type: 'audio/wav' });
+}
+
 // `wav` is the base64 WAV the backend sends with the set.
 export function speak(wav) {
   hush();
-  const clip = new Audio(`data:audio/wav;base64,${wav}`);
-  voice = clip;
+  const url = URL.createObjectURL(wavBlob(wav));
+  const clip = new Audio(url);
+  const thisVoice = { clip, url };
+  voice = thisVoice;
   const done = () => {
-    if (voice === clip) hush();
+    if (voice === thisVoice) hush();
   };
   clip.addEventListener('ended', done);
   clip.addEventListener('error', done);
