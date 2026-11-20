@@ -31,6 +31,9 @@ const FADE_STEP_MS = 50;
 // Early enough that a slow read from the device or a stream that has to buffer is
 // ready before the song ends, late enough not to fetch songs that get skipped.
 const ARM_AHEAD_SECONDS = 30;
+// Low enough that Lumi's voice is clear over the music, high enough that the song
+// is still felt underneath her, the way a radio host talks over an intro.
+const DUCKED_VOLUME = 0.3;
 
 const EMPTY = {
   tracks: [],
@@ -61,6 +64,7 @@ let lastSavedAt = 0;
 // Counts loads, so a slow read from the device cannot start a song the member
 // has already skipped past.
 let loadCount = 0;
+let ducked = false;
 const listeners = new Set();
 
 function emit(patch) {
@@ -183,6 +187,19 @@ function element() {
   return audio;
 }
 
+// Every volume the player sets goes through here, so a crossfade that runs while
+// Lumi talks stays under her voice.
+function level(volume) {
+  return ducked ? volume * DUCKED_VOLUME : volume;
+}
+
+// Lumi's DJ voice lowers the music while she speaks. iOS ignores the volume of an
+// audio element, so there she talks over the song at full volume.
+export function setDucked(on) {
+  ducked = on;
+  if (audio && !fade) audio.volume = level(1);
+}
+
 function syncPosition() {
   showPosition(audio.duration, audio.currentTime, audio.playbackRate);
 }
@@ -299,7 +316,7 @@ function takeArmed(position, volume) {
   audio = armed.deck;
   armed = null;
   loadCount += 1;
-  audio.volume = volume;
+  audio.volume = level(volume);
   announce(position, state.tracks[state.order[position]], 0, true);
   play();
   return outgoing;
@@ -325,8 +342,8 @@ function crossfadeTo(position, seconds) {
   const step = () => {
     const progress = incoming.currentTime / seconds;
     const volumes = fadeVolumes(progress);
-    incoming.volume = volumes.incoming;
-    outgoing.volume = volumes.outgoing;
+    incoming.volume = level(volumes.incoming);
+    outgoing.volume = level(volumes.outgoing);
     if (progress >= 1) stopFade();
   };
   fade = { outgoing, step, timer: setInterval(step, FADE_STEP_MS) };
@@ -340,7 +357,7 @@ function stopFade() {
   fade = null;
   clearInterval(timer);
   if (outgoing !== audio) silence(outgoing);
-  audio.volume = 1;
+  audio.volume = level(1);
 }
 
 export function play() {
