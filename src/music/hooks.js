@@ -2,29 +2,11 @@
 // hooks poll to show tracks turning ready.
 import { useCallback, useEffect, useState } from 'react';
 
-import { apiFetch, extractError, usePublicConfig } from '../api/client';
+import { apiJson as call, usePublicConfig } from '../api/client';
 import { useProfile } from '../account/profile';
 import { useLumiStatus } from '../lumi/hooks';
 
 const POLL_MS = 8000;
-
-async function call(path, options = {}) {
-  const init = { ...options };
-  if (options.json !== undefined) {
-    init.method = options.method || 'POST';
-    init.headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-    init.body = JSON.stringify(options.json);
-    delete init.json;
-  }
-  const res = await apiFetch(path, init);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const error = new Error(extractError(data, `Request failed (${res.status})`));
-    error.status = res.status;
-    throw error;
-  }
-  return data;
-}
 
 export const musicApi = {
   status: () => call('/music/status'),

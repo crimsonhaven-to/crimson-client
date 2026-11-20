@@ -5,6 +5,7 @@ import { useMangaOverview, useMangaResume } from './hooks';
 import { useTitle } from '../useTitle';
 import { stripHtml } from '../stripHtml';
 import WatchlistButton from '../library/WatchlistButton';
+import { SendTitleButton } from '../messages/SendButtons';
 
 // A manga is one ordered run of chapters with no seasons, so this doesn't reuse the
 // video <OverviewView>.
@@ -182,6 +183,7 @@ const MangaOverview = () => {
                 </Link>
               ) : null}
               <WatchlistButton item={watchlistItem} variant="overview" />
+              <SendTitleButton item={watchlistItem} />
             </div>
           </div>
         </div>
