@@ -70,6 +70,26 @@ export async function apiFetch(path, options = {}) {
   return res;
 }
 
+// A JSON request that throws on failure, with the server's reason as the message.
+// `json` is the request body; it makes the method POST unless one is given.
+export async function apiJson(path, options = {}) {
+  const init = { ...options };
+  if (options.json !== undefined) {
+    init.method = options.method || 'POST';
+    init.headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    init.body = JSON.stringify(options.json);
+    delete init.json;
+  }
+  const res = await apiFetch(path, init);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const error = new Error(extractError(data, `Request failed (${res.status})`));
+    error.status = res.status;
+    throw error;
+  }
+  return data;
+}
+
 export function useSessionToken() {
   const [token, setToken] = useState(() => localStorage.getItem(SESSION_KEY));
   useEffect(() => {

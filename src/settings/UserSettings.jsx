@@ -12,6 +12,7 @@ import { hasDownloads } from '../music/downloads';
 import DesktopAppCard from './DesktopAppCard';
 import NativeBackendCard from './NativeBackendCard';
 import PageHeading from '../shell/PageHeading';
+import HandleSetup from '../messages/HandleSetup';
 
 // Served same-origin from /helper because the repo is private, so GitHub Releases
 // wouldn't be reachable.
@@ -39,6 +40,13 @@ function guessHelper() {
       ? 'linux-amd64'
       : 'windows-amd64';
   return HELPER_BUILDS.find((b) => b.key === want);
+}
+
+// Keyed on the saved handle, so the field fills in once the profile has loaded.
+function HandleCard() {
+  const profile = useProfile();
+  if (!profile) return null;
+  return <HandleSetup key={profile.handle || ''} current={profile.handle} />;
 }
 
 const PrefPill = ({ label, active, onClick }) => (
@@ -166,6 +174,7 @@ const UserSettings = () => {
       <PageHeading icon={SlidersHorizontal} title="Your" accent="Preferences" subtitle="Tune how the haven picks your stream" className="border-b border-crimson-900/30 pb-8" />
 
       <DisplayNameCard />
+      <HandleCard />
 
       <NativeBackendCard />
       <DesktopAppCard />

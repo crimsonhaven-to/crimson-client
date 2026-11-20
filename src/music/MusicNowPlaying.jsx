@@ -9,6 +9,7 @@ import {
   currentTrack, next, previous, seek, toggle, toggleRepeat, toggleShuffle, useMusicPlayer,
 } from './player';
 import ShareButton from './ShareButton';
+import { SendSongButton } from '../messages/SendButtons';
 import UpNext from './UpNext';
 
 function DjSet({ set, loading }) {
@@ -66,7 +67,10 @@ export default function MusicNowPlaying() {
             {track.album && <p className="text-crimson-400 text-sm mt-0.5">{track.album}</p>}
             {state.error && <p className="text-amber-400 text-xs font-bold mt-2">{state.error}</p>}
           </div>
-          <ShareButton track={track} className="-mr-2 flex-shrink-0" />
+          <div className="flex -mr-2 flex-shrink-0">
+            <SendSongButton track={track} />
+            <ShareButton track={track} />
+          </div>
         </div>
 
         {set && <DjSet set={set} loading={dj.loading} />}

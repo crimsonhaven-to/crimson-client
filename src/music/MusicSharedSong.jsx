@@ -10,6 +10,7 @@ import { musicApi } from './hooks';
 import { currentTrack, playTracks, toggle, useMusicPlayer } from './player';
 import { formatTime } from './queue';
 import ShareButton from './ShareButton';
+import { SendSongButton } from '../messages/SendButtons';
 
 export default function MusicSharedSong() {
   const { token } = useParams();
@@ -22,7 +23,7 @@ export default function MusicSharedSong() {
   useEffect(() => {
     let live = true;
     musicApi.shared(token).then(
-      ({ track: shared, url }) => { if (live) setTrack({ ...shared, share_url: url }); },
+      ({ track: shared, url }) => { if (live) setTrack({ ...shared, share_url: url, share_token: token }); },
       (err) => { if (live) setError(err.message); },
     );
     return () => { live = false; };
@@ -70,6 +71,7 @@ export default function MusicSharedSong() {
           {isPlaying && player.playing ? <Pause className="w-7 h-7" fill="currentColor" />
             : <Play className="w-7 h-7 translate-x-0.5" fill="currentColor" />}
         </button>
+        <SendSongButton track={track} />
         <ShareButton track={track} />
       </div>
     </div>

@@ -4,6 +4,7 @@ import { stripHtml } from '../stripHtml';
 import { setOverviewActivity, clearActivity } from '../presence/discordPresence';
 import WatchlistButton from '../library/WatchlistButton';
 import FollowButton from '../library/FollowButton';
+import { SendTitleButton } from '../messages/SendButtons';
 import EpisodeCard from './EpisodeCard';
 
 // Shared by the anime, show and movie overview pages, which differ only in data source
@@ -233,6 +234,7 @@ const OverviewView = ({
                   {/* Anime only: it renders nothing without an anilist_id, which is
                       what the airing schedule is keyed on. */}
                   {watchlistItem && <FollowButton item={watchlistItem} variant="overview" />}
+                  {watchlistItem && <SendTitleButton item={watchlistItem} />}
                 </div>
               )}
             </div>

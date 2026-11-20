@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { HelpCircle, Menu, X, Heart, History, User, Sparkles, LogOut, Shield, SlidersHorizontal, Flame, Tv, Wallet, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays, Music, ArrowDownToLine } from 'lucide-react';
+import { HelpCircle, Menu, X, Heart, History, User, Sparkles, LogOut, Shield, SlidersHorizontal, Flame, Tv, Wallet, BookOpen, Clapperboard, HardDrive, Radio, CalendarDays, Music, ArrowDownToLine, MessageCircle } from 'lucide-react';
 import { useHealthStatus } from '../api/useHealthStatus';
 import { useAuth } from '../account/useAuth';
 import { useProfile } from '../account/profile';
@@ -9,6 +9,15 @@ import { forgetDownloads, hasDownloads } from '../music/downloads';
 import { forgetListens } from '../music/listens';
 import { forgetVideoDownloads } from '../offline/queue';
 import { close as closeMusic } from '../music/player';
+import { useUnreadCount } from '../messages/unread';
+
+function UnreadBadge({ count, className }) {
+  return (
+    <span className={`min-w-4 h-4 px-1 rounded-full bg-crimson-600 text-white text-[9px] font-black leading-4 text-center ${className}`}>
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
 
 export default function Navbar({ musicEnabled }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -22,6 +31,7 @@ export default function Navbar({ musicEnabled }) {
   const { local_library_enabled: localEnabled, live_tv_enabled: liveTvEnabled } = usePublicConfig();
   // Offline the profile never loads, so downloads on this device keep Music reachable.
   const showMusic = musicEnabled || hasDownloads();
+  const unread = useUnreadCount();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -55,6 +65,7 @@ export default function Navbar({ musicEnabled }) {
     { to: "/music", label: "Music", icon: <Music className="w-4 h-4" />, music: true },
   ].filter(l => (!l.local || localEnabled) && (!l.live || liveTvEnabled) && (!l.music || showMusic));
   const personalLinks = [
+    { to: "/messages", label: "Messages", icon: <MessageCircle className="w-4 h-4" />, badge: unread },
     { to: "/favorites", label: "Favorites", icon: <Heart className="w-4 h-4" /> },
     { to: "/recently-watched", label: "History", icon: <History className="w-4 h-4" /> },
     { to: "/calendar", label: "Calendar", icon: <CalendarDays className="w-4 h-4" /> },
@@ -88,8 +99,10 @@ export default function Navbar({ musicEnabled }) {
           ))}
           <span className="w-px h-5 mx-1 lg:mx-2 bg-crimson-900/60" />
           {personalLinks.map(link => (
-            <Link key={link.to} to={link.to} title={link.label} aria-label={link.label} className={navLinkClass(link.to)}>
+            <Link key={link.to} to={link.to} title={link.label} aria-label={link.badge ? `${link.label} (${link.badge} unread)` : link.label}
+              className={`relative ${navLinkClass(link.to)}`}>
               {link.icon}
+              {link.badge > 0 && <UnreadBadge count={link.badge} className="absolute -top-0.5 -right-0.5" />}
             </Link>
           ))}
         </div>
@@ -192,6 +205,7 @@ export default function Navbar({ musicEnabled }) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span className="text-crimson-500">{link.icon}</span> {link.label}
+                {link.badge > 0 && <UnreadBadge count={link.badge} className="ml-auto" />}
               </Link>
             ))}
           </div>
