@@ -1,16 +1,32 @@
 // A route of its own so Android's back gesture closes it like any other page.
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronDown, ListMusic, Loader2, Pause, Play, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lucide-react';
+import { ChevronDown, Loader2, Pause, Play, Radio, Repeat, Repeat1, Shuffle, SkipBack, SkipForward } from 'lucide-react';
 
 import { Cover } from './Cover';
+import { currentSet, useDj } from './dj';
 import { formatTime, REPEAT_OFF, REPEAT_ONE } from './queue';
 import {
-  currentTrack, next, playAt, previous, seek, toggle, toggleRepeat, toggleShuffle, useMusicPlayer,
+  currentTrack, next, previous, seek, toggle, toggleRepeat, toggleShuffle, useMusicPlayer,
 } from './player';
+import ShareButton from './ShareButton';
+import UpNext from './UpNext';
+
+function DjSet({ set, loading }) {
+  return (
+    <div className="rounded-2xl border border-crimson-700/40 bg-crimson-950/50 p-4 space-y-1.5">
+      <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-500">
+        <Radio className="w-4 h-4" /> Lumi DJ · <span className="text-crimson-300 normal-case tracking-normal">{set.theme}</span>
+        {loading && <Loader2 className="w-3.5 h-3.5 animate-spin ml-auto" aria-label="Lumi is picking the next set" />}
+      </p>
+      {set.intro && <p className="text-sm text-crimson-100 italic leading-relaxed">{set.intro}</p>}
+    </div>
+  );
+}
 
 export default function MusicNowPlaying() {
   const state = useMusicPlayer();
   const track = currentTrack(state);
+  const dj = useDj();
   const navigate = useNavigate();
 
   if (!track) {
@@ -24,11 +40,11 @@ export default function MusicNowPlaying() {
     );
   }
 
-  const upcoming = state.order.slice(state.position + 1, state.position + 51);
+  const set = currentSet(dj, state);
   const RepeatIcon = state.repeat === REPEAT_ONE ? Repeat1 : Repeat;
 
   return (
-    <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-14 grid lg:grid-cols-[minmax(0,26rem)_1fr] gap-10 lg:gap-14">
+    <div className="max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-14 grid lg:grid-cols-[minmax(0,26rem)_1fr] lg:items-start gap-10 lg:gap-14">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <button onClick={() => navigate(-1)} aria-label="Close" className="p-2 -ml-2 text-crimson-400 hover:text-white">
@@ -43,12 +59,17 @@ export default function MusicNowPlaying() {
 
         <Cover src={track.cover_url} className="w-full aspect-square rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.5)]" />
 
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl font-black text-crimson-50 leading-tight">{track.title}</h1>
-          <p className="text-crimson-400 font-bold mt-1">{track.artists.join(', ')}</p>
-          {track.album && <p className="text-crimson-400 text-sm mt-0.5">{track.album}</p>}
-          {state.error && <p className="text-amber-400 text-xs font-bold mt-2">{state.error}</p>}
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-grow">
+            <h1 className="text-2xl sm:text-3xl font-black text-crimson-50 leading-tight">{track.title}</h1>
+            <p className="text-crimson-400 font-bold mt-1">{track.artists.join(', ')}</p>
+            {track.album && <p className="text-crimson-400 text-sm mt-0.5">{track.album}</p>}
+            {state.error && <p className="text-amber-400 text-xs font-bold mt-2">{state.error}</p>}
+          </div>
+          <ShareButton track={track} className="-mr-2 flex-shrink-0" />
         </div>
+
+        {set && <DjSet set={set} loading={dj.loading} />}
 
         <div>
           <input
@@ -91,33 +112,7 @@ export default function MusicNowPlaying() {
         </div>
       </div>
 
-      <div className="min-w-0">
-        <h2 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-crimson-500 mb-4">
-          <ListMusic className="w-4 h-4" /> Up next
-        </h2>
-        {upcoming.length === 0 ? (
-          <p className="text-crimson-400 text-sm italic">The queue ends after this track.</p>
-        ) : (
-          <ol className="space-y-1">
-            {upcoming.map((index, offset) => {
-              const t = state.tracks[index];
-              return (
-                <li key={`${t.id}-${offset}`}>
-                  <button onClick={() => playAt(state.position + 1 + offset)}
-                    className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-crimson-900/30 text-left transition-colors">
-                    <Cover src={t.cover_url} className="w-10 h-10 rounded-md flex-shrink-0" />
-                    <div className="min-w-0 flex-grow">
-                      <p className="text-sm font-bold text-crimson-100 truncate">{t.title}</p>
-                      <p className="text-xs text-crimson-500 truncate">{t.artists.join(', ')}</p>
-                    </div>
-                    <span className="text-[11px] text-crimson-400 tabular-nums">{formatTime(t.duration_ms / 1000)}</span>
-                  </button>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </div>
+      <UpNext state={state} />
     </div>
   );
 }

@@ -53,6 +53,7 @@ const MusicHub = lazy(() => import('./music/MusicHub'));
 const MusicPlaylist = lazy(() => import('./music/MusicPlaylist'));
 const MusicNowPlaying = lazy(() => import('./music/MusicNowPlaying'));
 const MusicConnect = lazy(() => import('./music/MusicConnect'));
+const MusicSharedSong = lazy(() => import('./music/MusicSharedSong'));
 const DownloadExtensionPage = lazy(() => import('./info/DownloadExtension'));
 const DownloadsPage = lazy(() => import('./offline/Downloads'));
 const OfflineWatch = lazy(() => import('./offline/OfflineWatch'));
@@ -123,6 +124,7 @@ function App() {
           <Route path="/music/playlist/:id" element={<MusicPlaylist />} />
           <Route path="/music/now" element={<MusicNowPlaying />} />
           <Route path="/music/connect" element={<MusicConnect />} />
+          <Route path="/music/song/:token" element={<MusicSharedSong />} />
           {/* Legacy path: keep old Catalogue bookmarks working. */}
           <Route path="/catalogue" element={<Navigate to="/anime" replace />} />
           <Route path="/account" element={<AccountPage />} />

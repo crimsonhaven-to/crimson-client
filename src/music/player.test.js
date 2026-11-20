@@ -169,3 +169,31 @@ describe('crossfade', () => {
     expect(decks.filter((d) => d.src).length).toBe(1);
   });
 });
+
+describe('appendTracks', () => {
+  beforeEach(() => {
+    player.close();
+    localStorage.clear();
+  });
+
+  it('extends the queue without interrupting the song that plays', async () => {
+    const first = await startTwoSongs();
+    player.appendTracks([track(3), { ...track(4), stream_url: null }]);
+    expect(player.getState().position).toBe(0);
+    expect(playing()).toBe(first);
+    expect(player.getState().order).toEqual([0, 1, 2]);
+  });
+
+  it('lets the last song roll on into what was added', async () => {
+    player.playTracks([track(1)], 0, null, { shuffle: false });
+    await settle();
+    const only = decks.find((d) => d.src.endsWith('/1.m4a'));
+    only.duration = 100;
+    only.fire('playing');
+    player.appendTracks([track(2)]);
+    only.fire('ended');
+    await settle();
+    expect(player.getState().position).toBe(1);
+    expect(player.getState().tracks[1].id).toBe(2);
+  });
+});

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { apiFetch, extractError, usePublicConfig } from '../api/client';
 import { useProfile } from '../account/profile';
+import { useLumiStatus } from '../lumi/hooks';
 
 const POLL_MS = 8000;
 
@@ -51,6 +52,8 @@ export const musicApi = {
   chooseMatch: (trackId, url) => call(`/music/tracks/${trackId}/match`, { json: { url } }),
   retry: (trackId) => call(`/music/tracks/${trackId}/retry`, { method: 'POST' }),
   search: (q) => call(`/music/search?${new URLSearchParams({ q })}`),
+  share: (trackId) => call(`/music/tracks/${trackId}/share`, { method: 'POST' }),
+  shared: (token) => call(`/music/shared/${encodeURIComponent(token)}`),
 };
 
 const BUSY = ['pending', 'working'];
@@ -95,6 +98,13 @@ export function useMusicAccess() {
   const { music_enabled: server } = usePublicConfig();
   const profile = useProfile();
   return !!server && !!profile?.music_enabled;
+}
+
+// Lumi's DJ spends her tokens and plays the member's music, so it needs both grants.
+export function useDjAccess() {
+  const music = useMusicAccess();
+  const lumi = useLumiStatus();
+  return music && !!lumi?.available;
 }
 
 export function useMusicStatus() {

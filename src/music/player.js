@@ -426,6 +426,21 @@ export function playTracks(tracks, start = 0, source = null, { shuffle = state.s
   load(order.indexOf(startIndex), true);
 }
 
+// Lumi's DJ grows her queue this way, without touching the song that plays now.
+export function appendTracks(tracks) {
+  const playable = tracks.filter((t) => t.stream_url);
+  if (!playable.length) return;
+  const first = state.tracks.length;
+  emit({
+    tracks: [...state.tracks, ...playable],
+    order: [...state.order, ...playable.map((_, i) => first + i)],
+  });
+  // The last song had nothing armed after it; now it does.
+  disarm();
+  save();
+  preloadNext();
+}
+
 export function toggleShuffle() {
   if (!state.tracks.length) {
     emit({ shuffle: !state.shuffle });

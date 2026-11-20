@@ -8,6 +8,7 @@ import { HubShell } from '../browse/hubKit';
 import { useMusicPlaylists, useMusicStatus } from './hooks';
 import { Cover } from './Cover';
 import DeviceCard from './DeviceCard';
+import DjCard from './DjCard';
 import { isDownloaded, savedPlaylist, useDownloads } from './downloads';
 import ImportPanel from './ImportPanel';
 import NewPlaylistDialog from './NewPlaylistDialog';
@@ -136,6 +137,8 @@ export default function MusicHub() {
         {!s.provider && <Notice>This server can import playlists but has no download source, so nothing downloads yet.</Notice>}
         {s.provider && !s.share_ready && <Notice>The music share is not reachable right now. Downloads resume once it is back.</Notice>}
       </div>
+
+      <DjCard />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
         <NewPlaylistTile onClick={() => setCreating(true)} />
