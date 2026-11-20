@@ -197,3 +197,31 @@ describe('appendTracks', () => {
     expect(player.getState().tracks[1].id).toBe(2);
   });
 });
+
+describe('ducking under Lumi', () => {
+  beforeEach(() => {
+    player.close();
+    player.setDucked(false);
+    localStorage.clear();
+  });
+
+  it('lowers the song while she talks and restores it after', async () => {
+    const first = await startTwoSongs();
+    player.setDucked(true);
+    expect(first.volume).toBeLessThan(0.5);
+    player.setDucked(false);
+    expect(first.volume).toBe(1);
+  });
+
+  it('keeps a crossfade under her voice', async () => {
+    setCrossfadeSetting({ on: true, seconds: 5 });
+    const first = await startTwoSongs();
+    player.setDucked(true);
+    const second = await reachTheEnd(first);
+    second.currentTime = 5;
+    second.fire('timeupdate');
+    expect(second.volume).toBeLessThan(0.5);
+    player.setDucked(false);
+    expect(second.volume).toBe(1);
+  });
+});

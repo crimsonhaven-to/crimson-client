@@ -1,13 +1,15 @@
 // Lumi as a DJ. She picks a theme and a few songs from the member's library, the
 // player plays them, and a little before the set runs out the next one is fetched
 // and appended, so the music never stops for her to think. Playing anything else
-// ends the DJ session, the way picking a playlist ends Spotify's DJ.
+// ends the DJ session, the way picking a playlist ends Spotify's DJ. When a set's
+// first song starts, Lumi speaks its intro over it.
 import { useSyncExternalStore } from 'react';
 
 import { apiFetch, extractError } from '../api/client';
 import {
   appendTracks, currentTrack, getState as getPlayer, playTracks, subscribe as subscribePlayer,
 } from './player';
+import { hush, isSpeaking, speak } from './djVoice';
 
 // Two songs of warning leaves time for a slow model without ending a set early.
 const FETCH_WHEN_LEFT = 2;
@@ -18,6 +20,9 @@ const PLAYED_SENT = 500;
 const IDLE = { active: false, loading: false, error: null, failedAt: null, sets: [] };
 let state = IDLE;
 const listeners = new Set();
+// Each set's spoken intro, keyed by the index of its first song and dropped once
+// heard: a WAV is a few hundred kilobytes and a session can run for hours.
+const voices = new Map();
 
 function emit(patch) {
   state = { ...state, ...patch };
@@ -69,9 +74,12 @@ const DJ_SOURCE = { name: 'Lumi DJ', dj: true };
 // Resolves whether a set started.
 export async function startDj() {
   if (state.loading) return false;
+  hush();
+  voices.clear();
   emit({ ...IDLE, loading: true });
   try {
     const set = await fetchSet({ tracks: [] }, []);
+    if (set.voice) voices.set(0, set.voice);
     emit({ active: true, loading: false, sets: [{ theme: set.theme, intro: set.intro, firstIndex: 0 }] });
     playTracks(set.tracks, 0, DJ_SOURCE, { shuffle: false });
     return true;
@@ -82,6 +90,8 @@ export async function startDj() {
 }
 
 export function stopDj() {
+  hush();
+  voices.clear();
   state = IDLE;
   for (const listener of listeners) listener();
 }
@@ -93,6 +103,7 @@ async function extend() {
     const set = await fetchSet(player, state.sets);
     if (!state.active) return;
     const firstIndex = getPlayer().tracks.length;
+    if (set.voice) voices.set(firstIndex, set.voice);
     emit({
       loading: false, error: null, failedAt: null, sets: [...state.sets, { theme: set.theme, intro: set.intro, firstIndex }],
     });
@@ -102,6 +113,20 @@ async function extend() {
   }
 }
 
+// Pausing the music silences her for good: picking up mid-sentence minutes later
+// would sound broken, and the intro is still on screen.
+function introduce(player) {
+  if (!player.playing) {
+    if (isSpeaking()) hush();
+    return;
+  }
+  const index = player.order[player.position];
+  const wav = voices.get(index);
+  if (!wav) return;
+  voices.delete(index);
+  speak(wav);
+}
+
 subscribePlayer(() => {
   if (!state.active) return;
   const player = getPlayer();
@@ -109,6 +134,7 @@ subscribePlayer(() => {
     stopDj();
     return;
   }
+  introduce(player);
   if (!state.loading && state.failedAt !== player.position && needsNextSet(player)) extend();
 });
 
