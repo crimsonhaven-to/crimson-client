@@ -14,6 +14,7 @@ export const musicApi = {
   disconnectSpotify: () => call('/music/spotify', { method: 'DELETE' }),
   spotifyPlaylists: () => call('/music/spotify/playlists'),
   playlists: () => call('/music/playlists'),
+  allTitles: () => call('/music/all-titles'),
   importPlaylist: (source, playlist) => call('/music/playlists', { json: { source, playlist } }),
   importCsv: (name, csv) => call('/music/playlists/csv', { json: { name, csv } }),
   createPlaylist: (name) => call('/music/playlists/local', { json: { name } }),
@@ -73,7 +74,8 @@ const playlistsBusy = (list) => list.some(
 );
 
 const loadPlaylist = (id) => musicApi.playlist(id);
-const playlistBusy = (d) => d.tracks.some((t) => BUSY.includes(t.status));
+const loadAllTitles = () => musicApi.allTitles();
+const tracksBusy = (d) => d.tracks.some((t) => BUSY.includes(t.status));
 
 // Music needs both the server's library and this account's grant.
 export function useMusicAccess() {
@@ -99,6 +101,11 @@ export function useMusicPlaylists() {
 }
 
 export function useMusicPlaylist(id) {
-  const state = usePolled(id, loadPlaylist, playlistBusy);
+  const state = usePolled(id, loadPlaylist, tracksBusy);
   return { ...state, playlist: state.data?.playlist, tracks: state.data?.tracks || [] };
+}
+
+export function useMusicAllTitles() {
+  const state = usePolled('all-titles', loadAllTitles, tracksBusy);
+  return { ...state, tracks: state.data?.tracks || [], total: state.data?.total ?? 0 };
 }

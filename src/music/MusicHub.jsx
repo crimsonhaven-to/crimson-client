@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import { ArrowDownToLine, CircleAlert, Music, Play, Plus, WifiOff } from 'lucide-react';
 
 import { HubShell } from '../browse/hubKit';
+import { dedupeSavedTracks, formatAllTitlesSubtitle, formatTitleCount } from './allTitles';
 import { useMusicPlaylists, useMusicStatus } from './hooks';
 import { Cover } from './Cover';
 import DeviceCard from './DeviceCard';
@@ -33,6 +34,32 @@ function Notice({ children }) {
     <div className="flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/5 p-4 text-xs font-bold text-amber-200/90">
       <CircleAlert className="w-4 h-4 flex-shrink-0 mt-0.5" /> <span>{children}</span>
     </div>
+  );
+}
+
+function AllTitlesTile({ total, ready, subtitle }) {
+  return (
+    <Link to="/music/all-titles" className="group space-y-3">
+      <div className="relative">
+        <div className="w-full aspect-square rounded-2xl shadow-xl border border-crimson-700/50 bg-gradient-to-br from-crimson-900/80 via-crimson-950 to-crimson-950 flex flex-col items-center justify-center gap-2.5 group-hover:scale-[1.02] group-hover:border-crimson-500/70 transition-all">
+          <span className="w-14 h-14 rounded-2xl bg-crimson-600/20 border border-crimson-500/40 text-crimson-300 flex items-center justify-center">
+            <Music className="w-7 h-7" />
+          </span>
+          <span className="text-[11px] font-black uppercase tracking-widest text-crimson-300 tabular-nums">
+            {formatTitleCount(total)}
+          </span>
+        </div>
+        <span className="absolute bottom-3 right-3 w-11 h-11 rounded-full bg-crimson-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+          <Play className="w-5 h-5 translate-x-px" fill="currentColor" />
+        </span>
+      </div>
+      <div className="min-w-0">
+        <p className="text-sm font-bold text-crimson-50 truncate group-hover:text-crimson-300">All titles</p>
+        <p className="text-[11px] text-crimson-400 truncate">
+          {subtitle ?? formatAllTitlesSubtitle(ready, total)}
+        </p>
+      </div>
+    </Link>
   );
 }
 
@@ -82,6 +109,8 @@ function NewPlaylistTile({ onClick }) {
 
 function OfflineHub({ downloads }) {
   const saved = Object.keys(downloads.saved).map((id) => savedPlaylist(id, downloads));
+  const offlineTracks = dedupeSavedTracks(downloads.saved);
+  const storedCount = offlineTracks.filter((t) => downloads.stored.has(t.id)).length;
   return (
     <HubShell title="Your" accent="Music" icon={<Music className="w-4 h-4" />} subtitle="Offline: playing from this device">
       <Notice>
@@ -91,6 +120,11 @@ function OfflineHub({ downloads }) {
         <p className="text-crimson-500 text-sm">Nothing is downloaded to this device yet. Once you are back online, open a playlist and press Download.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+          <AllTitlesTile
+            total={offlineTracks.length}
+            ready={storedCount}
+            subtitle={`${storedCount} songs on this device`}
+          />
           {saved.map(({ playlist, tracks }) => (
             <Link key={playlist.id} to={`/music/playlist/${playlist.id}`} className="group space-y-3">
               <Cover src={playlist.cover_url} className="w-full aspect-square rounded-2xl shadow-xl group-hover:scale-[1.02] transition-transform" />
@@ -141,6 +175,15 @@ export default function MusicHub() {
       <DjCard />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-5">
+        <AllTitlesTile
+          total={counts.active ?? (counts.ready || 0)}
+          ready={counts.active_ready ?? (counts.ready || 0)}
+          subtitle={formatAllTitlesSubtitle(
+            counts.active_ready ?? (counts.ready || 0),
+            counts.active ?? (counts.ready || 0),
+            playlists.length,
+          )}
+        />
         <NewPlaylistTile onClick={() => setCreating(true)} />
         {playlists.map((p) => <PlaylistTile key={p.id} playlist={p} downloaded={isDownloaded(p.id, downloads)} />)}
       </div>
