@@ -50,6 +50,7 @@ const LiveTvHub = lazy(() => import('./livetv/LiveTvHub'));
 const LiveTvWatch = lazy(() => import('./livetv/LiveTvWatch'));
 const LumiSecret = lazy(() => import('./lumi/LumiSecret'));
 const MusicHub = lazy(() => import('./music/MusicHub'));
+const MusicAllTitles = lazy(() => import('./music/MusicAllTitles'));
 const MusicPlaylist = lazy(() => import('./music/MusicPlaylist'));
 const MusicNowPlaying = lazy(() => import('./music/MusicNowPlaying'));
 const MusicConnect = lazy(() => import('./music/MusicConnect'));
@@ -122,6 +123,7 @@ function App() {
           <Route path="/live" element={<LiveTvHub />} />
           <Route path="/local" element={<LocalHub />} />
           <Route path="/music" element={<MusicHub />} />
+          <Route path="/music/all-titles" element={<MusicAllTitles />} />
           <Route path="/music/playlist/:id" element={<MusicPlaylist />} />
           <Route path="/music/now" element={<MusicNowPlaying />} />
           <Route path="/music/connect" element={<MusicConnect />} />
