@@ -14,6 +14,8 @@ import {
   identityOrder,
   nextPosition,
   previousPosition,
+  queueInsert,
+  reorder,
   shuffledOrder,
   upcomingPositions,
 } from './queue';
@@ -39,6 +41,8 @@ const EMPTY = {
   tracks: [],
   order: [],
   position: -1,
+  // The position just past the last song added with "Add to queue".
+  queueEnd: 0,
   playing: false,
   loading: false,
   currentTime: 0,
@@ -97,9 +101,11 @@ function save() {
       localStorage.removeItem(SAVED_KEY);
       return;
     }
-    const { tracks, order, position, shuffle, repeat, source } = state;
+    const { tracks, order, position, queueEnd, shuffle, repeat, source } = state;
     const time = audio ? audio.currentTime : state.currentTime;
-    localStorage.setItem(SAVED_KEY, JSON.stringify({ tracks, order, position, shuffle, repeat, source, time }));
+    localStorage.setItem(SAVED_KEY, JSON.stringify({
+      tracks, order, position, queueEnd, shuffle, repeat, source, time,
+    }));
   } catch {
     // Quota or a private window.
   }
@@ -119,6 +125,7 @@ export function restoreQueue() {
     tracks: saved.tracks,
     order: saved.order,
     position: saved.position,
+    queueEnd: saved.queueEnd || 0,
     shuffle: !!saved.shuffle,
     repeat: saved.repeat || REPEAT_OFF,
     source: saved.source || null,
@@ -439,8 +446,30 @@ export function playTracks(tracks, start = 0, source = null, { shuffle = state.s
   const startIndex = Math.max(0, playable.indexOf(tracks[start]));
   const order = shuffle ? shuffledOrder(playable.length, startIndex) : identityOrder(playable.length);
   failedInARow = 0;
-  emit({ tracks: playable, order, shuffle, source });
+  emit({ tracks: playable, order, queueEnd: 0, shuffle, source });
   load(order.indexOf(startIndex), true);
+}
+
+// Plays the songs after the current one and anything queued before them,
+// ahead of what would have come next. With nothing loaded they simply start.
+// Returns how many songs went in.
+export function queueTracks(tracks, source = null) {
+  const playable = tracks.filter((t) => t.stream_url);
+  if (!playable.length) return 0;
+  if (state.position < 0) {
+    playTracks(playable, 0, source);
+    return playable.length;
+  }
+  const first = state.tracks.length;
+  emit({
+    tracks: [...state.tracks, ...playable],
+    ...queueInsert(state.order, state.position, state.queueEnd, playable.map((_, i) => first + i)),
+  });
+  // Whatever was armed to play next no longer is.
+  disarm();
+  save();
+  preloadNext();
+  return playable.length;
 }
 
 // Lumi's DJ grows her queue this way, without touching the song that plays now.
@@ -463,12 +492,8 @@ export function toggleShuffle() {
     emit({ shuffle: !state.shuffle });
     return;
   }
-  const current = state.order[state.position];
-  if (state.shuffle) {
-    emit({ shuffle: false, order: identityOrder(state.tracks.length), position: current });
-  } else {
-    emit({ shuffle: true, order: shuffledOrder(state.tracks.length, current), position: 0 });
-  }
+  const shuffle = !state.shuffle;
+  emit({ shuffle, ...reorder(state.order, state.position, state.queueEnd, shuffle) });
   disarm();
   save();
   preloadNext();

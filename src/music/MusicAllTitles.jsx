@@ -8,7 +8,10 @@ import { useDownloads } from './downloads';
 import { musicApi, useMusicAllTitles } from './hooks';
 import { currentTrack, playTracks, toggle, useMusicPlayer } from './player';
 import { formatTime } from './queue';
+import QueueButton from './QueueButton';
 import ReviewDialog from './ReviewDialog';
+import TrackFilters from './TrackFilters';
+import { filterTracks, useTrackFilter } from './trackFilter';
 import { coverKey } from './trackStore';
 import { StatusCell } from './TrackStatus';
 
@@ -27,6 +30,7 @@ export default function MusicAllTitles() {
   const playing = currentTrack(player);
   const [reviewing, setReviewing] = useState(null);
   const [notice, setNotice] = useState(null);
+  const filter = useTrackFilter();
 
   if (loading) {
     return <div className="py-32 text-center text-crimson-400 animate-pulse text-[11px] font-black uppercase tracking-[0.2em]">Gathering all titles...</div>;
@@ -41,7 +45,10 @@ export default function MusicAllTitles() {
   }
 
   const isPlayable = (t) => t.status === 'ready' && (!offline || downloads.stored.has(t.id));
-  const ready = tracks.filter(isPlayable);
+  const readyCount = tracks.filter(isPlayable).length;
+  // Play, shuffle and queue all act on what the filter leaves.
+  const shown = filterTracks(tracks, filter);
+  const ready = shown.filter(isPlayable);
   const isThisSource = player.source?.path === SOURCE.path;
   const totalMs = tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
 
@@ -72,7 +79,7 @@ export default function MusicAllTitles() {
           <h1 className="text-3xl sm:text-5xl font-black text-crimson-50 tracking-tighter leading-none break-words">All titles</h1>
           <p className="text-xs font-bold text-crimson-400">
             {offline && <span className="inline-flex items-center gap-1 text-amber-300 mr-2"><WifiOff className="w-3.5 h-3.5" /> Offline, from this device ·</span>}
-            {ready.length} of {tracks.length} on the share · {formatTime(totalMs / 1000)}
+            {readyCount} of {tracks.length} on the share · {formatTime(totalMs / 1000)}
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-2">
             <button
@@ -90,6 +97,8 @@ export default function MusicAllTitles() {
             >
               <Shuffle className="w-4 h-4" /> Shuffle
             </button>
+            <QueueButton tracks={ready} source={SOURCE} label="Queue"
+              className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40" />
           </div>
           {notice && <p className="text-xs font-bold text-crimson-300">{notice}</p>}
         </div>
@@ -106,72 +115,82 @@ export default function MusicAllTitles() {
           </Link>
         </div>
       ) : (
-        <ol className="divide-y divide-crimson-900/30 border-t border-crimson-900/30">
-          {tracks.map((track, index) => {
-            const isCurrent = playing?.id === track.id;
-            const playable = isPlayable(track);
-            const { visible, overflowCount, overflowTitle } = splitPlaylistBadges(track.playlists);
-            return (
-              <li
-                key={track.id}
-                className={`flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1.5 py-2.5 px-2 rounded-xl ${isCurrent ? 'bg-crimson-600/10' : ''}`}
-              >
-                <button
-                  disabled={!playable}
-                  onClick={() => (isCurrent ? toggle() : playTracks(ready, ready.indexOf(track), SOURCE))}
-                  className="flex items-center gap-3 min-w-0 flex-grow text-left disabled:cursor-default group"
-                  aria-label={playable ? `Play ${track.title}` : track.title}
+        <>
+          <TrackFilters tracks={tracks} filter={filter} />
+          {shown.length === 0 && (
+            <p className="py-10 text-center text-crimson-400 text-sm">Nothing in your library matches.</p>
+          )}
+          <ol className="divide-y divide-crimson-900/30 border-t border-crimson-900/30">
+            {shown.map((track, index) => {
+              const isCurrent = playing?.id === track.id;
+              const playable = isPlayable(track);
+              const { visible, overflowCount, overflowTitle } = splitPlaylistBadges(track.playlists);
+              return (
+                <li
+                  key={track.id}
+                  className={`flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1.5 py-2.5 px-2 rounded-xl ${isCurrent ? 'bg-crimson-600/10' : ''}`}
                 >
-                  <span className="w-6 text-right text-[11px] font-bold text-crimson-400 tabular-nums flex-shrink-0">
-                    {isCurrent && player.playing ? <Play className="w-3.5 h-3.5 inline text-crimson-500" fill="currentColor" /> : index + 1}
-                  </span>
-                  <Cover src={track.cover_url} className="w-10 h-10 rounded-md flex-shrink-0" />
-                  <span className="min-w-0">
-                    <span className={`block text-sm font-bold truncate ${isCurrent ? 'text-crimson-400' : playable ? 'text-crimson-100 group-hover:text-white' : 'text-crimson-500'}`}>
-                      {track.title}
+                  <button
+                    disabled={!playable}
+                    onClick={() => (isCurrent ? toggle() : playTracks(ready, ready.indexOf(track), SOURCE))}
+                    className="flex items-center gap-3 min-w-0 flex-grow text-left disabled:cursor-default group"
+                    aria-label={playable ? `Play ${track.title}` : track.title}
+                  >
+                    <span className="w-6 text-right text-[11px] font-bold text-crimson-400 tabular-nums flex-shrink-0">
+                      {isCurrent && player.playing ? <Play className="w-3.5 h-3.5 inline text-crimson-500" fill="currentColor" /> : index + 1}
                     </span>
-                    <span className="block text-xs text-crimson-400 truncate">
-                      {track.artists.join(', ')}{track.album ? ` · ${track.album}` : ''}
-                    </span>
-                  </span>
-                  {downloads.stored.has(track.id) && (
-                    <span title="On this device" className="text-emerald-400/70 flex-shrink-0"><ArrowDownToLine className="w-3.5 h-3.5" /></span>
-                  )}
-                </button>
-                {visible.length > 0 && (
-                  <div className="flex items-center gap-1.5 pl-9 sm:pl-0 flex-shrink-0 max-w-full">
-                    {visible.map((pl) => (
-                      <Link
-                        key={pl.id}
-                        to={`/music/playlist/${pl.id}`}
-                        className="px-2 py-0.5 rounded-full bg-crimson-900/40 border border-crimson-800/60 text-[10px] font-bold text-crimson-300 hover:text-white hover:border-crimson-500/70 transition-colors truncate max-w-[8.5rem]"
-                        title={pl.name}
-                      >
-                        {pl.name}
-                      </Link>
-                    ))}
-                    {overflowCount > 0 && (
-                      <span
-                        title={overflowTitle}
-                        className="px-2 py-0.5 rounded-full bg-crimson-950/80 border border-crimson-900/60 text-[10px] font-bold text-crimson-400 tabular-nums"
-                      >
-                        +{overflowCount}
+                    <Cover src={track.cover_url} className="w-10 h-10 rounded-md flex-shrink-0" />
+                    <span className="min-w-0">
+                      <span className={`block text-sm font-bold truncate ${isCurrent ? 'text-crimson-400' : playable ? 'text-crimson-100 group-hover:text-white' : 'text-crimson-500'}`}>
+                        {track.title}
                       </span>
+                      <span className="block text-xs text-crimson-400 truncate">
+                        {track.artists.join(', ')}{track.album ? ` · ${track.album}` : ''}
+                      </span>
+                    </span>
+                    {downloads.stored.has(track.id) && (
+                      <span title="On this device" className="text-emerald-400/70 flex-shrink-0"><ArrowDownToLine className="w-3.5 h-3.5" /></span>
                     )}
-                  </div>
-                )}
-                <StatusCell
-                  track={track}
-                  onReview={() => setReviewing(track)}
-                  onRetry={() => retry(track.id)}
-                />
-                <span className="hidden sm:block w-12 text-right text-[11px] text-crimson-400 tabular-nums flex-shrink-0">
-                  {formatTime(track.duration_ms / 1000)}
-                </span>
-              </li>
-            );
-          })}
-        </ol>
+                  </button>
+                  {visible.length > 0 && (
+                    <div className="flex items-center gap-1.5 pl-9 sm:pl-0 flex-shrink-0 max-w-full">
+                      {visible.map((pl) => (
+                        <Link
+                          key={pl.id}
+                          to={`/music/playlist/${pl.id}`}
+                          className="px-2 py-0.5 rounded-full bg-crimson-900/40 border border-crimson-800/60 text-[10px] font-bold text-crimson-300 hover:text-white hover:border-crimson-500/70 transition-colors truncate max-w-[8.5rem]"
+                          title={pl.name}
+                        >
+                          {pl.name}
+                        </Link>
+                      ))}
+                      {overflowCount > 0 && (
+                        <span
+                          title={overflowTitle}
+                          className="px-2 py-0.5 rounded-full bg-crimson-950/80 border border-crimson-900/60 text-[10px] font-bold text-crimson-400 tabular-nums"
+                        >
+                          +{overflowCount}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {playable && (
+                    <QueueButton tracks={[track]} source={SOURCE}
+                      className="p-1.5 rounded-lg text-crimson-400 hover:text-white hover:bg-crimson-900/40 flex-shrink-0" />
+                  )}
+                  <StatusCell
+                    track={track}
+                    onReview={() => setReviewing(track)}
+                    onRetry={() => retry(track.id)}
+                  />
+                  <span className="hidden sm:block w-12 text-right text-[11px] text-crimson-400 tabular-nums flex-shrink-0">
+                    {formatTime(track.duration_ms / 1000)}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        </>
       )}
 
       {reviewing && (

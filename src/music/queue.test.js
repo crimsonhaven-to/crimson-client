@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   REPEAT_ALL, REPEAT_OFF, REPEAT_ONE, cycleRepeat, formatTime, identityOrder, nextPosition,
-  previousPosition, shuffledOrder, upcomingPositions,
+  previousPosition, queueInsert, reorder, shuffledOrder, upcomingPositions,
 } from './queue';
 
 describe('nextPosition', () => {
@@ -78,5 +78,44 @@ describe('upcomingPositions', () => {
   it('is empty for a count of zero or a single track', () => {
     expect(upcomingPositions(0, 5, REPEAT_ALL, 0)).toEqual([]);
     expect(upcomingPositions(0, 1, REPEAT_ALL, 3)).toEqual([]);
+  });
+});
+
+describe('queueInsert', () => {
+  it('plays a queued song right after the current one', () => {
+    expect(queueInsert([0, 1, 2, 3], 1, 0, [4])).toEqual({ order: [0, 1, 4, 2, 3], queueEnd: 3 });
+  });
+
+  it('keeps queued songs in the order they were added', () => {
+    const first = queueInsert([0, 1, 2], 0, 0, [3]);
+    const second = queueInsert(first.order, 0, first.queueEnd, [4, 5]);
+    expect(second).toEqual({ order: [0, 3, 4, 5, 1, 2], queueEnd: 4 });
+  });
+
+  it('starts a fresh queue once the queued songs have played', () => {
+    // Playing position 3, the queue ended at 2.
+    expect(queueInsert([0, 1, 2, 3, 4], 3, 2, [5])).toEqual({ order: [0, 1, 2, 3, 5, 4], queueEnd: 5 });
+  });
+});
+
+describe('reorder', () => {
+  const noShuffle = () => 0;
+
+  it('keeps the current song first and the queued songs behind it when shuffling', () => {
+    // Playing track 1, tracks 4 and 5 queued after it.
+    const { order, position, queueEnd } = reorder([0, 1, 4, 5, 2, 3], 1, 4, true, noShuffle);
+    expect(order.slice(0, 3)).toEqual([1, 4, 5]);
+    expect([...order].sort()).toEqual([0, 1, 2, 3, 4, 5]);
+    expect({ position, queueEnd }).toEqual({ position: 0, queueEnd: 3 });
+  });
+
+  it('goes back to list order around the current song, queue intact', () => {
+    const { order, position, queueEnd } = reorder([2, 4, 0, 3, 1], 0, 2, false);
+    expect(order).toEqual([0, 1, 2, 4, 3]);
+    expect({ position, queueEnd }).toEqual({ position: 2, queueEnd: 4 });
+  });
+
+  it('marks no queue when nothing was queued', () => {
+    expect(reorder([0, 1, 2], 1, 0, false)).toEqual({ order: [0, 1, 2], position: 1, queueEnd: 0 });
   });
 });

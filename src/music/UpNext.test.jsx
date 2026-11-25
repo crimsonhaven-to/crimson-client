@@ -16,9 +16,9 @@ afterEach(() => {
 
 const track = (id) => ({ id, title: `Song ${id}`, artists: ['Band'], duration_ms: 60_000, cover_url: null });
 
-function render(count, position = 0) {
+function render(count, position = 0, queueEnd = 0) {
   const tracks = Array.from({ length: count }, (_, i) => track(i));
-  const state = { tracks, order: tracks.map((_, i) => i), position };
+  const state = { tracks, order: tracks.map((_, i) => i), position, queueEnd };
   const host = document.createElement('div');
   document.body.appendChild(host);
   root = createRoot(host);
@@ -48,5 +48,11 @@ describe('UpNext', () => {
 
   it('says when the queue ends', () => {
     expect(render(1).textContent).toContain('The queue ends after this track.');
+  });
+
+  it('marks the songs added with "Add to queue"', () => {
+    const host = render(5, 0, 3);
+    const marked = [...host.querySelectorAll('li')].map((li) => li.textContent.startsWith('Queued'));
+    expect(marked).toEqual([true, true, false, false]);
   });
 });
