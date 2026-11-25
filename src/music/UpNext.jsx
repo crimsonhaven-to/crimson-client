@@ -37,7 +37,12 @@ export default function UpNext({ state }) {
                     className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-crimson-900/30 text-left transition-colors">
                     <Cover src={t.cover_url} className="w-10 h-10 rounded-md flex-shrink-0" />
                     <div className="min-w-0 flex-grow">
-                      <p className="text-sm font-bold text-crimson-100 truncate">{t.title}</p>
+                      <p className="text-sm font-bold text-crimson-100 truncate">
+                        {state.position + 1 + offset < state.queueEnd && (
+                          <span className="mr-1.5 text-[10px] font-black uppercase tracking-widest text-crimson-500">Queued</span>
+                        )}
+                        {t.title}
+                      </p>
                       <p className="text-xs text-crimson-500 truncate">{t.artists.join(', ')}</p>
                     </div>
                     <span className="text-[11px] text-crimson-400 tabular-nums">{formatTime(t.duration_ms / 1000)}</span>

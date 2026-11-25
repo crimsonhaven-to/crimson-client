@@ -13,8 +13,11 @@ import CoverEditor from './CoverEditor';
 import DownloadButton from './DownloadButton';
 import NewPlaylistDialog from './NewPlaylistDialog';
 import { refreshDownload, savedPlaylist, useDownloads } from './downloads';
+import QueueButton from './QueueButton';
 import ReviewDialog from './ReviewDialog';
+import TrackFilters from './TrackFilters';
 import { StatusCell } from './TrackStatus';
+import { filterTracks, useTrackFilter } from './trackFilter';
 import { formatTime } from './queue';
 import { currentTrack, playTracks, toggle, useMusicPlayer } from './player';
 
@@ -40,6 +43,7 @@ export default function MusicPlaylist() {
   const [copying, setCopying] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState(null);
+  const filter = useTrackFilter();
 
   // Every fresh listing keeps a downloaded copy in step with the server.
   useEffect(() => {
@@ -59,7 +63,10 @@ export default function MusicPlaylist() {
   }
 
   const isPlayable = (t) => t.status === 'ready' && (!offline || downloads.stored.has(t.id));
-  const ready = tracks.filter(isPlayable);
+  const readyCount = tracks.filter(isPlayable).length;
+  // Play, shuffle and queue all act on what the filter leaves.
+  const shown = filterTracks(tracks, filter);
+  const ready = shown.filter(isPlayable);
   const source = { name: playlist.name, path: `/music/playlist/${playlist.id}` };
   const isThisPlaylist = player.source?.path === source.path;
   const totalMs = tracks.reduce((sum, t) => sum + (t.duration_ms || 0), 0);
@@ -112,7 +119,7 @@ export default function MusicPlaylist() {
           <h1 className="text-3xl sm:text-5xl font-black text-crimson-50 tracking-tighter leading-none break-words">{playlist.name}</h1>
           <p className="text-xs font-bold text-crimson-400">
             {offline && <span className="inline-flex items-center gap-1 text-amber-300 mr-2"><WifiOff className="w-3.5 h-3.5" /> Offline, from this device ·</span>}
-            {ready.length} of {tracks.length} on the share · {formatTime(totalMs / 1000)}
+            {readyCount} of {tracks.length} on the share · {formatTime(totalMs / 1000)}
             {playlist.last_error && <span className="text-amber-400"> · last sync failed: {playlist.last_error}</span>}
           </p>
           <div className="flex flex-wrap items-center gap-2 pt-2">
@@ -131,6 +138,8 @@ export default function MusicPlaylist() {
             >
               <Shuffle className="w-4 h-4" /> Shuffle
             </button>
+            <QueueButton tracks={ready} source={source} label="Queue"
+              className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest disabled:opacity-40" />
             {own && (
               <button onClick={() => setAdding(true)}
                 className="flex items-center gap-2 px-4 py-3 bg-crimson-950/60 border border-crimson-900/60 hover:border-crimson-600 text-crimson-200 rounded-2xl text-[11px] font-black uppercase tracking-widest">
@@ -178,8 +187,13 @@ export default function MusicPlaylist() {
         </div>
       )}
 
+      {tracks.length > 0 && <TrackFilters tracks={tracks} filter={filter} />}
+      {tracks.length > 0 && shown.length === 0 && (
+        <p className="py-10 text-center text-crimson-400 text-sm">Nothing in this playlist matches.</p>
+      )}
+
       <ol className="divide-y divide-crimson-900/30 border-t border-crimson-900/30">
-        {tracks.map((track, index) => {
+        {shown.map((track, index) => {
           const isCurrent = playing?.id === track.id;
           const playable = isPlayable(track);
           return (
@@ -207,6 +221,10 @@ export default function MusicPlaylist() {
                   <span title="On this device" className="text-emerald-400/70 flex-shrink-0"><ArrowDownToLine className="w-3.5 h-3.5" /></span>
                 )}
               </button>
+              {playable && (
+                <QueueButton tracks={[track]} source={source}
+                  className="p-1.5 rounded-lg text-crimson-400 hover:text-white hover:bg-crimson-900/40 flex-shrink-0" />
+              )}
               <StatusCell
                 track={track}
                 onReview={() => setReviewing(track)}

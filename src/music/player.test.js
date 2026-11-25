@@ -198,6 +198,52 @@ describe('appendTracks', () => {
   });
 });
 
+describe('queueTracks', () => {
+  beforeEach(() => {
+    player.close();
+    localStorage.clear();
+  });
+
+  const upcomingIds = () => {
+    const s = player.getState();
+    return s.order.slice(s.position + 1).map((i) => s.tracks[i].id);
+  };
+
+  it('plays queued songs next, in the order they were added, before the rest', async () => {
+    const first = await startTwoSongs();
+    expect(player.queueTracks([track(7)])).toBe(1);
+    player.queueTracks([track(8), { ...track(9), stream_url: null }]);
+    expect(playing()).toBe(first);
+    expect(upcomingIds()).toEqual([7, 8, 2]);
+    first.fire('ended');
+    await settle();
+    expect(player.currentTrack().id).toBe(7);
+  });
+
+  it('starts playing when nothing is loaded', async () => {
+    expect(player.queueTracks([track(5), track(6)])).toBe(2);
+    await settle();
+    expect(player.currentTrack().id).toBe(5);
+  });
+
+  it('keeps the queued songs next when shuffle is switched', async () => {
+    await startTwoSongs();
+    player.appendTracks([track(3), track(4)]);
+    player.queueTracks([track(7)]);
+    player.toggleShuffle();
+    expect(upcomingIds()[0]).toBe(7);
+    player.toggleShuffle();
+    expect(upcomingIds()).toEqual([7, 2, 3, 4]);
+  });
+
+  it('is forgotten when a new list starts', async () => {
+    await startTwoSongs();
+    player.queueTracks([track(7)]);
+    player.playTracks([track(1), track(2)], 0, null, { shuffle: false });
+    expect(player.getState().queueEnd).toBe(0);
+  });
+});
+
 describe('ducking under Lumi', () => {
   beforeEach(() => {
     player.close();
